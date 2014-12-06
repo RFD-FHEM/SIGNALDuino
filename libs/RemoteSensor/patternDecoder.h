@@ -7,15 +7,15 @@
 *   typical for home automation. The focus for the moment is on different sensors
 *   like weather sensors (temperature, humidity Logilink, TCM, Oregon Scientific, ...),
 *   remote controlled power switches (Intertechno, TCM, ARCtech, ...) which use
-*   encoder chips like PT2262 and EV1527-type and manchester encoder to send 
+*   encoder chips like PT2262 and EV1527-type and manchester encoder to send
 *   information in the 433MHz Band.
 *
-*   The classes in this library follow the approach to detect a typical pattern in the 
-*   first step and to try to find sensor (sender) specific information in the pattern in the 
-*   second step. The decoded information is send to the house automation fhem to be 
+*   The classes in this library follow the approach to detect a typical pattern in the
+*   first step and to try to find sensor (sender) specific information in the pattern in the
+*   second step. The decoded information is send to the house automation fhem to be
 *   processed there.
-*   As everything that you find in here is in an early state, please consider, that 
-*   the purpose of the library is to provide a startingpoint for experiments and 
+*   As everything that you find in here is in an early state, please consider, that
+*   the purpose of the library is to provide a startingpoint for experiments and
 *   discussions rather than to provide a ready to use functionality.
 *
 *   This program is free software: you can redistribute it and/or modify
@@ -46,6 +46,7 @@
 #define syncMinFact 9
 
 #define prefixLen 3
+
 //#define DEBUGDETECT
 //#define DEBUGDECODE
 
@@ -169,7 +170,7 @@ class ManchesterpatternDetector : patternBasic {
 		ManchesterpatternDetector(bool silentstate=true);
         bool detect(int* pulse);        // Runs the detection engine, It's mainly the only function which is calles from ourside. Input is one pule
         void reset();                   // Resets servals vars to start with a fresh engine
-        void printMessageHexStr();      // Gehört eigenlich in die Decoder Klasse
+        void printMessageHexStr();      // GehÃ¶rt eigenlich in die Decoder Klasse
         bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
         unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
         BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data
@@ -198,36 +199,38 @@ class ManchesterpatternDetector : patternBasic {
 
 class decoderBacis {
     public:
-        //decoderBacis(patternBasic *detector); // Constructor
-        decoderBacis(); // Constructor
-  		void printMessageHexStr();                  // Currently not implemented, must be defined in the subclass
-		virtual bool decode();            // Currently not implemented, must be defined in the subclass
-		virtual bool processMessage();              // Currently not implemented, must be defined in the subclass
-		//patternBasic *detector;
+        decoderBacis(); 								// Constructor
+  		String getMessageHexStr() const;              // Returns the hex message on serial
+		bool decode();                        			// Currently not implemented, must be defined in the subclass
+
+		virtual bool processMessage() {} ;                  // Currently not implemented, must be defined in the subclass
+	protected:
+		unsigned char Bit_Reverse (unsigned char x);    // Method to reverse a byte's bitorder 0111 -> 1110
+		bool message_decoded;							// Is set to true if we have decoded a valid signal
+		ManchesterpatternDetector *mcdetector;
+    	String protomessage;							// Holds the message from the protocol (hex)
 };
 
 /*
  Class for decoding oregon scientific protocol from a manchester bit signal.
- Currently not working
+ Currently only working if there is a delay between two transmissions of a signal
 */
-class OSV2Decoder : decoderBacis {
+class OSV2Decoder : public decoderBacis {
     public:
-        ManchesterpatternDetector *mcdetector;              // Pointer to the manchesterdetector
         OSV2Decoder(ManchesterpatternDetector *detector);
-        bool decode();                            // tries to decode the pattern, which is stored in the patterndetector
-        bool processMessage();                              // Check, conversion and outpuz
-
-        //void checkAS(); // -> AS Decoder ist ein Protokolldekoder!
+	private:
+        bool processMessage();                                  // Checks the Protocol
+        unsigned char getNibble(uint8_t startingPos);           // returns data bits 4 bits (nibble) in correct order
+        unsigned char getByte(uint8_t startingPos);				// returns data bits 8 bits (byte) in correct order
 };
 
 /*
  Class for decoding Arduinosensor protocol from a manchester bit signal.
 */
-class ASDecoder : decoderBacis {
+class ASDecoder : public decoderBacis {
     public:
-        ManchesterpatternDetector *mcdetector;              // Pointer to the manchesterdetector
         ASDecoder(ManchesterpatternDetector *detector);
-        bool decode();                            // tries to decode the pattern, which is stored in the patterndetector
+	private:
         bool processMessage();                              // Check, conversion and outpuz
 
 };

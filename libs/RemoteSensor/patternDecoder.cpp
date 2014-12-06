@@ -7,15 +7,15 @@
 *   typical for home automation. The focus for the moment is on different sensors
 *   like weather sensors (temperature, humidity Logilink, TCM, Oregon Scientific, ...),
 *   remote controlled power switches (Intertechno, TCM, ARCtech, ...) which use
-*   encoder chips like PT2262 and EV1527-type and manchester encoder to send 
+*   encoder chips like PT2262 and EV1527-type and manchester encoder to send
 *   information in the 433MHz Band.
 *
-*   The classes in this library follow the approach to detect a typical pattern in the 
-*   first step and to try to find sensor (sender) specific information in the pattern in the 
-*   second step. The decoded information is send to the house automation fhem to be 
+*   The classes in this library follow the approach to detect a typical pattern in the
+*   first step and to try to find sensor (sender) specific information in the pattern in the
+*   second step. The decoded information is send to the house automation fhem to be
 *   processed there.
-*   As everything that you find in here is in an early state, please consider, that 
-*   the purpose of the library is to provide a startingpoint for experiments and 
+*   As everything that you find in here is in an early state, please consider, that
+*   the purpose of the library is to provide a startingpoint for experiments and
 *   discussions rather than to provide a ready to use functionality.
 *
 *   This program is free software: you can redistribute it and/or modify
@@ -116,9 +116,10 @@ void patternBasic::swap(int* a, int* b){
 */
 bool patternBasic::validSequence(int *a, int *b)
 {
-    return ((*a> 0 and 0 > *b) or (*b > 0  and 0 > *a));
+
+    //return ((*a> 0 and 0 > *b) or (*b > 0  and 0 > *a));
     //return ((*a)*(*b)<0);
-    //return ((a ^ b) < 0); // true iff a and b have opposite signs
+    return ((*a ^ *b) < 0); // true iff a and b have opposite signs
 
 }
 
@@ -615,8 +616,8 @@ void patternDecoder::triStateMessageBytes(){
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate){
 	//tol = 200; //
 	tolFact = 5.0;
-	patternStore = new BitStore(2,40); // Init our Patternstore, with 40 bytes. So we can save 160 Values.
-	ManchesterBits=new BitStore(1,20); // use 1 Bit for every value stored, reserve 20 Bytes = 160 Bits
+	patternStore = new BitStore(2,66); // Init our Patternstore, with 40 bytes. So we can save 224 Values.
+	ManchesterBits=new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
 	this->silent=silentstate;
 
 }
@@ -670,7 +671,8 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 {
     /* Todo Auswetung der Pulse kann in die Schleife doDetect verlagert werden */
     static uint8_t sample=0;
-    static uint16_t average=0;
+    static uint32_t average=0;      // Need 32 Bit, because 16 bit it will overflow shortly.
+
 
     if (clock == 0) // Reset the counter
     {
@@ -681,11 +683,8 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 #endif // DEBUGDETECT
         reset();
         clock=abs(*pulse)/2;
-        sample=0;
-        average=0;
-#ifdef DEBUGDETECT
-        Serial.print("  init Clock:");
-#endif // DEBUGDETECT
+        sample=1;
+        average=clock;
 
     }
     if (abs(*pulse) < int(clock*0.5))
@@ -710,8 +709,6 @@ void ManchesterpatternDetector::updateClock(int *pulse)
         Serial.print(" to clock :");
 
 #endif // DEBUGDETECT
-    }
-    else {
     }
 
 #ifdef DEBUGDETECT
@@ -903,6 +900,7 @@ void ManchesterpatternDetector::printOut() {
 
 }
 
+
 /* Reverse a byte and output the reversed byte*/
 unsigned char ManchesterpatternDetector::reverseByte(unsigned char original){
 
@@ -942,108 +940,199 @@ unsigned char ManchesterpatternDetector::getMCByte(uint8_t idx){
 
 //-------------------------- Decoder -------------------------------
 
-//decoderBacis::decoderBacis(patternBasic *detector)
 decoderBacis::decoderBacis()
 {
-    //this->detector =detector;
+
 }
 
-void decoderBacis::printMessageHexStr()
+String decoderBacis::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
 {
-
-
+	return protomessage;
 }
 
-bool decoderBacis::decode()
-{
-
+bool decoderBacis::decode(){
+    if (mcdetector->manchesterfound()) {
+        message_decoded= processMessage();
+        return message_decoded;
+    }
+    return false;
 }
-
-bool decoderBacis::processMessage()
-{
-}
-
 
 OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
 }
-
+/*
 bool OSV2Decoder::decode(){
-	//return detect(pulse);
-
     if (mcdetector->manchesterfound()) {
-        return processMessage();
-        //mcdetector->reset();
-        //return  true; // We will loose this value
+        message_decoded= processMessage();
+        return message_decoded;
     }
-    //mcdetector->detect(pulse);
     return false;
 }
+*/
 
-/* State: Debugging */
+
+/*
+The Sync signal begins really with 01, so we need to start decoding at first 01 pattern, not 10. 10 is caused by the startingpoint of the signal
+
+Sync
+10 10 10 10 10 10 10 10
+10 10 10 10 10 10 10 10
+
+Preamble:
+10 01 10 01
+ 0  1  0  1     (Second bit)
+ 1  0  1  0     (Reversed nibbles)
+    A
+
+Data
+10 10 01 10  10 01 01 10  10 10 01 10  10 10 10 01
+0  0  1  0   0  1  1  0   0  0  1  0   0  0  0  1  (Second bit)
+0  1  0  0   0  1  1  0   0  1  0  0   1  0  0  0  (Reversed nibbles)
+      4            6            4          8
+
+
+01 10 01 10  01 01 10 10  10 10 01 01  10 01 01 01
+
+???
+10 1
+
+Jeelib Ausgabe Data hex: Flip=33=33 lange pulse abgewartet ohne zu decodieren!
+DA=1101 1010
+DC=1101 1100
+53=0101 0011
+9E=1001 1110
+18=0001 1000
+27=0010 0111
+70=0111 0000
+55=0101 0101,
+
+Jeelib hinzufügen der Bits Reihenfolge des Aufrufes gotbit() (jedes 2. bit)
+0101 1011
+0011 1011
+1100 1010
+01111001
+0001100011100100000011101
+01010100101Binary (8) :
+
+jeelip Manchester bits stimmen mit denen diese decoders überein!
+01 10 01 10   10 01 10 10   01 01 10 10   10 01 10 10   10 10 01 01    10 01 10 01   01 10 10 10   10 01 01 10   01 01 01 101001010110101001011001010101010110101001100110011001100101100110
+
+This Decoder: Sync bits        synccnt  (+2 every iteration!)
+10 10 10 10 10 10 10 10         16
+10 10 10 10 10 10 10 10         32
+10                              34
+
+Preamble<-|     Data ->>
+01 10 01 10   10 01 10 10   01 01 10 10   10 01 10 10   10 10 01 01    10 01 10 01   01 10 10 10   10 01 01 10   01 01 01 10  10010101 1010100 1011001 01010101 01101010 0110011 00110011 00101100 11 [169]
+   1010         1101
+
+01 10 01 10   10 01 10 10   01 01 10 10   10 01 10 10   10 10 01 01    10 01 10 01   01 10 10 10   10 01 01 10   01 01 01
+ 1010           0100           1100         0110          0011            0101         1000         0110                    (Second bit)
+ 0101           0010           0011         0110          1100            1010         0001         0110                    (Reversed nibbles)
+ 0101           1011           0011         1001                                                                            (Inverted nibbles)
+ 1010           0100           1100         0110                                                                            (Inverted +reversed nibbles)
+
+ 0101           1011           0011         1011          1100            1010         0111         1001                    (first bit)
+ 1010           1101           1100         1101          0011            0101         1110         1001                    (first bit reversed)  <<< --- Passt zum Jeelib Decoder
+*/
 bool OSV2Decoder::processMessage()
 {
 
-    if (mcdetector->ManchesterBits->valcount < 80) return false; // Message to short
+    if (mcdetector->ManchesterBits->valcount < 120) return false; // Message to short
 
     // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first 4 Bytes for our Sync Signal
     unsigned char cdata;
 
     // Check sync sginal
-    for (uint8_t idx=0; idx<4; idx++)
-    {
-        cdata = mcdetector->getMCByte(idx);
-        Serial.println(cdata,HEX);
-        //if (cdata != 0xAA) return;
-	}
+    uint8_t idx=0;
+    uint8_t twobit=0;
+    uint8_t synccnt=0;
 
-	//Todo: Convert to OSV2 Data, use only every second bit, work with this information
-
-    // Check Preamble
-    cdata = mcdetector->getMCByte(4);
-    Serial.println(cdata,HEX);
-    //if (cdata != 0xAA) return;
-
-
-    //Serial.println(mcdetector->ManchesterBits->bytecount);
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability
-    char hexStr[] ="00"; // Not really needed
-    Serial.print("OSV2 MC:");  // Still a Manchester Bit message, not really OSV2
-	for (uint8_t idx=0; idx<(mcdetector->ManchesterBits->bytecount); ++idx){
-         cdata = mcdetector->getMCByte(idx);
-         Serial.print(cdata,HEX);
-        //Serial.println(ManchesterBits->datastore[idx],DEC);
-        // Here we have to do some more stuff to extract osv2 Protocol out of the data
-        //sprintf(hexStr, "%02X",mcdetector->getMCByte(idx));
-		//Serial.print(hexStr);
-	}
-
-    Serial.print("OSV2 Proto (hex):");  // Now we look at the osv2 protocol. We use only every seocnd bit
-    uint8_t bcnt=7;
-    for (uint8_t idx=1; idx<(mcdetector->ManchesterBits->valcount); idx=idx+2){
-        //cdata = cdata | mcdetector->ManchesterBits->getValue(idx);
-        if (bcnt ==0){
-            Serial.print(cdata,HEX);
-            bcnt=7;
+    // Check if we have 12 x 10 bitspairs
+    do {
+        twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1);
+        if ( twobit == 0x2)             // Check if the two bis are b10 / 0x2
+        {
+            synccnt+=2;                // Count the number of sync bit
+        } else if (synccnt > 24)  {    // minimum of 24 sync bits must be reveived
+            break;
+        } else {
+            return false;              // Not a valid OSV2 Sync sequence
         }
+        idx+=2;
+    } while (true);
+    // Minimum 24 Sync bits received. Preamble beginns with 01
+    //Serial.println(synccnt); -> 34! Preamble begins at pos 32! (Index is 0-31 = 32 Sync Bits)
+    uint8_t datastart=synccnt;    // Starting point for furher inspection is one bit ahead!
 
-        //Serial.print(mcdetector->ManchesterBits->getValue(idx));
-        cdata =cdata | mcdetector->ManchesterBits->getValue(idx) <<(bcnt);
-        bcnt--;
-//        if (idx%8==0 && idx>0)
-//            Serial.print(cdata,HEX);
-        //Serial.println(ManchesterBits->datastore[idx],DEC);
-        // Here we have to do some more stuff to extract osv2 Protocol out of the data
-        //sprintf(hexStr, "%02X",mcdetector->getMCByte(idx));
-		//Serial.print(hexStr);
+    // Check the next 8 Manchester Bits
+#ifdef DEBUGDECODE
+    Serial.print("OSV2 Preamble at pos:");Serial.print(datastart);
+#endif
+    // Extract the Preamble in right order
+    cdata=getNibble(datastart);
+#ifdef DEBUGDECODE
+    Serial.print(" hex:");  Serial.println(cdata,HEX);
+#endif
+    if (cdata != 0xA) return false;     // Exit if our Preamble is not 0xA / b1010
+
+	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-datastart)/16)*8;  // Stores number of bits
+#ifdef DEBUGDECODE
+    // Now exract all of the message  // Todo: Check for a new sync signal, because we may have no delay between two transmissions of the messages may easy possible to check for occurence of 10101010 or 01010101
+    Serial.print("OSV2 protocol len(0x");  // Print the OSV2 hex message
+    Serial.print(numbits,HEX);   // Length of full bytes after Sync
+    Serial.print(" ) Message: ");    // Print the OSV2 hex message
+#endif
+	this->protomessage.reserve((numbits/4)+2); 							 	 // Reserve buffer for Hex String
+	this->protomessage= String(numbits,HEX);
+    for (idx=datastart; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
+    {
+        if (mcdetector->ManchesterBits->valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
+  		cdata = getByte(idx);
+  		this->protomessage.concat(String(cdata,HEX));
+#ifdef DEBUGDECODE
+        Serial.print(cdata,HEX);
+#endif
 	}
-
-
+#ifdef DEBUGDECODE
 	Serial.println();
-
+#endif
+	return true;
 }
+/*
+returns the 4 bits one nibble, begins at position deliverd via startingPos
+skips every second bit and returns the nibble in reversed (correct) order
+*/
+unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
+{
+    uint8_t bcnt=0;
+    unsigned char cdata=0;
+	for (uint8_t idx=startingPos; idx<startingPos+8; idx=idx+2, bcnt++){
+         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
+         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+	}
+    return cdata;
+}
+
+/*
+returns the 8 bits / one byte, begins at position deliverd via startingPos
+skips every second bit and returns the byte in reversed (correct) order.
+// Todo use getNibble to return the byte
+*/
+unsigned char OSV2Decoder::getByte(uint8_t startingPos)
+{
+    uint8_t bcnt=0;
+    unsigned char cdata=0;
+	for (uint8_t idx=startingPos; idx<startingPos+16; idx=idx+2, bcnt++){
+         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
+         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+	}
+    return cdata;
+}
+
 
 
 ASDecoder::ASDecoder(ManchesterpatternDetector *detector)
@@ -1052,40 +1141,35 @@ ASDecoder::ASDecoder(ManchesterpatternDetector *detector)
     mcdetector = detector;
 }
 
-bool ASDecoder::decode(){
-	//return detect(pulse);
-    if (mcdetector->manchesterfound()) {
-        return processMessage();
-        //mcdetector->reset();
-        //return  true; // We will loose this value
-    }
-    return false;
-
-}
-
-
 bool ASDecoder::processMessage()
 {
-    if (mcdetector->ManchesterBits->bytecount < 4) return false; // Message to short
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first 4 Bytes for our Sync Signal
-
+    if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
+    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first Bytes for our Sync Signal
 	// Check the sync Bit
-	for (uint8_t idx=0; idx<1; ++idx)
+	uint8_t idx =0;
+	for (; idx<1; ++idx)
     {
         if (mcdetector->getMCByte(idx) != 0xB3) return false;
 	}
-	char hexStr[] ="00"; // required for proper allocation of memory
-	uint8_t val =0;
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	Serial.print("AS");
+	uint8_t numbits = (mcdetector->ManchesterBits->valcount-idx);     // Stores number of bits in our message
+	this->protomessage.reserve(mcdetector->ManchesterBits->bytecount+2*2); 							 	 // Reserve buffer for Hex String
+	this->protomessage= String("AS:");
+#ifdef DEBUGDECODE
+	Serial.print("AS detected with len("); Serial.print(numbits); Serial.print(") :");
+#endif
+	char hexStr[] ="00";
 	// Check the Data Bits
-	for (byte idx=1; idx<(mcdetector->ManchesterBits->bytecount); ++idx){
-        //Serial.println(ManchesterBits->datastore[idx],DEC);
-        // Here we have to do some more stuff to extract osv2 Protocol out of the data
-        sprintf(hexStr, "%02x",mcdetector->getMCByte(idx));
+	for (; idx<(mcdetector->ManchesterBits->bytecount); ++idx){
+        sprintf(hexStr, "%02X",mcdetector->getMCByte(idx));
+#ifdef DEBUGDECODE
 		Serial.print(hexStr);
+#endif
+		this->protomessage.concat(hexStr);
 	}
+#ifdef DEBUGDECODE
 	Serial.println();
-
+#endif
+	return true;
 }
 
