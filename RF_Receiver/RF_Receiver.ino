@@ -1,14 +1,14 @@
 /*
-*   RemoteSensorReceiver v2.5 (201412) for Arduino
+*   RF_RECEIVER v2.5 (201412) for Arduino
 *   Sketch to use an arduino as a receiver/decoder device
 *   for the home automation software fhem
 *   The Sketch can also encode and send data via a transmitter,
 *   while only PT2262 type-signals for Intertechno devices are implemented yet
 *   2014  N.Butzek, S.Butzek
 
-*   This software focuses on remote sensors like weather sensors (temperature, 
-*   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches 
-*   (Intertechno, TCM, ARCtech, ...) which use encoder chips like PT2262 and 
+*   This software focuses on remote sensors like weather sensors (temperature,
+*   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
+*   (Intertechno, TCM, ARCtech, ...) which use encoder chips like PT2262 and
 *   EV1527-type and manchester encoder to send information in the 433MHz Band.
 *
 *   This program is free software: you can redistribute it and/or modify
@@ -27,8 +27,8 @@
 */
 
 
-#define PROGNAME               "RS433Receiver"
-#define PROGVERS               "2.0"
+#define PROGNAME               "RF_RECEIVER"
+#define PROGVERS               "2.5"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -37,7 +37,7 @@
 
 #include <filtering.h> //for FiFo Buffer
 #include <TimerOne.h>  // Timer for LED Blinking
-#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren ben√∂tigt.
+#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benˆtigt.
 #include <patternDecoder.h> //Logilink, IT decoder
 
 RingBuffer FiFo(200, 0); // FiFo Puffer
@@ -45,12 +45,21 @@ const int pulseMin = 200;
 bool blinkLED = false;
 String cmdstring = "";
 
+void handleInterrupt();
+void enableReceive();
+void disableReceive();
+void serialEvent();
+void blinken();
+
+
 //Decoder
 //SensorReceiver ASreceiver;
 patternDecoder musterDec;
 ManchesterpatternDetector ManchesterDetect(true);
 ASDecoder   asDec  (&ManchesterDetect);
 OSV2Decoder osv2Dec (&ManchesterDetect);
+
+
 
 void setup() {
   Serial.begin(BAUDRATE);
@@ -63,7 +72,7 @@ void setup() {
   pinMode(PIN_RECEIVE,INPUT);
   pinMode(PIN_SEND,OUTPUT);
   pinMode(PIN_LED,OUTPUT);
-  Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgel√∂st
+  Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelˆst
   Timer1.attachInterrupt(blinken);
   enableReceive();
   cmdstring.reserve(20);
@@ -71,13 +80,13 @@ void setup() {
 
 void blinken() {
      digitalWrite(PIN_LED, blinkLED);
-     blinkLED=false; 
+     blinkLED=false;
 }
 
 void loop() {
   static int aktVal;
   static bool state;
-  while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder √ºbergeben
+  while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder ¸bergeben
     //Serial.print(aktVal); Serial.print(",");
     state = musterDec.decode(&aktVal); //Logilink, PT2262
     if (ManchesterDetect.detect(&aktVal))
@@ -85,7 +94,7 @@ void loop() {
       state &= asDec.decode();
       state &= osv2Dec.decode();
       ManchesterDetect.reset();
-    }    
+    }
     if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
   }
 }
@@ -102,13 +111,13 @@ void handleInterrupt() {
   bool state = digitalRead(PIN_RECEIVE);
   duration = Time - lastTime;
   lastTime = Time;
-  if (duration >= pulseMin) {//kleinste zul√§ssige Pulsl√§nge
-    if (duration <= (32000)) {//gr√∂√üte zul√§ssige Pulsl√§nge, max = 32000
-      sDuration = int(duration); //das wirft bereits hier unn√ºtige Nullen raus und vergr√∂√üert den Wertebereich
+  if (duration >= pulseMin) {//kleinste zul‰ssige Pulsl‰nge
+    if (duration <= (32000)) {//grˆﬂte zul‰ssige Pulsl‰nge, max = 32000
+      sDuration = int(duration); //das wirft bereits hier unn¸tige Nullen raus und vergrˆﬂert den Wertebereich
     }else {
       sDuration = 32001; // Maximalwert
     }
-    if (state) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und daf√ºr gilt die gemessene Dauer.
+    if (state) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und daf¸r gilt die gemessene Dauer.
       sDuration=sDuration*-1;
     }
     FiFo.addValue(&sDuration);
@@ -127,6 +136,13 @@ void disableReceive() {
 byte ITrepetition = 6;
 byte ITreceivetolerance= 60;
 int ITbaseduration = 420;
+
+void PT2262_transmit(int nHighPulses, int nLowPulses) {
+  digitalWrite(PIN_SEND, HIGH);
+  delayMicroseconds(ITbaseduration * nHighPulses);
+  digitalWrite(PIN_SEND, LOW);
+  delayMicroseconds(ITbaseduration * nLowPulses);
+}
 
 void sendPT2262(char* triStateMessage) {
   disableReceive();
@@ -154,14 +170,10 @@ void sendPT2262(char* triStateMessage) {
   enableReceive();
 }
 
-void PT2262_transmit(int nHighPulses, int nLowPulses) {
-  digitalWrite(PIN_SEND, HIGH);
-  delayMicroseconds(ITbaseduration * nHighPulses);
-  digitalWrite(PIN_SEND, LOW);
-  delayMicroseconds(ITbaseduration * nLowPulses);
-}
 
 //================================= Kommandos ======================================
+void IT_CMDs(String cmd);
+
 void HandleCommand(String cmd)
 {
   int val;
@@ -178,20 +190,20 @@ void HandleCommand(String cmd)
   // R: FreeMemory
   else if (cmd.startsWith("R")) {
     Serial.println(F("R500"));// Fake Meldung
-  }  
+  }
   // i: Intertechno
   else if (cmd.startsWith("i")) {
     IT_CMDs(cmd);
-  }  
-  // t: Uptime 
+  }
+  // t: Uptime
   else if (cmd.startsWith("t")) {
     // tbd
-  }  
+  }
   else if (cmd.startsWith("XQ")) {
     disableReceive();
-//    Serial.flush();  
+//    Serial.flush();
 //    Serial.end();
-  }  
+  }
 }
 
 void IT_CMDs(String cmd) {
@@ -202,7 +214,7 @@ void IT_CMDs(String cmd) {
     cmd.substring(2).toCharArray(msg,3);
     ITreceivetolerance = atoi(msg);
     Serial.println(cmd);
-  }  
+  }
   // Set Intertechno Repetition
   else if (cmd.startsWith("ir")) {
     char msg[3];
