@@ -650,13 +650,26 @@
 		</Build>
 		<Compiler>
 			<Add directory="." />
+			<Add directory="../libs/filtering" />
+			<Add directory="../libs/TimerOne" />
+			<Add directory="../libs/bitstore" />
+			<Add directory="../libs/RemoteSensor" />
 		</Compiler>
+		<Unit filename="../libs/RemoteSensor/patternDecoder.cpp" />
+		<Unit filename="../libs/RemoteSensor/patternDecoder.h" />
+		<Unit filename="../libs/TimerOne/TimerOne.cpp" />
+		<Unit filename="../libs/TimerOne/TimerOne.h" />
+		<Unit filename="../libs/bitstore/bitstore.cpp" />
+		<Unit filename="../libs/bitstore/bitstore.h" />
+		<Unit filename="../libs/filtering/filtering.cpp" />
+		<Unit filename="../libs/filtering/filtering.h" />
 		<Unit filename="RF_Receiver.ino">
 			<Option compile="1" />
 			<Option link="1" />
 		</Unit>
 		<Extensions>
 			<code_completion />
+			<editor_config active="1" use_tabs="1" tab_indents="1" tab_width="4" indent="4" eol_mode="0" />
 			<envvars />
 			<debugger />
 		</Extensions>
