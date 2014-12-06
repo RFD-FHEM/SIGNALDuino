@@ -37,7 +37,6 @@
 
 #include <filtering.h> //for FiFo Buffer
 #include <TimerOne.h>  // Timer for LED Blinking
-#include <SensorReceiver.h> //AS decoder
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benötigt.
 #include <patternDecoder.h> //Logilink, IT decoder
 
