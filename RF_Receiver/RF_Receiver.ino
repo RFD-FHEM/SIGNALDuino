@@ -91,8 +91,13 @@ void loop() {
     state = musterDec.decode(&aktVal); //Logilink, PT2262
     if (ManchesterDetect.detect(&aktVal))
     {
-      state &= asDec.decode();
-      state &= osv2Dec.decode();
+      if (asDec.decode()) {
+        state =true;
+        Serial.println(asDec.getMessageHexStr());
+      } else if (osv2Dec.decode()) {
+        state = true;
+        Serial.println(osv2Dec.getMessageHexStr());
+      }
       ManchesterDetect.reset();
     }
     if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
