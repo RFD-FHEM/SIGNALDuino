@@ -40,8 +40,8 @@
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benötigt.
 #include <patternDecoder.h> //Logilink, IT decoder
 
-RingBuffer FiFo(200, 0); // FiFo Puffer
-const int pulseMin = 100;
+RingBuffer FiFo(40, 0); // FiFo Puffer
+const uint8_t pulseMin = 100;
 bool blinkLED = false;
 String cmdstring = "";
 
