@@ -627,12 +627,13 @@ void ManchesterpatternDetector::reset() {
 //  messageLen = 0;
   patternBasic::reset();
   ManchesterBits->reset();
+/*
 #ifdef DEBUGDETECT
         Serial.println("");
         Serial.println("         **  RESET       ** ");
         Serial.println("");
 #endif // DEBUGDETECT
-
+*/
 }
 
 
@@ -678,7 +679,7 @@ void ManchesterpatternDetector::updateClock(int *pulse)
     {
         sample=0;
         average=0;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("reinit clock math...");
 #endif // DEBUGDETECT
         reset();
@@ -694,7 +695,7 @@ void ManchesterpatternDetector::updateClock(int *pulse)
         average=average+abs(*pulse);
         sample++;
         clock=average/sample;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("  recalc Clock with short:");
         Serial.print(*pulse);
         Serial.print(" to clock :");
@@ -703,7 +704,7 @@ void ManchesterpatternDetector::updateClock(int *pulse)
         average=average+(abs(*pulse)/2);
         sample++;
         clock=average/sample;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("  recalc Clock with long pulse: ");
         Serial.print(*pulse);
         Serial.print(" to clock :");
@@ -711,7 +712,7 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 #endif // DEBUGDETECT
     }
 
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.println(clock);
 #endif // DEBUGDETECT
 }
@@ -733,10 +734,8 @@ void ManchesterpatternDetector::doSearch()
       // Valid
         state = detecting;
         updateClock(first);
-#ifdef DEBUGDETECT
-		Serial.println("");
-		Serial.println("         ** MC sync:     **");
-		Serial.println("");
+#if DEBUGDETECT==255
+		Serial.println("MCPD Sync: ");
 		Serial.print(*first); Serial.print(", ");Serial.print(*last);
 		Serial.print(", TOL: ");Serial.print(tol);
 		Serial.print(", clock: ");Serial.println(clock);
@@ -805,17 +804,16 @@ void ManchesterpatternDetector::doDetect() {
     }
 
 	int8_t fidx = findpatt(seq);
-#ifdef DEBUGDETECT
-	Serial.print("MC Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
+#if DEBUGDETECT==255
+	Serial.print("MCPD Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
 	Serial.print(", Clock: "); Serial.print(clock); Serial.print(", Found: "); Serial.println(fidx);
 #endif
     if (0<=fidx)
     {
         //gefunden
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
 	Serial.println("pattern found");
 #endif
-
         //patternStore->addValue(fidx); // Add current pattern index to our store
         //*(message+messageLen) = fidx;
         //messageLen++;
@@ -824,7 +822,7 @@ void ManchesterpatternDetector::doDetect() {
 	{
         if(patternLen <maxNumPattern) // Max 4 pattern are valid for manchester coding
         {
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
 	Serial.println("pattern not found, adding a new one...");
 #endif
 
@@ -845,7 +843,7 @@ void ManchesterpatternDetector::doDetect() {
 		}
     }
 #ifdef DEBUGDETECT
-	printOut();//debug
+	if (patternLen > 3) printOut();//debug
 #endif
 
 }
@@ -868,9 +866,8 @@ void ManchesterpatternDetector::processMessage()
 void ManchesterpatternDetector::printOut() {
 
 
-//#ifdef DEBUGDETECT
-
-	Serial.print("Clock: "); Serial.print(clock);
+#ifdef DEBUGDETECT
+	Serial.print("MCPD Clock: "); Serial.print(clock);
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen);
 	Serial.print(", Pattern: ");
@@ -887,17 +884,18 @@ void ManchesterpatternDetector::printOut() {
         Serial.print("]");
 	}
 	Serial.println();
-    Serial.print("MC MSG: ");
+    Serial.print("Manchester Bits: ");
     for (uint8_t idx=0; idx<ManchesterBits->valcount; ++idx){
 		//Serial.print(*(message+idx));
 		Serial.print(ManchesterBits->getValue(idx),DEC);
 	}
 	Serial.print("  ["); Serial.print(ManchesterBits->valcount); Serial.print("]");
 	Serial.println();
-//#endif
-    Serial.print("0x");
+
+    Serial.print("Hex: 0x");
 	printMessageHexStr();
 
+#endif
 }
 
 
