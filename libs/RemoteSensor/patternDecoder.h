@@ -47,9 +47,9 @@
 
 #define prefixLen 3
 
-#define DEBUGDETECT 1
+//#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE
+#define DEBUGDECODE
 
 
 #define PATTERNSIZE 2
@@ -75,13 +75,12 @@
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
 
-
+		uint16_t clock;                              // calculated clock of signal
     protected:
 		int buffer[2];                          // Internal buffer to store two pules length
         int* first;                             // Pointer to first buffer entry
 		int* last;                              // Pointer to last buffer entry
-		int clock;                              // calculated clock of signal
-		int tol;                                // calculated tolerance for signal
+		uint16_t tol;                                // calculated tolerance for signal
         float tolFact;                          //
 		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
 		BitStore *patternStore;                 // Store for saving detected bits or pattern index
@@ -166,7 +165,7 @@ class patternDecoder : public patternDetector {
     Detector for manchester Signals. It uses already the toolset from patternBasic.
     Todo:  Make a interface for retrieving the Manchesterbits easily for furher processing in other classes.
  */
-class ManchesterpatternDetector : patternBasic {
+class ManchesterpatternDetector : public patternBasic {
 	public:
 		ManchesterpatternDetector(bool silentstate=true);
         bool detect(int* pulse);        // Runs the detection engine, It's mainly the only function which is calles from ourside. Input is one pule
@@ -210,6 +209,8 @@ class decoderBacis {
 		bool message_decoded;							// Is set to true if we have decoded a valid signal
 		ManchesterpatternDetector *mcdetector;
     	String protomessage;							// Holds the message from the protocol (hex)
+        bool checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length);		// Checks the pattern data against protocol
+
 };
 
 /*
@@ -223,6 +224,12 @@ class OSV2Decoder : public decoderBacis {
         bool processMessage();                                  // Checks the Protocol
         unsigned char getNibble(uint8_t startingPos);           // returns data bits 4 bits (nibble) in correct order
         unsigned char getByte(uint8_t startingPos);				// returns data bits 8 bits (byte) in correct order
+		bool checkMessage();									// Verify if we have OSV2 Message Type
+		bool checkSync(uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks for a valid sync sequence between start and endpos
+
+		uint8_t syncend;										// Variable to hold the last syncend counter
+
+
 };
 
 /*

@@ -956,20 +956,85 @@ bool decoderBacis::decode(){
     return false;
 }
 
+/*
+	Check if the clock and the bitlength fit's our protocol
+*/
+bool decoderBacis::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
+{
+	bool valid;
+	valid = (min_clock <= mcdetector->clock <= max_clock) ;
+#ifdef DEBUGDECODE
+	Serial.print(1);
+#endif
+	valid &= (min_Length < mcdetector->ManchesterBits->valcount < max_Length);
+#ifdef DEBUGDECODE
+	Serial.print(1);
+#endif
+	return valid;
+}
+
+/*
+	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
+*/
+bool OSV2Decoder::checkMessage()
+{
+	bool valid;
+#ifdef DEBUGDECODE
+	Serial.print("Check OSV:");
+#endif
+	valid = decoderBacis::checkMessage(400,650,150,220);						// Valid clock and length
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= (getNibble(syncend) == 0xA);  										// Valid preamble
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+	Serial.println();
+#endif
+	return  valid;
+}
+
+/*
+	Checks for Sync signal, starting at startpos, returning true if mincount sync is counted. Returns true if maxcount has been reached. returns the end of the loop via syncend
+*/
+bool OSV2Decoder::checkSync(uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
+{
+	bool valid=true;
+
+    uint8_t twobit=0;
+    uint8_t endcount = startpos+maxcount;
+    uint8_t idx;
+	for (idx=startpos; idx<endcount;idx+=2)
+	{
+		twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1);
+        if ( twobit == 0x2)             		// Check if the two bis are b10 / 0x2
+        {
+            continue;
+        } else if (idx-startpos >= mincount)  {    	// minimum of 24 sync bits must be reveived
+            valid=true;              			// Valid OSV2 Sync sequence of 24 bits are valid
+            break;
+        } else {
+            valid=false;              			// Not a valid OSV2 Sync sequence, to less sync bits
+			break;
+        }
+	}
+	if (valid){
+		*syncend = idx+startpos;
+	}
+	return  valid;
+}
+
+
+
 OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
 }
-/*
-bool OSV2Decoder::decode(){
-    if (mcdetector->manchesterfound()) {
-        message_decoded= processMessage();
-        return message_decoded;
-    }
-    return false;
-}
-*/
 
 
 /*
@@ -1038,7 +1103,11 @@ Preamble<-|     Data ->>
 */
 bool OSV2Decoder::processMessage()
 {
+	if (!checkMessage()) return false;
+	unsigned char cdata;
+    uint8_t idx;
 
+	/*
     if (mcdetector->ManchesterBits->valcount < 120) return false; // Message to short
 
     // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first 4 Bytes for our Sync Signal
@@ -1078,6 +1147,8 @@ bool OSV2Decoder::processMessage()
     if (cdata != 0xA) return false;     // Exit if our Preamble is not 0xA / b1010
 
 	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-datastart)/16)*8;  // Stores number of bits
+	*/
+	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-syncend)/16)*8;  // Stores number of bits
 #ifdef DEBUGDECODE
     // Now exract all of the message  // Todo: Check for a new sync signal, because we may have no delay between two transmissions of the messages may easy possible to check for occurence of 10101010 or 01010101
     Serial.print("OSV2 protocol len(0x");  // Print the OSV2 hex message
@@ -1086,7 +1157,7 @@ bool OSV2Decoder::processMessage()
 #endif
 	this->protomessage.reserve((numbits/4)+2); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String(numbits,HEX);
-    for (idx=datastart; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
+    for (idx=syncend; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
     {
         if (mcdetector->ManchesterBits->valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
   		cdata = getByte(idx);
