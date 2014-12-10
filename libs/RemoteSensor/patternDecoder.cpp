@@ -537,7 +537,7 @@ LP801 similar pt2262, but lower clock:
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	uint8_t clockTst = 180;
+	const uint8_t clockTst = 180;
 	valid &= inTol(clock, clockTst);
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
