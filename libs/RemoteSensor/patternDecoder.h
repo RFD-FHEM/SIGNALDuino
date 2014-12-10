@@ -200,17 +200,18 @@ class ManchesterpatternDetector : public patternBasic {
 class decoderBacis {
     public:
         decoderBacis(); 								// Constructor
-  		String getMessageHexStr() const;              // Returns the hex message on serial
+  		String getMessageHexStr() const;             	// Returns the hex message on serial
 		bool decode();                        			// Currently not implemented, must be defined in the subclass
 
-		virtual bool processMessage() {} ;                  // Currently not implemented, must be defined in the subclass
+		virtual bool processMessage() {} ;              // Currently not implemented, must be defined in the subclass
 	protected:
 		unsigned char Bit_Reverse (unsigned char x);    // Method to reverse a byte's bitorder 0111 -> 1110
 		bool message_decoded;							// Is set to true if we have decoded a valid signal
 		ManchesterpatternDetector *mcdetector;
     	String protomessage;							// Holds the message from the protocol (hex)
-        bool checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length);		// Checks the pattern data against protocol
-
+        bool checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length);			 // Checks the pattern data against protocol
+        bool checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks tow bits against pattern beginning at startpos returns last position at syncend
+        unsigned char getNibble(uint8_t startingPos);           													 // returns data bits 4 bits (nibble) in correct order
 };
 
 /*
@@ -228,8 +229,6 @@ class OSV2Decoder : public decoderBacis {
 		bool checkSync(uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks for a valid sync sequence between start and endpos
 
 		uint8_t syncend;										// Variable to hold the last syncend counter
-
-
 };
 
 /*
@@ -240,7 +239,8 @@ class ASDecoder : public decoderBacis {
         ASDecoder(ManchesterpatternDetector *detector);
 	private:
         bool processMessage();                              // Check, conversion and outpuz
-
+   		bool checkMessage();									// Verify if we have OSV2 Message Type
+		uint8_t syncend;										// Variable to hold the last syncend counter
 };
 
 

@@ -962,15 +962,59 @@ bool decoderBacis::decode(){
 bool decoderBacis::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
 {
 	bool valid;
-	valid = (min_clock <= mcdetector->clock <= max_clock) ;
+	valid = ((min_clock <= mcdetector->clock) && (mcdetector->clock <= max_clock)) ;
 #ifdef DEBUGDECODE
 	Serial.print(1);
 #endif
-	valid &= (min_Length < mcdetector->ManchesterBits->valcount < max_Length);
+	valid &= ((min_Length <= mcdetector->ManchesterBits->valcount) && (mcdetector->ManchesterBits->valcount <= max_Length));
 #ifdef DEBUGDECODE
 	Serial.print(1);
 #endif
 	return valid;
+}
+
+/*
+	Checks for Sync signal, starting at startpos, returning true if mincount sync is counted. Returns true if maxcount has been reached. returns the end of the loop via syncend
+*/
+bool decoderBacis::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
+{
+	bool valid=true;
+
+    uint8_t twobit=0; // Check two bits of the sync signal
+    const uint8_t endcount = startpos+maxcount;
+    uint8_t idx;
+	for (idx=startpos; idx<endcount;idx+=2)
+	{
+		twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1); // Combine  two sync bits
+        if ( twobit == pattern)																				  // Check the sync bits against the pattern
+        {
+            continue;
+        } else if (idx-startpos >= mincount)  {    	// minimum of sync bits must be reveived
+            valid=true;              			// Valid Sync sequence of mincount bits are valid
+            break;
+        } else {
+            valid=false;              			// Not a valid Sync sequence, to less sync bits
+			break;
+        }
+	}
+	if (valid){
+		*syncend = idx+startpos;
+	}
+	return valid;
+}
+
+/*
+returns the 4 bits one nibble, begins at position deliverd via startingPos
+returns the nibble in received order
+*/
+unsigned char decoderBacis::getNibble(uint8_t startingPos)
+{
+    uint8_t bcnt=3;
+    unsigned char cdata=0;
+	for (uint8_t idx=startingPos; idx<startingPos+4; idx++, bcnt--){
+       cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+	}
+    return cdata;
 }
 
 /*
@@ -983,9 +1027,6 @@ bool OSV2Decoder::checkMessage()
 	Serial.print("Check OSV:");
 #endif
 	valid = decoderBacis::checkMessage(400,650,150,220);						// Valid clock and length
-#ifdef DEBUGDECODE
-	Serial.print(valid);
-#endif
 	valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
 #ifdef DEBUGDECODE
 	Serial.print(valid);
@@ -1177,6 +1218,7 @@ skips every second bit and returns the nibble in reversed (correct) order
 */
 unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
 {
+    // Todo: Use getNibble from baseclass and reorder the return value here
     uint8_t bcnt=0;
     unsigned char cdata=0;
 	for (uint8_t idx=startingPos; idx<startingPos+8; idx=idx+2, bcnt++){
@@ -1193,6 +1235,7 @@ skips every second bit and returns the byte in reversed (correct) order.
 */
 unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 {
+    // Todo: Use getNibble to build a byte
     uint8_t bcnt=0;
     unsigned char cdata=0;
 	for (uint8_t idx=startingPos; idx<startingPos+16; idx=idx+2, bcnt++){
@@ -1210,9 +1253,36 @@ ASDecoder::ASDecoder(ManchesterpatternDetector *detector)
     mcdetector = detector;
 }
 
+/*
+	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
+*/
+bool ASDecoder::checkMessage()
+{
+	bool valid=true;
+#ifdef DEBUGDECODE
+	Serial.print("Check AS:");
+#endif
+	valid = decoderBacis::checkMessage(350,450,30,40);							// Valid clock and length
+	valid &= decoderBacis::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= (getNibble(syncend) == 0xC);  										// Valid preamble for Sensor
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+	Serial.println();
+	Serial.println(getNibble(syncend));
+#endif
+	return  valid;
+}
+
+
 bool ASDecoder::processMessage()
 {
-    if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
+  	if (!checkMessage()) return false;
+
+
+	if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
     // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first Bytes for our Sync Signal
 	// Check the sync Bit
 	uint8_t idx =0;
