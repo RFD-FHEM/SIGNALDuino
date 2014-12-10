@@ -357,6 +357,10 @@ void patternDecoder::processMessage()
 				Serial.print("AS: ");
 			#endif
 			checkAS();
+			#ifdef DEBUGDECODE
+				Serial.print("LP801: ");
+			#endif
+			checkLP801b();
 		}
 	}
 }
@@ -485,11 +489,60 @@ IT old with selector:
 		Serial.print(valid);
 	#endif
 	int clockTst = 360;
-	valid &= inTol(clock, clockTst);//clock
+	valid &= inTol(clock, clockTst);
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
 	valid &= inTol(sync/clock, 31, 2); //syncValues
+	#ifdef DEBUGDECODE
+		Serial.print(valid);
+	#endif
+	valid &= (inTol(*(pattern+0),3*clock) & inTol(*(pattern+1),-1*clock));//p0=[3, -1]
+	#ifdef DEBUGDECODE
+		Serial.print(valid);
+	#endif
+	valid &= (inTol(*(pattern+2),1*clock) & inTol(*(pattern+3),-3*clock));//p1=[1, -3]
+	#ifdef DEBUGDECODE
+		Serial.println(valid);
+	#endif
+	if (valid){
+		//printOut();
+		triStateMessageBytes();
+		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
+		Serial.print("IR");
+		printTristateMessage();
+		Serial.print("_");Serial.print(clock);
+		Serial.println();
+		success = true;
+	}
+}
+
+
+void patternDecoder::checkLP801b() {
+/*
+LP801 similar pt2262, but lower clock:
+	clock: 		180(200)
+	Sync factor: 	31(32)
+	start sequence: [180, -5808] => [1, -32]
+	high pattern:	[540, -180][540, -180] => [3, -1][3, -1]
+	low pattern:	[180, -540][180, -540] => [1, -3][1, -3]
+	float pattern:	[180, -540][540, -180] => [1, -3][3, -1]
+	message length:	12 bit
+	characteristic: LP801b uses the same message format as pt2262 only uses 2 states: low, float
+					clock varies between controls from 1600 to 210 => using measured clock leads to lower (required) tolerances
+*/
+
+	bool valid = true;
+	valid &= messageLen==24;
+	#ifdef DEBUGDECODE
+		Serial.print(valid);
+	#endif
+	uint8_t clockTst = 180;
+	valid &= inTol(clock, clockTst);
+	#ifdef DEBUGDECODE
+		Serial.print(valid);
+	#endif
+	valid &= inTol(sync/float(clock), 31, 1); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
