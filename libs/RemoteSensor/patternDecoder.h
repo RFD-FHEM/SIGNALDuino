@@ -49,10 +49,13 @@
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE
+#define DEBUGDECODE 255
 
 
 #define PATTERNSIZE 2
+
+#define DEBUG_BEGIN(i) Serial.print("(D:");Serial.print(i);
+#define DEBUG_END Serial.println(")");
 
 //#define DEBUG
 
