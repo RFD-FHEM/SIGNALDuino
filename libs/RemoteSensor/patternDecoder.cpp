@@ -498,7 +498,7 @@ IT old with selector:
 	#endif
 	*/
 
-	valid &= inTol(sync/clock/10, 30, 3); //syncValues
+	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
