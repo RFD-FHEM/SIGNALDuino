@@ -37,6 +37,7 @@
 #include "Arduino.h"
 #include "patternDecoder.h"
 #include "bitstore.h"
+#include <util/crc16.h>
 
 
 
@@ -940,7 +941,6 @@ unsigned char ManchesterpatternDetector::getMCByte(uint8_t idx){
 
 decoderBacis::decoderBacis()
 {
-
 }
 
 String decoderBacis::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
@@ -961,14 +961,23 @@ bool decoderBacis::decode(){
 */
 bool decoderBacis::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
 {
+    #if DEBUGDECODE==255
+	//Serial.print(" (D255 Clock: ");
+	DEBUG_BEGIN(DEBUGDECODE)
+	Serial.print("  Clock: ");
+	Serial.print(mcdetector->clock);
+	Serial.print("  num bits : ");
+	Serial.print(mcdetector->ManchesterBits->valcount);
+	DEBUG_END
+	#endif // DEBUGDECODE
 	bool valid;
 	valid = ((min_clock <= mcdetector->clock) && (mcdetector->clock <= max_clock)) ;
 #ifdef DEBUGDECODE
-	Serial.print(1);
+	Serial.print(valid);
 #endif
 	valid &= ((min_Length <= mcdetector->ManchesterBits->valcount) && (mcdetector->ManchesterBits->valcount <= max_Length));
 #ifdef DEBUGDECODE
-	Serial.print(1);
+	Serial.print(valid);
 #endif
 	return valid;
 }
@@ -1026,7 +1035,7 @@ bool OSV2Decoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print("Check OSV:");
 #endif
-	valid = decoderBacis::checkMessage(400,650,150,220);						// Valid clock and length
+	valid = decoderBacis::checkMessage(440,540,150,220);						// Valid clock and length
 	valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
 #ifdef DEBUGDECODE
 	Serial.print(valid);
@@ -1247,22 +1256,23 @@ unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 
 
 
-ASDecoder::ASDecoder(ManchesterpatternDetector *detector)
+ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBacis()
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
 }
 
 /*
-	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
+	Function to check if it's a valid AS Protocol. Checks clock, Sync and preamble
 */
 bool ASDecoder::checkMessage()
 {
+
 	bool valid=true;
 #ifdef DEBUGDECODE
 	Serial.print("Check AS:");
 #endif
-	valid = decoderBacis::checkMessage(350,450,30,40);							// Valid clock and length
+	valid = decoderBacis::checkMessage(380,405,38,56);							// Valid clock and length
 	valid &= decoderBacis::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
 #ifdef DEBUGDECODE
 	Serial.print(valid);
@@ -1271,7 +1281,6 @@ bool ASDecoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print(valid);
 	Serial.println();
-	Serial.println(getNibble(syncend));
 #endif
 	return  valid;
 }
@@ -1280,33 +1289,52 @@ bool ASDecoder::checkMessage()
 bool ASDecoder::processMessage()
 {
   	if (!checkMessage()) return false;
+	uint8_t idx =0;
+	uint8_t numbits = (mcdetector->ManchesterBits->valcount-syncend-4);     // Stores number of bits in our message
 
 
+/*
 	if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
     // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first Bytes for our Sync Signal
 	// Check the sync Bit
-	uint8_t idx =0;
 	for (; idx<1; ++idx)
     {
         if (mcdetector->getMCByte(idx) != 0xB3) return false;
 	}
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	uint8_t numbits = (mcdetector->ManchesterBits->valcount-idx);     // Stores number of bits in our message
-	this->protomessage.reserve(mcdetector->ManchesterBits->bytecount+2*2); 							 	 // Reserve buffer for Hex String
+*/
+	this->protomessage.reserve((numbits/4)+3); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String("AS:");
 #ifdef DEBUGDECODE
 	Serial.print("AS detected with len("); Serial.print(numbits); Serial.print(") :");
 #endif
 	char hexStr[] ="00";
+	byte crcv=0x00;
+	byte b=0;
 	// Check the Data Bits
-	for (; idx<(mcdetector->ManchesterBits->bytecount); ++idx){
-        sprintf(hexStr, "%02X",mcdetector->getMCByte(idx));
+	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
+		b=getNibble(idx)<<4|getNibble(idx+4);
+		sprintf(hexStr, "%02X",b);
+		crcv = _crc_ibutton_update(crcv,b);
 #ifdef DEBUGDECODE
-		Serial.print(hexStr);
+		Serial.print(String(b,HEX));
 #endif
 		this->protomessage.concat(hexStr);
 	}
+
+	if (crcv == (getNibble(idx)<<4 | getNibble(idx+4))) {
 #ifdef DEBUGDECODE
+		Serial.print("  CRC Valid");
+#endif
+	} else {
+#ifdef DEBUGDECODE
+		Serial.print("  CRC: ");
+		Serial.println(crcv,HEX);
+#endif
+		return false;
+	}
+#ifdef DEBUGDECODE
+
 	Serial.println();
 #endif
 	return true;
