@@ -250,7 +250,7 @@ bool patternDetector::inTol(int value, int set){
 	return inTol(value, set, tol);
 }
 bool patternDetector::inTol(int value, int set, int tolerance){
-	return (abs(value-set)<tol);
+	return (abs(value-set)<=tolerance);
 }
 
 void patternDetector::swap(int* a, int* b){
@@ -357,10 +357,12 @@ void patternDecoder::processMessage()
 				Serial.print("AS: ");
 			#endif
 			checkAS();
+			/*
 			#ifdef DEBUGDECODE
 				Serial.print("LP801: ");
 			#endif
 			checkLP801b();
+			*/
 		}
 	}
 }
@@ -488,12 +490,15 @@ IT old with selector:
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
+	/*
 	int clockTst = 360;
 	valid &= inTol(clock, clockTst);
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(sync/clock, 31, 2); //syncValues
+	*/
+
+	valid &= inTol(sync/clock/10, 30, 3); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
