@@ -614,10 +614,11 @@ void patternDecoder::triStateMessageBytes(){
 ********************************************************
 */
 
-ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate){
+ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
 	tolFact = 5.0;
-	patternStore = new BitStore(2,66); // Init our Patternstore, with 40 bytes. So we can save 224 Values.
+	//patternStore = new BitStore(2,0); // Init our Patternstore, with 0 bytes, because we do not use it
+	free(patternStore);
 	ManchesterBits=new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
 	this->silent=silentstate;
 
