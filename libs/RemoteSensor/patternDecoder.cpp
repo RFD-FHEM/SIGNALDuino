@@ -994,7 +994,7 @@ bool decoderBacis::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mi
     uint8_t idx;
 	for (idx=startpos; idx<endcount;idx+=2)
 	{
-		twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1); // Combine  two sync bits
+		twobit = getDataBits(idx,2);
         if ( twobit == pattern)																				  // Check the sync bits against the pattern
         {
             continue;
