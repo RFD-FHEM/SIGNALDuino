@@ -735,7 +735,7 @@ void ManchesterpatternDetector::doSearch()
     {
       // Valid
         state = detecting;
-        updateClock(first);
+        //updateClock(first);
 #if DEBUGDETECT==255
 		Serial.println("MCPD Sync: ");
 		Serial.print(*first); Serial.print(", ");Serial.print(*last);
