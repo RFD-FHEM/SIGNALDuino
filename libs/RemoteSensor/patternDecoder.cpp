@@ -1310,18 +1310,6 @@ bool ASDecoder::processMessage()
   	if (!checkMessage()) return false;
 	uint8_t idx =0;
 	uint8_t numbits = (mcdetector->ManchesterBits->valcount-syncend-4);     // Stores number of bits in our message
-
-
-/*
-	if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first Bytes for our Sync Signal
-	// Check the sync Bit
-	for (; idx<1; ++idx)
-    {
-        if (mcdetector->getMCByte(idx) != 0xB3) return false;
-	}
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability
-*/
 	this->protomessage.reserve((numbits/4)+3); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String("AS:");
 #ifdef DEBUGDECODE
@@ -1332,7 +1320,7 @@ bool ASDecoder::processMessage()
 	byte b=0;
 	// Check the Data Bits
 	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
-		b=getNibble(idx)<<4|getNibble(idx+4);
+		b=getDataBits(idx,8);
 		sprintf(hexStr, "%02X",b);
 		crcv = _crc_ibutton_update(crcv,b);
 #ifdef DEBUGDECODE
@@ -1341,7 +1329,7 @@ bool ASDecoder::processMessage()
 		this->protomessage.concat(hexStr);
 	}
 
-	if (crcv == (getNibble(idx)<<4 | getNibble(idx+4))) {
+	if (crcv == (getDataBits(idx,8))) {
 #ifdef DEBUGDECODE
 		Serial.print("  CRC Valid");
 #endif
