@@ -727,16 +727,21 @@ void ManchesterpatternDetector::updateClock(int newClock)
     static uint8_t sample=0;
     static uint32_t average=0;      // Need 32 Bit, because 16 bit it will overflow shortly.
 
+
+
     if (clock == 0) // Reset the counter
     {
 #if DEBUGDETECT==255
         Serial.print("reinit clock to 0...");
 #endif // DEBUGDETECT
-        reset();
+        //reset();
         sample=0;
         average=clock=0;
 	}
-    average=average+newClock;
+
+	if (sample > 48) return;		// Use max 48 Samples for the clock calculation. Then save cpu cycles
+
+    average=average+abs(newClock);
     sample++;
     clock=average/sample;
 #if DEBUGDETECT==255
@@ -757,8 +762,16 @@ void ManchesterpatternDetector::doSearch()
 	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
     if (!validSequence(first,last)) return;
 
-    updateClock(last);
+	// Assume that the first pulse is a long one, clock must be half of the pulse
+    updateClock((*last)/2);
     tol = (int)round(clock*tolFact/10);
+
+    // If sencond pulse does not fit to out assumption, recalc our clock
+    if ((!isLong(first)) && (!isShort(first)))
+    {
+		clock=clock*2;
+		tol = (int)round(clock*tolFact/10);
+    }
 
     if (isLong(first) || isShort(first))
     {
@@ -796,13 +809,15 @@ void ManchesterpatternDetector::doDetect() {
       processMessage(); // May this does not work for manchester due to sorting
       return;
     }
-    updateClock(first);
+    //updateClock(first);
+
 
     // May a valid manchester pulse
     int seq[3] = {0,0,0};
     if (isLong(first))
     {
         // valid it is a long pulse
+        updateClock(*first/2);
         seq[0] = 1;
         seq[1] = *first;
         //ManchesterBits->addValue(!(*first & (1<<7))); // Check if bit 7 is set
@@ -812,11 +827,13 @@ void ManchesterpatternDetector::doDetect() {
     }
     else if(isShort(first) && isShort(last) )
     {
+		updateClock(*first);
+		updateClock(*last);
          // valid
         seq[0] = 2;
         seq[1] = *first;
         seq[2] = *last;
-        updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
+        //updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
         skip=true; // Skip next iteration
         //ManchesterBits->addValue(!(*last & (1<<7)));  // Check if bit 7 is set
         ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
