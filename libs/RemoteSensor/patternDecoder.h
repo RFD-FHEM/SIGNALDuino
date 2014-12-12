@@ -200,9 +200,9 @@ class ManchesterpatternDetector : public patternBasic {
  base class for decoding subclasses. Containing only the toolset used to decode a signal
 */
 
-class decoderBacis {
+class decoderBasic {
     public:
-        decoderBacis(); 								// Constructor
+        decoderBasic(); 								// Constructor
   		String getMessageHexStr() const;             	// Returns the hex message on serial
 		bool decode();                        			// Currently not implemented, must be defined in the subclass
 
@@ -222,7 +222,7 @@ class decoderBacis {
  Class for decoding oregon scientific protocol from a manchester bit signal.
  Currently only working if there is a delay between two transmissions of a signal
 */
-class OSV2Decoder : public decoderBacis {
+class OSV2Decoder : public decoderBasic {
     public:
         OSV2Decoder(ManchesterpatternDetector *detector);
 	private:
@@ -239,7 +239,7 @@ class OSV2Decoder : public decoderBacis {
 /*
  Class for decoding Arduinosensor protocol from a manchester bit signal.
 */
-class ASDecoder : public decoderBacis {
+class ASDecoder : public decoderBasic {
     public:
         ASDecoder(ManchesterpatternDetector *detector);
 	private:

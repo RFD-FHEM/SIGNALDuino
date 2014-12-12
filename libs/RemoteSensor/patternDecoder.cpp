@@ -939,16 +939,16 @@ unsigned char ManchesterpatternDetector::getMCByte(uint8_t idx){
 
 //-------------------------- Decoder -------------------------------
 
-decoderBacis::decoderBacis()
+decoderBasic::decoderBasic()
 {
 }
 
-String decoderBacis::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
+String decoderBasic::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
 {
 	return protomessage;
 }
 
-bool decoderBacis::decode(){
+bool decoderBasic::decode(){
     if (mcdetector->manchesterfound()) {
         message_decoded= processMessage();
         return message_decoded;
@@ -959,7 +959,7 @@ bool decoderBacis::decode(){
 /*
 	Check if the clock and the bitlength fit's our protocol
 */
-bool decoderBacis::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
+bool decoderBasic::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
 {
     #if DEBUGDECODE==255
 	//Serial.print(" (D255 Clock: ");
@@ -985,7 +985,7 @@ bool decoderBacis::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t 
 /*
 	Checks for Sync signal, starting at startpos, returning true if mincount sync is counted. Returns true if maxcount has been reached. returns the end of the loop via syncend
 */
-bool decoderBacis::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
+bool decoderBasic::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
 {
 	bool valid=true;
 
@@ -1016,7 +1016,7 @@ bool decoderBacis::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mi
 returns the 4 bits one nibble, begins at position deliverd via startingPos
 returns the nibble in received order
 */
-unsigned char decoderBacis::getNibble(uint8_t startingPos)
+unsigned char decoderBasic::getNibble(uint8_t startingPos)
 {
     const uint8_t nibsize=4;
     return getDataBits(startingPos,nibsize);
@@ -1025,7 +1025,7 @@ unsigned char decoderBacis::getNibble(uint8_t startingPos)
 returns n bits , begins at position deliverd via startingPos, returns numbits Maximum is 8 bits.
 returns the nibble in received order
 */
-unsigned char decoderBacis::getDataBits(uint8_t startingPos,uint8_t numbits)
+unsigned char decoderBasic::getDataBits(uint8_t startingPos,uint8_t numbits)
 {
     if (numbits>8) numbits=8;					//Max is 8 bits
     uint8_t bcnt=numbits-1;						//Calculates the bitposition for the first bit
@@ -1046,9 +1046,9 @@ bool OSV2Decoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print("Check OSV:");
 #endif
-	valid = decoderBacis::checkMessage(440,540,150,220);							// Valid clock and length
+	valid = decoderBasic::checkMessage(440,540,150,220);							// Valid clock and length
 	//valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
-	valid &= decoderBacis::checkSync(0x2,0,24,33,&syncend);							// Valid sync sequence ia 24-33 bits like 10
+	valid &= decoderBasic::checkSync(0x2,0,24,33,&syncend);							// Valid sync sequence ia 24-33 bits like 10
 #ifdef DEBUGDECODE
 	Serial.print(valid);
 #endif
@@ -1204,7 +1204,7 @@ unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 
 
 
-ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBacis()
+ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBasic()
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
@@ -1220,8 +1220,8 @@ bool ASDecoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print("Check AS:");
 #endif
-	valid = decoderBacis::checkMessage(380,405,38,56);							// Valid clock and length
-	valid &= decoderBacis::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
+	valid = decoderBasic::checkMessage(380,405,52,56);							// Valid clock and length
+	valid &= decoderBasic::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
 #ifdef DEBUGDECODE
 	Serial.print(valid);
 #endif
