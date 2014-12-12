@@ -208,7 +208,6 @@ class decoderBacis {
 
 		virtual bool processMessage() {} ;              // Currently not implemented, must be defined in the subclass
 	protected:
-		unsigned char Bit_Reverse (unsigned char x);    // Method to reverse a byte's bitorder 0111 -> 1110
 		bool message_decoded;							// Is set to true if we have decoded a valid signal
 		ManchesterpatternDetector *mcdetector;
     	String protomessage;							// Holds the message from the protocol (hex)
