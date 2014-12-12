@@ -1020,14 +1020,6 @@ unsigned char decoderBacis::getNibble(uint8_t startingPos)
 {
     const uint8_t nibsize=4;
     return getDataBits(startingPos,nibsize);
-	/*
-    uint8_t bcnt=3;
-    unsigned char cdata=0;
-	for (uint8_t idx=startingPos; idx<startingPos+4; idx++, bcnt--){
-       cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
-	}
-    return cdata;
-    */
 }
 /*
 returns n bits , begins at position deliverd via startingPos, returns numbits Maximum is 8 bits.
@@ -1054,49 +1046,19 @@ bool OSV2Decoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print("Check OSV:");
 #endif
-	valid = decoderBacis::checkMessage(440,540,150,220);						// Valid clock and length
-	valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
+	valid = decoderBacis::checkMessage(440,540,150,220);							// Valid clock and length
+	//valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
+	valid &= decoderBacis::checkSync(0x2,0,24,33,&syncend);							// Valid sync sequence ia 24-33 bits like 10
 #ifdef DEBUGDECODE
 	Serial.print(valid);
 #endif
-	valid &= (getNibble(syncend) == 0xA);  										// Valid preamble
+	valid &= (getNibble(syncend) == 0xA);  											// Valid preamble
 #ifdef DEBUGDECODE
 	Serial.print(valid);
 	Serial.println();
 #endif
 	return  valid;
 }
-
-/*
-	Checks for Sync signal, starting at startpos, returning true if mincount sync is counted. Returns true if maxcount has been reached. returns the end of the loop via syncend
-*/
-bool OSV2Decoder::checkSync(uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
-{
-	bool valid=true;
-
-    uint8_t twobit=0;
-    uint8_t endcount = startpos+maxcount;
-    uint8_t idx;
-	for (idx=startpos; idx<endcount;idx+=2)
-	{
-		twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1);
-        if ( twobit == 0x2)             		// Check if the two bis are b10 / 0x2
-        {
-            continue;
-        } else if (idx-startpos >= mincount)  {    	// minimum of 24 sync bits must be reveived
-            valid=true;              			// Valid OSV2 Sync sequence of 24 bits are valid
-            break;
-        } else {
-            valid=false;              			// Not a valid OSV2 Sync sequence, to less sync bits
-			break;
-        }
-	}
-	if (valid){
-		*syncend = idx+startpos;
-	}
-	return  valid;
-}
-
 
 
 OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
@@ -1175,48 +1137,6 @@ bool OSV2Decoder::processMessage()
 	if (!checkMessage()) return false;
 	unsigned char cdata;
     uint8_t idx;
-
-	/*
-    if (mcdetector->ManchesterBits->valcount < 120) return false; // Message to short
-
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first 4 Bytes for our Sync Signal
-    unsigned char cdata;
-
-    // Check sync sginal
-    uint8_t idx=0;
-    uint8_t twobit=0;
-    uint8_t synccnt=0;
-
-    // Check if we have 12 x 10 bitspairs
-    do {
-        twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1);
-        if ( twobit == 0x2)             // Check if the two bis are b10 / 0x2
-        {
-            synccnt+=2;                // Count the number of sync bit
-        } else if (synccnt > 24)  {    // minimum of 24 sync bits must be reveived
-            break;
-        } else {
-            return false;              // Not a valid OSV2 Sync sequence
-        }
-        idx+=2;
-    } while (true);
-    // Minimum 24 Sync bits received. Preamble beginns with 01
-    //Serial.println(synccnt); -> 34! Preamble begins at pos 32! (Index is 0-31 = 32 Sync Bits)
-    uint8_t datastart=synccnt;    // Starting point for furher inspection is one bit ahead!
-
-    // Check the next 8 Manchester Bits
-#ifdef DEBUGDECODE
-    Serial.print("OSV2 Preamble at pos:");Serial.print(datastart);
-#endif
-    // Extract the Preamble in right order
-    cdata=getNibble(datastart);
-#ifdef DEBUGDECODE
-    Serial.print(" hex:");  Serial.println(cdata,HEX);
-#endif
-    if (cdata != 0xA) return false;     // Exit if our Preamble is not 0xA / b1010
-
-	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-datastart)/16)*8;  // Stores number of bits
-	*/
 	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-syncend)/16)*8;  // Stores number of bits
 #ifdef DEBUGDECODE
     // Now exract all of the message  // Todo: Check for a new sync signal, because we may have no delay between two transmissions of the messages may easy possible to check for occurence of 10101010 or 01010101

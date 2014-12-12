@@ -230,8 +230,6 @@ class OSV2Decoder : public decoderBacis {
         unsigned char getNibble(uint8_t startingPos);           // returns data bits 4 bits (nibble) in correct order
         unsigned char getByte(uint8_t startingPos);				// returns data bits 8 bits (byte) in correct order
 		bool checkMessage();									// Verify if we have OSV2 Message Type
-		bool checkSync(uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks for a valid sync sequence between start and endpos
-
 		uint8_t syncend;										// Variable to hold the last syncend counter
 };
 
