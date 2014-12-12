@@ -1105,6 +1105,9 @@ bool OSV2Decoder::checkMessage()
 	Serial.println();
 #endif
 	return  valid;
+
+	// We may have started detecting the signal after the sync. There is an option, that there is another sync in our message, but may not the complete signal.
+	// Todo Die ganze Nachricht anch einem Sync absuchen
 }
 
 
