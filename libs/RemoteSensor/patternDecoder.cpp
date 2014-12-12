@@ -1018,13 +1018,32 @@ returns the nibble in received order
 */
 unsigned char decoderBacis::getNibble(uint8_t startingPos)
 {
+    const uint8_t nibsize=4;
+    return getDataBits(startingPos,nibsize);
+	/*
     uint8_t bcnt=3;
     unsigned char cdata=0;
 	for (uint8_t idx=startingPos; idx<startingPos+4; idx++, bcnt--){
        cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
 	}
     return cdata;
+    */
 }
+/*
+returns n bits , begins at position deliverd via startingPos, returns numbits Maximum is 8 bits.
+returns the nibble in received order
+*/
+unsigned char decoderBacis::getDataBits(uint8_t startingPos,uint8_t numbits)
+{
+    if (numbits>8) numbits=8;					//Max is 8 bits
+    uint8_t bcnt=numbits-1;						//Calculates the bitposition for the first bit
+    unsigned char cdata=0;
+	for (uint8_t idx=startingPos; idx<startingPos+numbits; idx++, bcnt--){
+       cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in received order
+	}
+    return cdata;
+}
+
 
 /*
 	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
