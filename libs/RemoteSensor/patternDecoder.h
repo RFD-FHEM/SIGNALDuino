@@ -182,7 +182,9 @@ class ManchesterpatternDetector : public patternBasic {
 		bool isLong(int *pulse);        // Returns true if it's a long pulse
 
         void doSearch();                // Seatchs for a valid manchester sequence
-		void updateClock(int *pulse);   // Updates the clock
+		void updateClock(int *pulse);   // Updates the clock with given pulse
+		void updateClock(int newClock); // Updates clock with the provided newClock and sets clock to the new average
+
 		void doDetect();                // Detect the manchester signal and store the detected manchester bits
         void processMessage();          // Checks if there are enough bits to have a message
         void printOut();                // Prints out the detected message, mor for debug purpose

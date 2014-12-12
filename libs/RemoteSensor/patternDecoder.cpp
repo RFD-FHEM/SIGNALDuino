@@ -679,8 +679,6 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 
     if (clock == 0) // Reset the counter
     {
-        sample=0;
-        average=0;
 #if DEBUGDETECT==255
         Serial.print("reinit clock math...");
 #endif // DEBUGDETECT
@@ -688,9 +686,8 @@ void ManchesterpatternDetector::updateClock(int *pulse)
         clock=abs(*pulse)/2;
         sample=1;
         average=clock;
-
     }
-    if (abs(*pulse) < int(clock*0.5))
+    else if (abs(*pulse) < int(clock*0.5))
     {
         clock=abs(*pulse);
     } else if (isShort(pulse)) {
@@ -719,6 +716,38 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 #endif // DEBUGDETECT
 }
 
+
+
+/*
+  Updates the Mancheser Clock witch given clock
+*/
+void ManchesterpatternDetector::updateClock(int newClock)
+{
+    /* Todo Auswetung der Pulse kann in die Schleife doDetect verlagert werden */
+    static uint8_t sample=0;
+    static uint32_t average=0;      // Need 32 Bit, because 16 bit it will overflow shortly.
+
+    if (clock == 0) // Reset the counter
+    {
+#if DEBUGDETECT==255
+        Serial.print("reinit clock to 0...");
+#endif // DEBUGDETECT
+        reset();
+        sample=0;
+        average=clock=0;
+	}
+    average=average+newClock;
+    sample++;
+    clock=average/sample;
+#if DEBUGDETECT==255
+    Serial.print("  recalc Clock with :");
+    Serial.print(newClock);
+    Serial.print(" to clock :");
+#endif // DEBUGDETECT
+#if DEBUGDETECT==255
+    Serial.println(clock);
+#endif // DEBUGDETECT
+}
 
 
 void ManchesterpatternDetector::doSearch()
