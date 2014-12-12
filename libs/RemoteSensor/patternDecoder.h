@@ -231,6 +231,9 @@ class OSV2Decoder : public decoderBacis {
         unsigned char getByte(uint8_t startingPos);				// returns data bits 8 bits (byte) in correct order
 		bool checkMessage();									// Verify if we have OSV2 Message Type
 		uint8_t syncend;										// Variable to hold the last syncend counter
+		unsigned char getDataBits(uint8_t startingPos,uint8_t numbits);
+
+
 };
 
 /*

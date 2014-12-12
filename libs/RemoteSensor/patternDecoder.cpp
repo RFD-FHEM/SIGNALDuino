@@ -1160,20 +1160,36 @@ bool OSV2Decoder::processMessage()
 #endif
 	return true;
 }
+
+
+
+/*
+returns numbit bits one , begins at position deliverd via startingPos
+skips every second bit and returns the bits in reversed (correct for OSV2) order
+*/
+unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
+{
+    uint8_t bcnt=0;
+    unsigned char cdata=0;
+
+    if (numbits>8) numbits=8;				// Max 8 bits can be retuned (one byte)
+    numbits=numbits*2;
+
+	for (uint8_t idx=startingPos; idx<startingPos+numbits; idx=idx+2, bcnt++){
+         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+	}
+    return cdata;
+}
+
+
+
 /*
 returns the 4 bits one nibble, begins at position deliverd via startingPos
 skips every second bit and returns the nibble in reversed (correct) order
 */
 unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
 {
-    // Todo: Use getNibble from baseclass and reorder the return value here
-    uint8_t bcnt=0;
-    unsigned char cdata=0;
-	for (uint8_t idx=startingPos; idx<startingPos+8; idx=idx+2, bcnt++){
-         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
-         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
-	}
-    return cdata;
+    return getDataBits(startingPos,4);
 }
 
 /*
@@ -1183,14 +1199,7 @@ skips every second bit and returns the byte in reversed (correct) order.
 */
 unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 {
-    // Todo: Use getNibble to build a byte
-    uint8_t bcnt=0;
-    unsigned char cdata=0;
-	for (uint8_t idx=startingPos; idx<startingPos+16; idx=idx+2, bcnt++){
-         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
-         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
-	}
-    return cdata;
+     return getDataBits(startingPos,8);
 }
 
 
