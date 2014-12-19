@@ -37,6 +37,7 @@
 #include "Arduino.h"
 #include "patternDecoder.h"
 #include "bitstore.h"
+#include <util/crc16.h>
 
 
 
@@ -619,10 +620,11 @@ void patternDecoder::triStateMessageBytes(){
 ********************************************************
 */
 
-ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate){
+ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
 	tolFact = 5.0;
-	patternStore = new BitStore(2,66); // Init our Patternstore, with 40 bytes. So we can save 224 Values.
+	//patternStore = new BitStore(2,0); // Init our Patternstore, with 0 bytes, because we do not use it
+	free(patternStore);
 	ManchesterBits=new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
 	this->silent=silentstate;
 
@@ -633,12 +635,13 @@ void ManchesterpatternDetector::reset() {
 //  messageLen = 0;
   patternBasic::reset();
   ManchesterBits->reset();
+/*
 #ifdef DEBUGDETECT
         Serial.println("");
         Serial.println("         **  RESET       ** ");
         Serial.println("");
 #endif // DEBUGDETECT
-
+*/
 }
 
 
@@ -682,25 +685,22 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 
     if (clock == 0) // Reset the counter
     {
-        sample=0;
-        average=0;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("reinit clock math...");
 #endif // DEBUGDETECT
         reset();
         clock=abs(*pulse)/2;
         sample=1;
         average=clock;
-
     }
-    if (abs(*pulse) < int(clock*0.5))
+    else if (abs(*pulse) < int(clock*0.5))
     {
         clock=abs(*pulse);
     } else if (isShort(pulse)) {
         average=average+abs(*pulse);
         sample++;
         clock=average/sample;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("  recalc Clock with short:");
         Serial.print(*pulse);
         Serial.print(" to clock :");
@@ -709,7 +709,7 @@ void ManchesterpatternDetector::updateClock(int *pulse)
         average=average+(abs(*pulse)/2);
         sample++;
         clock=average/sample;
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.print("  recalc Clock with long pulse: ");
         Serial.print(*pulse);
         Serial.print(" to clock :");
@@ -717,11 +717,48 @@ void ManchesterpatternDetector::updateClock(int *pulse)
 #endif // DEBUGDETECT
     }
 
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
         Serial.println(clock);
 #endif // DEBUGDETECT
 }
 
+
+
+/*
+  Updates the Mancheser Clock witch given clock
+*/
+void ManchesterpatternDetector::updateClock(int newClock)
+{
+    /* Todo Auswetung der Pulse kann in die Schleife doDetect verlagert werden */
+    static uint8_t sample=0;
+    static uint32_t average=0;      // Need 32 Bit, because 16 bit it will overflow shortly.
+
+
+
+    if (clock == 0) // Reset the counter
+    {
+#if DEBUGDETECT==255
+        Serial.print("reinit clock to 0...");
+#endif // DEBUGDETECT
+        //reset();
+        sample=0;
+        average=clock=0;
+	}
+
+	if (sample > 48) return;		// Use max 48 Samples for the clock calculation. Then save cpu cycles
+
+    average=average+abs(newClock);
+    sample++;
+    clock=average/sample;
+#if DEBUGDETECT==255
+    Serial.print("  recalc Clock with :");
+    Serial.print(newClock);
+    Serial.print(" to clock :");
+#endif // DEBUGDETECT
+#if DEBUGDETECT==255
+    Serial.println(clock);
+#endif // DEBUGDETECT
+}
 
 
 void ManchesterpatternDetector::doSearch()
@@ -731,18 +768,24 @@ void ManchesterpatternDetector::doSearch()
 	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
     if (!validSequence(first,last)) return;
 
-    updateClock(last);
+	// Assume that the first pulse is a long one, clock must be half of the pulse
+    updateClock((*last)/2);
     tol = (int)round(clock*tolFact/10);
+
+    // If sencond pulse does not fit to out assumption, recalc our clock
+    if ((!isLong(first)) && (!isShort(first)))
+    {
+		clock=clock*2;
+		tol = (int)round(clock*tolFact/10);
+    }
 
     if (isLong(first) || isShort(first))
     {
       // Valid
         state = detecting;
-        updateClock(first);
-#ifdef DEBUGDETECT
-		Serial.println("");
-		Serial.println("         ** MC sync:     **");
-		Serial.println("");
+        //updateClock(first);
+#if DEBUGDETECT==255
+		Serial.println("MCPD Sync: ");
 		Serial.print(*first); Serial.print(", ");Serial.print(*last);
 		Serial.print(", TOL: ");Serial.print(tol);
 		Serial.print(", clock: ");Serial.println(clock);
@@ -772,13 +815,15 @@ void ManchesterpatternDetector::doDetect() {
       processMessage(); // May this does not work for manchester due to sorting
       return;
     }
-    updateClock(first);
+    //updateClock(first);
+
 
     // May a valid manchester pulse
     int seq[3] = {0,0,0};
     if (isLong(first))
     {
         // valid it is a long pulse
+        updateClock(*first/2);
         seq[0] = 1;
         seq[1] = *first;
         //ManchesterBits->addValue(!(*first & (1<<7))); // Check if bit 7 is set
@@ -788,11 +833,13 @@ void ManchesterpatternDetector::doDetect() {
     }
     else if(isShort(first) && isShort(last) )
     {
+		updateClock(*first);
+		updateClock(*last);
          // valid
         seq[0] = 2;
         seq[1] = *first;
         seq[2] = *last;
-        updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
+        //updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
         skip=true; // Skip next iteration
         //ManchesterBits->addValue(!(*last & (1<<7)));  // Check if bit 7 is set
         ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
@@ -811,17 +858,16 @@ void ManchesterpatternDetector::doDetect() {
     }
 
 	int8_t fidx = findpatt(seq);
-#ifdef DEBUGDETECT
-	Serial.print("MC Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
+#if DEBUGDETECT==255
+	Serial.print("MCPD Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
 	Serial.print(", Clock: "); Serial.print(clock); Serial.print(", Found: "); Serial.println(fidx);
 #endif
     if (0<=fidx)
     {
         //gefunden
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
 	Serial.println("pattern found");
 #endif
-
         //patternStore->addValue(fidx); // Add current pattern index to our store
         //*(message+messageLen) = fidx;
         //messageLen++;
@@ -830,7 +876,7 @@ void ManchesterpatternDetector::doDetect() {
 	{
         if(patternLen <maxNumPattern) // Max 4 pattern are valid for manchester coding
         {
-#ifdef DEBUGDETECT
+#if DEBUGDETECT==255
 	Serial.println("pattern not found, adding a new one...");
 #endif
 
@@ -851,7 +897,7 @@ void ManchesterpatternDetector::doDetect() {
 		}
     }
 #ifdef DEBUGDETECT
-	printOut();//debug
+	if (patternLen > 3) printOut();//debug
 #endif
 
 }
@@ -874,9 +920,8 @@ void ManchesterpatternDetector::processMessage()
 void ManchesterpatternDetector::printOut() {
 
 
-//#ifdef DEBUGDETECT
-
-	Serial.print("Clock: "); Serial.print(clock);
+#ifdef DEBUGDETECT
+	Serial.print("MCPD Clock: "); Serial.print(clock);
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen);
 	Serial.print(", Pattern: ");
@@ -893,17 +938,18 @@ void ManchesterpatternDetector::printOut() {
         Serial.print("]");
 	}
 	Serial.println();
-    Serial.print("MC MSG: ");
+    Serial.print("Manchester Bits: ");
     for (uint8_t idx=0; idx<ManchesterBits->valcount; ++idx){
 		//Serial.print(*(message+idx));
 		Serial.print(ManchesterBits->getValue(idx),DEC);
 	}
 	Serial.print("  ["); Serial.print(ManchesterBits->valcount); Serial.print("]");
 	Serial.println();
-//#endif
-    Serial.print("0x");
+
+    Serial.print("Hex: 0x");
 	printMessageHexStr();
 
+#endif
 }
 
 
@@ -946,38 +992,136 @@ unsigned char ManchesterpatternDetector::getMCByte(uint8_t idx){
 
 //-------------------------- Decoder -------------------------------
 
-decoderBacis::decoderBacis()
+decoderBasic::decoderBasic()
 {
-
 }
 
-String decoderBacis::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
+String decoderBasic::getMessageHexStr()  const                    // Returns a Pointer the hex message on serial
 {
 	return protomessage;
 }
 
-bool decoderBacis::decode(){
+bool decoderBasic::decode(){
     if (mcdetector->manchesterfound()) {
         message_decoded= processMessage();
         return message_decoded;
     }
     return false;
 }
+
+/*
+	Check if the clock and the bitlength fit's our protocol
+*/
+bool decoderBasic::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length)
+{
+    #if DEBUGDECODE==255
+	//Serial.print(" (D255 Clock: ");
+	DEBUG_BEGIN(DEBUGDECODE)
+	Serial.print("  Clock: ");
+	Serial.print(mcdetector->clock);
+	Serial.print("  num bits : ");
+	Serial.print(mcdetector->ManchesterBits->valcount);
+	DEBUG_END
+	#endif // DEBUGDECODE
+	bool valid;
+	valid = ((min_clock <= mcdetector->clock) && (mcdetector->clock <= max_clock)) ;
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= ((min_Length <= mcdetector->ManchesterBits->valcount) && (mcdetector->ManchesterBits->valcount <= max_Length));
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	return valid;
+}
+
+/*
+	Checks for Sync signal, starting at startpos, returning true if mincount sync is counted. Returns true if maxcount has been reached. returns the end of the loop via syncend
+*/
+bool decoderBasic::checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend)
+{
+	bool valid=true;
+
+    uint8_t twobit=0; // Check two bits of the sync signal
+    const uint8_t endcount = startpos+maxcount;
+    uint8_t idx;
+	for (idx=startpos; idx<endcount;idx+=2)
+	{
+		twobit = getDataBits(idx,2);
+        if ( twobit == pattern)																				  // Check the sync bits against the pattern
+        {
+            continue;
+        } else if (idx-startpos >= mincount)  {    	// minimum of sync bits must be reveived
+            valid=true;              			// Valid Sync sequence of mincount bits are valid
+            break;
+        } else {
+            valid=false;              			// Not a valid Sync sequence, to less sync bits
+			break;
+        }
+	}
+	if (valid){
+		*syncend = idx+startpos;
+	}
+	return valid;
+}
+
+/*
+returns the 4 bits one nibble, begins at position deliverd via startingPos
+returns the nibble in received order
+*/
+unsigned char decoderBasic::getNibble(uint8_t startingPos)
+{
+    const uint8_t nibsize=4;
+    return getDataBits(startingPos,nibsize);
+}
+/*
+returns n bits , begins at position deliverd via startingPos, returns numbits Maximum is 8 bits.
+returns the nibble in received order
+*/
+unsigned char decoderBasic::getDataBits(uint8_t startingPos,uint8_t numbits)
+{
+    if (numbits>8) numbits=8;					//Max is 8 bits
+    uint8_t bcnt=numbits-1;						//Calculates the bitposition for the first bit
+    unsigned char cdata=0;
+	for (uint8_t idx=startingPos; idx<startingPos+numbits; idx++, bcnt--){
+       cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in received order
+	}
+    return cdata;
+}
+
+
+/*
+	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
+*/
+bool OSV2Decoder::checkMessage()
+{
+	bool valid;
+#ifdef DEBUGDECODE
+	Serial.print("Check OSV:");
+#endif
+	valid = decoderBasic::checkMessage(440,540,150,220);							// Valid clock and length
+	//valid &= checkSync(uint8_t (0),uint8_t (24),uint8_t (33),&syncend);			// Valid sync sequence
+	valid &= decoderBasic::checkSync(0x2,0,24,33,&syncend);							// Valid sync sequence ia 24-33 bits like 10
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= (getNibble(syncend) == 0xA);  											// Valid preamble
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+	Serial.println();
+#endif
+	return  valid;
+
+	// We may have started detecting the signal after the sync. There is an option, that there is another sync in our message, but may not the complete signal.
+	// Todo Die ganze Nachricht anch einem Sync absuchen
+}
+
 
 OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
 }
-/*
-bool OSV2Decoder::decode(){
-    if (mcdetector->manchesterfound()) {
-        message_decoded= processMessage();
-        return message_decoded;
-    }
-    return false;
-}
-*/
 
 
 /*
@@ -1046,46 +1190,10 @@ Preamble<-|     Data ->>
 */
 bool OSV2Decoder::processMessage()
 {
-
-    if (mcdetector->ManchesterBits->valcount < 120) return false; // Message to short
-
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first 4 Bytes for our Sync Signal
-    unsigned char cdata;
-
-    // Check sync sginal
-    uint8_t idx=0;
-    uint8_t twobit=0;
-    uint8_t synccnt=0;
-
-    // Check if we have 12 x 10 bitspairs
-    do {
-        twobit = mcdetector->ManchesterBits->getValue(idx) <<1 | mcdetector->ManchesterBits->getValue(idx+1);
-        if ( twobit == 0x2)             // Check if the two bis are b10 / 0x2
-        {
-            synccnt+=2;                // Count the number of sync bit
-        } else if (synccnt > 24)  {    // minimum of 24 sync bits must be reveived
-            break;
-        } else {
-            return false;              // Not a valid OSV2 Sync sequence
-        }
-        idx+=2;
-    } while (true);
-    // Minimum 24 Sync bits received. Preamble beginns with 01
-    //Serial.println(synccnt); -> 34! Preamble begins at pos 32! (Index is 0-31 = 32 Sync Bits)
-    uint8_t datastart=synccnt;    // Starting point for furher inspection is one bit ahead!
-
-    // Check the next 8 Manchester Bits
-#ifdef DEBUGDECODE
-    Serial.print("OSV2 Preamble at pos:");Serial.print(datastart);
-#endif
-    // Extract the Preamble in right order
-    cdata=getNibble(datastart);
-#ifdef DEBUGDECODE
-    Serial.print(" hex:");  Serial.println(cdata,HEX);
-#endif
-    if (cdata != 0xA) return false;     // Exit if our Preamble is not 0xA / b1010
-
-	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-datastart)/16)*8;  // Stores number of bits
+	if (!checkMessage()) return false;
+	unsigned char cdata;
+    uint8_t idx;
+	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-syncend)/16)*8;  // Stores number of bits
 #ifdef DEBUGDECODE
     // Now exract all of the message  // Todo: Check for a new sync signal, because we may have no delay between two transmissions of the messages may easy possible to check for occurence of 10101010 or 01010101
     Serial.print("OSV2 protocol len(0x");  // Print the OSV2 hex message
@@ -1094,7 +1202,7 @@ bool OSV2Decoder::processMessage()
 #endif
 	this->protomessage.reserve((numbits/4)+2); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String(numbits,HEX);
-    for (idx=datastart; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
+    for (idx=syncend; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
     {
         if (mcdetector->ManchesterBits->valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
   		cdata = getByte(idx);
@@ -1108,19 +1216,36 @@ bool OSV2Decoder::processMessage()
 #endif
 	return true;
 }
+
+
+
+/*
+returns numbit bits one , begins at position deliverd via startingPos
+skips every second bit and returns the bits in reversed (correct for OSV2) order
+*/
+unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
+{
+    uint8_t bcnt=0;
+    unsigned char cdata=0;
+
+    if (numbits>8) numbits=8;				// Max 8 bits can be retuned (one byte)
+    numbits=numbits*2;
+
+	for (uint8_t idx=startingPos; idx<startingPos+numbits; idx=idx+2, bcnt++){
+         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+	}
+    return cdata;
+}
+
+
+
 /*
 returns the 4 bits one nibble, begins at position deliverd via startingPos
 skips every second bit and returns the nibble in reversed (correct) order
 */
 unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
 {
-    uint8_t bcnt=0;
-    unsigned char cdata=0;
-	for (uint8_t idx=startingPos; idx<startingPos+8; idx=idx+2, bcnt++){
-         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
-         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
-	}
-    return cdata;
+    return getDataBits(startingPos,4);
 }
 
 /*
@@ -1130,50 +1255,78 @@ skips every second bit and returns the byte in reversed (correct) order.
 */
 unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 {
-    uint8_t bcnt=0;
-    unsigned char cdata=0;
-	for (uint8_t idx=startingPos; idx<startingPos+16; idx=idx+2, bcnt++){
-         //Serial.print(mcdetector->ManchesterBits->getValue(idx));
-         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
-	}
-    return cdata;
+     return getDataBits(startingPos,8);
 }
 
 
 
-ASDecoder::ASDecoder(ManchesterpatternDetector *detector)
+ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBasic()
 {
     //*mcdetector = new ManchesterpatternDetector(true);
     mcdetector = detector;
 }
 
+/*
+	Function to check if it's a valid AS Protocol. Checks clock, Sync and preamble
+*/
+bool ASDecoder::checkMessage()
+{
+
+	bool valid=true;
+#ifdef DEBUGDECODE
+	Serial.print("Check AS:");
+#endif
+	valid = decoderBasic::checkMessage(380,425,52,56);							// Valid clock and length
+	valid &= decoderBasic::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+#endif
+	valid &= (getNibble(syncend) == 0xC);  										// Valid preamble for Sensor
+#ifdef DEBUGDECODE
+	Serial.print(valid);
+	Serial.println();
+#endif
+	return  valid;
+}
+
+
 bool ASDecoder::processMessage()
 {
-    if (mcdetector->ManchesterBits->bytecount < 4 && mcdetector->ManchesterBits->bytecount > 6) return false; // Message to short or to long
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability and check first Bytes for our Sync Signal
-	// Check the sync Bit
+  	if (!checkMessage()) return false;
 	uint8_t idx =0;
-	for (; idx<1; ++idx)
-    {
-        if (mcdetector->getMCByte(idx) != 0xB3) return false;
-	}
-    // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	uint8_t numbits = (mcdetector->ManchesterBits->valcount-idx);     // Stores number of bits in our message
-	this->protomessage.reserve(mcdetector->ManchesterBits->bytecount+2*2); 							 	 // Reserve buffer for Hex String
+	uint8_t numbits = (mcdetector->ManchesterBits->valcount-syncend-4);     // Stores number of bits in our message
+	this->protomessage.reserve((numbits/4)+3); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String("AS:");
 #ifdef DEBUGDECODE
 	Serial.print("AS detected with len("); Serial.print(numbits); Serial.print(") :");
 #endif
 	char hexStr[] ="00";
+	byte crcv=0x00;
+	byte b=0;
 	// Check the Data Bits
-	for (; idx<(mcdetector->ManchesterBits->bytecount); ++idx){
-        sprintf(hexStr, "%02X",mcdetector->getMCByte(idx));
+	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
+		b=getDataBits(idx,8);
+		sprintf(hexStr, "%02X",b);
+		crcv = _crc_ibutton_update(crcv,b);
 #ifdef DEBUGDECODE
-		Serial.print(hexStr);
+		Serial.print(String(b,HEX));
 #endif
 		this->protomessage.concat(hexStr);
 	}
+
+	if (crcv == (getDataBits(idx,8))) {
 #ifdef DEBUGDECODE
+		Serial.print("  CRC Valid");
+#endif
+	} else {
+#ifdef DEBUGDECODE
+		Serial.print("  CRC: ");
+		Serial.println(crcv,HEX);
+#endif
+		return false;
+	}
+#ifdef DEBUGDECODE
+
 	Serial.println();
 #endif
 	return true;
