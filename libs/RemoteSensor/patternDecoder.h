@@ -48,7 +48,7 @@
 #define prefixLen 3
 
 //#define DEBUGDETECT
-//#define DEBUGDECODE
+#define DEBUGDECODE
 
 
 #define PATTERNSIZE 2

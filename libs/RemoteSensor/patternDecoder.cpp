@@ -250,7 +250,7 @@ bool patternDetector::inTol(int value, int set){
 	return inTol(value, set, tol);
 }
 bool patternDetector::inTol(int value, int set, int tolerance){
-	return (abs(value-set)<tol);
+	return (abs(value-set)<=tolerance);
 }
 
 void patternDetector::swap(int* a, int* b){
@@ -469,7 +469,7 @@ IT self learning:
 void patternDecoder::checkITold() {
 /*
 IT old with selector:
-	clock: 		360(400)
+	clock: 		Variable Clock! Example is with 400...
 	Sync factor: 	32(31)
 	start sequence: [400, -13200] => [1, -31]
 	high pattern:	[1200, -400][1200, -400] => [3, -1][3, -1]
@@ -484,12 +484,15 @@ IT old with selector:
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
+	/*
 	int clockTst = 360;
-	valid &= inTol(clock, clockTst);//clock
+	valid &= inTol(clock, clockTst);
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(sync/clock, 31, 2); //syncValues
+	*/
+
+	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
@@ -512,6 +515,9 @@ IT old with selector:
 		success = true;
 	}
 }
+
+
+
 
 void patternDecoder::printMessageHexStr(){
 	char hexStr[] ="00";
