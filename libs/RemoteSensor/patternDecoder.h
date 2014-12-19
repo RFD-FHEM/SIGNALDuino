@@ -155,7 +155,6 @@ class patternDecoder : public patternDetector {
 		void checkITold();
 		void checkITautolearn();
 		void checkAS();
-		void checkLP801b();
 
 		byte byteMessage[maxMsgSize];
 		byte byteMessageLen;
