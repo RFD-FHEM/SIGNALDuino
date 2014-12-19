@@ -1270,7 +1270,7 @@ bool ASDecoder::checkMessage()
 #ifdef DEBUGDECODE
 	Serial.print("Check AS:");
 #endif
-	valid = decoderBasic::checkMessage(380,405,52,56);							// Valid clock and length
+	valid = decoderBasic::checkMessage(380,425,52,56);							// Valid clock and length
 	valid &= decoderBasic::checkSync(0x2,0,8,12,&syncend);						// Searching for sync bits, 8-12 bits must be sync pattern 0x2 = 10
 #ifdef DEBUGDECODE
 	Serial.print(valid);

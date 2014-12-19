@@ -49,7 +49,7 @@
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 255
+//#define DEBUGDECODE 255
 
 
 #define PATTERNSIZE 2
