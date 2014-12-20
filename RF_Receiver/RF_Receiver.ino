@@ -63,12 +63,13 @@ OSV2Decoder osv2Dec (&ManchesterDetect);
 
 void setup() {
   Serial.begin(BAUDRATE);
+#ifdef DEBUG
   Serial.println("Startup:");
   Serial.print("# Bytes / Puffer: ");
   Serial.println(sizeof(int)*FiFo.getBuffSize());
   Serial.print("# Len Fifo: ");
   Serial.println(FiFo.getBuffSize());
-
+#endif
   pinMode(PIN_RECEIVE,INPUT);
   pinMode(PIN_SEND,OUTPUT);
   pinMode(PIN_LED,OUTPUT);
