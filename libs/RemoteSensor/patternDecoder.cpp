@@ -1316,11 +1316,12 @@ bool ASDecoder::processMessage()
 
 	if (crcv == (getDataBits(idx,8))) {
 #ifdef DEBUGDECODE
-		Serial.print("  CRC Valid");
+		Serial.print("  CRC valid: ");
+		Serial.print(crcv,HEX);
 #endif
 	} else {
 #ifdef DEBUGDECODE
-		Serial.print("  CRC: ");
+		Serial.print("  CRC not valid: ");
 		Serial.println(crcv,HEX);
 #endif
 		return false;
