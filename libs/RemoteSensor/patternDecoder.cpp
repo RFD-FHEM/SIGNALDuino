@@ -1296,7 +1296,7 @@ bool ASDecoder::processMessage()
 	uint8_t idx =0;
 	uint8_t numbits = (mcdetector->ManchesterBits->valcount-syncend-4);     // Stores number of bits in our message
 	this->protomessage.reserve((numbits/4)+3); 							 	 // Reserve buffer for Hex String
-	this->protomessage= String("AS:");
+	this->protomessage= String("AS");
 #ifdef DEBUGDECODE
 	Serial.print("AS detected with len("); Serial.print(numbits); Serial.print(") :");
 #endif
