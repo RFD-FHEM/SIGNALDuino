@@ -12,6 +12,7 @@ Compile it and have fun.
 Tested microcontrollers
 ===
 Arduino mega 2560
+Aduino Nano
 
 My sensor ist not detected
 ===
