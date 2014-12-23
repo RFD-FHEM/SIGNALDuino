@@ -161,11 +161,9 @@ bool patternDetector::detect(int* pulse){
 	swap(first, last);
 	//add new value to buffer
 	*last = *pulse;
-	switch(state) {
 	if (state == detecting) doDetect();
 	if (state == searching) doSearch();
-		//default: reset();
-	}
+
 	return success;
 }
 
@@ -469,7 +467,7 @@ void patternDecoder::checkITold() {
 /*
 IT old with selector:
 	clock: 		400 -> Variable Clock
-	Sync factor: 	31
+	Sync factor: 	(31)  27-33
 	start sequence: [400, -13200] => [1, -31]
 	high pattern:	[1200, -400][1200, -400] => [3, -1][3, -1]
 	low pattern:	[400, -1200][400, -1200] => [1, -3][1, -3]
@@ -491,7 +489,7 @@ IT old with selector:
 	#endif
 	*/
 
-	valid &= inTol(abs(sync)/clock, 31, 3); //syncValues
+	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif

@@ -54,8 +54,8 @@
 
 #define PATTERNSIZE 2
 
-#define DEBUG_BEGIN(i) Serial.print("(D:");Serial.print(i);
-#define DEBUG_END Serial.println(")");
+#define DEBUG_BEGIN(i) Serial.print(F("(D:"));Serial.print(i);
+#define DEBUG_END Serial.println(F(")"));
 
 //#define DEBUG
 
