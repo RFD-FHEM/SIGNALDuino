@@ -33,12 +33,10 @@
 
 */
 
-
 #include "Arduino.h"
 #include "patternDecoder.h"
 #include "bitstore.h"
 #include <util/crc16.h>
-
 
 
 /*
@@ -164,8 +162,8 @@ bool patternDetector::detect(int* pulse){
 	//add new value to buffer
 	*last = *pulse;
 	switch(state) {
-		case detecting: doDetect();
-		case searching: doSearch();
+	if (state == detecting) doDetect();
+	if (state == searching) doSearch();
 		//default: reset();
 	}
 	return success;
@@ -372,7 +370,7 @@ bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, in
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(round(sync/(float)clock), -syncFact, 1); //sync in tolerance
+	valid &= inTol(round(sync/(float)clock), -syncFact, 3); //sync in tolerance
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
@@ -470,8 +468,8 @@ IT self learning:
 void patternDecoder::checkITold() {
 /*
 IT old with selector:
-	clock: 		Variable Clock! Example is with 400...
-	Sync factor: 	32(31)
+	clock: 		400 -> Variable Clock
+	Sync factor: 	31
 	start sequence: [400, -13200] => [1, -31]
 	high pattern:	[1200, -400][1200, -400] => [3, -1][3, -1]
 	low pattern:	[400, -1200][400, -1200] => [1, -3][1, -3]
@@ -493,7 +491,7 @@ IT old with selector:
 	#endif
 	*/
 
-	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
+	valid &= inTol(abs(sync)/clock, 31, 3); //syncValues
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
@@ -620,6 +618,7 @@ void patternDecoder::triStateMessageBytes(){
 ********************************************************
 */
 
+
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
 	tolFact = 5.0;
@@ -643,6 +642,7 @@ void ManchesterpatternDetector::reset() {
 #endif // DEBUGDETECT
 */
 }
+
 
 
 bool ManchesterpatternDetector::detect(int* pulse){
