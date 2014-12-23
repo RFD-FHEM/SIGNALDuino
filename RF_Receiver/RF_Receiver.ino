@@ -34,7 +34,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               9600
-
+//#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benötigt.
@@ -50,6 +50,8 @@ void enableReceive();
 void disableReceive();
 void serialEvent();
 void blinken();
+int freeRam();
+
 
 
 //Decoder
@@ -195,7 +197,7 @@ void HandleCommand(String cmd)
   }
   // R: FreeMemory
   else if (cmd.startsWith("R")) {
-    Serial.println(F("R500"));// Fake Meldung
+    Serial.println(freeRam());// Fake Meldung
   }
   // i: Intertechno
   else if (cmd.startsWith("i")) {
@@ -277,3 +279,8 @@ void serialEvent()
   }
 }
 
+int freeRam () {
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
