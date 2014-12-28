@@ -449,7 +449,7 @@ Logilink NC_WS:
 void patternDecoder::checkTCM97001(){
 /*
 TCM Art. Nr. 97001:
-	clock: 		500
+	clock:	 		500
 	Sync factor: 	18
 	start sequence: [500, -9000] => [1, -18]
 	high pattern:	[500, -4000] => [1, -8]
@@ -459,14 +459,13 @@ TCM Art. Nr. 97001:
 					Bit 9  			Battery
 					Bit 10			unknown
 					Bit 11 & 12	 	positiv (00) or negativ (11) temperature
-					Bit 13-22 	 	Temperature / 10 if positiv or Temp^Temp/10 if negativ
-					Bit 23&24 		unknown may be a checksum?
+					Bit 13-22 	 	Temperature / 10 if positiv or Temp^0x3fe/10 if negativ
+					Bit 23			unknown may be a checksum?
+					Bit 24 			transmitting auto =0 or manual =1
 */
 	bool valid = checkEV1527type(500, 18, 4, 8, 24);
 	twoStateMessageBytes();
-	//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-	if (valid) {//ok, it's Logilink
-		//byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
+	if (valid) {//ok, it's TCM97001
 		Serial.print("W08");
 		printMessageHexStr();
 		success = true;
