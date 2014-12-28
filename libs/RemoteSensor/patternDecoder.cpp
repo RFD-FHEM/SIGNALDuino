@@ -459,7 +459,7 @@ TCM Art. Nr. 97001:
 					Bit 9  			Battery
 					Bit 10			unknown
 					Bit 11 & 12	 	positiv (00) or negativ (11) temperature
-					Bit 13-22 	 	Temperature / 10 if positiv or Temp^Temp/10 if negativ
+					Bit 13-22 	 	Temperature / 10 if positiv or Temp^0x3fe/10 if negativ
 					Bit 23&24 		unknown may be a checksum?
 */
 	bool valid = checkEV1527type(500, 18, 4, 8, 24);
