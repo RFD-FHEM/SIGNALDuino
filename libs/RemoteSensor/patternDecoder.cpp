@@ -999,6 +999,14 @@ String decoderBasic::getMessageHexStr()  const                    // Returns a P
 	return protomessage;
 }
 
+String decoderBasic::valToHex(unsigned char Value, uint8_t desiredStringLength) {
+
+
+  String hexStr = String(Value, HEX);
+  while (hexStr.length() < desiredStringLength) hexStr = "0" + hexStr;
+  return hexStr;
+}
+
 bool decoderBasic::decode(){
     if (mcdetector->manchesterfound()) {
         message_decoded= processMessage();
@@ -1204,7 +1212,9 @@ bool OSV2Decoder::processMessage()
     {
         if (mcdetector->ManchesterBits->valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
   		cdata = getByte(idx);
-  		this->protomessage.concat(String(cdata,HEX));
+
+  		this->protomessage.concat(valToHex(cdata));
+  		//this->protomessage.concat(String(cdata,HEX));
 #ifdef DEBUGDECODE
         Serial.print(cdata,HEX);
 #endif
@@ -1304,7 +1314,7 @@ bool ASDecoder::processMessage()
 	// Check the Data Bits
 	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
 		b=getDataBits(idx,8);
-		sprintf(hexStr, "%02X",b);
+		sprintf(hexStr, "%02X",b);						// Migrate to valToHex to save some memory
 		crcv = _crc_ibutton_update(crcv,b);
 #ifdef DEBUGDECODE
 		Serial.print(String(b,HEX));

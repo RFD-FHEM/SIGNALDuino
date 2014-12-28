@@ -216,7 +216,8 @@ class decoderBasic {
         bool checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length);			 // Checks the pattern data against protocol
         bool checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks two bits against pattern beginning at startpos returns last position at syncend
         unsigned char getNibble(uint8_t startingPos);           													 // returns data bits 4 bits (nibble) in received order
-        unsigned char getDataBits(uint8_t startingPos,uint8_t numbits);           									 // returns data bits numbits bits (max 8) in received order
+        unsigned char getDataBits(uint8_t startingPos,uint8_t numbits); 											 // returns data bits numbits bits (max 8) in received order
+		String valToHex(unsigned char Value, uint8_t desiredStringLength=2);													 // returns a hex string with padded 0 up to desired length
 };
 
 
