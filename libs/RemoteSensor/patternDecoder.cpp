@@ -354,6 +354,10 @@ void patternDecoder::processMessage()
 				Serial.print("AS: ");
 			#endif
 			checkAS();
+			#ifdef DEBUGDECODE
+				Serial.print("TCM97001: ");
+			#endif
+			checkTCM97001();
 		}
 	}
 }
@@ -436,6 +440,34 @@ Logilink NC_WS:
 	if (valid) {//ok, it's Logilink
 		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
 		Serial.print("W03");
+		printMessageHexStr();
+		success = true;
+	}
+}
+
+
+void patternDecoder::checkTCM97001(){
+/*
+TCM Art. Nr. 97001:
+	clock: 		500
+	Sync factor: 	18
+	start sequence: [500, -9000] => [1, -18]
+	high pattern:	[500, -4000] => [1, -8]
+	low pattern:	[500, -2000] => [1, -4]
+	message length:	24 bit
+	characteristic:	first 8 bits are sensor id, which is resettet every time the battery is changed
+					Bit 9  			Battery
+					Bit 10			unknown
+					Bit 11 & 12	 	positiv (00) or negativ (11) temperature
+					Bit 13-22 	 	Temperature / 10 if positiv or Temp^Temp/10 if negativ
+					Bit 23&24 		unknown may be a checksum?
+*/
+	bool valid = checkEV1527type(500, 18, 4, 8, 24);
+	twoStateMessageBytes();
+	//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+	if (valid) {//ok, it's Logilink
+		//byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
+		Serial.print("W08");
 		printMessageHexStr();
 		success = true;
 	}
