@@ -359,6 +359,11 @@ void patternDecoder::processMessage()
 			#endif
 			checkTCM97001();
 		}
+		#ifdef DEBUGDECODE
+	    else if (patternLen>2){
+	    	printOut();
+	    }
+		#endif
 	}
 }
 
@@ -553,6 +558,7 @@ void patternDecoder::printMessageHexStr(){
 		sprintf(hexStr, "%02x",byteMessage[cnt]);
 		Serial.print(hexStr);
 	}
+
 	Serial.println();
 }
 

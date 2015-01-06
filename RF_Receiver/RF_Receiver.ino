@@ -28,19 +28,21 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "2.5"
+#define PROGVERS               "2.5txtst"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
-#define BAUDRATE               9600
+#define BAUDRATE               57600
+#define FIFO_LENGTH			   40
+#define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benötigt.
 #include <patternDecoder.h> //Logilink, IT decoder
 
-RingBuffer FiFo(40, 0); // FiFo Puffer
+RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 const uint8_t pulseMin = 100;
 bool blinkLED = false;
 String cmdstring = "";
@@ -52,7 +54,8 @@ void serialEvent();
 void blinken();
 int freeRam();
 
-
+void IT_TX(unsigned int duration);
+void receiveProtocolIT_TX(unsigned int changeCount);
 
 //Decoder
 //SensorReceiver ASreceiver;
@@ -72,6 +75,7 @@ void setup() {
   Serial.print("# Len Fifo: ");
   Serial.println(FiFo.getBuffSize());
 #endif
+  delay(2000);
   pinMode(PIN_RECEIVE,INPUT);
   pinMode(PIN_SEND,OUTPUT);
   pinMode(PIN_LED,OUTPUT);
@@ -91,6 +95,9 @@ void loop() {
   static bool state;
   while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
     //Serial.print(aktVal); Serial.print(",");
+    #ifdef TX_TST
+    IT_TX(aktVal);
+    #endif
     state = musterDec.decode(&aktVal); //Logilink, PT2262
     if (ManchesterDetect.detect(&aktVal))
     {
@@ -284,3 +291,182 @@ int freeRam () {
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
+
+
+
+#ifdef TX_TST
+
+/*-----------------------------------------------------------------------------------------------
+/* Devices with temperatur / humidity functionality => Intertechno TX2/3/4
+-----------------------------------------------------------------------------------------------*/
+
+#define TX_MAX_CHANGES 88
+unsigned int timingsTX[TX_MAX_CHANGES+20];      //  TX
+
+// http://www.f6fbb.org/domo/sensors/tx3_th.php
+void IT_TX(unsigned int duration) {
+
+  static unsigned int changeCount;
+  static unsigned int fDuration;
+  static unsigned int sDuration;
+
+  sDuration = fDuration + duration;
+
+	/* Dump out the Buffer if received Buffer-10 valid TX Pulses to get the sync signal */
+
+  if ((sDuration > 1550 - 200 && sDuration < 1550 + 200) || (sDuration > 2150 - 200 && sDuration < 2150 + 200)) {
+    if ((duration > 520 - 100 && duration < 520 + 100) || (duration > 1250 - 100 && duration < 1250 + 100) || (duration > 950 - 100 && duration < 950 + 100)) {
+      if (changeCount == 0 ) {
+        timingsTX[changeCount++] = fDuration;
+      }
+      timingsTX[changeCount++] = duration;
+    }
+
+    if ( changeCount == TX_MAX_CHANGES - 1) {
+      receiveProtocolIT_TX(changeCount);
+      changeCount = 0;
+      fDuration = 0;
+    }
+  } else {
+    changeCount = 0;
+  }
+
+  fDuration = duration;
+  if (changeCount > 1 && changeCount%(FIFO_LENGTH-10) == 0)
+  {
+    FiFo.setFReadPointerToRead(FIFO_LENGTH); //Freien Lesezeiger 40 Werte vor den Schreibzeuger positionieren
+	Serial.println("RAW IT_TX Output: (");
+	int *buffVal;
+	for (int i = 1; i <= FIFO_LENGTH; ++i) {
+      buffVal = FiFo.getNextValue();
+      Serial.print(*buffVal);
+      Serial.print(", ");
+    }
+	Serial.println(")"); // End of output
+  }
+}
+
+void receiveProtocolIT_TX(unsigned int changeCount) {
+#define TX_ONE    520
+#define TX_ZERO   1250
+#define TX_GLITCH  100
+#define TX_MESSAGELENGTH 44
+
+  byte i;
+  unsigned long code = 0;
+
+  String message = "W00";
+
+  for (i = 0; i <= 14; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+
+  // Startsequence 0000 1010 = 0xA
+  if (code != 10) {
+    return;
+  }
+
+  message += String(code,HEX);
+  code = 0;
+
+  // Sensor type 0000 = Temp / 1110 = Humidity
+  for (i = 16; i <= 22; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+
+  message += String(code,HEX);
+  code = 0;
+
+  // Sensor adress
+  for (i = 24; i <= 38; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+  message += String(code,HEX);
+  code = 0;
+
+  // Temp or Humidity
+  for (i = 40; i <= 62; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+  message += String(code,HEX);
+  code = 0;
+
+  // Repeated Bytes temp / Humidity
+  for (i = 64; i <= 78; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+  message += String(code,HEX);
+  code = 0;
+
+  // Checksum
+  for (i = 80; i <= changeCount; i = i + 2)
+  {
+    if ((timingsTX[i] > TX_ZERO - TX_GLITCH) && (timingsTX[i] < TX_ZERO + TX_GLITCH))    {
+      code <<= 1;
+    }
+    else if ((timingsTX[i] > TX_ONE - TX_GLITCH) && (timingsTX[i] < TX_ONE + TX_GLITCH)) {
+      code <<= 1;
+      code |= 1;
+    }
+    else {
+      return;
+    }
+  }
+  message += String(code,HEX);
+  message.toUpperCase();
+  Serial.println(message);
+
+  return;
+}
+#endif
+
