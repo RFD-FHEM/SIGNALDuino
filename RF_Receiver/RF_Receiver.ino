@@ -96,7 +96,7 @@ void loop() {
   while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
     //Serial.print(aktVal); Serial.print(",");
     #ifdef TX_TST
-    IT_TX(aktVal);
+    IT_TX(abs(aktVal));
     #endif
     state = musterDec.decode(&aktVal); //Logilink, PT2262
     if (ManchesterDetect.detect(&aktVal))
