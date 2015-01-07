@@ -34,7 +34,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   40
+#define FIFO_LENGTH			   115
 #define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
@@ -300,6 +300,24 @@ int freeRam () {
 /* Devices with temperatur / humidity functionality => Intertechno TX2/3/4
 -----------------------------------------------------------------------------------------------*/
 
+void dump_buffer(bool force,unsigned int changeCount)
+{
+  if (force || changeCount > 1 && changeCount%(FIFO_LENGTH-10) == 0)
+  {
+    FiFo.setFReadPointerToRead(FIFO_LENGTH*-1); //Freien Lesezeiger an den Anfang positionieren
+	Serial.println("RAW IT_TX Output: (");
+	int *buffVal;
+	for (int i = 1; i <= FIFO_LENGTH; ++i) {
+      buffVal = FiFo.getNextValue();
+      Serial.print(*buffVal);
+      Serial.print(", ");
+    }
+	Serial.println(")"); // End of output
+  }
+
+}
+
+
 #define TX_MAX_CHANGES 88
 unsigned int timingsTX[TX_MAX_CHANGES+20];      //  TX
 
@@ -323,6 +341,7 @@ void IT_TX(unsigned int duration) {
     }
 
     if ( changeCount == TX_MAX_CHANGES - 1) {
+	  dump_buffer(true,changeCount);
       receiveProtocolIT_TX(changeCount);
       changeCount = 0;
       fDuration = 0;
@@ -330,21 +349,10 @@ void IT_TX(unsigned int duration) {
   } else {
     changeCount = 0;
   }
-
+  dump_buffer(false, changeCount);
   fDuration = duration;
-  if (changeCount > 1 && changeCount%(FIFO_LENGTH-10) == 0)
-  {
-    FiFo.setFReadPointerToRead(FIFO_LENGTH); //Freien Lesezeiger 40 Werte vor den Schreibzeuger positionieren
-	Serial.println("RAW IT_TX Output: (");
-	int *buffVal;
-	for (int i = 1; i <= FIFO_LENGTH; ++i) {
-      buffVal = FiFo.getNextValue();
-      Serial.print(*buffVal);
-      Serial.print(", ");
-    }
-	Serial.println(")"); // End of output
-  }
 }
+
 
 void receiveProtocolIT_TX(unsigned int changeCount) {
 #define TX_ONE    520
@@ -355,7 +363,7 @@ void receiveProtocolIT_TX(unsigned int changeCount) {
   byte i;
   unsigned long code = 0;
 
-  String message = "W00";
+  String message = "TX";
 
   for (i = 0; i <= 14; i = i + 2)
   {
