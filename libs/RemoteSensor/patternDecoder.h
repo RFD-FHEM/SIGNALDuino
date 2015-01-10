@@ -38,7 +38,7 @@
 
 #include "Arduino.h"
 #include <bitstore.h>
-
+#include <filtering.h>
 #define maxNumPattern 4
 #define maxMsgSize 30
 
@@ -106,8 +106,10 @@ class patternDetector {
 		bool detect(int* pulse);
 		void doSearch();
 		void doDetect();
+		void doDetectwoSync();
 		void reset();
 		virtual void processMessage();
+
 
 		void swap(int* a, int* b);
 		void sortPattern();

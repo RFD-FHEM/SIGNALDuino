@@ -186,6 +186,77 @@ void patternDetector::doSearch() {
 #endif
 	}
 }
+/* Detect without a Sync */
+void patternDetector::doDetectwoSync() {
+	//Serial.print("bitcnt:");Serial.println(bitcnt);
+	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
+		//Serial.println("doDetect");
+		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
+		bitcnt = 0;
+
+		//if (!validSequence()) return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
+		static RingBuffer ringPattern(maxNumPattern, 0); // FiFo Puffer für Muster
+
+		int *checkVal;
+		int pulsPatt = (abs(*last)+abs(*first))/2;  //Store pattern from two pulses and save the average
+		bool pfound=false;
+		ringPattern._readFree =  ringPattern.head;	//Set Position to first one in buffer
+		uint8_t i=0;
+		uint8_t matchCounter[maxNumPattern];
+		for (;i<maxNumPattern;++i)
+		{
+				checkVal = ringPattern.getNextValue();				// Get one Value from the Buffer to check against
+				if (inTol(pulsPatt,*checkVal,100))			//Check if we already have a similar pattern
+				{
+					pfound=true;
+					break;
+				}
+		}
+		if (!pfound) ringPattern.addValue(&pulsPatt);  // Add new Pattern if not already found in our patternstore
+		// Hier müsste geprüft werden ob ein altes Pattern überschrieben wird.
+
+		matchCounter[i]++;					  // Count Matches of every found pattern
+
+
+
+		if (((inTol(*first, clock) & (syncMinFact*clock> - *last) & (*last<0)) | ((0<*first) & (*first<syncMinFact*clock) & (inTol(*last, -clock))))){
+			//wenn nicht vorhanden, aufnehmen
+			int fidx = find();
+#ifdef DEBUG2
+		 	Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
+			Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
+#endif
+			if (0<=fidx){
+				//gefunden
+				*(message+messageLen) = fidx;
+				messageLen++;
+			} else {
+				if (patternLen <maxNumPattern){
+					//neues hinzufügen
+					//Serial.println("hinzufügen");
+					*(pattern+2*patternLen)   = *first;
+					*(pattern+2*patternLen+1) = *last;
+					patternLen++;
+					*(message+messageLen) = patternLen-1; //Index des letzten Elements
+					messageLen++;
+				} else {
+					processMessage();
+					reset();
+				}
+			}
+#ifdef DEBUGDETECT
+			printOut();//debug
+#endif
+		} else { //kein valides Muster (mehr)
+		 	//Serial.print("TrashPulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last); Serial.print(", MSGLen: "); Serial.println(messageLen);
+			processMessage();
+	        reset();
+		}
+	} else { //zweiten Wert für Muster sammeln
+            bitcnt++;
+	}
+}
+
 
 void patternDetector::doDetect() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
