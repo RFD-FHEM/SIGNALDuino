@@ -69,10 +69,10 @@ OSV2Decoder osv2Dec (&ManchesterDetect);
 void setup() {
   Serial.begin(BAUDRATE);
 #ifdef DEBUG
-  Serial.println("Startup:");
-  Serial.print("# Bytes / Puffer: ");
+  Serial.println(F("Startup:"));
+  Serial.print(F("# Bytes / Puffer: "));
   Serial.println(sizeof(int)*FiFo.getBuffSize());
-  Serial.print("# Len Fifo: ");
+  Serial.print(F("# Len Fifo: "));
   Serial.println(FiFo.getBuffSize());
 #endif
   delay(2000);
@@ -196,11 +196,11 @@ void HandleCommand(String cmd)
 
   // ?: Kommandos anzeigen
   if (cmd.equals("?")) {
-    Serial.println("? Use one of V i f d h t R q");//FHEM Message
+    Serial.println(F("? Use one of V i f d h t R q"));//FHEM Message
   }
   // V: Version
   else if (cmd.startsWith("V")) {
-    Serial.println(F("V " PROGVERS " FHEMduino - compiled at " __DATE__ " " __TIME__));
+    Serial.println("V " PROGVERS " FHEMduino - compiled at " __DATE__ " " __TIME__);
   }
   // R: FreeMemory
   else if (cmd.startsWith("R")) {
