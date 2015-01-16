@@ -136,7 +136,7 @@ void patternBasic::processMessage() {}
 
 
 //	constructor
-patternDetector::patternDetector() {
+patternDetector::patternDetector():patternBasic() {
 	buffer[0] = 0; buffer[1] = 0;
 	first = buffer;
 	last = first+1;
@@ -192,34 +192,107 @@ void patternDetector::doDetectwoSync() {
 	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-		bitcnt = 0;
+		if (!validSequence(first,last)) return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
 
-		//if (!validSequence()) return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
-		static RingBuffer ringPattern(maxNumPattern, 0); // FiFo Puffer für Muster
+		bitcnt = 0;
+		static uint8_t pattern_pos=0;
+		int fidx = find();
+
+		#ifdef DEBUG2
+		Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
+		Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
+		#endif
 
 		int *checkVal;
-		int pulsPatt = (abs(*last)+abs(*first))/2;  //Store pattern from two pulses and save the average
+		if (0<=fidx){
+			//gefunden
+			*(message+messageLen) = fidx;
+			messageLen++;
+		} else {
+
+
+			if (messageLen>minMessageLen){
+				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
+				processMessage();
+				reset();
+			}
+
+			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
+			for (int8_t i=messageLen;i>=0 && messageLen>0 ;--i)
+			{
+				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+				{
+					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+					// Kopieren der validen Einträge im Array an den Anfang, alternativ mit memcpy schneller und einfacher zu lösen
+					for (uint8_t p=i;p<messageLen;p++ )
+					{
+						message[p] = message[p-i];
+						message[p-i]=0; // Reset des alten Eintrages
+					}
+					messageLen=messageLen-i-1; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					break;
+				}
+			}
+			pattern[pattern_pos] = (abs(*last)+abs(*first))/2;		//Store pattern from two pulses and save the average
+			message[messageLen]=pattern_pos;
+			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
+			pattern_pos++;
+			messageLen++;
+			if (pattern_pos==5) pattern_pos=0; 						// Bei 4 Pattern den ältesten überschreiben
+			}
+		} else { //zweiten Wert für Muster sammeln
+			bitcnt++;
+		}
+/*
+		static RingBuffer ringPattern(maxNumPattern, 0); // FiFo Puffer für Muster
+
+		static uint8_t rb_position=1; 					// Ringbuffer positioncounter
+		int *checkVal;
+		int pulsPatt = (abs(*last)+abs(*first))/2;		//Store pattern from two pulses and save the average
 		bool pfound=false;
-		ringPattern._readFree =  ringPattern.head;	//Set Position to first one in buffer
-		uint8_t i=0;
-		uint8_t matchCounter[maxNumPattern];
-		for (;i<maxNumPattern;++i)
+		ringPattern._readFree =  ringPattern.head;		//Set Position to first one in buffer
+		static uint8_t matchCounter[maxNumPattern];
+
+		for (uint8_t i=1;i<=maxNumPattern;++i)
 		{
 				checkVal = ringPattern.getNextValue();				// Get one Value from the Buffer to check against
-				if (inTol(pulsPatt,*checkVal,100))			//Check if we already have a similar pattern
+				if (inTol(pulsPatt,*checkVal,100))					//Check if we already have a similar pattern
 				{
 					pfound=true;
+					matchCounter[i]++;					  // Count Matches of every found pattern
+					message[messageLen]=i;				  // Save Message
+					messageLen++;
 					break;
 				}
 		}
-		if (!pfound) ringPattern.addValue(&pulsPatt);  // Add new Pattern if not already found in our patternstore
-		// Hier müsste geprüft werden ob ein altes Pattern überschrieben wird.
+		if (!pfound)
+		{
+			if (rb_position > maxNumPattern)
+			{
+				rb_position=1; // Hier muss noch was getan werden, da wir ja weiterhin vorhandene Werte überschreiben
+				matchCounter[rb_position]=1;
 
-		matchCounter[i]++;					  // Count Matches of every found pattern
+				int *msg_ptr = message;
+				while (msg_prt!=message+messageLen) {
+				if (!(*msg_ptr == val)) {
+				  *result = *first;
+				  ++result;
+				}
+				++first;
+				}
+				return result;
 
+				// Vorhandener Wert wird überschrieben
+			}
+			ringPattern.addValue(&pulsPatt);  // Add new Pattern if not already found in our patternstore
+			message[messageLen]=rb_position;
+			messageLen++;
+			rb_position++;
+		}
+*/
+/*
 
-
-		if (((inTol(*first, clock) & (syncMinFact*clock> - *last) & (*last<0)) | ((0<*first) & (*first<syncMinFact*clock) & (inTol(*last, -clock))))){
+		if (validSequence()) {  				//valides Muster prüfen: ([+n,-n] oder [-n, +n])
 			//wenn nicht vorhanden, aufnehmen
 			int fidx = find();
 #ifdef DEBUG2
@@ -236,8 +309,8 @@ void patternDetector::doDetectwoSync() {
 					//Serial.println("hinzufügen");
 					*(pattern+2*patternLen)   = *first;
 					*(pattern+2*patternLen+1) = *last;
+					*(message+messageLen) = patternLen; //Index des letzten Elements
 					patternLen++;
-					*(message+messageLen) = patternLen-1; //Index des letzten Elements
 					messageLen++;
 				} else {
 					processMessage();
@@ -252,9 +325,8 @@ void patternDetector::doDetectwoSync() {
 			processMessage();
 	        reset();
 		}
-	} else { //zweiten Wert für Muster sammeln
-            bitcnt++;
-	}
+*/
+
 }
 
 
@@ -317,17 +389,18 @@ int patternDetector::find() {
 bool patternDetector::inTol(int value, int set){
 	return inTol(value, set, tol);
 }
+
 bool patternDetector::inTol(int value, int set, int tolerance){
 	return (abs(value-set)<=tolerance);
 }
-
+/*
 void patternDetector::swap(int* a, int* b){
 	int buffer;
 	buffer = *b;
 	*b = *a;
 	*a = buffer;
 }
-
+*/
 void patternDetector::sortPattern(){
 	// sort the pattern, such that the second value of the first pattern is the greatest (values are considered negative => the absolute value of the first is then the smallest)
 	// Example for the result: [1, -2]*c, [1, -6]*c, with the clock c

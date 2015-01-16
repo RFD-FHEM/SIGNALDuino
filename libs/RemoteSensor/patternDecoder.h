@@ -98,10 +98,10 @@
  Class currently not based on patternBacis, to detect simple on-off signals
  Todo: Make it child from patternBasic
 */
-class patternDetector {
+class patternDetector : public patternBasic {
 
 	public:
-		enum status {searching, detecting};
+		//enum status {searching, detecting};
 		patternDetector();
 		bool detect(int* pulse);
 		void doSearch();
@@ -111,7 +111,7 @@ class patternDetector {
 		virtual void processMessage();
 
 
-		void swap(int* a, int* b);
+		//void swap(int* a, int* b);
 		void sortPattern();
 
 		int find();
@@ -126,6 +126,7 @@ class patternDetector {
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
 		byte messageLen;
+		/*
 		int buffer[2];
 		int* first;
 		int* last;
@@ -134,6 +135,7 @@ class patternDetector {
 		status state;
 		bool success;
 		float tolFact;
+		*/
 };
 
 
