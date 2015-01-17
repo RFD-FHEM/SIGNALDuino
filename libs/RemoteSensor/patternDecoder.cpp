@@ -143,6 +143,7 @@ patternDetector::patternDetector():patternBasic() {
 	success = false;
 	tol = 200; //
 	tolFact = 0.4;
+
 	reset();
 }
 
@@ -152,6 +153,7 @@ void patternDetector::reset() {
 	bitcnt = 0;
 	state = searching;
 	clock = 0;
+	histo[0]=histo[1]=histo[2]=histo[3]=0;
 	//Serial.println("reset");
 }
 
