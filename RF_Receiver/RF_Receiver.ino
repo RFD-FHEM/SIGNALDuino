@@ -99,6 +99,7 @@ void loop() {
     IT_TX(abs(aktVal));
     #endif
     state = musterDec.decode(&aktVal); //Logilink, PT2262
+    /*
     if (ManchesterDetect.detect(&aktVal))
     {
       if (asDec.decode()) {
@@ -110,6 +111,7 @@ void loop() {
       }
       ManchesterDetect.reset();
     }
+    */
     if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
   }
 }

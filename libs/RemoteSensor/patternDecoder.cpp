@@ -130,7 +130,7 @@ void patternBasic::processMessage() {}
 
 /*
 ********************************************************
-************ Return to zero detector *******************
+*************** Puls Pause detector ********************
 ********************************************************
 */
 
@@ -161,9 +161,11 @@ bool patternDetector::detect(int* pulse){
 	swap(first, last);
 	//add new value to buffer
 	*last = *pulse;
+	doDetectwoSync();
+	/*
 	if (state == detecting) doDetect();
 	if (state == searching) doSearch();
-
+	*/
 	return success;
 }
 
@@ -192,33 +194,45 @@ void patternDetector::doDetectwoSync() {
 	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-		if (!validSequence(first,last)) return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
+
+		if (!validSequence(first,last)) {
+//			reset();
+//			pattern_pos=0;
+			return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
+		}
 
 		bitcnt = 0;
+		patternLen=4;
 		static uint8_t pattern_pos=0;
-		int fidx = find();
+	    int seq[2] = {1,0};
+	    seq[1]=(abs(*last)+abs(*first));
+		int8_t fidx = findpatt(seq);
 
-		#ifdef DEBUG2
-		Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
-		Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
+		#ifdef DEBUGDETECT
+		Serial.print(F("Pulse: "));Serial.print(*first); Serial.print(F(", "));Serial.print(*last);
+		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
+		Serial.print(F(", pSeq: ")); Serial.print(seq[1]);
+		Serial.print(F(", mLen: ")); Serial.print(messageLen);
 		#endif
 
-		int *checkVal;
+
 		if (0<=fidx){
 			//gefunden
-			*(message+messageLen) = fidx;
+			message[messageLen]=fidx;
 			messageLen++;
 		} else {
-
-
-			if (messageLen>minMessageLen){
+			if (messageLen>=minMessageLen){
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
+				//printOut();
+                for (uint8_t i=0;i<messageLen;++i)
+                {
+                    histo[message[i]]++;
+                }
 				processMessage();
 				reset();
 			}
-
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
-			for (int8_t i=messageLen;i>=0 && messageLen>0 ;--i)
+			for (int8_t i=messageLen;(i>=0 && messageLen>0) ;--i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
@@ -229,20 +243,31 @@ void patternDetector::doDetectwoSync() {
 						message[p] = message[p-i];
 						message[p-i]=0; // Reset des alten Eintrages
 					}
-					messageLen=messageLen-i-1; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					messageLen++;
 					break;
 				}
 			}
-			pattern[pattern_pos] = (abs(*last)+abs(*first))/2;		//Store pattern from two pulses and save the average
+			pattern[pattern_pos][0] = seq[1];						//Store average from two pulses as pattern
 			message[messageLen]=pattern_pos;
+            #ifdef DEBUGDETECT
+            Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
+            #endif // DEBUGDETECT
 			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
 			pattern_pos++;
 			messageLen++;
-			if (pattern_pos==5) pattern_pos=0; 						// Bei 4 Pattern den ältesten überschreiben
-			}
-		} else { //zweiten Wert für Muster sammeln
-			bitcnt++;
+			//printOut();
+			if (pattern_pos==4) pattern_pos=0;  // Ab 5 gehts wieder bei 0 los und wir überschreiben alte pattern
 		}
+		#ifdef DEBUGDETECT
+		Serial.println();
+		#endif // DEBUGDETECT
+	} else { //zweiten Wert für Muster sammeln
+		bitcnt++;
+	}
+
+
+
 /*
 		static RingBuffer ringPattern(maxNumPattern, 0); // FiFo Puffer für Muster
 
@@ -331,6 +356,7 @@ void patternDetector::doDetectwoSync() {
 
 
 void patternDetector::doDetect() {
+/*
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
@@ -373,10 +399,12 @@ void patternDetector::doDetect() {
 	} else { //zweiten Wert für Muster sammeln
             bitcnt++;
 	}
+	*/
 }
 
 int patternDetector::find() {
 	//Todo: Use find from patternBasic :  int tmp[2]; tmp[0] = *first; tmp[1] = *last; return find(tmp);
+/*
 	int findex = -1;
 	for (int idx=0; idx<patternLen; ++idx) {
 		if ((abs(*first-(*(pattern+2*idx)))<tol) & (abs(*last-(*(pattern+2*idx+1)))<tol)){
@@ -384,6 +412,7 @@ int patternDetector::find() {
 		}
 	}
 	return findex;
+*/
 }
 
 bool patternDetector::inTol(int value, int set){
@@ -406,6 +435,7 @@ void patternDetector::sortPattern(){
 	// Example for the result: [1, -2]*c, [1, -6]*c, with the clock c
 	// other example: [3, -1]*c, [1, -3]*c, with the clock c
 	// for the moment only patterns of length 2 are considered
+/*
 	if (*(pattern+1)<*(pattern+3)) {
 		swap(pattern, pattern+2);
 		swap(pattern+1, pattern+3);
@@ -417,9 +447,14 @@ void patternDetector::sortPattern(){
 				message[idx] = 0;
 		}
 	}
+	*/
 }
 
 void patternDetector::printOut() {
+
+
+
+    Serial.println();
 	Serial.print("Sync: ");Serial.print(sync);
 	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
 	Serial.print(", Clock: "); Serial.print(clock);
@@ -433,16 +468,18 @@ void patternDetector::printOut() {
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
 	Serial.print("Pattern: ");
 	for (int idx=0; idx<patternLen; ++idx){
- 		Serial.print(" P");Serial.print(idx);Serial.print(":");
-		Serial.print(*(pattern+2*idx)); Serial.print(", ");Serial.print(*(pattern+2*idx+1));Serial.print(", ");
- 		Serial.print(" Pclock");Serial.print(idx);Serial.print(":");
-		Serial.print(*(pattern+2*idx)/(float)clock); Serial.print(", ");Serial.print(*(pattern+2*idx+1)/(float)clock);Serial.print(", ");
- 		//Serial.print(" Pfact");Serial.print(idx);Serial.print(":");
-		//Serial.print(*(pattern+2*idx+1)/(float)*(pattern+2*idx));
-		//Serial.print("-i-> ");
-		//Serial.print(*(pattern+2*idx+1)/ *(pattern+2*idx));
-		//Serial.print(", ");
-		}
+        Serial.print(" P");Serial.print(idx);
+        Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
+        for (uint8_t x=0; x<PATTERNSIZE;++x)
+        {
+            if (pattern[idx][x] != 0)
+            {
+                if (x>0) Serial.print(",");
+                Serial.print(pattern[idx][x]);
+            }
+        }
+        Serial.print("]");
+	}
 	Serial.println();
 }
 
@@ -451,13 +488,17 @@ void patternDetector::processMessage()
         if (messageLen >= minMessageLen)
         {
             //mindestlänge der Message prüfen
-            Serial.println("Message detected:");
-            //printOut();
-            if (patternLen=2)
+            //Serial.println(F("Message detected:"));
+            printOut();
+
+
+/*            if (patternLen=2)
             {
+
                 sortPattern();
                 printOut();
             }
+*/
         }
 }
 
@@ -476,8 +517,11 @@ void patternDecoder::processMessage()
 {
         if (messageLen >= minMessageLen){ //mindestlänge der Message prüfen
 		//Serial.println("Message decoded:");
-		//printOut();
-		if (patternLen=2){
+        #ifdef DEBUGDETECT
+		printOut();
+		return;
+		#endif
+		if (patternLen==2){
 			sortPattern();
 			#ifdef DEBUGDECODE
 				printOut();
@@ -502,12 +546,13 @@ void patternDecoder::processMessage()
 				Serial.print("TCM97001: ");
 			#endif
 			checkTCM97001();
-		}
+		}/*
 		#ifdef DEBUGDECODE
 	    else if (patternLen>2){
 	    	printOut();
 	    }
 		#endif
+		*/
 	}
 }
 
@@ -525,15 +570,15 @@ bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, in
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(*(pattern+0), clockTst) & inTol(*(pattern+2), clockTst); //[1, ][1, ] patternclocks in tolerance
+//	valid &= inTol(*(pattern+0), clockTst) & inTol(*(pattern+2), clockTst); //[1, ][1, ] patternclocks in tolerance
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
+//	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
+//	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
 	#ifdef DEBUGDECODE
 		Serial.println(valid);
 	#endif
@@ -673,11 +718,11 @@ IT old with selector:
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= (inTol(*(pattern+0),3*clock) & inTol(*(pattern+1),-1*clock));//p0=[3, -1]
+//	valid &= (inTol(*(pattern+0),3*clock) & inTol(*(pattern+1),-1*clock));//p0=[3, -1]
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= (inTol(*(pattern+2),1*clock) & inTol(*(pattern+3),-3*clock));//p1=[1, -3]
+//	valid &= (inTol(*(pattern+2),1*clock) & inTol(*(pattern+3),-3*clock));//p1=[1, -3]
 	#ifdef DEBUGDECODE
 		Serial.println(valid);
 	#endif
@@ -1496,7 +1541,9 @@ bool ASDecoder::processMessage()
 	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
 		b=getDataBits(idx,8);
 		sprintf(hexStr, "%02X",b);						// Migrate to valToHex to save some memory
+		#ifndef ARDUSIM
 		crcv = _crc_ibutton_update(crcv,b);
+		#endif
 #ifdef DEBUGDECODE
 		Serial.print(String(b,HEX));
 #endif

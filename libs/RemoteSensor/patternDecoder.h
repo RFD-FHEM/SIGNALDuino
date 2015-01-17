@@ -47,7 +47,7 @@
 
 #define prefixLen 3
 
-//#define DEBUGDETECT 1
+#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
 
@@ -98,7 +98,7 @@
  Class currently not based on patternBacis, to detect simple on-off signals
  Todo: Make it child from patternBasic
 */
-class patternDetector : public patternBasic {
+class patternDetector : protected patternBasic {
 
 	public:
 		//enum status {searching, detecting};
@@ -119,9 +119,9 @@ class patternDetector : public patternBasic {
 		bool inTol(int val, int set, int tolerance);
 		void printOut();
 
-		int pattern[maxNumPattern*2];
+		//int pattern[maxNumPattern*2];
 		int sync;
-		uint8_t patternLen;
+		//uint8_t patternLen;
 		//int syncFact;
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
@@ -136,6 +136,7 @@ class patternDetector : public patternBasic {
 		bool success;
 		float tolFact;
 		*/
+	    int histo[4];
 };
 
 
@@ -143,7 +144,7 @@ class patternDetector : public patternBasic {
  Decoder class for some on-off protocols
  currently implemented as cild of the detector.
 */
-class patternDecoder : public patternDetector {
+class patternDecoder : public patternDetector{
 	public:
 		patternDecoder();
 
