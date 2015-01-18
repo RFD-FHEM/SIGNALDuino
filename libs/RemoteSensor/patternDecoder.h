@@ -118,6 +118,8 @@ class patternDetector : protected patternBasic {
 		bool inTol(int val, int set);
 		bool inTol(int val, int set, int tolerance);
 		void printOut();
+		void calcHisto();
+        bool isPatternInMsg(int *key);
 
 		//int pattern[maxNumPattern*2];
 		int sync;
@@ -136,7 +138,7 @@ class patternDetector : protected patternBasic {
 		bool success;
 		float tolFact;
 		*/
-	    int histo[4];
+	    int histo[maxNumPattern];
 };
 
 

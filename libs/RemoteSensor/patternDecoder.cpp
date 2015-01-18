@@ -72,6 +72,7 @@ bool patternBasic::detect(int* pulse){
 	*last = *pulse;
 }
 
+
 int8_t patternBasic::findpatt(int *seq) {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
@@ -193,7 +194,7 @@ void patternDetector::doSearch() {
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
-	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
+	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
 
@@ -207,7 +208,8 @@ void patternDetector::doDetectwoSync() {
 		patternLen=4;
 		static uint8_t pattern_pos=0;
 	    int seq[2] = {1,0};
-	    seq[1]=(abs(*last)+abs(*first));
+	    //seq[1]=(abs(*last)+abs(*first));
+	    seq[1]=*first;
 		int8_t fidx = findpatt(seq);
 
 		#ifdef DEBUGDETECT
@@ -226,10 +228,6 @@ void patternDetector::doDetectwoSync() {
 			if (messageLen>=minMessageLen){
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
 				//printOut();
-                for (uint8_t i=0;i<messageLen;++i)
-                {
-                    histo[message[i]]++;
-                }
 				processMessage();
 				reset();
 			}
@@ -452,10 +450,17 @@ void patternDetector::sortPattern(){
 	*/
 }
 
+/* Berechnet Werte für ein Histogramm aus den Daten der Variable message */
+void patternDetector::calcHisto()
+{
+    //Serial.print(F("Calc histo"));
+    for (uint8_t i=0;i<messageLen;++i)
+    {
+        histo[message[i]]++;
+    }
+}
+
 void patternDetector::printOut() {
-
-
-
     Serial.println();
 	Serial.print("Sync: ");Serial.print(sync);
 	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
@@ -487,6 +492,7 @@ void patternDetector::printOut() {
 
 void patternDetector::processMessage()
 {
+        calcHisto();
         if (messageLen >= minMessageLen)
         {
             //mindestlänge der Message prüfen
@@ -504,6 +510,31 @@ void patternDetector::processMessage()
         }
 }
 
+/* Searches a pattern in the detected message
+key[0] = Anzahl der Elemente in key
+*/
+
+bool patternDetector::isPatternInMsg(int *key)
+{
+    bool valid = true;
+    bool found = false;
+
+    uint8_t i,p=0;
+    for(i=1; i<key[0];++i)
+    {
+        found=false;
+        for(p=0; p<maxNumPattern;++p)
+        {
+            if (found=inTol(key[i],pattern[p][0]))  break;
+        }
+        valid &=found;
+
+    }
+    return valid;
+}
+
+
+
 //-------------------------- Decoder -------------------------------
 
 patternDecoder::patternDecoder(): patternDetector() {
@@ -511,7 +542,7 @@ patternDecoder::patternDecoder(): patternDetector() {
 	tolFact = 0.5;
 }
 
-bool patternDecoder::decode(int* pulse){
+bool patternDecoder::decode(int* pulse) {
 	return detect(pulse);
 }
 
@@ -520,9 +551,14 @@ void patternDecoder::processMessage()
         if (messageLen >= minMessageLen){ //mindestlänge der Message prüfen
 		//Serial.println("Message decoded:");
         #ifdef DEBUGDETECT
-		printOut();
-		return;
+		patternDetector::processMessage();//printOut();
+		int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
+        Serial.print("IT TX: ");
+        Serial.println(isPatternInMsg(ittxpattern));
 		#endif
+
+
+		return;
 		if (patternLen==2){
 			sortPattern();
 			#ifdef DEBUGDECODE
