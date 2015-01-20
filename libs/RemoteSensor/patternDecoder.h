@@ -42,7 +42,8 @@
 #define maxNumPattern 4
 #define maxMsgSize 30
 
-#define minMessageLen 20
+//#define minMessageLen 40 // 40 Pulse
+const uint8_t minMessageLen=40;
 #define syncMinFact 9
 
 #define prefixLen 3

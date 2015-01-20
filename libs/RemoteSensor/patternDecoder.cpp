@@ -155,6 +155,7 @@ void patternDetector::reset() {
 	state = searching;
 	clock = 0;
 	histo[0]=histo[1]=histo[2]=histo[3]=0;
+	pattern[0][0]=pattern[1][0]=pattern[2][0]=pattern[3][0]=0;
 	//Serial.println("reset");
 }
 
@@ -197,16 +198,18 @@ void patternDetector::doDetectwoSync() {
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-
+/*
 		if (!validSequence(first,last)) {
 //			reset();
 //			pattern_pos=0;
 			return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
 		}
-
+*/
 		bitcnt = 0;
 		patternLen=4;
-		static uint8_t pattern_pos=0;
+		static uint8_t pattern_pos;
+        if (messageLen ==0)  pattern_pos=0;
+
 	    int seq[2] = {1,0};
 	    //seq[1]=(abs(*last)+abs(*first));
 	    seq[1]=*first;
@@ -229,10 +232,12 @@ void patternDetector::doDetectwoSync() {
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
 				//printOut();
 				processMessage();
-				reset();
+				reset();pattern_pos=0;
+			} else {
+
 			}
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
-			for (int8_t i=messageLen;(i>=0 && messageLen>0) ;--i)
+			for (int16_t i=messageLen-1;(i>=0) && messageLen>0 ;--i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
@@ -240,14 +245,16 @@ void patternDetector::doDetectwoSync() {
 					// Kopieren der validen Einträge im Array an den Anfang, alternativ mit memcpy schneller und einfacher zu lösen
 					for (uint8_t p=i;p<messageLen;p++ )
 					{
-						message[p] = message[p-i];
-						message[p-i]=0; // Reset des alten Eintrages
+						message[p-i] = message[p];
+						//message[p+1]=0; // Reset des alten Eintrages
 					}
+					//message[messageLen]=0;
 					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-					messageLen++;
-					break;
-				}
+                    //messageLen++;
+                    break;
+                }
 			}
+
 			pattern[pattern_pos][0] = seq[1];						//Store average from two pulses as pattern
 			message[messageLen]=pattern_pos;
             #ifdef DEBUGDETECT
@@ -257,7 +264,10 @@ void patternDetector::doDetectwoSync() {
 			pattern_pos++;
 			messageLen++;
 			//printOut();
-			if (pattern_pos==4) pattern_pos=0;  // Ab 5 gehts wieder bei 0 los und wir überschreiben alte pattern
+			if (pattern_pos==4) pattern_pos=0;  // Ab 3 gehts wieder bei 0 los und wir überschreiben alte pattern
+			DEBUG_BEGIN(2)
+			printOut();
+			DEBUG_END
 		}
 		#ifdef DEBUGDETECT
 		Serial.println();
