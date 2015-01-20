@@ -242,14 +242,17 @@ void patternDetector::doDetectwoSync() {
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
 					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-					// Kopieren der validen Einträge im Array an den Anfang, alternativ mit memcpy schneller und einfacher zu lösen
+					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					memmove(message,message+i,sizeof(*message)*(messageLen));
+					/*
 					for (uint8_t p=i;p<messageLen;p++ )
 					{
 						message[p-i] = message[p];
 						//message[p+1]=0; // Reset des alten Eintrages
 					}
+					*/
 					//message[messageLen]=0;
-					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+
                     //messageLen++;
                     break;
                 }
