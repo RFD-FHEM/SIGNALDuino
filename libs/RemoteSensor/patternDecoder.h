@@ -68,6 +68,7 @@ const uint8_t prefixLen=3;
 		void swap(int* a, int* b);              // Swaps the two vars
 		int8_t findpatt(int *seq);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 		bool inTol(int val, int set);           // checks if a value is in tolerance range
+		bool inTol(int val, int set, int tolerance);
         bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
 
 		enum status {searching, detecting};
@@ -114,8 +115,6 @@ class patternDetector : protected patternBasic {
 		void sortPattern();
 
 		int find();
-		bool inTol(int val, int set);
-		bool inTol(int val, int set, int tolerance);
 		void printOut();
 		void calcHisto();
         bool isPatternInMsg(int *key);
