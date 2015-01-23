@@ -99,9 +99,14 @@ int8_t patternBasic::findpatt(int *seq) {
 
 
 
-bool patternBasic::inTol(int value, int set){
-	return (abs(value-set)<tol);
+bool patternDetector::inTol(int value, int set){
+	return inTol(value, set, tol);
 }
+
+bool patternDetector::inTol(int value, int set, int tolerance){
+	return (abs(value-set)<=tolerance);
+}
+
 
 void patternBasic::swap(int* a, int* b){
 	int temp;
@@ -141,9 +146,7 @@ patternDetector::patternDetector():patternBasic() {
 	buffer[0] = 0; buffer[1] = 0;
 	first = buffer;
 	last = first+1;
-	success = false;
-	tol = 200; //
-	tolFact = 0.4;
+
 
 	reset();
 }
@@ -156,7 +159,6 @@ void patternDetector::reset() {
 	clock = 0;
 	for (uint8_t i=0; i<maxNumPattern;++i)
 		histo[0]=pattern[i][0]=0;
-
 	success = false;
 	tol = 200; //
 	tolFact = 0.4;
@@ -165,12 +167,8 @@ void patternDetector::reset() {
 }
 
 bool patternDetector::detect(int* pulse){
-	//swap buffer
-	success = false;
-	swap(first, last);
-	//add new value to buffer
-	*last = *pulse;
-	doDetectwoSync();
+	patternBasic::detect(pulse);   // Call function from base class
+	doDetectwoSync();			   // Search for signal
 	/*
 	if (state == detecting) doDetect();
 	if (state == searching) doSearch();
@@ -178,25 +176,7 @@ bool patternDetector::detect(int* pulse){
 	return success;
 }
 
-void patternDetector::doSearch() {
-	//Serial.println("doSearch");
-	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-	if ((0<*first) & (*first<3276) & (syncMinFact* (*first) <= -1* (*last))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
-		clock = *first;
-		sync = *last;
-		//clock = ~(int) *last/(sync/clock);
-		state = detecting;
-		bitcnt=0;
-		tol = (int)round(clock*tolFact);
-#ifdef DEBUGDETECT
-		//debug
-		Serial.print("PD sync: ");
-		Serial.print(*first); Serial.print(", ");Serial.print(*last);
-		Serial.print(", TOL: ");Serial.print(tol);
-		Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
-#endif
-	}
-}
+
 
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
@@ -307,7 +287,7 @@ void patternDetector::doDetectwoSync() {
 			pattern_pos++;
 			messageLen++;
 			//printOut();
-			if (pattern_pos==maxNumPattern) pattern_pos=0;  // Ab 3 gehts wieder bei 0 los und wir überschreiben alte pattern
+			if (pattern_pos==maxNumPattern) pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
 			/*
 			DEBUG_BEGIN(2)
 			printOut();
@@ -327,7 +307,27 @@ void patternDetector::doDetectwoSync() {
 
 }
 
-
+void patternDetector::doSearch() {
+	//Serial.println("doSearch");
+	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
+/*
+	if ((0<*first) & (*first<3276) & (syncMinFact* (*first) <= -1* (*last))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+		clock = *first;
+		sync = *last;
+		//clock = ~(int) *last/(sync/clock);
+		state = detecting;
+		bitcnt=0;
+		tol = (int)round(clock*tolFact);
+#ifdef DEBUGDETECT
+		//debug
+		Serial.print("PD sync: ");
+		Serial.print(*first); Serial.print(", ");Serial.print(*last);
+		Serial.print(", TOL: ");Serial.print(tol);
+		Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
+#endif
+	}
+*/
+}
 void patternDetector::doDetect() {
 /*
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
@@ -386,14 +386,6 @@ int patternDetector::find() {
 	}
 	return findex;
 */
-}
-
-bool patternDetector::inTol(int value, int set){
-	return inTol(value, set, tol);
-}
-
-bool patternDetector::inTol(int value, int set, int tolerance){
-	return (abs(value-set)<=tolerance);
 }
 /*
 void patternDetector::swap(int* a, int* b){
