@@ -62,7 +62,7 @@ void patternBasic::reset()
 	state = searching;
 	clock = 0;
 	patternStore->reset();
-    //tol=0;
+    tol=0;
 }
 
 bool patternBasic::detect(int* pulse){
@@ -82,7 +82,9 @@ int8_t patternBasic::findpatt(int *seq) {
         // Iterate over sequence in pattern (2 dimension of array)
         for (x=1; x<=seq[0]; x++)
         {
+            //if (!(seq[x] ^ pattern[idx][x-1]) >= 0)  break;  // Not same sign, we can skip
             if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+            //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
             {
                 x=0;
                 break;
@@ -160,8 +162,8 @@ void patternDetector::reset() {
 	for (uint8_t i=0; i<maxNumPattern;++i)
 		histo[0]=pattern[i][0]=0;
 	success = false;
-	tol = 200; //
-	tolFact = 0.4;
+	tol = 150; //
+	tolFact = 0.3;
 
 	//Serial.println("reset");
 }
@@ -181,23 +183,44 @@ bool patternDetector::detect(int* pulse){
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
     // Zum anderen ist ein Muster eine Momentaufnahme und es wird kein durchschnittswert gebildet. Das ist zu überdenken
-    for (uint8_t i=0;i<maxNumPattern;i++)
+    for (uint8_t i=0;i<maxNumPattern;++i)
     {
-        for (uint8_t p=0;p<maxNumPattern;p++)
+        for (uint8_t p=0;p<maxNumPattern;++p)
         {
-           	if ((0<pattern[i][0]) & (pattern[i][0]<3276) & (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+           	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
+           	if ((0<pattern[i][0] && pattern[i][0]<3276) && (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+                // Prüfe ob Sync und Clock valide sein können
+                if (histo[p] > 6) continue;    // Maximal 5 Sync Pulse
+                if (histo[i] < 10) continue;   // Mindestens 10 Clock Pulse
+
+				uint8_t c = 0;
+				while (c < messageLen && (message[c] != i || message[c+1] != p )) {
+					++c;
+				}
+
+
+
+				if (c==messageLen) continue;
+
                 clock = pattern[i][0];
                 sync = pattern[p][0];;
                 state = detecting;
-                tol = (int)round(clock*tolFact);
-                #ifdef DEBUGDETECT
+                //tol = (int)round(clock*tolFact);
+
+				// Delete Messagebits bevore detected Sync
+				messageLen-=c;
+				memmove(message,message+c,sizeof(*message)*(messageLen));
+
+				#if DEBUGDETECT > 1
                 //debug
+                Serial.println();
                 Serial.print("PD sync: ");
                 Serial.print(pattern[i][0]); Serial.print(", ");Serial.print(pattern[p][0]);
                 Serial.print(", TOL: ");Serial.print(tol);
                 Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
                 #endif
-                break;
+                return true;
+                //break;
            	}
         }
     }
@@ -222,15 +245,10 @@ void patternDetector::doDetectwoSync() {
 		bitcnt = 0;
 		static uint8_t pattern_pos;
 
-		if (pattern_pos > patternLen)
-		{
-			patternLen=pattern_pos;
-		}
-
-        if (messageLen ==0)  pattern_pos=0;
+		if (pattern_pos > patternLen) patternLen=pattern_pos;
+		if (messageLen ==0)  pattern_pos=patternLen=0;
 
 	    int seq[2] = {1,0};
-	    //seq[1]=(abs(*last)+abs(*first));
 	    seq[1]=*first;
 		int8_t fidx = findpatt(seq);
 
@@ -265,20 +283,11 @@ void patternDetector::doDetectwoSync() {
 					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
 					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 					memmove(message,message+i,sizeof(*message)*(messageLen));
-					/*
-					for (uint8_t p=i;p<messageLen;p++ )
-					{
-						message[p-i] = message[p];
-						//message[p+1]=0; // Reset des alten Eintrages
-					}
-					message[messageLen]=0;
-                    messageLen++;
-                    */
                     break;
                 }
 			}
 
-			pattern[pattern_pos][0] = seq[1];						//Store average from two pulses as pattern
+			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
             #ifdef DEBUGDETECT
             Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
@@ -504,8 +513,10 @@ bool patternDetector::isPatternInMsg(int *key)
 //-------------------------- Decoder -------------------------------
 
 patternDecoder::patternDecoder(): patternDetector() {
+/*
 	tol = 200;
 	tolFact = 0.5;
+*/
 }
 
 bool patternDecoder::decode(int* pulse) {
