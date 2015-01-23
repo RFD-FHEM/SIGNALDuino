@@ -39,19 +39,16 @@
 #include "Arduino.h"
 #include <bitstore.h>
 #include <filtering.h>
-#define maxNumPattern 4
-#define maxMsgSize 30
 
-//#define minMessageLen 40 // 40 Pulse
+const uint8_t maxNumPattern=6;
+const uint8_t maxMsgSize=30;
 const uint8_t minMessageLen=40;
-#define syncMinFact 9
-
-#define prefixLen 3
+const uint8_t syncMinFact=9;
+const uint8_t prefixLen=3;
 
 #define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
-
 
 #define PATTERNSIZE 2
 
@@ -109,6 +106,7 @@ class patternDetector : protected patternBasic {
 		void doDetect();
 		void doDetectwoSync();
 		void reset();
+		bool getSync();
 		virtual void processMessage();
 
 

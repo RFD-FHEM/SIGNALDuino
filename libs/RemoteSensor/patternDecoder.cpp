@@ -154,8 +154,13 @@ void patternDetector::reset() {
 	bitcnt = 0;
 	state = searching;
 	clock = 0;
-	histo[0]=histo[1]=histo[2]=histo[3]=0;
-	pattern[0][0]=pattern[1][0]=pattern[2][0]=pattern[3][0]=0;
+	for (uint8_t i=0; i<maxNumPattern;++i)
+		histo[0]=pattern[i][0]=0;
+
+	success = false;
+	tol = 200; //
+	tolFact = 0.4;
+
 	//Serial.println("reset");
 }
 
@@ -192,6 +197,35 @@ void patternDetector::doSearch() {
 #endif
 	}
 }
+
+bool patternDetector::getSync(){
+    // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
+    // Zum anderen ist ein Muster eine Momentaufnahme und es wird kein durchschnittswert gebildet. Das ist zu überdenken
+    for (uint8_t i=0;i<maxNumPattern;i++)
+    {
+        for (uint8_t p=0;p<maxNumPattern;p++)
+        {
+           	if ((0<pattern[i][0]) & (pattern[i][0]<3276) & (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+                clock = pattern[i][0];
+                sync = pattern[p][0];;
+                state = detecting;
+                tol = (int)round(clock*tolFact);
+                #ifdef DEBUGDETECT
+                //debug
+                Serial.print("PD sync: ");
+                Serial.print(pattern[i][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+                Serial.print(", TOL: ");Serial.print(tol);
+                Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
+                #endif
+                break;
+           	}
+        }
+    }
+
+
+}
+
+
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
@@ -206,8 +240,13 @@ void patternDetector::doDetectwoSync() {
 		}
 */
 		bitcnt = 0;
-		patternLen=4;
 		static uint8_t pattern_pos;
+
+		if (pattern_pos > patternLen)
+		{
+			patternLen=pattern_pos;
+		}
+
         if (messageLen ==0)  pattern_pos=0;
 
 	    int seq[2] = {1,0};
@@ -226,6 +265,7 @@ void patternDetector::doDetectwoSync() {
 		if (0<=fidx){
 			//gefunden
 			message[messageLen]=fidx;
+			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
 			messageLen++;
 		} else {
 			if (messageLen>=minMessageLen){
@@ -237,6 +277,7 @@ void patternDetector::doDetectwoSync() {
 
 			}
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
+			// Array wird sozusagen nach links geschoben
 			for (int16_t i=messageLen-1;(i>=0) && messageLen>0 ;--i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
@@ -250,10 +291,9 @@ void patternDetector::doDetectwoSync() {
 						message[p-i] = message[p];
 						//message[p+1]=0; // Reset des alten Eintrages
 					}
-					*/
-					//message[messageLen]=0;
-
-                    //messageLen++;
+					message[messageLen]=0;
+                    messageLen++;
+                    */
                     break;
                 }
 			}
@@ -267,10 +307,12 @@ void patternDetector::doDetectwoSync() {
 			pattern_pos++;
 			messageLen++;
 			//printOut();
-			if (pattern_pos==4) pattern_pos=0;  // Ab 3 gehts wieder bei 0 los und wir überschreiben alte pattern
+			if (pattern_pos==maxNumPattern) pattern_pos=0;  // Ab 3 gehts wieder bei 0 los und wir überschreiben alte pattern
+			/*
 			DEBUG_BEGIN(2)
 			printOut();
 			DEBUG_END
+			*/
 		}
 		#ifdef DEBUGDETECT
 		Serial.println();
@@ -281,89 +323,7 @@ void patternDetector::doDetectwoSync() {
 
 
 
-/*
-		static RingBuffer ringPattern(maxNumPattern, 0); // FiFo Puffer für Muster
 
-		static uint8_t rb_position=1; 					// Ringbuffer positioncounter
-		int *checkVal;
-		int pulsPatt = (abs(*last)+abs(*first))/2;		//Store pattern from two pulses and save the average
-		bool pfound=false;
-		ringPattern._readFree =  ringPattern.head;		//Set Position to first one in buffer
-		static uint8_t matchCounter[maxNumPattern];
-
-		for (uint8_t i=1;i<=maxNumPattern;++i)
-		{
-				checkVal = ringPattern.getNextValue();				// Get one Value from the Buffer to check against
-				if (inTol(pulsPatt,*checkVal,100))					//Check if we already have a similar pattern
-				{
-					pfound=true;
-					matchCounter[i]++;					  // Count Matches of every found pattern
-					message[messageLen]=i;				  // Save Message
-					messageLen++;
-					break;
-				}
-		}
-		if (!pfound)
-		{
-			if (rb_position > maxNumPattern)
-			{
-				rb_position=1; // Hier muss noch was getan werden, da wir ja weiterhin vorhandene Werte überschreiben
-				matchCounter[rb_position]=1;
-
-				int *msg_ptr = message;
-				while (msg_prt!=message+messageLen) {
-				if (!(*msg_ptr == val)) {
-				  *result = *first;
-				  ++result;
-				}
-				++first;
-				}
-				return result;
-
-				// Vorhandener Wert wird überschrieben
-			}
-			ringPattern.addValue(&pulsPatt);  // Add new Pattern if not already found in our patternstore
-			message[messageLen]=rb_position;
-			messageLen++;
-			rb_position++;
-		}
-*/
-/*
-
-		if (validSequence()) {  				//valides Muster prüfen: ([+n,-n] oder [-n, +n])
-			//wenn nicht vorhanden, aufnehmen
-			int fidx = find();
-#ifdef DEBUG2
-		 	Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
-			Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
-#endif
-			if (0<=fidx){
-				//gefunden
-				*(message+messageLen) = fidx;
-				messageLen++;
-			} else {
-				if (patternLen <maxNumPattern){
-					//neues hinzufügen
-					//Serial.println("hinzufügen");
-					*(pattern+2*patternLen)   = *first;
-					*(pattern+2*patternLen+1) = *last;
-					*(message+messageLen) = patternLen; //Index des letzten Elements
-					patternLen++;
-					messageLen++;
-				} else {
-					processMessage();
-					reset();
-				}
-			}
-#ifdef DEBUGDETECT
-			printOut();//debug
-#endif
-		} else { //kein valides Muster (mehr)
-		 	//Serial.print("TrashPulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last); Serial.print(", MSGLen: "); Serial.println(messageLen);
-			processMessage();
-	        reset();
-		}
-*/
 
 }
 
@@ -508,6 +468,7 @@ void patternDetector::processMessage()
         calcHisto();
         if (messageLen >= minMessageLen)
         {
+            getSync();
             //mindestlänge der Message prüfen
             //Serial.println(F("Message detected:"));
             printOut();
