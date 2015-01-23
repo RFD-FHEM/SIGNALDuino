@@ -154,11 +154,12 @@ patternDetector::patternDetector():patternBasic() {
 }
 
 void patternDetector::reset() {
+	patternBasic::reset();
 	messageLen = 0;
 	patternLen = 0;
 	bitcnt = 0;
 	state = searching;
-	clock = 0;
+	clock = sync=0;
 	for (uint8_t i=0; i<maxNumPattern;++i)
 		histo[0]=pattern[i][0]=0;
 	success = false;
@@ -183,6 +184,8 @@ bool patternDetector::detect(int* pulse){
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
     // Zum anderen ist ein Muster eine Momentaufnahme und es wird kein durchschnittswert gebildet. Das ist zu überdenken
+	Serial.println("  --  Searching Sync  -- ");
+
     for (uint8_t i=0;i<maxNumPattern;++i)
     {
         for (uint8_t p=0;p<maxNumPattern;++p)
@@ -235,15 +238,15 @@ void patternDetector::doDetectwoSync() {
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-/*
+		static uint8_t pattern_pos;
+
 		if (!validSequence(first,last)) {
-//			reset();
-//			pattern_pos=0;
+			reset();
+			pattern_pos=0;
 			return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
 		}
-*/
+
 		bitcnt = 0;
-		static uint8_t pattern_pos;
 
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
 		if (messageLen ==0)  pattern_pos=patternLen=0;
@@ -252,7 +255,7 @@ void patternDetector::doDetectwoSync() {
 	    seq[1]=*first;
 		int8_t fidx = findpatt(seq);
 
-		#ifdef DEBUGDETECT
+		#if DEBUGDETECT>3
 		Serial.print(F("Pulse: "));Serial.print(*first); Serial.print(F(", "));Serial.print(*last);
 		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
 		Serial.print(F(", pSeq: ")); Serial.print(seq[1]);
@@ -289,7 +292,7 @@ void patternDetector::doDetectwoSync() {
 
 			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
-            #ifdef DEBUGDETECT
+            #if DEBUGDETECT>3
             Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
             #endif // DEBUGDETECT
 			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
@@ -303,7 +306,7 @@ void patternDetector::doDetectwoSync() {
 			DEBUG_END
 			*/
 		}
-		#ifdef DEBUGDETECT
+		#if DEBUGDETECT>3
 		Serial.println();
 		#endif // DEBUGDETECT
 	} else { //zweiten Wert für Muster sammeln
@@ -427,6 +430,11 @@ void patternDetector::sortPattern(){
 /* Berechnet Werte für ein Histogramm aus den Daten der Variable message */
 void patternDetector::calcHisto()
 {
+    for (uint8_t i=0;i<maxNumPattern;++i)
+    {
+        histo[i]=0;
+    }
+
     //Serial.print(F("Calc histo"));
     for (uint8_t i=0;i<messageLen;++i)
     {
