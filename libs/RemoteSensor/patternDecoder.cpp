@@ -170,12 +170,9 @@ void patternDetector::reset() {
 }
 
 bool patternDetector::detect(int* pulse){
-	patternBasic::detect(pulse);   // Call function from base class
-	doDetectwoSync();			   // Search for signal
-	/*
-	if (state == detecting) doDetect();
-	if (state == searching) doSearch();
-	*/
+	patternBasic::detect(pulse);   // Call function from base class, to do some basic stuff
+    doDetectwoSync();			   // Search for signal
+
 	return success;
 }
 
@@ -227,6 +224,7 @@ bool patternDetector::getSync(){
            	}
         }
     }
+    return false;
 
 
 }
@@ -239,17 +237,14 @@ void patternDetector::doDetectwoSync() {
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
 		static uint8_t pattern_pos;
-
-		if (!validSequence(first,last)) {
-			reset();
-			pattern_pos=0;
-			return;  		//valides Muster prüfen: ([+n,-n] oder [-n, +n])
-		}
+        bool valid;
 
 		bitcnt = 0;
 
+        valid=validSequence(first,last);
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
-		if (messageLen ==0)  pattern_pos=patternLen=0;
+		if (messageLen ==0) valid=pattern_pos=patternLen=0;
+
 
 	    int seq[2] = {1,0};
 	    seq[1]=*first;
@@ -258,9 +253,11 @@ void patternDetector::doDetectwoSync() {
 		#if DEBUGDETECT>3
 		Serial.print(F("Pulse: "));Serial.print(*first); Serial.print(F(", "));Serial.print(*last);
 		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
-		Serial.print(F(", pSeq: ")); Serial.print(seq[1]);
+		Serial.print(F(", pSeq: ")); Serial.print(seq[1]); Serial.print(F(", Vld: ")); Serial.print(valid);
 		Serial.print(F(", mLen: ")); Serial.print(messageLen);
 		#endif
+
+
 
 
 		if (0<=fidx){
@@ -268,15 +265,27 @@ void patternDetector::doDetectwoSync() {
 			message[messageLen]=fidx;
 			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
 			messageLen++;
-		} else {
+		}   else { valid=false; }
+
+
+        if (!valid && messageLen>=minMessageLen){
+          processMessage();
+          success=true;
+          reset();
+          pattern_pos=0;
+          return;
+        }
+
+		/*else {
 			if (messageLen>=minMessageLen){
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
 				//printOut();
-				processMessage();
-				reset();pattern_pos=0;
-			} else {
-
+				//processMessage();
+				//reset();pattern_pos=0;
 			}
+        */
+        if (!valid)
+        {
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
 			// Array wird sozusagen nach links geschoben
 			for (int16_t i=messageLen-1;(i>=0) && messageLen>0 ;--i)
