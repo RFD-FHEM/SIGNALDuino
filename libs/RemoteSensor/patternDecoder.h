@@ -46,7 +46,7 @@ const uint8_t minMessageLen=40;
 const uint8_t syncMinFact=9;
 const uint8_t prefixLen=3;
 
-#define DEBUGDETECT 4
+#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
 

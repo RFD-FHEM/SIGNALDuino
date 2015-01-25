@@ -238,6 +238,7 @@ void patternDetector::doDetectwoSync() {
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
 		static uint8_t pattern_pos;
         bool valid;
+        bool add_new_pattern=true;
 
 		bitcnt = 0;
 
@@ -263,12 +264,23 @@ void patternDetector::doDetectwoSync() {
 		if (0<=fidx){
 			//gefunden
 			message[messageLen]=fidx;
+			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
 			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
 			messageLen++;
-		}   else { valid=false; }
+			add_new_pattern=false;
+        }   else {
+            // Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
+            calcHisto();
+            if (histo[pattern_pos] > 1)
+            {
+                valid=false;
+                add_new_pattern=false;
+            }
+        }
 
 
         if (!valid && messageLen>=minMessageLen){
+            // Todo: Der Puls müsste gesichert werden, da wir ihn noch gebrauchen könnten. Hmm
           processMessage();
           success=true;
           reset();
@@ -284,7 +296,7 @@ void patternDetector::doDetectwoSync() {
 				//reset();pattern_pos=0;
 			}
         */
-        if (!valid)
+        if (add_new_pattern)
         {
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
 			// Array wird sozusagen nach links geschoben
