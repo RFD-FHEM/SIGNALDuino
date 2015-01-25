@@ -181,7 +181,9 @@ bool patternDetector::detect(int* pulse){
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
     // Zum anderen ist ein Muster eine Momentaufnahme und es wird kein durchschnittswert gebildet. Das ist zu überdenken
+	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
+	#endif
 
     for (uint8_t i=0;i<maxNumPattern;++i)
     {
@@ -471,7 +473,7 @@ void patternDetector::printOut() {
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
-	Serial.println();Serial.print("MSG: ");
+	Serial.println();Serial.print("Signal: ");
 	for (int idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
@@ -561,11 +563,11 @@ void patternDecoder::processMessage()
 		int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
         Serial.print("IT TX: ");
         Serial.println(isPatternInMsg(ittxpattern));
+        bool valid = checkEV1527type(500, 18, 4, 8, 36);
 		#endif
 
 
-		return;
-		if (patternLen==2){
+		if (clock){
 			sortPattern();
 			#ifdef DEBUGDECODE
 				printOut();
@@ -602,10 +604,11 @@ void patternDecoder::processMessage()
 
 bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, int highFact, byte Length){
 	bool valid = true;
-	valid &= messageLen==Length;
+	/*valid &= messageLen==Length;
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
+	*/
 	valid &= inTol(clock, clockTst);//clock in tolerance
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
@@ -746,10 +749,11 @@ IT old with selector:
 					clock varies between controls from 340 to 400 => using measured clock leads to lower (required) tolerances
 */
 	bool valid = true;
-	valid &= messageLen==24;
+	/*valid &= messageLen==24;
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
+	*/
 	/*
 	int clockTst = 360;
 	valid &= inTol(clock, clockTst);
