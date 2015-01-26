@@ -200,8 +200,6 @@ bool patternDetector::getSync(){
 					++c;
 				}
 
-
-
 				if (c==messageLen) continue;
 
                 clock = pattern[i][0];
@@ -340,114 +338,6 @@ void patternDetector::doDetectwoSync() {
 
 
 
-}
-
-void patternDetector::doSearch() {
-	//Serial.println("doSearch");
-	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-/*
-	if ((0<*first) & (*first<3276) & (syncMinFact* (*first) <= -1* (*last))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
-		clock = *first;
-		sync = *last;
-		//clock = ~(int) *last/(sync/clock);
-		state = detecting;
-		bitcnt=0;
-		tol = (int)round(clock*tolFact);
-#ifdef DEBUGDETECT
-		//debug
-		Serial.print("PD sync: ");
-		Serial.print(*first); Serial.print(", ");Serial.print(*last);
-		Serial.print(", TOL: ");Serial.print(tol);
-		Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
-#endif
-	}
-*/
-}
-void patternDetector::doDetect() {
-/*
-	//Serial.print("bitcnt:");Serial.println(bitcnt);
-	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
-		//Serial.println("doDetect");
-		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-		bitcnt = 0;
-		//valides Muster prüfen: ([1,-n] oder [n, -1])
-		if (((inTol(*first, clock) & (syncMinFact*clock> - *last) & (*last<0)) | ((0<*first) & (*first<syncMinFact*clock) & (inTol(*last, -clock))))){
-			//wenn nicht vorhanden, aufnehmen
-			int fidx = find();
-#ifdef DEBUG2
-		 	Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
-			Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
-#endif
-			if (0<=fidx){
-				//gefunden
-				*(message+messageLen) = fidx;
-				messageLen++;
-			} else {
-				if (patternLen <maxNumPattern){
-					//neues hinzufügen
-					//Serial.println("hinzufügen");
-					*(pattern+2*patternLen)   = *first;
-					*(pattern+2*patternLen+1) = *last;
-					patternLen++;
-					*(message+messageLen) = patternLen-1; //Index des letzten Elements
-					messageLen++;
-				} else {
-					processMessage();
-					reset();
-				}
-			}
-#ifdef DEBUGDETECT
-			printOut();//debug
-#endif
-		} else { //kein valides Muster (mehr)
-		 	//Serial.print("TrashPulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last); Serial.print(", MSGLen: "); Serial.println(messageLen);
-			processMessage();
-	        reset();
-		}
-	} else { //zweiten Wert für Muster sammeln
-            bitcnt++;
-	}
-	*/
-}
-
-int patternDetector::find() {
-	//Todo: Use find from patternBasic :  int tmp[2]; tmp[0] = *first; tmp[1] = *last; return find(tmp);
-/*
-	int findex = -1;
-	for (int idx=0; idx<patternLen; ++idx) {
-		if ((abs(*first-(*(pattern+2*idx)))<tol) & (abs(*last-(*(pattern+2*idx+1)))<tol)){
-			findex = idx;
-		}
-	}
-	return findex;
-*/
-}
-/*
-void patternDetector::swap(int* a, int* b){
-	int buffer;
-	buffer = *b;
-	*b = *a;
-	*a = buffer;
-}
-*/
-void patternDetector::sortPattern(){
-	// sort the pattern, such that the second value of the first pattern is the greatest (values are considered negative => the absolute value of the first is then the smallest)
-	// Example for the result: [1, -2]*c, [1, -6]*c, with the clock c
-	// other example: [3, -1]*c, [1, -3]*c, with the clock c
-	// for the moment only patterns of length 2 are considered
-/*
-	if (*(pattern+1)<*(pattern+3)) {
-		swap(pattern, pattern+2);
-		swap(pattern+1, pattern+3);
-		// Swap the Message
-		for (byte idx = 0; idx<messageLen; ++idx){
-			if (message[idx] == 0)
-				message[idx] = 1;
-			else //then it must be 1
-				message[idx] = 0;
-		}
-	}
-	*/
 }
 
 /* Berechnet Werte für ein Histogramm aus den Daten der Variable message */

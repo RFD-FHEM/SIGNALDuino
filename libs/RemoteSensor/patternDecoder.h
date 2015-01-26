@@ -103,8 +103,6 @@ class patternDetector : protected patternBasic {
 		//enum status {searching, detecting};
 		patternDetector();
 		bool detect(int* pulse);
-		void doSearch();
-		void doDetect();
 		void doDetectwoSync();
 		void reset();
 		bool getSync();
@@ -114,7 +112,6 @@ class patternDetector : protected patternBasic {
 		//void swap(int* a, int* b);
 		void sortPattern();
 
-		int find();
 		void printOut();
 		void calcHisto();
         bool isPatternInMsg(int *key);
