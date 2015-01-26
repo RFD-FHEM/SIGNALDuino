@@ -148,8 +148,6 @@ patternDetector::patternDetector():patternBasic() {
 	buffer[0] = 0; buffer[1] = 0;
 	first = buffer;
 	last = first+1;
-
-
 	reset();
 }
 
@@ -179,8 +177,7 @@ bool patternDetector::detect(int* pulse){
 
 
 bool patternDetector::getSync(){
-    // Durchsuchen aller Musterpulse und bilden des Sync Faktors. Dazu müssten zwei arrays einmal aufsteigend, einmal absteigend miteinander verglichen werden.
-    // Zum anderen ist ein Muster eine Momentaufnahme und es wird kein durchschnittswert gebildet. Das ist zu überdenken
+    // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
@@ -340,7 +337,7 @@ void patternDetector::doDetectwoSync() {
 
 }
 
-/* Berechnet Werte für ein Histogramm aus den Daten der Variable message */
+/* Berechnet Werte für ein Histogramm aus den Daten des arrays message */
 void patternDetector::calcHisto()
 {
     for (uint8_t i=0;i<maxNumPattern;++i)
@@ -357,18 +354,18 @@ void patternDetector::calcHisto()
 
 void patternDetector::printOut() {
     Serial.println();
-	Serial.print("Sync: ");Serial.print(sync);
-	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
-	Serial.print(", Clock: "); Serial.print(clock);
-	Serial.print(", Tol: "); Serial.print(tol);
-	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
-	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
+	Serial.print(F("Sync: "));Serial.print(sync);
+	Serial.print(F(" -> SyncFact: "));Serial.print(sync/(float)clock);
+	Serial.print(F(", Clock: ")); Serial.print(clock);
+	Serial.print(F(", Tol: ")); Serial.print(tol);
+	Serial.print(F(", PattLen: ")); Serial.print(patternLen); Serial.print(" ");
+	Serial.print(F(", Pulse: ")); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.println();Serial.print("Signal: ");
 	for (int idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
-	Serial.print("Pattern: ");
+	Serial.print(F("Pattern: "));
 	for (int idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
         Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
@@ -391,23 +388,13 @@ void patternDetector::processMessage()
         if (messageLen >= minMessageLen)
         {
             getSync();
-            //mindestlänge der Message prüfen
-            //Serial.println(F("Message detected:"));
             printOut();
-
-
-/*            if (patternLen=2)
-            {
-
-                sortPattern();
-                printOut();
-            }
-*/
         }
 }
 
 /* Searches a pattern in the detected message
 key[0] = Anzahl der Elemente in key
+key[1--n] = Zu suchendes Element
 */
 
 bool patternDetector::isPatternInMsg(int *key)
@@ -428,6 +415,8 @@ bool patternDetector::isPatternInMsg(int *key)
     }
     return valid;
 }
+
+
 
 
 
@@ -458,7 +447,7 @@ void patternDecoder::processMessage()
 
 
 		if (clock){
-			sortPattern();
+			//sortPattern();
 			#ifdef DEBUGDECODE
 				printOut();
 			#endif
