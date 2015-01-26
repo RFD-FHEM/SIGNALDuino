@@ -72,7 +72,7 @@ bool patternBasic::detect(int* pulse){
 	*last = *pulse;
 }
 
-
+/* Returns the index of the searched pattern or -1 if not found */
 int8_t patternBasic::findpatt(int *seq) {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
@@ -361,12 +361,12 @@ void patternDetector::printOut() {
 	Serial.print(F(", PattLen: ")); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(F(", Pulse: ")); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.println();Serial.print("Signal: ");
-	for (int idx=0; idx<messageLen; ++idx){
+	for (uint8_t idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
 	Serial.print(F("Pattern: "));
-	for (int idx=0; idx<patternLen; ++idx){
+	for (uint8_t idx=0; idx<=patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
         Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
         for (uint8_t x=0; x<PATTERNSIZE;++x)
@@ -400,21 +400,50 @@ key[1--n] = Zu suchendes Element
 bool patternDetector::isPatternInMsg(int *key)
 {
     bool valid = true;
-    bool found = false;
+    //bool found = false;
 
     uint8_t i,p=0;
     for(i=1; i<key[0];++i)
     {
-        found=false;
+        //found=false;
+        if (0<=getPatternIndex(key[i]))
+			valid &= true;
+		else
+			valid &= false;
+        /*
         for(p=0; p<maxNumPattern;++p)
         {
+
             if (found=inTol(key[i],pattern[p][0]))  break;
         }
         valid &=found;
-
+		*/
     }
     return valid;
 }
+
+/* Searches a pattern in the detected message and returns the index where the pattern is found. returns -1 if it's not found */
+int8_t patternDetector::getPatternIndex(int key)
+{
+	for(uint8_t p=0; p<maxNumPattern;++p)
+    {
+		if (inTol(key,pattern[p][0])) return p;
+	} return -1;
+}
+
+
+/*
+Sync: -9136 -> SyncFact: -18.95, Clock: 482, Tol: 150, PattLen: 4 , Pulse: -32001, -22344
+Signal: 0301020102010102010101010202010101010101010201010101020101010102020101020103010201020101020101010102020101010101010102010101010201010101020201010201030.  [151]
+Pattern:  P0: 103*[482] P1: 72*[-1939] P2: 27*[-3897] P3: 3*[-9136] P4: 0*[]
+03 = Sync
+
+01 = short = 0
+02 = long  = 1
+
+
+
+ */
 
 
 
@@ -435,14 +464,14 @@ bool patternDecoder::decode(int* pulse) {
 
 void patternDecoder::processMessage()
 {
-        if (messageLen >= minMessageLen){ //mindestlänge der Message prüfen
+        if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
 		//Serial.println("Message decoded:");
         #ifdef DEBUGDETECT
 		patternDetector::processMessage();//printOut();
-		int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
-        Serial.print("IT TX: ");
-        Serial.println(isPatternInMsg(ittxpattern));
-        bool valid = checkEV1527type(500, 18, 4, 8, 36);
+		//int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
+        //Serial.print("IT TX: ");
+        //Serial.println(isPatternInMsg(ittxpattern));
+        //bool valid = checkEV1527type(500, 18, 4, 8, 36);
 		#endif
 
 
@@ -478,7 +507,7 @@ void patternDecoder::processMessage()
 	    }
 		#endif
 		*/
-	}
+
 }
 
 bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, int highFact, byte Length){
@@ -496,14 +525,18 @@ bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, in
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-//	valid &= inTol(*(pattern+0), clockTst) & inTol(*(pattern+2), clockTst); //[1, ][1, ] patternclocks in tolerance
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
+
+	int check_vals[3] = {2,0,0};
+	check_vals[1]= clockTst;
+	check_vals[2]= -lowFact* clockTst;
+
+	valid &= isPatternInMsg(check_vals);
 //	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
+	check_vals[2]=  -highFact* clockTst;
+	valid &= isPatternInMsg(check_vals);
 //	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
 	#ifdef DEBUGDECODE
 		Serial.println(valid);
@@ -532,6 +565,7 @@ FHEM Schnittstelle:
     DD2 - HighByte
 */
 	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
+
 	bool valid = checkEV1527type(500, 18, 1, 2, 32); //14 kommt hier nicht durch =>12
 	twoStateMessageBytes();
 	if (valid) {//ok, it's AS
@@ -554,9 +588,27 @@ Logilink NC_WS:
 			checksum
 */
 	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-	bool valid = checkEV1527type(500, 18, 4, 8, 36);
-	twoStateMessageBytes();
-	valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+	const uint8_t lowfact= 4;
+	const uint8_t highfact= 8;
+	const uint8_t sync= 18;
+	const int clock= 500;
+	bool valid = checkEV1527type(clock, sync, lowfact, highfact, 36);
+	if (valid)
+	{
+		// Get Index for the message Pattern
+		uint8_t sp_idx=getPatternIndex(-lowfact*clock);  // Short Pulse index
+		uint8_t lp_idx=getPatternIndex(-highfact*clock); // Long Pulse index
+		uint8_t ck_idx=getPatternIndex(clock); 			 // clock Pulse index
+		#if DEBUGDECODE > 1
+		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(ck_idx);
+		Serial.print(F(", SP: ")); Serial.print(sp_idx);
+		Serial.print(F(", LP: ")); Serial.println(lp_idx);
+		#endif // DEBUGDECODE
+
+
+		twoStateMessageBytes(ck_idx,sp_idx,lp_idx);
+		valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+	}
 	if (valid) {//ok, it's Logilink
 		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
 		Serial.print("W03");
@@ -714,22 +766,50 @@ void patternDecoder::printNewITMessage(){
 		Serial.print(msgChar);
 	}
 }
+/*
+Sync: -9190 -> SyncFact: -16.77, Clock: 548, Tol: 150, PattLen: 5 , Pulse: 704, -3716
+Signal: 323431343134343134343434313134343434343434313434343431343434343131343431343234.  [78]
+Pattern:  P0: 1*[-720] P1: 19*[-3885] P2: 2*[-9190] P3: 74*[548] P4: 53*[-1914] P5: 1*[-1312]
+Logi: 1111
+Index: CP: 3, SP: 4, LP: 1ITold: 000
+ITauto: 0000
+AS: 1111
+AS0209000c000402010900
+TCM97001: 1111
+W080209000c000402010900
 
-void patternDecoder::twoStateMessageBytes(){
+
+*/
+void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_idx, uint8_t longPuls_idx){
 	byte byteCode = 0;
 	byte byteCnt = 0;
-	for(byte idx=0; idx<messageLen; ++idx) {
+
+	// First and second message Index is sync
+	for(uint8_t idx=2; idx<messageLen; ++idx) {
 		byteCode <<= 1;
-		if (message[idx]==1){
-			byteCode |=1;
+		if (message[idx]!=clock_idx) break;			// no Clock, abort
+
+		idx++;
+		if (message[idx]==longPuls_idx){
+			byteCode |=1;						// Highpuls = 1
+			#if DEBUGDECODE >3
+			Serial.print(1);
+			#endif
+		} else if (message[idx]!=shortpulse_idx){
+			break;								// No low Puls, abort
+		} else {
+			#if DEBUGDECODE >3
+			Serial.print(0);
+			#endif
 		}
-		if (((idx+1) % 8) ==0){ //byte full
+		if (((idx-1) % 16) ==0){ //byte full
 			//Serial.println(byteCode,HEX);
 			byteMessage[byteCnt]=byteCode;
 			byteCnt++;
 			byteCode = 0;
  		}
 	}
+	Serial.println();
 	if ((messageLen % 8) != 0) {//non full byte
 			//Serial.println(byteCode,HEX);
 			byteMessage[byteCnt]=byteCode;

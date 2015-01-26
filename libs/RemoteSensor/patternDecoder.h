@@ -107,7 +107,7 @@ class patternDetector : protected patternBasic {
 		void reset();
 		bool getSync();
 		virtual void processMessage();
-
+		int8_t getPatternIndex(int key);
 
 		//void swap(int* a, int* b);
 		void sortPattern();
@@ -145,7 +145,8 @@ class patternDecoder : public patternDetector{
 	public:
 		patternDecoder();
 
-		void twoStateMessageBytes();
+		void twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_idx, uint8_t longPuls_idx);
+		void twoStateMessageBytes() {};
 		void triStateMessageBytes();
 
 		void printMessageHexStr();
