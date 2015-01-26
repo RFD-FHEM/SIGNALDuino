@@ -35,7 +35,7 @@ First, sorry. The software is not perfect.
 ### Contributing
 
 1. Open one ore more issue for your development.
-2. Ask to be added to our repository or just fort it.
+2. Ask to be added to our repository or just fork it.
 3. Make your modifications and test them.
 4. Create a branch (git checkout -b my_branch)
 5. Commit your changes (git commit -am "<some description>")
