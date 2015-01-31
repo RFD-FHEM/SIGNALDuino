@@ -783,39 +783,47 @@ W080209000c000402010900
 void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_idx, uint8_t longPuls_idx){
 	byte byteCode = 0;
 	byte byteCnt = 0;
-
+	uint8_t idx=0;
 	// First and second message Index is sync
-	for(uint8_t idx=2; idx<messageLen; ++idx) {
+	for(idx=2; idx<messageLen; ++idx) {
 		byteCode <<= 1;
 		if (message[idx]!=clock_idx) break;			// no Clock, abort
 
 		idx++;
 		if (message[idx]==longPuls_idx){
 			byteCode |=1;						// Highpuls = 1
-			#if DEBUGDECODE >3
+			#if DEBUGDECODE >1
 			Serial.print(1);
 			#endif
 		} else if (message[idx]!=shortpulse_idx){
 			break;								// No low Puls, abort
 		} else {
-			#if DEBUGDECODE >3
+			#if DEBUGDECODE >1
 			Serial.print(0);
 			#endif
 		}
 		if (((idx-1) % 16) ==0){ //byte full
 			//Serial.println(byteCode,HEX);
+			#if DEBUGDECODE >1
+			Serial.print(" ");
+			#endif
 			byteMessage[byteCnt]=byteCode;
 			byteCnt++;
 			byteCode = 0;
  		}
 	}
-	Serial.println();
-	if ((messageLen % 8) != 0) {//non full byte
+
+	if ((idx-1 % 16) != 0) {//non full byte
 			//Serial.println(byteCode,HEX);
 			byteMessage[byteCnt]=byteCode;
 			byteMessageLen = byteCnt+1;
 	} else
 		byteMessageLen = byteCnt;
+	#if DEBUGDECODE >1
+		Serial.print(" IDX: "); Serial.print(idx);
+	#endif
+	Serial.println();
+
 }
 
 void patternDecoder::triStateMessageBytes(){
