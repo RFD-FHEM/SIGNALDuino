@@ -57,6 +57,8 @@ int freeRam();
 void IT_TX(unsigned int duration);
 void receiveProtocolIT_TX(unsigned int changeCount);
 
+volatile int fifocnt=0;
+
 //Decoder
 //SensorReceiver ASreceiver;
 patternDecoder musterDec;
@@ -91,14 +93,20 @@ void blinken() {
 }
 
 void loop() {
+  Serial.print("fcnt: ");   Serial.println(fifocnt);
+
+
   static int aktVal;
   static bool state;
   while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
     //Serial.print(aktVal); Serial.print(",");
     #ifdef TX_TST
-    IT_TX(abs(aktVal));
+    //IT_TX(abs(aktVal));
     #endif
+    --fifocnt;
+	long t1= micros();
     state = musterDec.decode(&aktVal); //Logilink, PT2262
+	Serial.print("Loop time: ");   Serial.print(micros()-t1); Serial.println("us");
     /*
     if (ManchesterDetect.detect(&aktVal))
     {
@@ -114,6 +122,9 @@ void loop() {
     */
     if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
   }
+  //long t2= micro();
+
+
 }
 
 
@@ -138,7 +149,9 @@ void handleInterrupt() {
       sDuration=sDuration*-1;
     }
     FiFo.addValue(&sDuration);
+    ++fifocnt;
   } // else => trash
+
 }
 
 void enableReceive() {

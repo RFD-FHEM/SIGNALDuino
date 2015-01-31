@@ -192,22 +192,26 @@ bool patternDetector::getSync(){
                 if (histo[p] > 6) continue;    // Maximal 5 Sync Pulse
                 if (histo[i] < 10) continue;   // Mindestens 10 Clock Pulse
 
+				// Prüfen ob der gefundene Sync auch als i messafe [i, p] vorkommt
 				uint8_t c = 0;
 				while (c < messageLen && (message[c] != i || message[c+1] != p )) {
 					++c;
 				}
 
-				if (c==messageLen) continue;
+				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
 
+				// Sync wurde gefunden, Variablen setzen
                 clock = pattern[i][0];
                 sync = pattern[p][0];;
                 state = detecting;
                 //tol = (int)round(clock*tolFact);
 
-				// Delete Messagebits bevore detected Sync
+				// Delete Messagebits bevore detected Sync. because they are trash
+				/* Löschen deaktiviert, da eventuell zu viel fehlt
 				messageLen-=c;
 				memmove(message,message+c,sizeof(*message)*(messageLen));
-
+				calcHisto();  // Da etwas von der Nachricht entfernt wird, brauchen wir eine neue Histogramm berechnung
+				*/
 				#if DEBUGDETECT > 1
                 //debug
                 Serial.println();
@@ -297,13 +301,13 @@ void patternDetector::doDetectwoSync() {
         {
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
 			// Array wird sozusagen nach links geschoben
-			for (int16_t i=messageLen-1;(i>=0) && messageLen>0 ;--i)
+			for (int16_t i=messageLen-1;(i>=0) ;--i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
 					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
 					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-					memmove(message,message+i,sizeof(*message)*(messageLen));
+					memmove(message,message+i,sizeof(*message)*(messageLen+1));
                     break;
                 }
 			}
@@ -394,7 +398,7 @@ void patternDetector::processMessage()
 
 /* Searches a pattern in the detected message
 key[0] = Anzahl der Elemente in key
-key[1--n] = Zu suchendes Element
+key[1..n] = Zu suchende Elemente
 */
 
 bool patternDetector::isPatternInMsg(int *key)
@@ -403,7 +407,7 @@ bool patternDetector::isPatternInMsg(int *key)
     //bool found = false;
 
     uint8_t i,p=0;
-    for(i=1; i<key[0];++i)
+    for(i=1; i<=key[0];++i)
     {
         //found=false;
         if (0<=getPatternIndex(key[i]))
@@ -596,9 +600,9 @@ Logilink NC_WS:
 	if (valid)
 	{
 		// Get Index for the message Pattern
-		uint8_t sp_idx=getPatternIndex(-lowfact*clock);  // Short Pulse index
-		uint8_t lp_idx=getPatternIndex(-highfact*clock); // Long Pulse index
-		uint8_t ck_idx=getPatternIndex(clock); 			 // clock Pulse index
+		int8_t sp_idx=getPatternIndex(-lowfact*clock);  // Short Pulse index
+		int8_t lp_idx=getPatternIndex(-highfact*clock); // Long Pulse index
+		int8_t ck_idx=getPatternIndex(clock); 			 // clock Pulse index
 		#if DEBUGDECODE > 1
 		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(ck_idx);
 		Serial.print(F(", SP: ")); Serial.print(sp_idx);
