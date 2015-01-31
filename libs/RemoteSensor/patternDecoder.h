@@ -48,7 +48,7 @@ const uint8_t prefixLen=3;
 
 #define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 2
+#define DEBUGDECODE 1
 
 #define PATTERNSIZE 2
 
@@ -122,7 +122,7 @@ class patternDetector : protected patternBasic {
 		//int syncFact;
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
-		byte messageLen;
+		uint8_t messageLen;
 		/*
 		int buffer[2];
 		int* first;
@@ -133,7 +133,7 @@ class patternDetector : protected patternBasic {
 		bool success;
 		float tolFact;
 		*/
-	    int histo[maxNumPattern];
+	    uint8_t histo[maxNumPattern];
 };
 
 

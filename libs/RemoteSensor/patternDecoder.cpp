@@ -182,9 +182,9 @@ bool patternDetector::getSync(){
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
 
-    for (uint8_t i=0;i<maxNumPattern;++i)
+    for (uint8_t i=0;i<patternLen;++i)
     {
-        for (uint8_t p=0;p<maxNumPattern;++p)
+        for (uint8_t p=0;p<patternLen;++p)
         {
            	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
            	if ((0<pattern[i][0] && pattern[i][0]<3276) && (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
@@ -207,11 +207,11 @@ bool patternDetector::getSync(){
                 //tol = (int)round(clock*tolFact);
 
 				// Delete Messagebits bevore detected Sync. because they are trash
-				/* Löschen deaktiviert, da eventuell zu viel fehlt
+				// Löschen deaktiviert, da eventuell zu viel fehlt
 				messageLen-=c;
 				memmove(message,message+c,sizeof(*message)*(messageLen));
 				calcHisto();  // Da etwas von der Nachricht entfernt wird, brauchen wir eine neue Histogramm berechnung
-				*/
+
 				#if DEBUGDETECT > 1
                 //debug
                 Serial.println();
@@ -234,6 +234,10 @@ bool patternDetector::getSync(){
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
+	#if DEBUGDETECT>0
+	if (messageLen > maxMsgSize*8)
+		Serial.println("Error, overflow in message Array");
+	#endif
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
@@ -281,11 +285,12 @@ void patternDetector::doDetectwoSync() {
 
 
         if (!valid && messageLen>=minMessageLen){
-            // Todo: Der Puls müsste gesichert werden, da wir ihn noch gebrauchen könnten. Hmm
+
           processMessage();
           success=true;
           reset();
           pattern_pos=0;
+          //doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
           return;
         }
 
@@ -318,10 +323,26 @@ void patternDetector::doDetectwoSync() {
             Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
             #endif // DEBUGDETECT
 			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
-			pattern_pos++;
+
 			messageLen++;
+			pattern_pos++;
+
 			//printOut();
-			if (pattern_pos==maxNumPattern) pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+			if (pattern_pos==maxNumPattern)
+			{
+				pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				patternLen=maxNumPattern;
+			}
+			/*
+			if (pattern_pos==maxNumPattern)
+			{
+				pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				patternLen=maxNumPattern;
+			} else {
+
+				patternLen++;
+			}
+			*/
 			/*
 			DEBUG_BEGIN(2)
 			printOut();
@@ -370,7 +391,7 @@ void patternDetector::printOut() {
 	}
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
 	Serial.print(F("Pattern: "));
-	for (uint8_t idx=0; idx<=patternLen; ++idx){
+	for (uint8_t idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
         Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
         for (uint8_t x=0; x<PATTERNSIZE;++x)
@@ -482,7 +503,7 @@ void patternDecoder::processMessage()
 		if (clock){
 			//sortPattern();
 			#ifdef DEBUGDECODE
-				printOut();
+				//printOut();
 			#endif
 			#ifdef DEBUGDECODE
 				Serial.print("Logi: ");
