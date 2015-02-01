@@ -198,20 +198,24 @@ bool patternDetector::getSync(){
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
-
-
-
-    for (uint8_t i=0;i<patternLen;++i)
+/*
+	int pattern_up[maxNumPattern][PATTERNSIZE] ={};
+	memcpy(pattern_up, pattern, sizeof(int)*maxNumPattern*PATTERNSIZE);
+	ArraySort(pattern_up,maxNumPattern);
+*/
+    for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
-        for (uint8_t p=0;p<patternLen;++p)
+		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Werte <0 / >3276 sind keine Clockpulse
+        for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
         {
+           	if (pattern[p][0]>0)  continue;  // Werte >0 sind keine Sync Pulse
            	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
-           	if ((0<pattern[i][0] && pattern[i][0]<3276) && (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+           	if ((syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
                 // Prüfe ob Sync und Clock valide sein können
                 if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
                 if (histo[i] < 10) continue;   // Mindestens 10 Clock Pulse
 
-				// Prüfen ob der gefundene Sync auch als i messafe [i, p] vorkommt
+				// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
 				uint8_t c = 0;
 				while (c < messageLen && (message[c] != i || message[c+1] != p )) {
 					++c;
@@ -227,9 +231,10 @@ bool patternDetector::getSync(){
 
 				// Delete Messagebits bevore detected Sync. because they are trash
 				// Löschen deaktiviert, da eventuell zu viel fehlt
-				messageLen-=c;
-				memmove(message,message+c,sizeof(*message)*(messageLen));
-				calcHisto();  // Da etwas von der Nachricht entfernt wird, brauchen wir eine neue Histogramm berechnung
+
+				//messageLen-=c;
+				//memmove(message,message+c,sizeof(*message)*(messageLen));
+				//calcHisto();  // Da etwas von der Nachricht entfernt wird, brauchen wir eine neue Histogramm berechnung
 
 				#if DEBUGDETECT > 1
                 //debug
