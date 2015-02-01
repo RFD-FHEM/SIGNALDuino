@@ -174,13 +174,32 @@ bool patternDetector::detect(int* pulse){
 	return success;
 }
 
+void patternDetector::ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n)
+{
+	int min[2], i, j, pos;
+	for (i=0; i < n; ++i) // Das Array an Position i teilen
+	{ // mit leerem linken Teil beginnen
+		pos = i; // suche in unsortiertem Teil
+		*min = *arr[i]; // das kleinste Element
+		for( j = i+1; j < n; j++)
+			if ( min[0] > arr[j][0])
+			{
+				pos = j;
+				*min = *arr[j];
+			}
+		*arr[pos] = *arr[i]; // Austausche
+		*arr[i] = *min;
+	}
 
+}
 
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
+
+
 
     for (uint8_t i=0;i<patternLen;++i)
     {
@@ -189,7 +208,7 @@ bool patternDetector::getSync(){
            	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
            	if ((0<pattern[i][0] && pattern[i][0]<3276) && (syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
                 // Prüfe ob Sync und Clock valide sein können
-                if (histo[p] > 6) continue;    // Maximal 5 Sync Pulse
+                if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
                 if (histo[i] < 10) continue;   // Mindestens 10 Clock Pulse
 
 				// Prüfen ob der gefundene Sync auch als i messafe [i, p] vorkommt
@@ -316,6 +335,8 @@ void patternDetector::doDetectwoSync() {
                     break;
                 }
 			}
+
+
 
 			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
