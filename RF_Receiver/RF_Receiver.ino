@@ -34,7 +34,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   115
+#define FIFO_LENGTH			   400
 //#define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
