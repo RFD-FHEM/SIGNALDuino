@@ -217,8 +217,10 @@ bool patternDetector::getSync(){
 
 				// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
 				uint8_t c = 0;
-				while (c < messageLen && (message[c] != i || message[c+1] != p )) {
-					++c;
+				while (c < messageLen)
+				{
+					if (message[c] == i && message[c+1] == p) break;
+					c++;
 				}
 
 				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
@@ -227,6 +229,8 @@ bool patternDetector::getSync(){
                 clock = pattern[i][0];
                 sync = pattern[p][0];;
                 state = detecting;
+
+                mstart=c;
                 //tol = (int)round(clock*tolFact);
 
 				// Delete Messagebits bevore detected Sync. because they are trash
@@ -299,8 +303,8 @@ void patternDetector::doDetectwoSync() {
 			add_new_pattern=false;
         }   else {
             // Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
-            calcHisto();
-            if (histo[pattern_pos] > 1)
+			calcHisto();
+            if (patternLen==maxNumPattern && histo[pattern_pos] > 1)
             {
                 valid=false;
                 add_new_pattern=false;
@@ -340,9 +344,6 @@ void patternDetector::doDetectwoSync() {
                     break;
                 }
 			}
-
-
-
 			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
             #if DEBUGDETECT>3
@@ -411,6 +412,8 @@ void patternDetector::printOut() {
 	Serial.print(F(", Tol: ")); Serial.print(tol);
 	Serial.print(F(", PattLen: ")); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(F(", Pulse: ")); Serial.print(*first); Serial.print(", "); Serial.print(*last);
+	Serial.print(F(", mStart: ")); Serial.print(mstart);
+
 	Serial.println();Serial.print("Signal: ");
 	for (uint8_t idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
@@ -439,7 +442,7 @@ void patternDetector::processMessage()
         if (messageLen >= minMessageLen)
         {
             getSync();
-            printOut();
+            //printOut();
         }
 }
 
@@ -836,7 +839,7 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 	byte byteCnt = 0;
 	uint8_t idx=0;
 	// First and second message Index is sync
-	for(idx=2; idx<messageLen; ++idx) {
+	for(idx=mstart+2; idx<messageLen; ++idx) {
 		byteCode <<= 1;
 		if (message[idx]!=clock_idx) break;			// no Clock, abort
 

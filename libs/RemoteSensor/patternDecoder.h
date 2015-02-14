@@ -135,6 +135,7 @@ class patternDetector : protected patternBasic {
 		float tolFact;
 		*/
 	    uint8_t histo[maxNumPattern];
+	    uint8_t mstart; // Temp Variable zum Testen
 };
 
 
