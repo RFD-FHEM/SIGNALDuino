@@ -33,7 +33,7 @@
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
-#define BAUDRATE               9600
+#define BAUDRATE               57600
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
 #include <TimerOne.h>  // Timer for LED Blinking
