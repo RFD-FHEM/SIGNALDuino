@@ -333,7 +333,7 @@ void patternDecoder::processMessage()
         if (messageLen >= minMessageLen){ //mindestlänge der Message prüfen
 		//Serial.println("Message decoded:");
 		//printOut();
-		if (patternLen=2){
+		if (patternLen==2){
 			sortPattern();
 			#ifdef DEBUGDECODE
 				printOut();
