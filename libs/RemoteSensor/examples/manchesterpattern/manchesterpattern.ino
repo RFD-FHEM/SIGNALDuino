@@ -384,14 +384,14 @@ void decode_onoff()
       {
         Serial.println("ON-OFF Message dekodiert");
         ooDecode.reset();
-        delay(1000);
+        //delay(1000);
       }
   }
   if (!state)
   {
     ooDecode.processMessage();
     Serial.println("Message nicht dekodiert");
-    delay(1000);
+    //delay(1000);
    }
 
 }
@@ -412,8 +412,10 @@ void setup() {
   Serial.println(sizeof(sample_onoff_data)/sizeof(sample_onoff_data[0]));
   Serial.println("Detecting pattern ");
   //detect_onoff();
+  uint32_t start_time=micros();
   decode_onoff();
-  return;
+  uint32_t end_time=micros();
+/*
 	// OSV2 Data
 
   Serial.print("Len Input data (Manchester): ");
@@ -436,6 +438,13 @@ void setup() {
   //decode_osv2_jeelib();
 //  randomize_signal();
 //  detect();
+*/
+  uint32_t duration= end_time-start_time;
+  Serial.print("Detection Time =");  Serial.print(duration);
+  Serial.println(" micro seconds");
+
+
+
 
 }
 
