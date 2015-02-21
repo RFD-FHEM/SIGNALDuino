@@ -442,7 +442,9 @@ void patternDetector::processMessage()
         if (messageLen >= minMessageLen)
         {
             getSync();
-            //printOut();
+            #ifdef DEBUGDETECT >1
+            printOut();
+            #endif
         }
 }
 
@@ -838,6 +840,7 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 	byte byteCode = 0;
 	byte byteCnt = 0;
 	uint8_t idx=0;
+	uint8_t bitcnt=0;
 	// First and second message Index is sync
 	for(idx=mstart+2; idx<messageLen; ++idx) {
 		byteCode <<= 1;
@@ -856,7 +859,10 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 			Serial.print(0);
 			#endif
 		}
-		if (((idx-1) % 16) ==0){ //byte full
+        bitcnt++;
+
+		if (bitcnt==8){ //byte full
+            bitcnt=0;
 			//Serial.println(byteCode,HEX);
 			#if DEBUGDECODE >1
 			Serial.print(" ");
@@ -867,7 +873,7 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
  		}
 	}
 
-	if ((idx-1 % 16) != 0) {//non full byte
+	if (bitcnt != 0) {//non full byte
 			//Serial.println(byteCode,HEX);
 			byteMessage[byteCnt]=byteCode;
 			byteMessageLen = byteCnt+1;
