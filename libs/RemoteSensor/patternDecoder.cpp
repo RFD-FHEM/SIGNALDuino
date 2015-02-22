@@ -208,7 +208,7 @@ bool patternDetector::getSync(){
 		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Werte <0 / >3276 sind keine Clockpulse
         for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
         {
-           	if (pattern[p][0]>0)  continue;  // Werte >0 sind keine Sync Pulse
+           	if (pattern[p][0] > 0 || pattern[p][0] == -maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
            	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
            	if ((syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
                 // Prüfe ob Sync und Clock valide sein können
@@ -265,6 +265,7 @@ void patternDetector::doDetectwoSync() {
 	#if DEBUGDETECT>0
 	if (messageLen > maxMsgSize*8)
 		Serial.println("Error, overflow in message Array");
+        processMessage();
 	#endif
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
@@ -276,6 +277,7 @@ void patternDetector::doDetectwoSync() {
 		bitcnt = 0;
 
         valid=validSequence(first,last);
+        valid&=!(messageLen+1 == maxMsgSize*8);
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
 		if (messageLen ==0) valid=pattern_pos=patternLen=0;
 
@@ -298,7 +300,7 @@ void patternDetector::doDetectwoSync() {
 			//gefunden
 			message[messageLen]=fidx;
 			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
-			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
+			//pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
 			messageLen++;
 			add_new_pattern=false;
         }   else {
@@ -314,8 +316,8 @@ void patternDetector::doDetectwoSync() {
 
         if (!valid && messageLen>=minMessageLen){
 
-          processMessage();
           success=true;
+          processMessage();
           reset();
           pattern_pos=0;
           //doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
@@ -406,20 +408,20 @@ void patternDetector::calcHisto()
 
 void patternDetector::printOut() {
     Serial.println();
-	Serial.print(F("Sync: "));Serial.print(sync);
-	Serial.print(F(" -> SyncFact: "));Serial.print(sync/(float)clock);
-	Serial.print(F(", Clock: ")); Serial.print(clock);
-	Serial.print(F(", Tol: ")); Serial.print(tol);
-	Serial.print(F(", PattLen: ")); Serial.print(patternLen); Serial.print(" ");
-	Serial.print(F(", Pulse: ")); Serial.print(*first); Serial.print(", "); Serial.print(*last);
-	Serial.print(F(", mStart: ")); Serial.print(mstart);
+	Serial.print("Sync: ");Serial.print(sync);
+	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
+	Serial.print(", Clock: "); Serial.print(clock);
+	Serial.print(", Tol: "); Serial.print(tol);
+	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
+	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
+	Serial.print(", mStart: "); Serial.print(mstart);
 
 	Serial.println();Serial.print("Signal: ");
 	for (uint8_t idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
-	Serial.print(F("Pattern: "));
+	Serial.print("Pattern: ");
 	for (uint8_t idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
         Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
@@ -522,13 +524,12 @@ void patternDecoder::processMessage()
 {
         if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
 		//Serial.println("Message decoded:");
-        #ifdef DEBUGDETECT
 		patternDetector::processMessage();//printOut();
 		//int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
         //Serial.print("IT TX: ");
         //Serial.println(isPatternInMsg(ittxpattern));
         //bool valid = checkEV1527type(500, 18, 4, 8, 36);
-		#endif
+
 
 
 		if (clock){
@@ -666,7 +667,7 @@ Logilink NC_WS:
 		valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
 	}
 	if (valid) {//ok, it's Logilink
-		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
+		byteMessage[byteMessageLen-1] <<=3; //shift last bits to align left in bitsequence
 		Serial.print("W03");
 		printMessageHexStr();
 		success = true;
@@ -880,10 +881,9 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 	} else
 		byteMessageLen = byteCnt;
 	#if DEBUGDECODE >1
-		Serial.print(" IDX: "); Serial.print(idx);
-	#endif
+	Serial.print(" IDX: "); Serial.print(idx);
 	Serial.println();
-
+	#endif
 }
 
 void patternDecoder::triStateMessageBytes(){

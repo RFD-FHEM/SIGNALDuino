@@ -143,7 +143,7 @@ void handleInterrupt() {
     if (duration <= (32000)) {//größte zulässige Pulslänge, max = 32000
       sDuration = int(duration); //das wirft bereits hier unnütige Nullen raus und vergrößert den Wertebereich
     }else {
-      sDuration = 32001; // Maximalwert
+      sDuration = maxPulse; // Maximalwert set to maxPulse defined in lib.
     }
     if (state) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafür gilt die gemessene Dauer.
       sDuration=sDuration*-1;

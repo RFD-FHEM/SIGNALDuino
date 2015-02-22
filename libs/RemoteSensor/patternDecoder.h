@@ -46,9 +46,11 @@ const uint8_t minMessageLen=40;
 const uint8_t syncMinFact=9;
 const uint8_t prefixLen=3;
 
-#define DEBUGDETECT 2
+const int16_t maxPulse = 32001;  // Magic Pulse Length
+
+#define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 2
+#define DEBUGDECODE 1
 
 #define PATTERNSIZE 2
 
