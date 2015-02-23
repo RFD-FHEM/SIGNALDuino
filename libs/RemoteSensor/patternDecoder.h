@@ -59,6 +59,24 @@ const int16_t maxPulse = 32001;  // Magic Pulse Length
 
 //#define DEBUG
 
+// Struct for signal identificaion
+typedef struct s_sigid {
+	uint8_t lowFact;
+	uint8_t highFact;
+	uint8_t syncFact;
+	int clock;
+	uint8_t len;
+};
+
+// Struct for reference to pattern low-, highfact and clock index
+typedef struct s_pidx {
+	int8_t lf_idx;
+	int8_t hf_idx;
+	int8_t ck_idx;
+};
+
+
+
 /*
  base class for pattern detector subclasses. Containing only the toolset used to define a pattern detector
 */
@@ -138,6 +156,8 @@ class patternDetector : protected patternBasic {
 		*/
 	    uint8_t histo[maxNumPattern];
 	    uint8_t mstart; // Temp Variable zum Testen
+    	s_sigid protoID[10]; // Speicher für Protokolldaten
+
 };
 
 
@@ -149,7 +169,7 @@ class patternDecoder : public patternDetector{
 	public:
 		patternDecoder();
 
-		void twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_idx, uint8_t longPuls_idx);
+		uint8_t twoStateMessageBytes(const s_pidx s_patt);
 		void twoStateMessageBytes() {};
 		void triStateMessageBytes();
 
@@ -160,7 +180,9 @@ class patternDecoder : public patternDetector{
 		bool decode(int* pulse);
 
 		void processMessage();
-		bool checkEV1527type(int clockTst, int syncFact, int lowFact, int highFact, byte Length);
+
+		bool checkSignal(const s_sigid s_signal);
+		bool checkEV1527type(s_sigid match);
 		void checkLogilink();
 		void checkITold();
 		void checkITautolearn();

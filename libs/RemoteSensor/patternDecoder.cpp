@@ -490,19 +490,6 @@ int8_t patternDetector::getPatternIndex(int key)
 }
 
 
-/*
-Sync: -9136 -> SyncFact: -18.95, Clock: 482, Tol: 150, PattLen: 4 , Pulse: -32001, -22344
-Signal: 0301020102010102010101010202010101010101010201010101020101010102020101020103010201020101020101010102020101010101010102010101010201010101020201010201030.  [151]
-Pattern:  P0: 103*[482] P1: 72*[-1939] P2: 27*[-3897] P3: 3*[-9136] P4: 0*[]
-03 = Sync
-
-01 = short = 0
-02 = long  = 1
-
-
-
- */
-
 
 
 
@@ -530,9 +517,29 @@ void patternDecoder::processMessage()
         //Serial.println(isPatternInMsg(ittxpattern));
         //bool valid = checkEV1527type(500, 18, 4, 8, 36);
 
-
+		// Setup of some protocol identifierc, should be retrieved via fhem in future
 
 		if (clock){
+			protoID[0]=(s_sigid){4,8,18,500,36}; // Logi
+			protoID[1]=(s_sigid){4,8,18,500,24}; // TCM 97001
+			protoID[2]=(s_sigid){1,2,18,500,32}; // AS
+
+			for (uint8_t i=0; i<3;i++)
+			{
+				#ifdef DEBUGDECODE
+					Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
+				#endif
+
+				if (checkSignal(protoID[i]))
+				{
+					Serial.println();
+					Serial.print(i);Serial.print(";");printMessageHexStr();
+					success = true;
+				}
+				Serial.println();
+
+			}
+			return;
 			//sortPattern();
 			#ifdef DEBUGDECODE
 				//printOut();
@@ -564,39 +571,38 @@ void patternDecoder::processMessage()
 	    }
 		#endif
 		*/
-
 }
 
-bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, int highFact, byte Length){
+bool patternDecoder::checkEV1527type(s_sigid match){
 	bool valid = true;
 	/*valid &= messageLen==Length;
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
 	*/
-	valid &= inTol(clock, clockTst);//clock in tolerance
+	valid &= inTol(clock, match.clock);//clock in tolerance
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	valid &= inTol(round(sync/(float)clock), -syncFact, 3); //sync in tolerance
+	valid &= inTol(round(sync/(float)clock), -match.syncFact, 3); //sync in tolerance
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
 
 	int check_vals[3] = {2,0,0};
-	check_vals[1]= clockTst;
-	check_vals[2]= -lowFact* clockTst;
+	check_vals[1]= match.clock;
+	check_vals[2]= -match.lowFact* match.clock;
 
 	valid &= isPatternInMsg(check_vals);
 //	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	check_vals[2]=  -highFact* clockTst;
+	check_vals[2]=  -match.highFact* match.clock;
 	valid &= isPatternInMsg(check_vals);
 //	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
 	#ifdef DEBUGDECODE
-		Serial.println(valid);
+		Serial.print(valid);
 	#endif
 	return valid;
 }
@@ -622,7 +628,7 @@ FHEM Schnittstelle:
     DD2 - HighByte
 */
 	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-
+/*
 	bool valid = checkEV1527type(500, 18, 1, 2, 32); //14 kommt hier nicht durch =>12
 	twoStateMessageBytes();
 	if (valid) {//ok, it's AS
@@ -630,7 +636,33 @@ FHEM Schnittstelle:
 		printMessageHexStr();
 		success = true;
 	}
+*/
 }
+
+
+bool patternDecoder::checkSignal(const s_sigid s_signal)
+{
+	bool valid = checkEV1527type(s_signal);
+	if (valid)
+	{
+		// Get Index for the message Pattern
+		const s_pidx p_idx = {getPatternIndex(-s_signal.lowFact*s_signal.clock),getPatternIndex(-s_signal.highFact*s_signal.clock),getPatternIndex(s_signal.clock)};
+
+		#if DEBUGDECODE > 1
+		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(p_idx.ck_idx);
+		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
+		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
+		#endif // DEBUGDECODE
+
+		valid &= (twoStateMessageBytes(p_idx) == s_signal.len);
+		#ifdef DEBUGDECODE
+			Serial.print(valid);
+		#endif
+		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+	}
+	return valid;
+}
+
 
 void patternDecoder::checkLogilink(){
 /*
@@ -644,30 +676,16 @@ Logilink NC_WS:
 	characteristic:	first bits allways 0101
 			checksum
 */
+
 	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-	const uint8_t lowfact= 4;
-	const uint8_t highfact= 8;
-	const uint8_t sync= 18;
-	const int clock= 500;
-	bool valid = checkEV1527type(clock, sync, lowfact, highfact, 36);
-	if (valid)
-	{
-		// Get Index for the message Pattern
-		int8_t sp_idx=getPatternIndex(-lowfact*clock);  // Short Pulse index
-		int8_t lp_idx=getPatternIndex(-highfact*clock); // Long Pulse index
-		int8_t ck_idx=getPatternIndex(clock); 			 // clock Pulse index
-		#if DEBUGDECODE > 1
-		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(ck_idx);
-		Serial.print(F(", SP: ")); Serial.print(sp_idx);
-		Serial.print(F(", LP: ")); Serial.println(lp_idx);
-		#endif // DEBUGDECODE
+	bool valid = checkSignal(protoID[0]);
+	//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+	#ifdef DEBUGDECODE
+		Serial.println(valid);
+	#endif
 
-
-		twoStateMessageBytes(ck_idx,sp_idx,lp_idx);
-		valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-	}
 	if (valid) {//ok, it's Logilink
-		byteMessage[byteMessageLen-1] <<=3; //shift last bits to align left in bitsequence
+		//byteMessage[byteMessageLen-1] <<=3; //shift last bits to align left in bitsequence
 		Serial.print("W03");
 		printMessageHexStr();
 		success = true;
@@ -692,13 +710,26 @@ TCM Art. Nr. 97001:
 					Bit 23			unknown may be a checksum?
 					Bit 24 			transmitting auto =0 or manual =1
 */
-	bool valid = checkEV1527type(500, 18, 4, 8, 24);
-	twoStateMessageBytes();
+
+	const s_sigid tcmSignal = {4,8,18,500};
+	bool valid = checkEV1527type(tcmSignal);
+	if (valid)
+	{
+		// Get Index for the message Pattern
+		const s_pidx tcmPattern = {getPatternIndex(-tcmSignal.lowFact*clock),getPatternIndex(-tcmSignal.highFact*clock),getPatternIndex(clock)};
+		#if DEBUGDECODE > 1
+	//	Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(ck_idx);
+	//	Serial.print(F(", SP: ")); Serial.print(sp_idx);
+	//	Serial.print(F(", LP: ")); Serial.println(lp_idx);
+		#endif // DEBUGDECODE
+		valid &= (twoStateMessageBytes(tcmPattern) == 24);
+	}
 	if (valid) {//ok, it's TCM97001
 		Serial.print("W08");
 		printMessageHexStr();
 		success = true;
 	}
+
 }
 
 void patternDecoder::checkITautolearn(){
@@ -712,6 +743,7 @@ IT self learning:
 	message length:	32 bit
 */
 	//checkEV1527type(int clockTst, byte startFact, byte lowFact, byte highFact, byte Length)
+/*
 	bool valid = checkEV1527type(270, 10, 1, 5, 64);
 	// two bits in Message give one final bit:
 	// 01 => 0, 10 => 1
@@ -721,6 +753,7 @@ IT self learning:
 		Serial.println();
 		success = true;
 	}
+	*/
 }
 
 void patternDecoder::checkITold() {
@@ -823,21 +856,7 @@ void patternDecoder::printNewITMessage(){
 		Serial.print(msgChar);
 	}
 }
-/*
-Sync: -9190 -> SyncFact: -16.77, Clock: 548, Tol: 150, PattLen: 5 , Pulse: 704, -3716
-Signal: 323431343134343134343434313134343434343434313434343431343434343131343431343234.  [78]
-Pattern:  P0: 1*[-720] P1: 19*[-3885] P2: 2*[-9190] P3: 74*[548] P4: 53*[-1914] P5: 1*[-1312]
-Logi: 1111
-Index: CP: 3, SP: 4, LP: 1ITold: 000
-ITauto: 0000
-AS: 1111
-AS0209000c000402010900
-TCM97001: 1111
-W080209000c000402010900
-
-
-*/
-void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_idx, uint8_t longPuls_idx){
+uint8_t patternDecoder::twoStateMessageBytes(const s_pidx s_patt){
 	byte byteCode = 0;
 	byte byteCnt = 0;
 	uint8_t idx=0;
@@ -845,15 +864,15 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 	// First and second message Index is sync
 	for(idx=mstart+2; idx<messageLen; ++idx) {
 		byteCode <<= 1;
-		if (message[idx]!=clock_idx) break;			// no Clock, abort
+		if (message[idx]!=s_patt.ck_idx) break;			// no Clock, abort
 
 		idx++;
-		if (message[idx]==longPuls_idx){
+		if (message[idx]==s_patt.hf_idx){
 			byteCode |=1;						// Highpuls = 1
 			#if DEBUGDECODE >1
 			Serial.print(1);
 			#endif
-		} else if (message[idx]!=shortpulse_idx){
+		} else if (message[idx]!=s_patt.lf_idx){
 			break;								// No low Puls, abort
 		} else {
 			#if DEBUGDECODE >1
@@ -875,15 +894,18 @@ void patternDecoder::twoStateMessageBytes(uint8_t clock_idx,uint8_t shortpulse_i
 	}
 
 	if (bitcnt != 0) {//non full byte
-			//Serial.println(byteCode,HEX);
-			byteMessage[byteCnt]=byteCode;
-			byteMessageLen = byteCnt+1;
+		//Serial.println(byteCode,HEX);
+		byteCode <<= 7-bitcnt; // Align Bits left
+		byteMessage[byteCnt]=byteCode;
+		byteMessageLen = byteCnt+1;
 	} else
 		byteMessageLen = byteCnt;
 	#if DEBUGDECODE >1
 	Serial.print(" IDX: "); Serial.print(idx);
+	Serial.print(", bitcnt: "); Serial.print(bitcnt + (byteCnt*8));
 	Serial.println();
 	#endif
+	return (bitcnt + (byteCnt*8) );  // Return number of detected bits
 }
 
 void patternDecoder::triStateMessageBytes(){

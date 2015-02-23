@@ -1,11 +1,11 @@
 # depslib dependency file v1.0
-1417902929 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\rf_receiver\rf_receiver.ino
+1424632829 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\rf_receiver\rf_receiver.ino
 	<filtering.h>
 	<TimerOne.h>
 	<bitstore.h>
 	<patternDecoder.h>
 
-1417898898 z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\filtering\filtering.h
+1418067483 z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\filtering\filtering.h
 	"Arduino.h"
 
 1371033102 z:\programme\codeblocks\arduino\hardware\arduino\cores\arduino\arduino.h
@@ -68,21 +68,23 @@
 1417694639 z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\bitstore\bitstore.h
 	"Arduino.h"
 
-1417898499 z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\remotesensor\patterndecoder.h
+1424728761 z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\remotesensor\patterndecoder.h
 	"Arduino.h"
 	<bitstore.h>
+	<filtering.h>
 
 1417696039 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\bitstore\bitstore.cpp
 	"bitstore.h"
 
-1417898898 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\filtering\filtering.cpp
+1418067483 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\filtering\filtering.cpp
 	"Arduino.h"
 	"filtering.h"
 
-1417898553 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\remotesensor\patterndecoder.cpp
+1424729173 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\remotesensor\patterndecoder.cpp
 	"Arduino.h"
 	"patternDecoder.h"
 	"bitstore.h"
+	<util/crc16.h>
 
 1417898898 source:z:\benutzer\sven\documents\rfd-fhem\rfduino\libs\timerone\timerone.cpp
 	"TimerOne.h"
