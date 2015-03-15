@@ -50,7 +50,7 @@ const int16_t maxPulse = 32001;  // Magic Pulse Length
 
 #define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 1
+#define DEBUGDECODE 2
 
 #define PATTERNSIZE 2
 
@@ -59,20 +59,26 @@ const int16_t maxPulse = 32001;  // Magic Pulse Length
 
 //#define DEBUG
 
+// Message Type
+enum mt {twostate,tristate};
+
 // Struct for signal identificaion
 typedef struct s_sigid {
-	uint8_t lowFact;
-	uint8_t highFact;
-	uint8_t syncFact;
+	int8_t lowFact;
+	int8_t highFact;
+	int8_t syncFact;
 	int clock;
 	uint8_t len;
+	mt messageType;
 };
 
 // Struct for reference to pattern low-, highfact and clock index
 typedef struct s_pidx {
-	int8_t lf_idx;
-	int8_t hf_idx;
-	int8_t ck_idx;
+	int8_t lf_idx;	// low fact
+	int8_t hf_idx;	// High fact
+	int8_t ck_idx;	// Clock
+	int8_t sc_idx;  // Sync
+
 };
 
 
@@ -174,7 +180,7 @@ class patternDecoder : public patternDetector{
 		void triStateMessageBytes();
 
 		void printMessageHexStr();
-		void printTristateMessage();
+		uint8_t printTristateMessage(const s_pidx s_patt);
 		void printNewITMessage();
 
 		bool decode(int* pulse);
