@@ -485,7 +485,7 @@ int8_t patternDetector::getPatternIndex(int key)
 {
 	//const int tolerance= abs(key)>abs(clock)*13 ? abs(key*0.1) : abs(key*0.3);
 	//const uint16_t tolerance= abs(key)>abs(clock)*13 ? tol*10 : tol;
-	const uint16_t tolerance= 3;
+	const uint16_t tolerance= key>10 ? 3: 1;
 	//Serial.print("  tol: "); Serial.println(tolerance);
 //valid &= inTol(round(sync/(float)clock), match.syncFact, 3); //sync in tolerance
 
@@ -540,6 +540,42 @@ void patternDecoder::processMessage()
 
 				if (checkSignal(protoID[i]))
 				{
+					/*
+							Output raw message Data
+					*/
+
+
+
+					// Search start and end of a message if it has a sync
+					if (sync)
+					{
+						// Get Index of Sync and Clock to find beginning of new message
+						const s_pidx s_patt = {0,0,
+											   getPatternIndex(1),
+											   getPatternIndex(sync/(float)clock)
+											  } ;
+						#if DEBUGDECODE > 1
+						Serial.print("Index: ");
+						Serial.print("SC: "); Serial.print(s_patt.sc_idx);
+						Serial.print(", CP: "); Serial.println(s_patt.ck_idx);
+						#endif // DEBUGDECODE
+
+						uint8_t mend=mstart+2;
+						do {
+							mend+=2;
+							if (message[mend]==s_patt.ck_idx  && message[mend+1]==s_patt.sc_idx) break;
+						} while ( mend<messageLen-2);
+						String preamble;
+						preamble.concat('M'); preamble.concat(i); preamble.concat(';');
+
+						String postamble;
+						postamble.concat(';'); postamble.concat('\n');
+
+						printMsgRaw(mstart,mend,preamble,postamble);
+						continue;
+
+					}
+
 					Serial.println();
 					Serial.print(i);Serial.print(";");printMessageHexStr();
 					success = true;
@@ -579,6 +615,16 @@ void patternDecoder::processMessage()
 	    }
 		#endif
 		*/
+}
+
+String patternDecoder::printMsgRaw(uint8_t start, uint8_t end, String preamble,String postamble)
+{
+	Serial.print(preamble);
+	for (uint8_t idx=start;idx<end;idx++)
+	{
+		Serial.print(message[idx]);
+	}
+	Serial.print(postamble);
 }
 
 // Function needs to be renamed
@@ -624,6 +670,9 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 bool patternDecoder::checkSignal(const s_sigid s_signal)
 {
 	bool valid = checkEV1527type(s_signal);
+	return valid;  // Exit here, let's do all decoding Stuff outside
+
+
 	if (valid && s_signal.messageType == twostate)
 	{
 		// Get Index for the message Pattern
@@ -635,10 +684,12 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
 		#endif // DEBUGDECODE
 
+		/*
 		valid &= (twoStateMessageBytes(p_idx) == s_signal.len);
 		#ifdef DEBUGDECODE
 			Serial.print(valid);
 		#endif
+		*/
 		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
 	}
 	else if (valid && s_signal.messageType == tristate)
