@@ -226,8 +226,10 @@ bool patternDetector::getSync(){
 				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
 
 				// Sync wurde gefunden, Variablen setzen
-                clock = pattern[i][0];
-                sync = pattern[p][0];;
+                //clock = pattern[i][0];
+                //sync = pattern[p][0];
+                clock=i;
+                sync=p;
                 state = detecting;
 
                 mstart=c;
@@ -246,7 +248,7 @@ bool patternDetector::getSync(){
                 Serial.print("PD sync: ");
                 Serial.print(pattern[i][0]); Serial.print(", ");Serial.print(pattern[p][0]);
                 Serial.print(", TOL: ");Serial.print(tol);
-                Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
+                Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
                 #endif
                 return true;
                 //break;
@@ -408,9 +410,9 @@ void patternDetector::calcHisto()
 
 void patternDetector::printOut() {
     Serial.println();
-	Serial.print("Sync: ");Serial.print(sync);
-	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
-	Serial.print(", Clock: "); Serial.print(clock);
+	Serial.print("Sync: ");Serial.print(pattern[sync][0]);
+	Serial.print(" -> SyncFact: ");Serial.print(pattern[sync][0]/(float)pattern[clock][0]);
+	Serial.print(", Clock: "); Serial.print(pattern[clock][0]);
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
@@ -493,7 +495,7 @@ int8_t patternDetector::getPatternIndex(int key)
 	for(uint8_t p=0; p<patternLen;p++)
     {
 		//if (inTol(key,pattern[p][0]),tolerance) return p;
-		if (inTol(key,pattern[p][0]/(float)(clock),tolerance)) return p;
+		if (inTol(key,pattern[p][0]/(float)(pattern[clock][0]),tolerance)) return p;
 	}
 	return -1;
 }
@@ -529,7 +531,7 @@ void patternDecoder::processMessage()
 			protoID[0]=(s_sigid){-4,-8,-18,500,36,twostate}; // Logi
 			protoID[1]=(s_sigid){-4,-8,-18,500,24,twostate}; // TCM 97001
 			protoID[2]=(s_sigid){-1,-2,-18,500,32,twostate}; // AS
-			protoID[3]=(s_sigid){-1,3,-30,clock,12,tristate}; // IT old
+			protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],12,tristate}; // IT old
 
 			for (uint8_t i=0; i<4;i++)
 			{
@@ -549,22 +551,27 @@ void patternDecoder::processMessage()
 					if (sync)
 					{
 						// Get Index of Sync and Clock to find beginning of new message
+						/*
 						const s_pidx s_patt = {0,0,
 											   getPatternIndex(1),
 											   getPatternIndex(sync/(float)clock)
 											  } ;
+						*/
 						#if DEBUGDECODE > 1
 						Serial.print("Index: ");
-						Serial.print("SC: "); Serial.print(s_patt.sc_idx);
-						Serial.print(", CP: "); Serial.print(s_patt.ck_idx);
+						Serial.print("SC: "); Serial.print(pattern[sync][0]);
+						Serial.print(", CP: "); Serial.print(pattern[clock][0]);
 						#endif // DEBUGDECODE
 
 						uint8_t mend=mstart+2;
 
 						do {
 							mend+=2;
-							if (message[mend]==s_patt.ck_idx  && message[mend+1]==s_patt.sc_idx) break;
+							if (message[mend]==pattern[clock][0]  && message[mend+1]==pattern[sync][0]) break;
 						} while ( mend<(messageLen-2));
+
+
+
 
 						#if DEBUGDECODE > 1
 						Serial.print(", MEnd: "); Serial.println(mend);
@@ -642,11 +649,11 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 	#endif
 	*/
 	if (match.clock !=0 )
-		valid &= inTol(clock, match.clock);//clock in tolerance
+		valid &= inTol(pattern[clock][0], match.clock);//clock in tolerance
 	#ifdef DEBUGDECODE
 	Serial.print(valid);
 	#endif
-	valid &= inTol(round(sync/(float)clock), match.syncFact, 3); //sync in tolerance
+	valid &= inTol(round(pattern[sync][0]/(float)pattern[clock][0]), match.syncFact, 3); //sync in tolerance
 	#ifdef DEBUGDECODE
 	Serial.print(valid);
 	#endif
@@ -682,10 +689,10 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 	if (valid && s_signal.messageType == twostate)
 	{
 		// Get Index for the message Pattern
-		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),getPatternIndex(s_signal.highFact),getPatternIndex(1)};
+		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),getPatternIndex(s_signal.highFact),clock};
 
 		#if DEBUGDECODE > 1
-		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(p_idx.ck_idx);
+		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(clock);
 		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
 		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
 		#endif // DEBUGDECODE
@@ -711,8 +718,8 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 		*/
 		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),
 							  getPatternIndex(s_signal.highFact),
-							  getPatternIndex(1),
-							  getPatternIndex(s_signal.syncFact)  //Todo:  Toleranz ist hierfür zu gering
+							  clock,
+							  sync  //Todo:  Toleranz ist hierfür zu gering
 							  };
 
 
@@ -723,12 +730,13 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
 		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
 		#endif // DEBUGDECODE
-
-//		valid &= (triStateMessageBytes(p_idx) == s_signal.len);
+/*
+		valid &= (triStateMessageBytes(p_idx) == s_signal.len);
 		valid &= (printTristateMessage(p_idx) == s_signal.len);
 		#ifdef DEBUGDECODE
 			Serial.print(valid);
 		#endif
+*/
 		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
 	}
 
