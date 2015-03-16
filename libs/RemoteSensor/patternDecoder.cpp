@@ -318,7 +318,7 @@ void patternDetector::doDetectwoSync() {
 
           success=true;
           processMessage();
-          reset();
+          reset();  // GGF hier nicht ausführen.
           pattern_pos=0;
           //doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
           return;
@@ -529,7 +529,6 @@ void patternDecoder::processMessage()
 			protoID[0]=(s_sigid){-4,-8,-18,500,36,twostate}; // Logi
 			protoID[1]=(s_sigid){-4,-8,-18,500,24,twostate}; // TCM 97001
 			protoID[2]=(s_sigid){-1,-2,-18,500,32,twostate}; // AS
-
 			protoID[3]=(s_sigid){-1,3,-30,clock,12,tristate}; // IT old
 
 			for (uint8_t i=0; i<4;i++)
@@ -557,14 +556,19 @@ void patternDecoder::processMessage()
 						#if DEBUGDECODE > 1
 						Serial.print("Index: ");
 						Serial.print("SC: "); Serial.print(s_patt.sc_idx);
-						Serial.print(", CP: "); Serial.println(s_patt.ck_idx);
+						Serial.print(", CP: "); Serial.print(s_patt.ck_idx);
 						#endif // DEBUGDECODE
 
 						uint8_t mend=mstart+2;
+
 						do {
 							mend+=2;
 							if (message[mend]==s_patt.ck_idx  && message[mend+1]==s_patt.sc_idx) break;
-						} while ( mend<messageLen-2);
+						} while ( mend<(messageLen-2));
+
+						#if DEBUGDECODE > 1
+						Serial.print(", MEnd: "); Serial.println(mend);
+						#endif // DEBUGDECODE
 						String preamble;
 						preamble.concat('M'); preamble.concat(i); preamble.concat(';');
 
@@ -572,7 +576,8 @@ void patternDecoder::processMessage()
 						postamble.concat(';'); postamble.concat('\n');
 
 						printMsgRaw(mstart,mend,preamble,postamble);
-						continue;
+						//continue;
+
 
 					}
 
@@ -582,6 +587,7 @@ void patternDecoder::processMessage()
 				}
 				Serial.println();
 			}
+
 			return;
 			//sortPattern();
 			#ifdef DEBUGDECODE
@@ -617,14 +623,14 @@ void patternDecoder::processMessage()
 		*/
 }
 
-String patternDecoder::printMsgRaw(uint8_t start, uint8_t end, String preamble,String postamble)
+void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble,String postamble)
 {
 	Serial.print(preamble);
-	for (uint8_t idx=start;idx<end;idx++)
+	for (;m_start<m_end;m_start++)
 	{
-		Serial.print(message[idx]);
+		Serial.print(message[m_start]);
 	}
-	Serial.print(postamble);
+	Serial.println(postamble);
 }
 
 // Function needs to be renamed
