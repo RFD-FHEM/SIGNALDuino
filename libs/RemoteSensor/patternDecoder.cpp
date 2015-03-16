@@ -566,8 +566,8 @@ void patternDecoder::processMessage()
 						uint8_t mend=mstart+2;
 
 						do {
-							mend+=2;
 							if (message[mend]==pattern[clock][0]  && message[mend+1]==pattern[sync][0]) break;
+							mend+=2;
 						} while ( mend<(messageLen-2));
 
 
