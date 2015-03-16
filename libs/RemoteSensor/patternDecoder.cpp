@@ -517,117 +517,81 @@ bool patternDecoder::decode(int* pulse) {
 
 void patternDecoder::processMessage()
 {
-        if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
-		//Serial.println("Message decoded:");
-		patternDetector::processMessage();//printOut();
-		//int ittxpattern[maxNumPattern+1]= {3,1300,-1100,500,0};;
-        //Serial.print("IT TX: ");
-        //Serial.println(isPatternInMsg(ittxpattern));
-        //bool valid = checkEV1527type(500, 18, 4, 8, 36);
+	if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
+	//Serial.println("Message decoded:");
+	patternDetector::processMessage();//printOut();
 
+
+	if (clock || sync)// Wenn sync oder clock <> index 0 ist, dann haben wir ein brauchbares Signal mit Sync.
+	{
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
+		protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi
+		protoID[1]=(s_sigid){-4,-8,-18,500,0,twostate}; // TCM 97001
+		protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
+		protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
 
-		if (clock){
-			protoID[0]=(s_sigid){-4,-8,-18,500,36,twostate}; // Logi
-			protoID[1]=(s_sigid){-4,-8,-18,500,24,twostate}; // TCM 97001
-			protoID[2]=(s_sigid){-1,-2,-18,500,32,twostate}; // AS
-			protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],12,tristate}; // IT old
 
+		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
+		bool m_endfound=false;
+
+		uint8_t repeat;
+		do {
+			if (message[mend]==clock  && message[mend+1]==sync) {
+				mend-=2;
+				m_endfound=true;
+				break;
+			}
+			mend+=2;
+		} while ( mend<(messageLen));
+
+
+		#if DEBUGDECODE > 1
+		Serial.print("Index: ");
+		Serial.print("SC: "); Serial.print(sync);
+		Serial.print(", CP: "); Serial.print(clock);
+		Serial.print(" - MEnd: "); Serial.println(mend);
+		#endif // DEBUGDECODE
+
+		if (m_endfound)
+		{
 			for (uint8_t i=0; i<4;i++)
 			{
 				#ifdef DEBUGDECODE
-					Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
+				Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
 				#endif
-
 				if (checkSignal(protoID[i]))
 				{
-					/*
-							Output raw message Data
-					*/
+					/*				Output raw message Data				*/
+					String preamble;
 
+					preamble.concat('\n');
 
-
-					// Search start and end of a message if it has a sync
-					if (sync)
+					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-						// Get Index of Sync and Clock to find beginning of new message
-						/*
-						const s_pidx s_patt = {0,0,
-											   getPatternIndex(1),
-											   getPatternIndex(sync/(float)clock)
-											  } ;
-						*/
-						#if DEBUGDECODE > 1
-						Serial.print("Index: ");
-						Serial.print("SC: "); Serial.print(pattern[sync][0]);
-						Serial.print(", CP: "); Serial.print(pattern[clock][0]);
-						#endif // DEBUGDECODE
-
-						uint8_t mend=mstart+2;
-
-						do {
-							if (message[mend]==pattern[clock][0]  && message[mend+1]==pattern[sync][0]) break;
-							mend+=2;
-						} while ( mend<(messageLen-2));
-
-
-
-
-						#if DEBUGDECODE > 1
-						Serial.print(", MEnd: "); Serial.println(mend);
-						#endif // DEBUGDECODE
-						String preamble;
-						preamble.concat('M'); preamble.concat(i); preamble.concat(';');
-
-						String postamble;
-						postamble.concat(';'); postamble.concat('\n');
-
-						printMsgRaw(mstart,mend,preamble,postamble);
-						//continue;
-
-
+                        preamble.concat('P');preamble.concat(idx);preamble.concat(SERIAL_DELIMITER);
+                        preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);
 					}
+					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);
 
-					Serial.println();
-					Serial.print(i);Serial.print(";");printMessageHexStr();
+					String postamble;
+					postamble.concat(SERIAL_DELIMITER); postamble.concat('\n');
+
+					printMsgRaw(mstart,mend,preamble,postamble);
 					success = true;
-				}
-				Serial.println();
+				} else
+					Serial.println();
 			}
-
-			return;
-			//sortPattern();
-			#ifdef DEBUGDECODE
-				//printOut();
-			#endif
-			#ifdef DEBUGDECODE
-				Serial.print("Logi: ");
-			#endif
-			checkLogilink();
-			#ifdef DEBUGDECODE
-				Serial.print("ITold: ");
-			#endif
-			checkITold();
-			#ifdef DEBUGDECODE
-				Serial.print("ITauto: ");
-			#endif
-			checkITautolearn();
-			#ifdef DEBUGDECODE
-				Serial.print("AS: ");
-			#endif
-			checkAS();
-			#ifdef DEBUGDECODE
-				Serial.print("TCM97001: ");
-			#endif
-			checkTCM97001();
 		}
-		/*
-		#ifdef DEBUGDECODE
-	    else if (patternLen>2){
-	    	printOut();
-	    }
-		#endif
-		*/
+	} else {
+		// Signale ohne Sync
+
+		//ITTX
+
+		// Manchster
+
+		// ETC
+
+	}
 }
 
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble,String postamble)
@@ -637,10 +601,16 @@ void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble
 	{
 		Serial.print(message[m_start]);
 	}
-	Serial.println(postamble);
+	Serial.print(postamble);
 }
 
+
+/*
 // Function needs to be renamed
+Checks Clock, Sync, low and high puls fact
+
+Returns true if all values match
+*/
 bool patternDecoder::checkEV1527type(s_sigid match){
 	bool valid = true;
 	/*valid &= messageLen==Length;

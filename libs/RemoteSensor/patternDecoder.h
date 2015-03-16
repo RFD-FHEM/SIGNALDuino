@@ -48,6 +48,9 @@ const uint8_t prefixLen=3;
 
 const int16_t maxPulse = 32001;  // Magic Pulse Length
 
+
+const char SERIAL_DELIMITER =';';
+
 #define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
 #define DEBUGDECODE 2
@@ -63,7 +66,7 @@ const int16_t maxPulse = 32001;  // Magic Pulse Length
 enum mt {twostate,tristate};
 
 // Struct for signal identificaion
-typedef struct s_sigid {
+ struct s_sigid {
 	int8_t lowFact;
 	int8_t highFact;
 	int8_t syncFact;
@@ -73,7 +76,7 @@ typedef struct s_sigid {
 };
 
 // Struct for reference to pattern low-, highfact and clock index
-typedef struct s_pidx {
+ struct s_pidx {
 	int8_t lf_idx;	// low fact
 	int8_t hf_idx;	// High fact
 	int8_t ck_idx;	// Clock
@@ -103,7 +106,7 @@ typedef struct s_pidx {
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
 
-		uint16_t clock;                              // calculated clock of signal
+		uint16_t clock;                         // calculated clock of signal
     protected:
 		int buffer[2];                          // Internal buffer to store two pules length
         int* first;                             // Pointer to first buffer entry
