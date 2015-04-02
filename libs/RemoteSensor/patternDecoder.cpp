@@ -565,13 +565,12 @@ void patternDecoder::processMessage()
 					String preamble;
 
 					preamble.concat('\n');
-
+					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-                        preamble.concat('P');preamble.concat(idx);preamble.concat(SERIAL_DELIMITER);
-                        preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);
+                        preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
-					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);
+
 
 					String postamble;
 					postamble.concat(SERIAL_DELIMITER); postamble.concat('\n');

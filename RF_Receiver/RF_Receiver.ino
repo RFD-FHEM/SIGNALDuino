@@ -215,7 +215,7 @@ void HandleCommand(String cmd)
   }
   // V: Version
   else if (cmd.startsWith("V")) {
-    Serial.println("V " PROGVERS " FHEMduino - compiled at " __DATE__ " " __TIME__);
+    Serial.println("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
   }
   // R: FreeMemory
   else if (cmd.startsWith("R")) {
