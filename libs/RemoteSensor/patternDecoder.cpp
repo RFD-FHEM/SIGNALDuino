@@ -573,7 +573,11 @@ void patternDecoder::processMessage()
 
 
 					String postamble;
-					postamble.concat(SERIAL_DELIMITER); postamble.concat('\n');
+					postamble.concat(SERIAL_DELIMITER);
+					postamble.concat('CP=');postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+					postamble.concat('SP=');postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+
+					postamble.concat('\n');
 
 					printMsgRaw(mstart,mend,preamble,postamble);
 					success = true;
