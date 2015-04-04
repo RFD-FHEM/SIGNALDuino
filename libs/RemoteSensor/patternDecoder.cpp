@@ -568,7 +568,7 @@ void patternDecoder::processMessage()
 					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-                        preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+                        preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);preamble.concat("D=");  // Patternidx=Value
 					}
 
 

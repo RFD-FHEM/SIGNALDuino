@@ -34,7 +34,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   400
+#define FIFO_LENGTH			   200
 //#define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
@@ -77,7 +77,7 @@ void setup() {
   Serial.print(F("# Len Fifo: "));
   Serial.println(FiFo.getBuffSize());
 #endif
-  delay(2000);
+  //delay(2000);
   pinMode(PIN_RECEIVE,INPUT);
   pinMode(PIN_SEND,OUTPUT);
   pinMode(PIN_LED,OUTPUT);
@@ -211,7 +211,7 @@ void HandleCommand(String cmd)
 
   // ?: Kommandos anzeigen
   if (cmd.equals("?")) {
-    Serial.println(F("? Use one of V i f d h t R q"));//FHEM Message
+    Serial.println(F("? Use one of V R i t XQ"));//FHEM Message
   }
   // V: Version
   else if (cmd.startsWith("V")) {
@@ -229,6 +229,7 @@ void HandleCommand(String cmd)
   else if (cmd.startsWith("t")) {
     // tbd
   }
+  // XQ disable receiver
   else if (cmd.startsWith("XQ")) {
     disableReceive();
 //    Serial.flush();

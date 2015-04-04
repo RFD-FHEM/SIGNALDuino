@@ -51,9 +51,9 @@ const int16_t maxPulse = 32001;  // Magic Pulse Length
 
 const char SERIAL_DELIMITER =';';
 
-#define DEBUGDETECT 0
+//#define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 2
+//#define DEBUGDECODE 0
 
 #define PATTERNSIZE 2
 
