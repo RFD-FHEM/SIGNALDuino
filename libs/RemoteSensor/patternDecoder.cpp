@@ -563,21 +563,25 @@ void patternDecoder::processMessage()
 				{
 					/*				Output raw message Data				*/
 					String preamble;
-
-					preamble.concat('\n');
+					preamble.concat(MSG_START);
+					//preamble.concat('\n');
 					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-                        preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);preamble.concat("D=");  // Patternidx=Value
+                        if (pattern[idx][0] != 0)
+							preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
-
+					preamble.concat("D=");
 
 					String postamble;
 					postamble.concat(SERIAL_DELIMITER);
-					postamble.concat('CP=');postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
-					postamble.concat('SP=');postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+					postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+					postamble.concat("SP=");postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
 
+
+					postamble.concat(MSG_END);
 					postamble.concat('\n');
+
 
 					printMsgRaw(mstart,mend,preamble,postamble);
 					success = true;
