@@ -1,4 +1,4 @@
-# RFDuino
+# SIGNALDuino
 
 System to receive radio signals and use them in FHEM. Currently tested with 433 MHZ, but not limited to that frequency.
 
