@@ -537,7 +537,7 @@ void patternDecoder::processMessage()
 		uint8_t repeat;
 		do {
 			if (message[mend]==clock  && message[mend+1]==sync) {
-				mend-=2;
+				mend-=1;					// Previus signal is last from message
 				m_endfound=true;
 				break;
 			}
@@ -590,21 +590,54 @@ void patternDecoder::processMessage()
 			}
 		}
 	} else {
+
+		/*
+				1. Wir kennen Start und eine einer Nachricht nicht...
+				2. Wir kennen das Ende der Nachricht nicht....
+		*/
 		// Signale ohne Sync
+		//
+		/*
+		if(checkManchester())		// 1. Check for Manchester encoding
+		{
+
+		}
+		else {					// 2. No Manchester, raw output?
+
+
+		}
+
+		*/
 
 		//ITTX
-
-		// Manchster
-
 		// ETC
+					/*				Output raw message Data				*/
+		String preamble;
+		preamble.concat(MSG_START);
+		preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+		for (uint8_t idx=0;idx<=patternLen;idx++)
+		{
+			if (pattern[idx][0] != 0)
+				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+		}
+		preamble.concat("D=");
 
+		String postamble;
+		postamble.concat(SERIAL_DELIMITER);
+
+		postamble.concat(MSG_END);
+		postamble.concat('\n');
+
+
+		printMsgRaw(0,messageLen,preamble,postamble);
+		success = true;
 	}
 }
 
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble,String postamble)
 {
 	Serial.print(preamble);
-	for (;m_start<m_end;m_start++)
+	for (;m_start<=m_end;m_start++)
 	{
 		Serial.print(message[m_start]);
 	}
