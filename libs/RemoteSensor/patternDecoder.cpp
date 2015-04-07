@@ -537,7 +537,7 @@ void patternDecoder::processMessage()
 		uint8_t repeat;
 		do {
 			if (message[mend]==clock  && message[mend+1]==sync) {
-				mend-=2;
+				mend-=1;					// Previus signal is last from message
 				m_endfound=true;
 				break;
 			}
@@ -604,7 +604,7 @@ void patternDecoder::processMessage()
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble,String postamble)
 {
 	Serial.print(preamble);
-	for (;m_start<m_end;m_start++)
+	for (;m_start<=m_end;m_start++)
 	{
 		Serial.print(message[m_start]);
 	}
