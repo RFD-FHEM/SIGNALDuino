@@ -568,8 +568,8 @@ void patternDecoder::processMessage()
 					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-                        if (pattern[idx][0] != 0)
-							preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+                        if (pattern[idx][0] == 0) continue;
+						preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
 					preamble.concat("D=");
 
@@ -583,7 +583,7 @@ void patternDecoder::processMessage()
 					postamble.concat('\n');
 
 
-					printMsgRaw(mstart,mend,preamble,postamble);
+					printMsgRaw(mstart,mend,&preamble,&postamble);
 					success = true;
 				} else
 					Serial.println();
@@ -617,8 +617,11 @@ void patternDecoder::processMessage()
 		preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 		for (uint8_t idx=0;idx<=patternLen;idx++)
 		{
-			if (pattern[idx][0] != 0)
-				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			if (pattern[idx][0] == 0) continue;
+
+			preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+
+
 		}
 		preamble.concat("D=");
 
@@ -629,19 +632,19 @@ void patternDecoder::processMessage()
 		postamble.concat('\n');
 
 
-		printMsgRaw(0,messageLen,preamble,postamble);
+		printMsgRaw(0,messageLen,&preamble,&postamble);
 		success = true;
 	}
 }
 
-void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String preamble,String postamble)
+void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preamble,String *postamble)
 {
-	Serial.print(preamble);
+	Serial.print(*preamble);
 	for (;m_start<=m_end;m_start++)
 	{
 		Serial.print(message[m_start]);
 	}
-	Serial.print(postamble);
+	Serial.print(*postamble);
 }
 
 

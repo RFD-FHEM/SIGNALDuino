@@ -184,7 +184,7 @@ class patternDecoder : public patternDetector{
 		void twoStateMessageBytes() {};
 		void triStateMessageBytes();
 
-		void printMsgRaw(uint8_t start, uint8_t end,String preamble="",String postamble="");
+		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
 		void printMessageHexStr();
 		uint8_t printTristateMessage(const s_pidx s_patt);
 		void printNewITMessage();
