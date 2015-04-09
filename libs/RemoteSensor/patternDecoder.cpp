@@ -670,6 +670,9 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 	#ifdef DEBUGDECODE
 	Serial.print(valid);
 	#endif
+	return valid;  // Skip further investigation of protocol and do this in FHEM
+
+
 
 	int check_vals[3] = {2,0,0};
 	/*

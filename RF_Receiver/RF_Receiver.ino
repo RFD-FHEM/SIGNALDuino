@@ -54,6 +54,8 @@ void serialEvent();
 void blinken();
 int freeRam();
 void changeReciver();
+void changeFilter();
+
 
 void IT_TX(unsigned int duration);
 void receiveProtocolIT_TX(unsigned int changeCount);
@@ -163,16 +165,6 @@ void disableReceive() {
   detachInterrupt(0);
 }
 
-void changeReciver() {
-  if (cmdstring.charAt(1) == 'Q')
-  {
-  	disableReceive();
-  }
-  if (cmdstring.charAt(1) == 'E')
-  {
-  	enableReceive();
-  }
-}
 
 
 //============================== IT_Send =========================================
@@ -226,9 +218,10 @@ void HandleCommand(String cmd)
   const char cmd_freeRam ='R';
   const char cmd_intertechno ='i';
   const char cmd_uptime ='t';
-  const char cmd_stateReceiver ='X';
+  const char cmd_changeReceiver ='X';
   const char cmd_space =' ';
   const char cmd_help='?';
+  const char cmd_changeFilter ='F';
 
   // ?: Kommandos anzeigen
 
@@ -241,7 +234,7 @@ void HandleCommand(String cmd)
 	Serial.print(cmd_Version);Serial.print(cmd_space);
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
 	Serial.print(cmd_uptime);Serial.print(cmd_space);
-	Serial.print(cmd_stateReceiver);Serial.print(cmd_space);
+	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
 	Serial.println("");
 
   }
@@ -262,16 +255,21 @@ void HandleCommand(String cmd)
     // tbd
   }
   // XQ disable receiver
-  else if (cmd.charAt(0) == cmd_stateReceiver) {
+  else if (cmd.charAt(0) == cmd_changeReceiver) {
     changeReciver();
     //Serial.flush();
 	//Serial.end();
   }
+  else if (cmd.charAt(0) == cmd_changeReceiver) {
+    changeFilter();
+  }
 
 }
 
+
 void IT_CMDs(String cmd) {
 
+	// TODO: Change check to charAt, because we only need to check the 2. char here
   // Set Intertechno receive tolerance
   if (cmd.startsWith("it")) {
     char msg[3];
@@ -340,6 +338,49 @@ int freeRam () {
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
+
+void changeReciver() {
+  if (cmdstring.charAt(1) == 'Q')
+  {
+  	disableReceive();
+  }
+  if (cmdstring.charAt(1) == 'E')
+  {
+  	enableReceive();
+  }
+}
+
+void changeFilter()
+{
+	//cmdstring.concat(0);
+	char tmp[10];
+
+	cmdstring.toCharArray(tmp,10,1);
+
+	const char *param = strtok(tmp,";");
+	const uint8_t id = atoi(param);
+	s_sigid new_entry ={NULL,NULL,NULL,NULL,NULL,undef};
+
+	if (cmdstring.charAt(1) == 'A')
+	{
+		// ADD entry to filter list    A;<num>;<Syncfact>;<clock>;
+
+		// syncfact
+		param = strtok (NULL, ";");
+		new_entry.syncFact = atoi(param);
+		// clock
+		param = strtok (NULL, ";");
+		new_entry.clock = atoi(param);
+
+		musterDec.protoID[id] = new_entry;
+	}
+	if (cmdstring.charAt(1) == 'R')
+	{
+		// Remove entry to filter list R;<number to remove>;
+		musterDec.protoID[id] = new_entry;
+	}
+}
+
 
 
 

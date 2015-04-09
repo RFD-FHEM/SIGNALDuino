@@ -65,20 +65,20 @@ const char MSG_END =0x3;			// this is a non printable Char
 //#define DEBUG
 
 // Message Type
-enum mt {twostate,tristate};
+enum mt {twostate,tristate,undef};
 
 // Struct for signal identificaion
  struct s_sigid {
 	int8_t lowFact;
 	int8_t highFact;
-	int8_t syncFact;
-	int clock;
-	uint8_t len;
-	mt messageType;
+	int8_t syncFact;		// used
+	int clock;				// used
+	uint8_t len;			// not used
+	mt messageType;			// not used
 };
 
 // Struct for reference to pattern low-, highfact and clock index
- struct s_pidx {
+ struct s_pidx {							// Not used anymore
 	int8_t lf_idx;	// low fact
 	int8_t hf_idx;	// High fact
 	int8_t ck_idx;	// Clock
