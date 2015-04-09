@@ -136,7 +136,8 @@ class patternDetector : protected patternBasic {
 		bool detect(int* pulse);
 		void doDetectwoSync();
 		void reset();
-		bool getSync();
+		bool getSync();	 // Searches clock and sync in given Signal
+		bool getClock(); // Searches a clock in a given signal
 		virtual void processMessage();
 		int8_t getPatternIndex(int key);
 

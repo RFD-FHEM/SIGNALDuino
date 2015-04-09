@@ -261,6 +261,37 @@ bool patternDetector::getSync(){
 }
 
 
+bool patternDetector::getClock(){
+    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	#if DEBUGDETECT > 3
+	Serial.println("  --  Searching Clock in signal -- ");
+	#endif
+	uint8_t maxcnt=0;
+	int tstclock=0;
+
+    for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
+    {
+		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
+
+		if (histo[i] > maxcnt )
+		{
+			maxcnt = histo[i];
+			tstclock = pattern[i][0];
+		}
+
+    }
+
+	// Check Anzahl der Clockpulse von der Nachrichtenlänge
+	if ((tstclock == 0) || (maxcnt < (messageLen /7*2))) return false;
+
+	clock=tstclock;
+
+	// Todo: GGf. andere Pulse gegen die ermittelte Clock verifizieren
+
+
+	return true;
+}
+
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
@@ -530,7 +561,6 @@ void patternDecoder::processMessage()
 		protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
 		protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
 
-
 		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
 		bool m_endfound=false;
 
@@ -592,7 +622,7 @@ void patternDecoder::processMessage()
 	} else {
 
 		/*
-				1. Wir kennen Start und eine einer Nachricht nicht...
+				1. Wir kennen Start und der Nachricht nicht...
 				2. Wir kennen das Ende der Nachricht nicht....
 		*/
 		// Signale ohne Sync
@@ -603,8 +633,6 @@ void patternDecoder::processMessage()
 
 		}
 		else {					// 2. No Manchester, raw output?
-
-
 		}
 
 		*/
