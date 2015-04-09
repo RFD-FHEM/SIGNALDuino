@@ -28,13 +28,13 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "2.5txtst"
+#define PROGVERS               "2.5raw-out"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   200
+#define FIFO_LENGTH			   100
 //#define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
