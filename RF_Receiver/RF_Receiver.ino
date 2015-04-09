@@ -53,6 +53,7 @@ void disableReceive();
 void serialEvent();
 void blinken();
 int freeRam();
+void changeReciver();
 
 void IT_TX(unsigned int duration);
 void receiveProtocolIT_TX(unsigned int changeCount);
@@ -162,6 +163,18 @@ void disableReceive() {
   detachInterrupt(0);
 }
 
+void changeReciver() {
+  if (cmdstring.charAt(1) == 'Q')
+  {
+  	disableReceive();
+  }
+  if (cmdstring.charAt(1) == 'E')
+  {
+  	enableReceive();
+  }
+}
+
+
 //============================== IT_Send =========================================
 byte ITrepetition = 6;
 byte ITreceivetolerance= 60;
@@ -209,32 +222,52 @@ void HandleCommand(String cmd)
   int val;
   String strVal;
 
+  const char cmd_Version ='V';
+  const char cmd_freeRam ='R';
+  const char cmd_intertechno ='i';
+  const char cmd_uptime ='t';
+  const char cmd_stateReceiver ='X';
+  const char cmd_space =' ';
+  const char cmd_help='?';
+
   // ?: Kommandos anzeigen
-  if (cmd.equals("?")) {
-    Serial.println(F("? Use one of V R i t XQ"));//FHEM Message
+
+
+
+
+  if (cmd.charAt(0) == cmd_help) {
+    //Serial.println(F("? Use one of V R i t X"));//FHEM Message
+	Serial.print(cmd_help);	Serial.print(" Use one of");
+	Serial.print(cmd_Version);Serial.print(cmd_space);
+	Serial.print(cmd_intertechno);Serial.print(cmd_space);
+	Serial.print(cmd_uptime);Serial.print(cmd_space);
+	Serial.print(cmd_stateReceiver);Serial.print(cmd_space);
+	Serial.println("");
+
   }
   // V: Version
-  else if (cmd.startsWith("V")) {
+  else if (cmd.charAt(0) == cmd_Version) {
     Serial.println("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
   }
   // R: FreeMemory
-  else if (cmd.startsWith("R")) {
-    Serial.println(freeRam());// Fake Meldung
+  else if (cmd.charAt(0) == cmd_freeRam) {
+    Serial.println(freeRam());
   }
   // i: Intertechno
-  else if (cmd.startsWith("i")) {
+  else if (cmd.charAt(0) == cmd_intertechno) {
     IT_CMDs(cmd);
   }
   // t: Uptime
-  else if (cmd.startsWith("t")) {
+  else if (cmd.charAt(0) == cmd_uptime) {
     // tbd
   }
   // XQ disable receiver
-  else if (cmd.startsWith("XQ")) {
-    disableReceive();
-//    Serial.flush();
-//    Serial.end();
+  else if (cmd.charAt(0) == cmd_stateReceiver) {
+    changeReciver();
+    //Serial.flush();
+	//Serial.end();
   }
+
 }
 
 void IT_CMDs(String cmd) {
