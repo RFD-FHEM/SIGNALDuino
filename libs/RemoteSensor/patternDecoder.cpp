@@ -267,7 +267,7 @@ bool patternDetector::getClock(){
 	Serial.println("  --  Searching Clock in signal -- ");
 	#endif
 	uint8_t maxcnt=0;
-	int tstclock=0;
+	int tstclock=-1;
 
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
@@ -276,13 +276,13 @@ bool patternDetector::getClock(){
 		if (histo[i] > maxcnt )
 		{
 			maxcnt = histo[i];
-			tstclock = pattern[i][0];
+			tstclock = i;
 		}
 
     }
 
 	// Check Anzahl der Clockpulse von der Nachrichtenlänge
-	if ((tstclock == 0) || (maxcnt < (messageLen /7*2))) return false;
+	if ((tstclock == -1) || (maxcnt < (messageLen /7*2))) return false;
 
 	clock=tstclock;
 
@@ -620,7 +620,6 @@ void patternDecoder::processMessage()
 			}
 		}
 	} else {
-
 		/*
 				1. Wir kennen Start und der Nachricht nicht...
 				2. Wir kennen das Ende der Nachricht nicht....
@@ -640,6 +639,8 @@ void patternDecoder::processMessage()
 		//ITTX
 		// ETC
 					/*				Output raw message Data				*/
+
+
 		String preamble;
 		preamble.concat(MSG_START);
 		preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
@@ -655,7 +656,8 @@ void patternDecoder::processMessage()
 
 		String postamble;
 		postamble.concat(SERIAL_DELIMITER);
-
+		if (!clock &&  getClock() )
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
 
