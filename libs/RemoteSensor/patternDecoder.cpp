@@ -552,7 +552,7 @@ void patternDecoder::processMessage()
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
 
-		if (m_endfound)
+		if (m_endfound && mend - mstart >= minMessageLen)	// Check if message Length is long enough
 		{
 			for (uint8_t i=0; i<4;i++)
 			{
