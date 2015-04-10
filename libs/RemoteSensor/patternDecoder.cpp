@@ -198,11 +198,48 @@ bool patternDetector::getSync(){
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
+
+	// clock wurde bereits durch getclock bestimmt.
+	for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
+	{
+		if (pattern[p][0] > 0 || pattern[p][0] == -maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+		if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
+		if ((syncMinFact* (pattern[clock][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+			// Prüfe ob Sync und Clock valide sein können
+			if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
+
+			// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
+			uint8_t c = 0;
+			while (c < messageLen)
+			{
+				if (message[c] == clock && message[c+1] == p) break;
+				c++;
+			}
+
+			if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
+
+			// Sync wurde gefunden, Variablen setzen
+			//clock = pattern[i][0];
+			//sync = pattern[p][0];
+			sync=p;
+			state = syncfound;
+
+			mstart=c;
+
+			#if DEBUGDETECT > 1
+			//debug
+			Serial.println();
+			Serial.print("PD sync: ");
+			Serial.print(pattern[clock][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+			Serial.print(", TOL: ");Serial.print(tol);
+			Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
+			#endif
+			return true;
+			//break;
+		}
+	}
+
 /*
-	int pattern_up[maxNumPattern][PATTERNSIZE] ={};
-	memcpy(pattern_up, pattern, sizeof(int)*maxNumPattern*PATTERNSIZE);
-	ArraySort(pattern_up,maxNumPattern);
-*/
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
 		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Werte <0 / >3276 sind keine Clockpulse
@@ -255,6 +292,7 @@ bool patternDetector::getSync(){
            	}
         }
     }
+    */
     return false;
 
 
@@ -288,7 +326,7 @@ bool patternDetector::getClock(){
 
 	// Todo: GGf. andere Pulse gegen die ermittelte Clock verifizieren
 
-
+	state=clockfound;
 	return true;
 }
 
@@ -432,7 +470,6 @@ void patternDetector::calcHisto()
         histo[i]=0;
     }
 
-    //Serial.print(F("Calc histo"));
     for (uint8_t i=0;i<messageLen;++i)
     {
         histo[message[i]]++;
@@ -476,6 +513,7 @@ void patternDetector::processMessage()
         calcHisto();
         if (messageLen >= minMessageLen)
         {
+            getClock();
             getSync();
             #ifdef DEBUGDETECT >1
             printOut();
@@ -553,8 +591,9 @@ void patternDecoder::processMessage()
 	patternDetector::processMessage();//printOut();
 
 
-	if (clock || sync)// Wenn sync oder clock <> index 0 ist, dann haben wir ein brauchbares Signal mit Sync.
+	if (state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
 	{
+
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
 		protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi
 		protoID[1]=(s_sigid){-4,-8,-18,500,0,twostate}; // TCM 97001
@@ -619,7 +658,12 @@ void patternDecoder::processMessage()
 					Serial.println();
 			}
 		}
+	} else if (state == clockfound) {
+		// Message has a clock puls, but no sync. Try to decode this
+
 	} else {
+
+
 		/*
 				1. Wir kennen Start und der Nachricht nicht...
 				2. Wir kennen das Ende der Nachricht nicht....

@@ -102,7 +102,7 @@ enum mt {twostate,tristate,undef};
 		bool inTol(int val, int set, int tolerance);
         bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
 
-		enum status {searching, detecting};
+		enum status {searching, clockfound, syncfound,detecting};
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
