@@ -69,8 +69,8 @@ enum mt {twostate,tristate,undef};
 
 // Struct for signal identificaion
  struct s_sigid {
-	int8_t lowFact;
-	int8_t highFact;
+	int8_t lowFact;			// not used
+	int8_t highFact;		// not used
 	int8_t syncFact;		// used
 	int clock;				// used
 	uint8_t len;			// not used

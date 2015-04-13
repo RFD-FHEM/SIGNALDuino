@@ -578,6 +578,10 @@ patternDecoder::patternDecoder(): patternDetector() {
 	tol = 200;
 	tolFact = 0.5;
 */
+	protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
+	protoID[1]=(s_sigid){-4,-8,-10,650,0,twostate}; // RSL
+	protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
+	protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
 }
 
 bool patternDecoder::decode(int* pulse) {
@@ -595,10 +599,6 @@ void patternDecoder::processMessage()
 	{
 
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
-		protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi
-		protoID[1]=(s_sigid){-4,-8,-18,500,0,twostate}; // TCM 97001
-		protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
-		protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
 
 		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
 		bool m_endfound=false;
