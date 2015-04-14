@@ -138,6 +138,7 @@ class patternDetector : protected patternBasic {
 		void reset();
 		bool getSync();	 // Searches clock and sync in given Signal
 		bool getClock(); // Searches a clock in a given signal
+		bool isManchester();	// Checks if Signal is manchester style
 		virtual void processMessage();
 		int8_t getPatternIndex(int key);
 
@@ -197,6 +198,7 @@ class patternDecoder : public patternDetector{
 
 		bool checkSignal(const s_sigid s_signal);
 		bool checkEV1527type(s_sigid match);
+
 		void checkLogilink();
 		void checkITold();
 		void checkITautolearn();

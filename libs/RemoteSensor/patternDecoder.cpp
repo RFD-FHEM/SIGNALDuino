@@ -195,6 +195,7 @@ void patternDetector::ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n)
 */
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
+    //
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
@@ -304,7 +305,6 @@ bool patternDetector::getClock(){
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Clock in signal -- ");
 	#endif
-	uint8_t maxcnt=0;
 	int tstclock=3276;
 
 
@@ -336,6 +336,55 @@ bool patternDetector::getClock(){
 	state=clockfound;
 	return true;
 }
+
+bool patternDetector::isManchester()
+{
+    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	#if DEBUGDETECT > 3
+	Serial.println("  --  checking Signal for Manchester -- ");
+	#endif
+	int tstclock=0;
+
+	uint8_t valid_mc_pulses[4];		// Store index for valid pulses
+	uint8_t vmcp_cnt=0;
+
+	// First find some valid pulselength from the patternstore
+    for (uint8_t i=0;i<patternLen;++i)
+    {
+		if (histo[i] < (messageLen*0.25)) continue;		// Skip this pattern, due to less occurence in our message
+
+		valid_mc_pulses[vmcp_cnt] = i;
+		vmcp_cnt++;
+
+		if (vmcp_cnt == 5) break;						// Break after 4 valid pulses
+    }
+	if (vmcp_cnt < 4 ) return false;
+
+	// second, we will check if they are valid to each other
+	uint8_t pos_cnt=0;
+	uint8_t neg_cnt=0;
+    for (uint8_t i=0; i<vmcp_cnt;++i)
+	{
+		if (pattern[valid_mc_pulses[vmcp_cnt]][0] > 0) pos_cnt++;
+		else neg_cnt++;
+
+		tstclock=tstclock+pattern[valid_mc_pulses[vmcp_cnt]][0];
+	}
+
+	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
+
+	tstclock=tstclock/3;
+
+	#if DEBUGDETECT > 3
+	Serial.println("  --  Manchester found -- ");
+	#endif
+
+	// state= xyz
+	return true;
+
+}
+
+
 
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
@@ -672,8 +721,18 @@ void patternDecoder::processMessage()
 		// Message has a clock puls, but no sync. Try to decode this
 
 	} else {
+		String preamble;
+		preamble.concat(MSG_START);
 
 
+		if (isManchester())
+		{
+				// Do some clock Calculations
+			preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+		} else {
+
+			preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+		}
 		/*
 				1. Wir kennen Start und der Nachricht nicht...
 				2. Wir kennen das Ende der Nachricht nicht....
@@ -695,9 +754,6 @@ void patternDecoder::processMessage()
 					/*				Output raw message Data				*/
 
 
-		String preamble;
-		preamble.concat(MSG_START);
-		preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 		for (uint8_t idx=0;idx<=patternLen;idx++)
 		{
 			if (pattern[idx][0] == 0) continue;
@@ -851,6 +907,10 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 	return valid;
 	*/
 }
+
+
+
+
 void patternDecoder::checkAS(){
 /*
 AS:
