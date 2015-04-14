@@ -148,7 +148,7 @@ class patternDetector : protected patternBasic {
 		void calcHisto();
         bool isPatternInMsg(int *key);
 
-		void ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n);
+		//void ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n);
 		//int pattern[maxNumPattern*2];
 		int sync;
 		//uint8_t patternLen;

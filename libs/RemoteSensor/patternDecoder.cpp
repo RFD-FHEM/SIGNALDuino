@@ -173,7 +173,7 @@ bool patternDetector::detect(int* pulse){
 
 	return success;
 }
-
+/*
 void patternDetector::ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n)
 {
 	int min[2], i, j, pos;
@@ -192,7 +192,7 @@ void patternDetector::ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n)
 	}
 
 }
-
+*/
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
 	#if DEBUGDETECT > 3
@@ -792,7 +792,7 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 	bool valid = checkEV1527type(s_signal);
 	return valid;  // Exit here, let's do all decoding Stuff outside
 
-
+/*
 	if (valid && s_signal.messageType == twostate)
 	{
 		// Get Index for the message Pattern
@@ -804,25 +804,25 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
 		#endif // DEBUGDECODE
 
-		/*
-		valid &= (twoStateMessageBytes(p_idx) == s_signal.len);
-		#ifdef DEBUGDECODE
-			Serial.print(valid);
-		#endif
-		*/
+
+		//valid &= (twoStateMessageBytes(p_idx) == s_signal.len);
+		//#ifdef DEBUGDECODE
+		//	Serial.print(valid);
+		//#endif
+
 		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
 	}
 	else if (valid && s_signal.messageType == tristate)
 	{
 		// Get Index for the message Pattern
 		//const s_pidx p_idx = {getPatternIndex(-s_signal.lowFact*s_signal.clock),getPatternIndex(-s_signal.highFact*s_signal.clock),getPatternIndex(s_signal.clock)};
-		/*
-		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact*s_signal.clock),
-							  getPatternIndex(s_signal.highFact*s_signal.clock),
-							  getPatternIndex(s_signal.clock),
-							  getPatternIndex(s_signal.syncFact*s_signal.clock)  //Todo:  Toleranz ist hierfür zu gering
-							  };
-		*/
+
+		//const s_pidx p_idx = {getPatternIndex(s_signal.lowFact*s_signal.clock),
+		//					  getPatternIndex(s_signal.highFact*s_signal.clock),
+		//					  getPatternIndex(s_signal.clock),
+		//					  getPatternIndex(s_signal.syncFact*s_signal.clock)  //Todo:  Toleranz ist hierfür zu gering
+		//					  };
+
 		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),
 							  getPatternIndex(s_signal.highFact),
 							  clock,
@@ -837,17 +837,19 @@ bool patternDecoder::checkSignal(const s_sigid s_signal)
 		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
 		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
 		#endif // DEBUGDECODE
-/*
+
 		valid &= (triStateMessageBytes(p_idx) == s_signal.len);
 		valid &= (printTristateMessage(p_idx) == s_signal.len);
 		#ifdef DEBUGDECODE
 			Serial.print(valid);
 		#endif
-*/
+
 		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
+
 	}
 
 	return valid;
+	*/
 }
 void patternDecoder::checkAS(){
 /*
@@ -896,7 +898,7 @@ Logilink NC_WS:
 	characteristic:	first bits allways 0101
 			checksum
 */
-
+/*
 	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
 	bool valid = checkSignal(protoID[0]);
 	//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
@@ -910,6 +912,7 @@ Logilink NC_WS:
 		printMessageHexStr();
 		success = true;
 	}
+	*/
 }
 
 
@@ -930,7 +933,7 @@ TCM Art. Nr. 97001:
 					Bit 23			unknown may be a checksum?
 					Bit 24 			transmitting auto =0 or manual =1
 */
-
+/*
 	const s_sigid tcmSignal = {4,8,18,500};
 	bool valid = checkEV1527type(tcmSignal);
 	if (valid)
@@ -949,7 +952,7 @@ TCM Art. Nr. 97001:
 		printMessageHexStr();
 		success = true;
 	}
-
+*/
 }
 
 void patternDecoder::checkITautolearn(){
@@ -989,8 +992,8 @@ IT old with selector:
 	characteristic: IT only uses 2 states: low, float
 					clock varies between controls from 340 to 400 => using measured clock leads to lower (required) tolerances
 */
-	bool valid = true;
-	/*valid &= messageLen==24;
+	/*bool valid = true;
+	valid &= messageLen==24;
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
@@ -1001,7 +1004,7 @@ IT old with selector:
 	#ifdef DEBUGDECODE
 		Serial.print(valid);
 	#endif
-	*/
+
 
 	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
 	#ifdef DEBUGDECODE
@@ -1025,12 +1028,14 @@ IT old with selector:
 		Serial.println();
 		success = true;
 	}
+	*/
 }
 
 
 
 
 void patternDecoder::printMessageHexStr(){
+	/*
 	char hexStr[] ="00";
 	for (byte cnt=0; cnt<byteMessageLen; ++cnt){
 		sprintf(hexStr, "%02x",byteMessage[cnt]);
@@ -1038,6 +1043,7 @@ void patternDecoder::printMessageHexStr(){
 	}
 
 	Serial.println();
+	*/
 }
 
 uint8_t patternDecoder::printTristateMessage(const s_pidx s_patt){
@@ -1046,6 +1052,7 @@ uint8_t patternDecoder::printTristateMessage(const s_pidx s_patt){
 		1: [3, -1], [3, -1] => message 0,0
 		F: [1, -3], [3, -1] => message 1,0
 	*/
+	/*
 	char msgChar;
 	uint8_t chrcnt=0;
 	//for (byte idx=0; idx<messageLen; idx +=2){
@@ -1063,6 +1070,7 @@ uint8_t patternDecoder::printTristateMessage(const s_pidx s_patt){
 		chrcnt++;
 	}
 	return chrcnt;
+	*/
 }
 
 void patternDecoder::printNewITMessage(){
@@ -1070,6 +1078,8 @@ void patternDecoder::printNewITMessage(){
 		0: message 01
 		1: message 10
 	*/
+
+	/*
 	char msgChar;
 	for (byte idx=0; idx<messageLen; idx +=2){
 		if (message[idx]==0 & message[idx+1]==1)
@@ -1080,8 +1090,10 @@ void patternDecoder::printNewITMessage(){
 			msgChar = '?';
 		Serial.print(msgChar);
 	}
+	*/
 }
 uint8_t patternDecoder::twoStateMessageBytes(const s_pidx s_patt){
+	/*
 	byte byteCode = 0;
 	byte byteCnt = 0;
 	uint8_t idx=0;
@@ -1131,11 +1143,13 @@ uint8_t patternDecoder::twoStateMessageBytes(const s_pidx s_patt){
 	Serial.println();
 	#endif
 	return (bitcnt + (byteCnt*8) );  // Return number of detected bits
+	*/
 }
 
 void patternDecoder::triStateMessageBytes(){
 	//the function interpretes only two states: 0([1, -3][1, -3]),floating([1, -3][3, -1])
 	// I wouldn't know how to represent three digits => As 3^n?
+	/*
 	byte byteCode = 0;
 	byte byteCnt = 0;
 	for(byte idx=0; idx<messageLen; idx+=2) {
@@ -1156,6 +1170,7 @@ void patternDecoder::triStateMessageBytes(){
 			byteMessageLen = byteCnt+1;
 	} else
 		byteMessageLen = byteCnt;
+		*/
 }
 
 /*
