@@ -65,29 +65,39 @@ void receiveProtocolIT_TX(unsigned int changeCount);
 //Decoder
 //SensorReceiver ASreceiver;
 patternDecoder musterDec;
-ManchesterpatternDetector ManchesterDetect(true);
-ASDecoder   asDec  (&ManchesterDetect);
-OSV2Decoder osv2Dec (&ManchesterDetect);
+//ManchesterpatternDetector ManchesterDetect(true);
+//ASDecoder   asDec  (&ManchesterDetect);
+//OSV2Decoder osv2Dec (&ManchesterDetect);
 
 
 
 void setup() {
-  Serial.begin(BAUDRATE);
-#ifdef DEBUG
-  Serial.println(F("Startup:"));
-  Serial.print(F("# Bytes / Puffer: "));
-  Serial.println(sizeof(int)*FiFo.getBuffSize());
-  Serial.print(F("# Len Fifo: "));
-  Serial.println(FiFo.getBuffSize());
-#endif
-  //delay(2000);
-  pinMode(PIN_RECEIVE,INPUT);
-  pinMode(PIN_SEND,OUTPUT);
-  pinMode(PIN_LED,OUTPUT);
-  Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
-  Timer1.attachInterrupt(blinken);
-  enableReceive();
-  cmdstring.reserve(20);
+	Serial.begin(BAUDRATE);
+	#ifdef DEBUG
+	Serial.println(F("Startup:"));
+	Serial.print(F("# Bytes / Puffer: "));
+	Serial.println(sizeof(int)*FiFo.getBuffSize());
+	Serial.print(F("# Len Fifo: "));
+	Serial.println(FiFo.getBuffSize());
+	#endif
+	//delay(2000);
+	pinMode(PIN_RECEIVE,INPUT);
+	pinMode(PIN_SEND,OUTPUT);
+	pinMode(PIN_LED,OUTPUT);
+	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
+	Timer1.attachInterrupt(blinken);
+
+
+	musterDec.protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
+	musterDec.protoID[1]=(s_sigid){0,0,-10,650,0,twostate}; // RSL
+	musterDec.protoID[2]=(s_sigid){0,0,0,0,0,undef}; // Free Slot
+	musterDec.protoID[3]=(s_sigid){-1,3,-30,0,0,tristate}; // IT old
+	musterDec.protoID[4]=(s_sigid){0,0,-10,270,0,twostate}; // IT Autolearn
+	musterDec.numprotos=5;
+	//musterDec.protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
+
+	enableReceive();
+	cmdstring.reserve(20);
 }
 
 void blinken() {

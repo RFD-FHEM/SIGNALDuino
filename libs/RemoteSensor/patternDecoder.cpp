@@ -226,7 +226,7 @@ bool patternDetector::getSync(){
 
 			mstart=c;
 
-			#if DEBUGDETECT > 1
+			#ifdef DEBUGDECODE
 			//debug
 			Serial.println();
 			Serial.print("PD sync: ");
@@ -309,7 +309,7 @@ bool patternDetector::getClock(){
 
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
-		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
+		if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
 
 		if (histo[i] > maxcnt )
 		{
@@ -578,10 +578,13 @@ patternDecoder::patternDecoder(): patternDetector() {
 	tol = 200;
 	tolFact = 0.5;
 */
+	/*
 	protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
-	protoID[1]=(s_sigid){-4,-8,-10,650,0,twostate}; // RSL
+	protoID[1]=(s_sigid){0,0,-10,650,0,twostate}; // RSL
 	protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
 	protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
+	*/
+	numprotos=0;
 }
 
 bool patternDecoder::decode(int* pulse) {
@@ -623,7 +626,7 @@ void patternDecoder::processMessage()
 
 		if (m_endfound && mend - mstart >= minMessageLen)	// Check if message Length is long enough
 		{
-			for (uint8_t i=0; i<4;i++)
+			for (uint8_t i=0; i<numprotos;i++)
 			{
 				#ifdef DEBUGDECODE
 				Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
