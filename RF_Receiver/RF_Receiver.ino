@@ -91,7 +91,7 @@ void setup() {
 	musterDec.protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
 	musterDec.protoID[1]=(s_sigid){0,0,-10,650,0,twostate}; // RSL
 	musterDec.protoID[2]=(s_sigid){0,0,0,0,0,undef}; // Free Slot
-	musterDec.protoID[3]=(s_sigid){-1,3,-30,0,0,tristate}; // IT old
+	musterDec.protoID[3]=(s_sigid){-1,3,-30,-1,0,tristate}; // IT old
 	musterDec.protoID[4]=(s_sigid){0,0,-10,270,0,twostate}; // IT Autolearn
 	musterDec.numprotos=5;
 	//musterDec.protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS

@@ -55,7 +55,7 @@ const char MSG_END =0x3;			// this is a non printable Char
 
 //#define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 0
+//#define DEBUGDECODE 1
 
 #define PATTERNSIZE 2
 

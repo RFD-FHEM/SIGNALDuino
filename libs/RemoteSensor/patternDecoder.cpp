@@ -305,22 +305,29 @@ bool patternDetector::getClock(){
 	Serial.println("  --  Searching Clock in signal -- ");
 	#endif
 	uint8_t maxcnt=0;
-	int tstclock=-1;
+	int tstclock=3276;
+
 
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
-		if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
+		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
 
+		/*
 		if (histo[i] > maxcnt )
 		{
 			maxcnt = histo[i];
 			tstclock = i;
 		}
-
+		*/
+		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > 10)){
+			tstclock = i;
+		}
     }
 
+
 	// Check Anzahl der Clockpulse von der Nachrichtenlänge
-	if ((tstclock == -1) || (maxcnt < (messageLen /7*2))) return false;
+	//if ((tstclock == 3276) || (maxcnt < (messageLen /7*2))) return false;
+	if (tstclock == 3276) return false;
 
 	clock=tstclock;
 
@@ -739,7 +746,14 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 	#endif
 	*/
 	if (match.clock !=0 )
+	{
+		if (match.clock == -1)  // Auto Mode
+		{
+			match.clock=pattern[clock][0];
+		}
 		valid &= inTol(pattern[clock][0], match.clock);//clock in tolerance
+	}
+
 	#ifdef DEBUGDECODE
 	Serial.print(valid);
 	#endif
