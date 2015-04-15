@@ -60,7 +60,7 @@ void patternBasic::reset()
 {
 	patternLen = 0;
 	state = searching;
-	clock = 0;
+	clock = -1;
 	patternStore->reset();
     tol=0;
 }
@@ -148,6 +148,7 @@ patternDetector::patternDetector():patternBasic() {
 	buffer[0] = 0; buffer[1] = 0;
 	first = buffer;
 	last = first+1;
+	sync=-1;
 	reset();
 }
 
@@ -157,7 +158,7 @@ void patternDetector::reset() {
 	patternLen = 0;
 	bitcnt = 0;
 	state = searching;
-	clock = sync=0;
+	clock = sync=-1;
 	for (uint8_t i=0; i<maxNumPattern;++i)
 		histo[0]=pattern[i][0]=0;
 	success = false;
@@ -200,12 +201,14 @@ bool patternDetector::getSync(){
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
 
+
+
 	// clock wurde bereits durch getclock bestimmt.
 	for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
 	{
-		if (pattern[p][0] > 0 || pattern[p][0] == -maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+		if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
 		if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
-		if ((syncMinFact* (pattern[clock][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+		if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
 			// Prüfe ob Sync und Clock valide sein können
 			if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
 
@@ -239,6 +242,7 @@ bool patternDetector::getSync(){
 			//break;
 		}
 	}
+
 
 /*
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
@@ -294,6 +298,7 @@ bool patternDetector::getSync(){
         }
     }
     */
+	sync=-1; // Workaround for sync detection bug.
     return false;
 
 
@@ -305,8 +310,9 @@ bool patternDetector::getClock(){
 	#if DEBUGDETECT > 3
 	Serial.println("  --  Searching Clock in signal -- ");
 	#endif
-	int tstclock=3276;
+	int tstclock=-1;
 
+	clock=-1; // Workaround for sync detection bug.
 
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
@@ -327,7 +333,7 @@ bool patternDetector::getClock(){
 
 	// Check Anzahl der Clockpulse von der Nachrichtenlänge
 	//if ((tstclock == 3276) || (maxcnt < (messageLen /7*2))) return false;
-	if (tstclock == 3276) return false;
+	if (tstclock == -1) return false;
 
 	clock=tstclock;
 
