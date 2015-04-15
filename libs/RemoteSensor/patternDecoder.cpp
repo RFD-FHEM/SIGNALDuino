@@ -317,14 +317,12 @@ bool patternDetector::getClock(){
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
 		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
-
-		/*
-		if (histo[i] > maxcnt )
+		if (tstclock==-1 && (pattern[i][0]>=0) && (histo[i] > messageLen*0.17) )
 		{
-			maxcnt = histo[i];
 			tstclock = i;
+			continue;
 		}
-		*/
+
 		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > 10)){
 			tstclock = i;
 		}
@@ -349,35 +347,65 @@ bool patternDetector::isManchester()
 	#if DEBUGDETECT > 3
 	Serial.println("  --  checking Signal for Manchester -- ");
 	#endif
-	int tstclock=0;
+	int tstclock=-1;
+
+	uint8_t pos_cnt=0;
+	uint8_t neg_cnt=0;
+	uint8_t equal_cnt=0;
+    for (uint8_t i=0;i<patternLen;++i)
+    {
+		if (histo[i] < (messageLen*0.14)) continue;		// Skip this pattern, due to less occurence in our message
+
+		if (pattern[i][0] > 0 )
+		{
+			equal_cnt += histo[i];
+			pos_cnt++;
+			tstclock += pattern[i][0];
+
+		} else {
+			equal_cnt -= histo[i];
+			neg_cnt++;
+		}
+    }
+    if (equal_cnt > messageLen*0.02) return false;
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC equalcnt matched");
+	#endif
+
+	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC neg and pos pattern cnt is equal");
+	#endif
+
+	tstclock=tstclock/3;
+	#if DEBUGDETECT >= 1
+	Serial.print("  tstclock: ");Serial.print(tstclock);
+	#endif
+
+
+	return true;
+
+
+
+/*
 
 	uint8_t valid_mc_pulses[4];		// Store index for valid pulses
 	uint8_t vmcp_cnt=0;
-
 	// First find some valid pulselength from the patternstore
     for (uint8_t i=0;i<patternLen;++i)
     {
-		if (histo[i] < (messageLen*0.25)) continue;		// Skip this pattern, due to less occurence in our message
+
+		if (histo[i] < (messageLen*0.14)) continue;		// Skip this pattern, due to less occurence in our message
 
 		valid_mc_pulses[vmcp_cnt] = i;
-		vmcp_cnt++;
 
-		if (vmcp_cnt == 5) break;						// Break after 4 valid pulses
+		if (vmcp_cnt == 4) break;						// Break after 4 valid pulses
+		vmcp_cnt++;
     }
 	if (vmcp_cnt < 4 ) return false;
-
-	// second, we will check if they are valid to each other
-	uint8_t pos_cnt=0;
-	uint8_t neg_cnt=0;
-    for (uint8_t i=0; i<vmcp_cnt;++i)
-	{
-		if (pattern[valid_mc_pulses[vmcp_cnt]][0] > 0) pos_cnt++;
-		else neg_cnt++;
-
-		tstclock=tstclock+pattern[valid_mc_pulses[vmcp_cnt]][0];
-	}
-
-	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
+	#if DEBUGDETECT >= 0
+	Serial.print("MC vcmp matched");
+	#endif
 
 	tstclock=tstclock/3;
 
@@ -387,7 +415,7 @@ bool patternDetector::isManchester()
 
 	// state= xyz
 	return true;
-
+*/
 }
 
 
@@ -719,14 +747,23 @@ void patternDecoder::processMessage()
 
 					printMsgRaw(mstart,mend,&preamble,&postamble);
 					success = true;
-				} else
+				} else {
+					#ifdef DEBUGDECODE || DEBUGDETECT
 					Serial.println();
+					#endif
+				}
 			}
 		}
 	} else if (state == clockfound) {
 		// Message has a clock puls, but no sync. Try to decode this
 
-	} else {
+		#if DEBUGDECODE > 1
+		Serial.print("Clock found: ");
+		Serial.print(", CP: "); Serial.print(clock);
+		Serial.println("");
+		#endif // DEBUGDECODE
+
+
 		String preamble;
 		preamble.concat(MSG_START);
 
@@ -772,7 +809,7 @@ void patternDecoder::processMessage()
 
 		String postamble;
 		postamble.concat(SERIAL_DELIMITER);
-		if (!clock &&  getClock() )
+		if (clock == -1 &&  getClock() )
 			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
@@ -780,6 +817,9 @@ void patternDecoder::processMessage()
 
 		printMsgRaw(0,messageLen,&preamble,&postamble);
 		success = true;
+	} else {
+		success=false;
+		//reset();
 	}
 }
 
