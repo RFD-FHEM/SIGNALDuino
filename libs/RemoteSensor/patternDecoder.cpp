@@ -201,48 +201,49 @@ bool patternDetector::getSync(){
 	Serial.println("  --  Searching Sync  -- ");
 	#endif
 
-
-
-	// clock wurde bereits durch getclock bestimmt.
-	for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
+	if (state == clockfound)		// we need a clock to find this type of sync
 	{
-		if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
-		if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
-		if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
-			// Prüfe ob Sync und Clock valide sein können
-			if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
+		// clock wurde bereits durch getclock bestimmt.
+		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
+		{
+			if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+			if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
+			if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
+				// Prüfe ob Sync und Clock valide sein können
+				if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
 
-			// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
-			uint8_t c = 0;
-			while (c < messageLen)
-			{
-				if (message[c] == clock && message[c+1] == p) break;
-				c++;
+				// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
+				uint8_t c = 1;
+				while (c < messageLen)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				{
+					//if (message[c] == clock && message[c+1] == p) break;
+					if (message[c] == p && message[c-1] == clock) break;   // Faster version as bevore
+					c++;
+				}
+
+				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
+
+				// Sync wurde gefunden, Variablen setzen
+				//clock = pattern[i][0];
+				//sync = pattern[p][0];
+				sync=p;
+				state = syncfound;
+
+				mstart=c;
+
+				#ifdef DEBUGDECODE
+				//debug
+				Serial.println();
+				Serial.print("PD sync: ");
+				Serial.print(pattern[clock][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+				Serial.print(", TOL: ");Serial.print(tol);
+				Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
+				#endif
+				return true;
+				//break;
 			}
-
-			if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
-
-			// Sync wurde gefunden, Variablen setzen
-			//clock = pattern[i][0];
-			//sync = pattern[p][0];
-			sync=p;
-			state = syncfound;
-
-			mstart=c;
-
-			#ifdef DEBUGDECODE
-			//debug
-			Serial.println();
-			Serial.print("PD sync: ");
-			Serial.print(pattern[clock][0]); Serial.print(", ");Serial.print(pattern[p][0]);
-			Serial.print(", TOL: ");Serial.print(tol);
-			Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
-			#endif
-			return true;
-			//break;
 		}
 	}
-
 
 /*
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
@@ -323,7 +324,7 @@ bool patternDetector::getClock(){
 			continue;
 		}
 
-		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > 10)){
+		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > messageLen*0.17)){
 			tstclock = i;
 		}
     }
@@ -809,8 +810,8 @@ void patternDecoder::processMessage()
 
 		String postamble;
 		postamble.concat(SERIAL_DELIMITER);
-		if (clock == -1 &&  getClock() )
-			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+		//if (clock == -1 &&  getClock() )
+		postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
 
