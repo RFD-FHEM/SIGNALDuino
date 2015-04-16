@@ -108,7 +108,7 @@ enum mt {twostate,tristate,undef};
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
 
-		uint16_t clock;                         // calculated clock of signal
+		uint16_t clock;                         // index to clock in pattern
     protected:
 		int buffer[2];                          // Internal buffer to store two pules length
         int* first;                             // Pointer to first buffer entry
@@ -180,6 +180,7 @@ class patternDetector : protected patternBasic {
  currently implemented as cild of the detector.
 */
 class patternDecoder : public patternDetector{
+	friend class ManchesterpatternDecoder;
 	public:
 		patternDecoder();
 
@@ -210,6 +211,33 @@ class patternDecoder : public patternDetector{
 
 };
 
+class ManchesterpatternDecoder
+{
+	ManchesterpatternDecoder(patternDecoder *ref_dec);
+	void doDecode();
+	bool doSearch(uint8_t msg_idx);
+	void reset();
+	bool isLong(uint8_t pulse_idx);
+	bool isShort(uint8_t pulse_idx);
+    bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
+    void printMessageHexStr();
+	bool isManchester();
+
+    BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+    patternDecoder *pdec;
+    int clock;						// Manchester calculated clock
+    int dclock;						// Manchester calculated double clock
+
+    uint8_t longlow;
+    uint8_t longhigh;
+    uint8_t shortlow;
+    uint8_t shorthigh;
+
+
+    unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
+
+
+};
 /*
     Detector for manchester Signals. It uses already the toolset from patternBasic.
     Todo:  Make a interface for retrieving the Manchesterbits easily for furher processing in other classes.

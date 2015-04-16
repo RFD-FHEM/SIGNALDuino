@@ -1286,6 +1286,288 @@ void patternDecoder::triStateMessageBytes(){
 ********************************************************
 */
 
+ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
+{
+	pdec = ref_dec;
+
+
+}
+
+void ManchesterpatternDecoder::reset()
+{
+	pdec = NULL;
+	longlow = 0;
+	longhigh = 0;
+
+	shortlow =0;
+	shorthigh =0;
+
+}
+
+bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
+{
+	return pdec->inTol(abs(pdec->pattern[pulse_idx][0]), clock);
+}
+
+bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
+{
+	return pdec->inTol(abs(pdec->pattern[pulse_idx][0]), dclock);
+}
+
+bool ManchesterpatternDecoder::manchesterfound()
+{
+	//TODO
+}
+
+void ManchesterpatternDecoder::printMessageHexStr()
+{
+	char hexStr[] ="00"; // Not really needed
+    // Bytes are stored from left to right in our buffer. We reverse them for better readability
+	for (uint8_t idx=4; idx<ManchesterBits->bytecount; ++idx){
+        //Serial.print(getMCByte(idx),HEX);
+        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+        sprintf(hexStr, "%02X",getMCByte(idx));
+		Serial.print(hexStr);
+	}
+	Serial.println();
+
+}
+
+unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx){
+
+    return ManchesterBits->getByte(idx);
+}
+/*
+bool ManchesterpatternDetector::doSearch(uint8_t msg_idx)
+{
+	// Assume that the first pulse is a long one, clock must be half of the pulse
+    if (!)
+    message[i]
+
+    updateClock((*last)/2);
+    tol = (int)round(clock*tolFact/10);
+
+    // If sencond pulse does not fit to out assumption, recalc our clock
+    if ((!isLong(first)) && (!isShort(first)))
+    {
+		clock=clock*2;
+		tol = (int)round(clock*tolFact/10);
+    }
+
+    if (isLong(first) || isShort(first))
+    {
+      // Valid
+        state = detecting;
+        //updateClock(first);
+#if DEBUGDETECT==255
+		Serial.println("MCPD Sync: ");
+		Serial.print(*first); Serial.print(", ");Serial.print(*last);
+		Serial.print(", TOL: ");Serial.print(tol);
+		Serial.print(", clock: ");Serial.println(clock);
+#endif // DEBUGDETECT
+        // Eventuell Clock an diesem Punkt wieder auf 0 setzen.. und die Berechnung komplett in doDetect machen
+
+    } else {
+      // not Valid
+        state = searching;
+        reset();
+    }
+}
+*/
+
+
+void ManchesterpatternDecoder::doDecode() {
+    static bool skip=false;
+    static uint8_t bcnt=0;
+	//Serial.print("bitcnt:");Serial.println(bitcnt);
+
+	uint8_t i=0;
+
+	bool mc_start_found=false;
+	while (i < pdec->messageLen)
+	{
+		if ( isLong(pdec->message[i]) ||  isShort(pdec->message[i])  )
+		{
+			pdec->mstart=i;
+			mc_start_found=true;
+		}
+
+
+		if (mc_start_found)
+		{
+
+            if (isLong(pdec->message[i])) {
+		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+            }
+			else if(isShort(pdec->message[i]) && isShort(pdec->message[i+1])  )
+			{
+				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+				  ++i;
+			}
+			else {
+				return ;
+
+			}
+
+		}
+
+
+		++i;
+	}
+
+/*
+	if (skip)
+    {
+        skip=false;
+        return;
+    }
+    if (!validSequence(first,last))
+    {
+      //Serial.println("Invalid sequence found, aborting");
+      processMessage(); // May this does not work for manchester due to sorting
+      return;
+    }
+    //updateClock(first);
+
+
+    // May a valid manchester pulse
+    int seq[3] = {0,0,0};
+    if (isLong(first))
+    {
+        // valid it is a long pulse
+        updateClock(*first/2);
+        seq[0] = 1;
+        seq[1] = *first;
+        //ManchesterBits->addValue(!(*first & (1<<7))); // Check if bit 7 is set
+        //Serial.println(*first,BIN);
+        //ManchesterBits->addValue((*first >>15)? 0 :1 ); // Check if bit 7 is set
+        ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
+    }
+    else if(isShort(first) && isShort(last) )
+    {
+		updateClock(*first);
+		updateClock(*last);
+         // valid
+        seq[0] = 2;
+        seq[1] = *first;
+        seq[2] = *last;
+        //updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
+        skip=true; // Skip next iteration
+        //ManchesterBits->addValue(!(*last & (1<<7)));  // Check if bit 7 is set
+        ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
+    } else {
+        // not valid
+        //Serial.println("Invalid sequence found, aborting");
+
+		processMessage(); // May this does not work for manchester due to sorting
+        state=searching;
+        //reset();
+        return;
+    }
+
+	int8_t fidx = findpatt(seq);
+#if DEBUGDETECT==255
+	Serial.print("MCPD Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
+	Serial.print(", Clock: "); Serial.print(clock); Serial.print(", Found: "); Serial.println(fidx);
+#endif
+    if (0<=fidx)
+    {
+        //gefunden
+#if DEBUGDETECT==255
+	Serial.println("pattern found");
+#endif
+        //patternStore->addValue(fidx); // Add current pattern index to our store
+        //*(message+messageLen) = fidx;
+        //messageLen++;
+    }
+    else
+	{
+        if(patternLen <maxNumPattern) // Max 4 pattern are valid for manchester coding
+        {
+#if DEBUGDETECT==255
+	Serial.println("pattern not found, adding a new one...");
+#endif
+
+            //neues hinzufügen
+			//Serial.println("hinzufügen");
+            pattern[patternLen][0] = seq[1];
+            pattern[patternLen][1] = seq[2];
+
+            //patternStore->addValue(patternLen); // Add current pattern index to our store
+			//*(message+messageLen) = patternLen; //Index des eben angefügten Elementes
+
+			patternLen++;
+			//messageLen++;
+        } else {
+            //Serial.print("Max len reached, printing out");
+			processMessage(); // May this does not work for manchester due to sorting
+			//reset();
+		}
+    }
+#ifdef DEBUGDETECT
+	if (patternLen > 3) printOut();//debug
+#endif
+*/
+}
+
+
+bool ManchesterpatternDecoder::isManchester()
+{
+    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	#if DEBUGDETECT > 3
+	Serial.println("  --  checking Signal for Manchester -- ");
+	#endif
+	int tstclock=-1;
+
+	uint8_t pos_cnt=0;
+	uint8_t neg_cnt=0;
+	uint8_t equal_cnt=0;
+	const uint8_t minHistocnt=pdec->messageLen*0.14;
+
+    for (uint8_t i=0;i< pdec->patternLen;++i)
+    {
+		int aktpulse = pdec->pattern[i][0];
+
+		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+
+		if (aktpulse > 0 )
+		{
+			equal_cnt += pdec->histo[i];
+			pos_cnt++;
+			tstclock += aktpulse;
+
+			longhigh = pdec->pattern[longhigh][0] < aktpulse ? i  : longhigh;
+			shorthigh = pdec->pattern[shorthigh][0] > aktpulse ? i  : shorthigh;
+
+		} else {
+			equal_cnt -= pdec->histo[i];
+			neg_cnt++;
+
+			longlow = pdec->pattern[longlow][0] < aktpulse ? i  : longlow;
+			shortlow = pdec->pattern[shortlow][0] > aktpulse ? shortlow : i;
+		}
+
+    }
+    if (equal_cnt > pdec->messageLen*0.02) return false;
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC equalcnt matched");
+	#endif
+
+	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC neg and pos pattern cnt is equal");
+	#endif
+
+	tstclock=tstclock/3;
+	#if DEBUGDETECT >= 1
+	Serial.print("  tstclock: ");Serial.print(tstclock);
+	#endif
+	clock=tstclock;
+	dclock=clock*2;
+
+	return true;
+}
+
 
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
