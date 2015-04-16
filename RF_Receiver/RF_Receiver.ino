@@ -245,6 +245,7 @@ void HandleCommand(String cmd)
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
 	Serial.print(cmd_uptime);Serial.print(cmd_space);
 	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
+	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
 	Serial.println("");
 
   }
@@ -270,7 +271,7 @@ void HandleCommand(String cmd)
     //Serial.flush();
 	//Serial.end();
   }
-  else if (cmd.charAt(0) == cmd_changeReceiver) {
+  else if (cmd.charAt(0) == cmd_changeFilter) {
     changeFilter();
   }
 
