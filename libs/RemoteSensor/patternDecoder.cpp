@@ -1306,12 +1306,12 @@ void ManchesterpatternDecoder::reset()
 
 bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
 {
-	return pdec->inTol(abs(pdec->pattern[pulse_idx][0]), clock);
+	return (pulse_idx == longlow || pulse_idx == longhigh);
 }
 
 bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
 {
-	return pdec->inTol(abs(pdec->pattern[pulse_idx][0]), dclock);
+	return (pulse_idx == shortlow || pulse_idx == shorthigh);
 }
 
 bool ManchesterpatternDecoder::manchesterfound()
