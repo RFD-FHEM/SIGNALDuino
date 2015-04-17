@@ -138,7 +138,6 @@ class patternDetector : protected patternBasic {
 		void reset();
 		bool getSync();	 // Searches clock and sync in given Signal
 		bool getClock(); // Searches a clock in a given signal
-		bool isManchester();	// Checks if Signal is manchester style
 		virtual void processMessage();
 		int8_t getPatternIndex(int key);
 
@@ -188,6 +187,7 @@ class patternDecoder : public patternDetector{
 		void twoStateMessageBytes() {};
 		void triStateMessageBytes();
 
+		void printMsgStr(String *first, String *second, String *third);
 		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
 		void printMessageHexStr();
 		uint8_t printTristateMessage(const s_pidx s_patt);
@@ -213,29 +213,33 @@ class patternDecoder : public patternDetector{
 
 class ManchesterpatternDecoder
 {
+	public:
 	ManchesterpatternDecoder(patternDecoder *ref_dec);
 	bool doDecode();
+	void setMinBitLen(uint8_t len);
+    bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
+    void getMessageHexStr(String *message);
+    bool isManchester();
+
+
+
+	private:
 	void reset();
 	bool isLong(uint8_t pulse_idx);
 	bool isShort(uint8_t pulse_idx);
-    bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
-    void getMessageHexStr();
-	bool isManchester();
-	void setMinBitLen(uint8_t len);
+	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 
     BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
     patternDecoder *pdec;
+
+    int8_t longlow;
+    int8_t longhigh;
+    int8_t shortlow;
+    int8_t shorthigh;
     int clock;						// Manchester calculated clock
     int dclock;						// Manchester calculated double clock
 
-    uint8_t longlow;
-    uint8_t longhigh;
-    uint8_t shortlow;
-    uint8_t shorthigh;
-
 	uint8_t minbitlen;
-    unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
-
 
 };
 /*

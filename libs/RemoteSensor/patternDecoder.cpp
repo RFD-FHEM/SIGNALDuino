@@ -342,82 +342,7 @@ bool patternDetector::getClock(){
 	return true;
 }
 
-bool patternDetector::isManchester()
-{
-    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
-	#if DEBUGDETECT > 3
-	Serial.println("  --  checking Signal for Manchester -- ");
-	#endif
-	int tstclock=-1;
 
-	uint8_t pos_cnt=0;
-	uint8_t neg_cnt=0;
-	uint8_t equal_cnt=0;
-    for (uint8_t i=0;i<patternLen;++i)
-    {
-		if (histo[i] < (messageLen*0.14)) continue;		// Skip this pattern, due to less occurence in our message
-
-		if (pattern[i][0] > 0 )
-		{
-			equal_cnt += histo[i];
-			pos_cnt++;
-			tstclock += pattern[i][0];
-
-		} else {
-			equal_cnt -= histo[i];
-			neg_cnt++;
-		}
-    }
-    if (equal_cnt > messageLen*0.02) return false;
-	#if DEBUGDETECT >= 1
-	Serial.print("  MC equalcnt matched");
-	#endif
-
-	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
-	#if DEBUGDETECT >= 1
-	Serial.print("  MC neg and pos pattern cnt is equal");
-	#endif
-
-	tstclock=tstclock/3;
-	#if DEBUGDETECT >= 1
-	Serial.print("  tstclock: ");Serial.print(tstclock);
-	#endif
-
-
-	return true;
-
-
-
-/*
-
-	uint8_t valid_mc_pulses[4];		// Store index for valid pulses
-	uint8_t vmcp_cnt=0;
-	// First find some valid pulselength from the patternstore
-    for (uint8_t i=0;i<patternLen;++i)
-    {
-
-		if (histo[i] < (messageLen*0.14)) continue;		// Skip this pattern, due to less occurence in our message
-
-		valid_mc_pulses[vmcp_cnt] = i;
-
-		if (vmcp_cnt == 4) break;						// Break after 4 valid pulses
-		vmcp_cnt++;
-    }
-	if (vmcp_cnt < 4 ) return false;
-	#if DEBUGDETECT >= 0
-	Serial.print("MC vcmp matched");
-	#endif
-
-	tstclock=tstclock/3;
-
-	#if DEBUGDETECT > 3
-	Serial.println("  --  Manchester found -- ");
-	#endif
-
-	// state= xyz
-	return true;
-*/
-}
 
 
 
@@ -767,71 +692,84 @@ void patternDecoder::processMessage()
 
 		String preamble;
 		preamble.concat(MSG_START);
-
-
-		if (isManchester())
-		{
-				// Do some clock Calculations
-			preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
-		} else {
-
-			preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
-		}
-		/*
-				1. Wir kennen Start und der Nachricht nicht...
-				2. Wir kennen das Ende der Nachricht nicht....
-		*/
-		// Signale ohne Sync
-		//
-		/*
-		if(checkManchester())		// 1. Check for Manchester encoding
-		{
-
-		}
-		else {					// 2. No Manchester, raw output?
-		}
-
-		*/
-
-		//ITTX
-		// ETC
-					/*				Output raw message Data				*/
-
-
 		for (uint8_t idx=0;idx<=patternLen;idx++)
 		{
 			if (pattern[idx][0] == 0) continue;
 
 			preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-
-
 		}
 		preamble.concat("D=");
 
 		String postamble;
 		postamble.concat(SERIAL_DELIMITER);
-		//if (clock == -1 &&  getClock() )
 		postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
 
 
-		printMsgRaw(0,messageLen,&preamble,&postamble);
+		ManchesterpatternDecoder mcdecoder(this);				// Init Manchester Decoder class
+		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		{
+			String mcbitmsg;
+			mcdecoder.getMessageHexStr(&mcbitmsg);
+
+			preamble = String("MC")+preamble+String(SERIAL_DELIMITER);
+			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+
+			// Output Manchester Bits
+			printMsgStr(&preamble,&mcbitmsg,&postamble);
+		} else {
+			preamble = String("MU")+preamble+String(SERIAL_DELIMITER);
+
+			printMsgRaw(0,messageLen,&preamble,&postamble);
+			/*
+					1. Wir kennen Start und der Nachricht nicht...
+					2. Wir kennen das Ende der Nachricht nicht....
+			*/
+
+			//ITTX
+			// ETC
+				/*				Output raw message Data				*/
+
+			//preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+		}
 		success = true;
 	} else {
 		success=false;
 		//reset();
 	}
 }
+/** @brief (Prints given strings in provided order)
+  *
+  * (documentation goes here)
+  */
+void patternDecoder::printMsgStr(String *first, String *second, String *third)
+{
+	Serial.print(*first);
+	Serial.print(*second);
+	Serial.print(*third);
+}
+
+/** @brief (Convertes message array into string for serial output)
+  *
+  * (documentation goes here)
+  */
 
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preamble,String *postamble)
 {
-	Serial.print(*preamble);
+
+	//Serial.print(*preamble);
+	String msg;
+	msg.reserve(m_end-mstart);
+
 	for (;m_start<=m_end;m_start++)
 	{
-		Serial.print(message[m_start]);
+		msg +=message[m_start];
+		//Serial.print(message[m_start]);
 	}
-	Serial.print(*postamble);
+	//Serial.print(*postamble);
+
+	printMsgStr(preamble,&msg,postamble);
 }
 
 
@@ -1292,9 +1230,9 @@ void patternDecoder::triStateMessageBytes(){
 
 ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
 {
+	reset();
 	pdec = ref_dec;
 	minbitlen = 20; // Set defaults
-
 
 }
 /** @brief (Resets internal vars to defaults)
@@ -1303,13 +1241,12 @@ ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
   */
 void ManchesterpatternDecoder::reset()
 {
-	pdec = NULL;
-	longlow = 0;
-	longhigh = 0;
+	//pdec = NULL;
 
-	shortlow =0;
-	shorthigh =0;
-
+	longlow =   -1;
+	longhigh =  -1;
+	shortlow =  -1;
+	shorthigh = -1;
 }
 /** @brief (Sets internal minbitlen to new value)
   *
@@ -1350,22 +1287,24 @@ bool ManchesterpatternDecoder::manchesterfound()
 	//TODO
 }
 
-  /** @brief (Returns String with hex Output)
+  /** @brief (Places bits in provides string message in hex notation)
     *
     * (documentation goes here)
     */
 
-void ManchesterpatternDecoder::getMessageHexStr()
+void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
 	char hexStr[] ="00"; // Not really needed
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (uint8_t idx=4; idx<ManchesterBits->bytecount; ++idx){
         //Serial.print(getMCByte(idx),HEX);
         //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+
         sprintf(hexStr, "%02X",getMCByte(idx));
-		Serial.print(hexStr);
+        *message +=hexStr;
+		//Serial.print(hexStr);
 	}
-	Serial.println();
+	//Serial.println();
 
 }
 
@@ -1536,9 +1475,12 @@ bool ManchesterpatternDecoder::isManchester()
 
     for (uint8_t i=0;i< pdec->patternLen;++i)
     {
-		int aktpulse = pdec->pattern[i][0];
-
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+
+		int aktpulse = pdec->pattern[i][0];
+		if (longlow == -1)
+            longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
+
 
 		if (aktpulse > 0 )
 		{
