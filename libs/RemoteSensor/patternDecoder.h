@@ -206,8 +206,8 @@ class patternDecoder : public patternDetector{
 		void checkAS();
 		void checkTCM97001();
 
-		byte byteMessage[maxMsgSize];
-		byte byteMessageLen;
+		//uint8_t byteMessage[maxMsgSize];
+		//byte byteMessageLen;
 
 };
 
