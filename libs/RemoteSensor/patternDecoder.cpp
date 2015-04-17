@@ -708,18 +708,19 @@ void patternDecoder::processMessage()
 
 
 		ManchesterpatternDecoder mcdecoder(this);				// Init Manchester Decoder class
-		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		if (mcdecoder.isManchester() )//&& mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
+			return;
 			String mcbitmsg;
 			mcdecoder.getMessageHexStr(&mcbitmsg);
 
-			preamble = String("MC")+preamble+String(SERIAL_DELIMITER);
+			preamble = String("MC")+String(SERIAL_DELIMITER)+preamble;
 			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
 			// Output Manchester Bits
-			printMsgStr(&preamble,&mcbitmsg,&postamble);
+			//printMsgStr(&preamble,&mcbitmsg,&postamble);
 		} else {
-			preamble = String("MU")+preamble+String(SERIAL_DELIMITER);
+			preamble = String("MU")+String(SERIAL_DELIMITER)+preamble;
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			/*
@@ -760,7 +761,7 @@ void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preambl
 
 	//Serial.print(*preamble);
 	String msg;
-	msg.reserve(m_end-mstart);
+	//msg.reserve(m_end-mstart);
 
 	for (;m_start<=m_end;m_start++)
 	{
@@ -804,13 +805,13 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 	#endif
 	return valid;  // Skip further investigation of protocol and do this in FHEM
 
-
+/*
 
 	int check_vals[3] = {2,0,0};
-	/*
-	check_vals[1]= match.clock;
-	check_vals[2]= match.lowFact* match.clock;
-	*/
+
+	//check_vals[1]= match.clock;
+	//check_vals[2]= match.lowFact* match.clock;
+
 	check_vals[1]= 1; // Clock fact
 	check_vals[2]= match.lowFact;
 
@@ -826,6 +827,7 @@ bool patternDecoder::checkEV1527type(s_sigid match){
 		Serial.print(valid);
 	#endif
 	return valid;
+*/
 }
 
 bool patternDecoder::checkSignal(const s_sigid s_signal)
