@@ -1285,14 +1285,22 @@ void patternDecoder::triStateMessageBytes(){
 ************* Manchester detection class ***************
 ********************************************************
 */
+/** @brief (Constructor for Manchester decoder. ref= object of type patternDetecor which is calling the manchester decoder)
+  *
+  * Initialisation of class MancheserpatternDecoder
+  */
 
 ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
 {
 	pdec = ref_dec;
+	minbitlen = 20; // Set defaults
 
 
 }
-
+/** @brief (Resets internal vars to defaults)
+  *
+  * Reset internal vars to defaults. Called after error or when finished
+  */
 void ManchesterpatternDecoder::reset()
 {
 	pdec = NULL;
@@ -1303,23 +1311,51 @@ void ManchesterpatternDecoder::reset()
 	shorthigh =0;
 
 }
+/** @brief (Sets internal minbitlen to new value)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::setMinBitLen(uint8_t len)
+{
+		minbitlen = len;
+}
 
+
+  /** @brief (Returns true if given pattern index matches a long puls index)
+    *
+    * (documentation goes here)
+    */
 bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
 {
 	return (pulse_idx == longlow || pulse_idx == longhigh);
 }
+
+  /** @brief (Returns true if given pattern index matches a short puls index)
+    *
+    * (documentation goes here)
+    */
 
 bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
 {
 	return (pulse_idx == shortlow || pulse_idx == shorthigh);
 }
 
+  /** @brief (Returns true if valid Manchester is found)
+    *
+    * (not implemented yet)
+    */
+
 bool ManchesterpatternDecoder::manchesterfound()
 {
 	//TODO
 }
 
-void ManchesterpatternDecoder::printMessageHexStr()
+  /** @brief (Returns String with hex Output)
+    *
+    * (documentation goes here)
+    */
+
+void ManchesterpatternDecoder::getMessageHexStr()
 {
 	char hexStr[] ="00"; // Not really needed
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
@@ -1333,50 +1369,23 @@ void ManchesterpatternDecoder::printMessageHexStr()
 
 }
 
+  /** @brief (retieves one Byte out of the Bitstore for manchester decoded bits)
+    *
+    * (documentation goes here)
+    */
+
 unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx){
 
     return ManchesterBits->getByte(idx);
 }
-/*
-bool ManchesterpatternDetector::doSearch(uint8_t msg_idx)
-{
-	// Assume that the first pulse is a long one, clock must be half of the pulse
-    if (!)
-    message[i]
-
-    updateClock((*last)/2);
-    tol = (int)round(clock*tolFact/10);
-
-    // If sencond pulse does not fit to out assumption, recalc our clock
-    if ((!isLong(first)) && (!isShort(first)))
-    {
-		clock=clock*2;
-		tol = (int)round(clock*tolFact/10);
-    }
-
-    if (isLong(first) || isShort(first))
-    {
-      // Valid
-        state = detecting;
-        //updateClock(first);
-#if DEBUGDETECT==255
-		Serial.println("MCPD Sync: ");
-		Serial.print(*first); Serial.print(", ");Serial.print(*last);
-		Serial.print(", TOL: ");Serial.print(tol);
-		Serial.print(", clock: ");Serial.println(clock);
-#endif // DEBUGDETECT
-        // Eventuell Clock an diesem Punkt wieder auf 0 setzen.. und die Berechnung komplett in doDetect machen
-
-    } else {
-      // not Valid
-        state = searching;
-        reset();
-    }
-}
-*/
 
 
-void ManchesterpatternDecoder::doDecode() {
+  /** @brief (Decodes the manchester pattern to bits. Returns true on success and false on error )
+    *
+    * (documentation goes here)
+    */
+
+bool ManchesterpatternDecoder::doDecode() {
     static bool skip=false;
     static uint8_t bcnt=0;
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
@@ -1405,13 +1414,10 @@ void ManchesterpatternDecoder::doDecode() {
 				  ++i;
 			}
 			else {
-				return ;
-
+				return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
 			}
 
 		}
-
-
 		++i;
 	}
 
@@ -1510,6 +1516,10 @@ void ManchesterpatternDecoder::doDecode() {
 */
 }
 
+  /** @brief (one liner)
+    *
+    * (documentation goes here)
+    */
 
 bool ManchesterpatternDecoder::isManchester()
 {

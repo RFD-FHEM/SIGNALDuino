@@ -214,14 +214,14 @@ class patternDecoder : public patternDetector{
 class ManchesterpatternDecoder
 {
 	ManchesterpatternDecoder(patternDecoder *ref_dec);
-	void doDecode();
-	bool doSearch(uint8_t msg_idx);
+	bool doDecode();
 	void reset();
 	bool isLong(uint8_t pulse_idx);
 	bool isShort(uint8_t pulse_idx);
     bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
-    void printMessageHexStr();
+    void getMessageHexStr();
 	bool isManchester();
+	void setMinBitLen(uint8_t len);
 
     BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
     patternDecoder *pdec;
@@ -233,7 +233,7 @@ class ManchesterpatternDecoder
     uint8_t shortlow;
     uint8_t shorthigh;
 
-
+	uint8_t minbitlen;
     unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 
 
