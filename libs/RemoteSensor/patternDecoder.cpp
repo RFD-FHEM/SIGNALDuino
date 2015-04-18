@@ -126,7 +126,7 @@ bool patternBasic::validSequence(int *a, int *b)
 
     //return ((*a> 0 and 0 > *b) or (*b > 0  and 0 > *a));
     //return ((*a)*(*b)<0);
-    return ((*a ^ *b) < 0); // true iff a and b have opposite signs
+    return ((*a ^ *b) < 0); // true if a and b have opposite signs
 
 }
 
@@ -160,7 +160,7 @@ void patternDetector::reset() {
 	state = searching;
 	clock = sync=-1;
 	for (uint8_t i=0; i<maxNumPattern;++i)
-		histo[0]=pattern[i][0]=0;
+		histo[i]=pattern[i][0]=0;
 	success = false;
 	tol = 150; //
 	tolFact = 0.3;
@@ -364,7 +364,7 @@ void patternDetector::doDetectwoSync() {
 		bitcnt = 0;
 
         valid=validSequence(first,last);
-        valid&=!(messageLen+1 == maxMsgSize*8);
+        valid &= (messageLen+1 == maxMsgSize*8) ? false : true;
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
 		if (messageLen ==0) valid=pattern_pos=patternLen=0;
 
@@ -409,6 +409,10 @@ void patternDetector::doDetectwoSync() {
           pattern_pos=0;
           //doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
           return;
+        } else if (!valid) {
+			reset();
+			success=false;
+			pattern_pos=0;
         }
 
 		/*else {
