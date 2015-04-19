@@ -212,12 +212,13 @@ bool patternDetector::getSync(){
 				// Prüfe ob Sync und Clock valide sein können
 				if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
 
-				// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
-				uint8_t c = 1;
+				// Prüfen ob der gefundene Sync auch als message [clock, p] vorkommt
+				uint8_t c = 0;
 				while (c < messageLen)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 				{
 					//if (message[c] == clock && message[c+1] == p) break;
-					if (message[c] == p && message[c-1] == clock) break;   // Faster version as bevore
+					//if (message[c] == p && message[c-1] == clock) break;   // Faster version as bevore, but does not work
+					if (message[c+1] == p && message[c] == clock ) break;	// Fast as bevore and works.
 					c++;
 				}
 
