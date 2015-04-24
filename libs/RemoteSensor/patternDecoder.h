@@ -53,7 +53,7 @@ const char SERIAL_DELIMITER =';';
 const char MSG_START =0x2;			// this is a non printable Char
 const char MSG_END =0x3;			// this is a non printable Char
 
-//#define DEBUGDETECT 0
+//#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 2
 
@@ -101,7 +101,6 @@ enum mt {twostate,tristate,undef};
 		bool inTol(int val, int set);           // checks if a value is in tolerance range
 		bool inTol(int val, int set, int tolerance);
         bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
-
 		enum status {searching, clockfound, syncfound,detecting};
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
@@ -138,6 +137,7 @@ class patternDetector : protected patternBasic {
 		void reset();
 		bool getSync();	 // Searches clock and sync in given Signal
 		bool getClock(); // Searches a clock in a given signal
+		bool validSignal();						// Checks if stored message belongs to a validSignal
 		virtual void processMessage();
 		int8_t getPatternIndex(int key);
 
@@ -183,28 +183,32 @@ class patternDecoder : public patternDetector{
 	public:
 		patternDecoder();
 
-		uint8_t twoStateMessageBytes(const s_pidx s_patt);
-		void twoStateMessageBytes() {};
-		void triStateMessageBytes();
+		bool decode(int* pulse);
+		void processMessage();
+		bool checkSignal(const s_sigid s_signal);
+		bool checkEV1527type(s_sigid match);
+
 
 		void printMsgStr(String *first, String *second, String *third);
 		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
 		void printMessageHexStr();
-		uint8_t printTristateMessage(const s_pidx s_patt);
-		void printNewITMessage();
 
-		bool decode(int* pulse);
 
-		void processMessage();
 
-		bool checkSignal(const s_sigid s_signal);
-		bool checkEV1527type(s_sigid match);
 
 		void checkLogilink();
 		void checkITold();
 		void checkITautolearn();
 		void checkAS();
 		void checkTCM97001();
+
+		uint8_t twoStateMessageBytes(const s_pidx s_patt);
+		void twoStateMessageBytes() {};
+		void triStateMessageBytes();
+		uint8_t printTristateMessage(const s_pidx s_patt);
+		void printNewITMessage();
+	private:
+
 
 		//uint8_t byteMessage[maxMsgSize];
 		//byte byteMessageLen;
@@ -217,14 +221,13 @@ class ManchesterpatternDecoder
 	ManchesterpatternDecoder(patternDecoder *ref_dec);
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
-    bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
     void getMessageHexStr(String *message);
     bool isManchester();
+	void reset();
 
 
 
 	private:
-	void reset();
 	bool isLong(uint8_t pulse_idx);
 	bool isShort(uint8_t pulse_idx);
 	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
@@ -236,8 +239,8 @@ class ManchesterpatternDecoder
     int8_t longhigh;
     int8_t shortlow;
     int8_t shorthigh;
-    int clock;						// Manchester calculated clock
-    int dclock;						// Manchester calculated double clock
+//    int clock;						// Manchester calculated clock
+//    int dclock;						// Manchester calculated double clock
 
 	uint8_t minbitlen;
 
