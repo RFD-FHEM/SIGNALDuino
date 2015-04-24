@@ -22,7 +22,7 @@ BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
 {
     valuelen = bitlength; // How many bits shoudl be reserved for one value added ?
     bmask=0;
-    BitStore::buffsize = bufsize;
+    buffsize = bufsize;
     datastore= (unsigned char*) calloc(bufsize,sizeof(char)); // Speicher allokieren und 0 zuweisen
     reset();
     for (uint8_t x=7;x>(7-valuelen);x--)
