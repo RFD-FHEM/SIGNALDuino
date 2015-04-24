@@ -45,7 +45,7 @@
 ********************************************************
 */
 patternBasic::patternBasic() {
-	patternStore = new BitStore(2); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
+	patternStore = new BitStore(2,1); // Init our Patternstore, default is 1 bytes. So we can save 4 Values.
 
 	buffer[0] = buffer[1] = 0;
 	first = buffer;
@@ -164,7 +164,7 @@ void patternDetector::reset() {
 	success = false;
 	tol = 150; //
 	tolFact = 0.3;
-
+	mstart=0;
 	//Serial.println("reset");
 }
 
@@ -536,7 +536,7 @@ void patternDetector::processMessage()
         {
             getClock();
             getSync();
-            #ifdef DEBUGDETECT >1
+            #if DEBUGDETECT >= 1
             printOut();
             #endif
         }
@@ -710,7 +710,7 @@ void patternDecoder::processMessage()
 		postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
-
+		/*
 
 		ManchesterpatternDecoder mcdecoder(this);				// Init Manchester Decoder class
 		if (mcdecoder.isManchester() )//&& mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
@@ -728,18 +728,15 @@ void patternDecoder::processMessage()
 			preamble = String("MU")+String(SERIAL_DELIMITER)+preamble;
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
-			/*
-					1. Wir kennen Start und der Nachricht nicht...
-					2. Wir kennen das Ende der Nachricht nicht....
-			*/
-
 			//ITTX
 			// ETC
-				/*				Output raw message Data				*/
 
 			//preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+
 		}
+
 		success = true;
+		*/
 	} else {
 		success=false;
 		//reset();
@@ -764,18 +761,17 @@ void patternDecoder::printMsgStr(String *first, String *second, String *third)
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preamble,String *postamble)
 {
 
-	//Serial.print(*preamble);
-	String msg;
+	Serial.print(*preamble);
+	//String msg;
 	//msg.reserve(m_end-mstart);
-
 	for (;m_start<=m_end;m_start++)
 	{
-		msg +=message[m_start];
-		//Serial.print(message[m_start]);
+		//msg + =message[m_start];
+		Serial.print(message[m_start]);
 	}
-	//Serial.print(*postamble);
-
-	printMsgStr(preamble,&msg,postamble);
+	//Serial.print(msg);
+	Serial.print(*postamble);
+	//printMsgStr(preamble,&msg,postamble);
 }
 
 
