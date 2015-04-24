@@ -696,7 +696,7 @@ void patternDecoder::processMessage()
 
 
 		String preamble;
-		preamble.concat(MSG_START);
+		//preamble.concat(MSG_START);
 		for (uint8_t idx=0;idx<=patternLen;idx++)
 		{
 			if (pattern[idx][0] == 0) continue;
@@ -710,9 +710,10 @@ void patternDecoder::processMessage()
 		postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 		postamble.concat(MSG_END);
 		postamble.concat('\n');
-		/*
 
+		/*
 		ManchesterpatternDecoder mcdecoder(this);				// Init Manchester Decoder class
+
 		if (mcdecoder.isManchester() )//&& mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
 			return;
@@ -725,7 +726,8 @@ void patternDecoder::processMessage()
 			// Output Manchester Bits
 			//printMsgStr(&preamble,&mcbitmsg,&postamble);
 		} else {
-			preamble = String("MU")+String(SERIAL_DELIMITER)+preamble;
+		*/
+			preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			//ITTX
@@ -733,10 +735,10 @@ void patternDecoder::processMessage()
 
 			//preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
-		}
+		//}
 
 		success = true;
-		*/
+
 	} else {
 		success=false;
 		//reset();
