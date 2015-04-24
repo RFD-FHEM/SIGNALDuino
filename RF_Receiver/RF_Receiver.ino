@@ -28,13 +28,13 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "2.5raw-out"
+#define PROGVERS               "3.0raw-out-alpha"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   100
+#define FIFO_LENGTH			   80
 //#define TX_TST
 //#define DEBUG				   1
 #include <filtering.h> //for FiFo Buffer
@@ -109,8 +109,8 @@ void loop() {
   //Serial.print("fcnt: ");   Serial.println(fifocnt);
 
 
-  static int aktVal;
-  static bool state;
+  int aktVal;
+  bool state;
   while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
     //Serial.print(aktVal); Serial.print(",");
     #ifdef TX_TST
@@ -221,8 +221,8 @@ void IT_CMDs(String cmd);
 
 void HandleCommand(String cmd)
 {
-  int val;
-  String strVal;
+  //int val;
+  //String strVal;
 
   const char cmd_Version ='V';
   const char cmd_freeRam ='R';
@@ -240,9 +240,10 @@ void HandleCommand(String cmd)
 
   if (cmd.charAt(0) == cmd_help) {
     //Serial.println(F("? Use one of V R i t X"));//FHEM Message
-	Serial.print(cmd_help);	Serial.print(" Use one of");
+	Serial.print(cmd_help);	Serial.print(" Use one of ");
 	Serial.print(cmd_Version);Serial.print(cmd_space);
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
+	Serial.print(cmd_freeRam);Serial.print(cmd_space);
 	Serial.print(cmd_uptime);Serial.print(cmd_space);
 	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
 	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
