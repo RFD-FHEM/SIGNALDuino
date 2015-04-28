@@ -350,11 +350,14 @@ bool patternDetector::getClock(){
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
-	#if DEBUGDETECT>0
-	if (messageLen > maxMsgSize*8)
+
+	if (messageLen > maxMsgSize*8) {
+		#if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
-        processMessage();
-	#endif
+		#endif
+	    processMessage();
+	}
+
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
