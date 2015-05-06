@@ -356,6 +356,7 @@ void patternDetector::doDetectwoSync() {
 		Serial.println("Error, overflow in message Array");
 		#endif
 	    processMessage();
+	    reset();
 	}
 
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
