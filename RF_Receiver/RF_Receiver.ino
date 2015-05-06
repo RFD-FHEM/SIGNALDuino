@@ -109,9 +109,6 @@ void loop() {
   bool state;
   while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
     //Serial.print(aktVal); Serial.print(",");
-    #ifdef TX_TST
-    IT_TX(abs(aktVal));
-    #endif
     //--fifocnt;
 	//long t1= micros();
     state = musterDec.decode(&aktVal); //Logilink, PT2262
