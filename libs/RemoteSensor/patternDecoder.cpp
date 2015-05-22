@@ -374,11 +374,15 @@ bool patternDetector::getClock(){
 /* Detect without a Sync */
 void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
-	#if DEBUGDETECT>0
-	if (messageLen > maxMsgSize*8)
+
+	if (messageLen > maxMsgSize*8) {
+		#if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
-        processMessage();
-	#endif
+		#endif
+	    processMessage();
+	    reset();
+	}
+
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
@@ -389,8 +393,7 @@ void patternDetector::doDetectwoSync() {
 		bitcnt = 0;
 
         valid=validSequence(first,last);
-        //valid &= (messageLen+1 == maxMsgSize*8) ? false : true; //not working as next line
-		valid&=!(messageLen+1 == maxMsgSize*8);
+        valid &= (messageLen+1 == maxMsgSize*8) ? false : true;
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
 		if (messageLen ==0) valid=pattern_pos=patternLen=0;
 
@@ -426,35 +429,10 @@ void patternDetector::doDetectwoSync() {
             }
         }
 
-		// Funktionierende Version, erzeugt jedoch zu viel Ausgaben
-		if (!valid && messageLen>=minMessageLen)
-		{
-			success=true;
-          	processMessage();
-			pattern_pos=0;
-			reset();
-			return;
-		}
-		/*
-		// Funktioniert nicht wie gewünscht
-		if (valid == false)
-		{
-			success=false;
-			bool signal_valid = validSignal();
-			if (signal_valid == true)
-			{
-				processMessage();
-			}
-			reset();
-			pattern_pos=0;
-			return;
-		}
-*/
-/*
-		// Funktioniert nicht wie gewünscht
-        if (valid == false && signal_valid==true){
 
-          //success=true;
+        if (!valid && messageLen>=minMessageLen){
+
+          success=true;
           processMessage();
           reset();  // GGF hier nicht ausführen.
           pattern_pos=0;
@@ -465,7 +443,7 @@ void patternDetector::doDetectwoSync() {
 			success=false;
 			pattern_pos=0;
         }
-*/
+
 		/*else {
 			if (messageLen>=minMessageLen){
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
@@ -586,7 +564,7 @@ void patternDetector::processMessage()
         {
             getClock();
             getSync();
-            #if DEBUGDETECT >=1
+            #if DEBUGDETECT >= 1
             printOut();
             #endif
         }
@@ -782,12 +760,14 @@ void patternDecoder::processMessage()
 			//printMsgStr(&preamble,&mcbitmsg,&postamble);
 			success = true;
 		} else {
+		*/
 			preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
-			//preamble.concat("MU"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			//ITTX Protokoll z.B.
 			success = true;
 		}
+
 
 
 	} else {
@@ -816,19 +796,16 @@ void patternDecoder::printMsgStr(String *first, String *second, String *third)
 void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preamble,String *postamble)
 {
 
-	//Serial.print(*first);
-
 	Serial.print(*preamble);
 	//String msg;
 	//msg.reserve(m_end-mstart);
-
 	for (;m_start<=m_end;m_start++)
 	{
-		//msg +=message[m_start];
+		//msg + =message[m_start];
 		Serial.print(message[m_start]);
 	}
+	//Serial.print(msg);
 	Serial.print(*postamble);
-
 	//printMsgStr(preamble,&msg,postamble);
 }
 
