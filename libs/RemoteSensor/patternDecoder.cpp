@@ -646,8 +646,8 @@ void patternDecoder::processMessage()
 	//Serial.println("Message decoded:");
 	patternDetector::processMessage();//printOut();
 
-	String preamble="";
-	String postamble="";
+	String preamble;
+	String postamble;
 
 
 	if (state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
@@ -719,7 +719,7 @@ void patternDecoder::processMessage()
 
 
 		// Message has a clock puls, but no sync. Try to decode this
-		success = false;
+
 
 		#if DEBUGDECODE > 1
 		Serial.print("Clock found: ");
@@ -729,53 +729,65 @@ void patternDecoder::processMessage()
 
 
 		//String preamble;
-		//preamble.concat(MSG_START);
-		for (uint8_t idx=0;idx<=patternLen;idx++)
-		{
-			if (pattern[idx][0] == 0) continue;
 
-			preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-		}
-		preamble.concat("D=");
-
-		//String postamble;
-		postamble.concat(SERIAL_DELIMITER);
-		postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-		postamble.concat(MSG_END);
-		postamble.concat('\n');
-
+		preamble.concat(MSG_START);
 
 		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
-		mcdecoder.reset();
 
+		mcdecoder.reset();
+		mcdecoder.isManchester();
+		/*
 		if (mcdecoder.isManchester())// && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
-			String mcbitmsg="";
+			//String mcbitmsg;
 			//mcdecoder.getMessageHexStr(&mcbitmsg);
 
-			preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
+			preamble.concat("MC");
+			preamble.concat(SERIAL_DELIMITER);
+
+			postamble.concat(SERIAL_DELIMITER);
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
+
+			//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
+			printMsgRaw(0,messageLen,&preamble,&postamble);
+
 			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
 			// Output Manchester Bits
 			//printMsgStr(&preamble,&mcbitmsg,&postamble);
-			success = true;
 		} else {
 		*/
-			preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
+			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
+
+			preamble.concat("MU");
+			preamble.concat(SERIAL_DELIMITER);
+
+			for (uint8_t idx=0;idx<=patternLen;idx++)
+			{
+				if (pattern[idx][0] == 0) continue;
+
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
+
+			//String postamble;
+			postamble.concat(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			//ITTX Protokoll z.B.
-			success = true;
-		}
+		//}
 
+		success = true;
 
 
 	} else {
 		success=false;
 		//reset();
 	}
-	preamble="";
-	postamble="";
 }
 /** @brief (Prints given strings in provided order)
   *
@@ -1268,10 +1280,22 @@ void patternDecoder::triStateMessageBytes(){
 
 ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
 {
-	reset();
 	pdec = ref_dec;
 	ManchesterBits=new BitStore(1,30); // use 1 Bit for every value stored, reserve 30 Bytes = 240 Bits
+	reset();
 }
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+ManchesterpatternDecoder::~ManchesterpatternDecoder()
+{
+	delete ManchesterBits;
+
+}
+
+
+
 /** @brief (Resets internal vars to defaults)
   *
   * Reset internal vars to defaults. Called after error or when finished

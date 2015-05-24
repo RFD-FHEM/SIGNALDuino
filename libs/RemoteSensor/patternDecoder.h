@@ -219,6 +219,7 @@ class ManchesterpatternDecoder
 {
 	public:
 	ManchesterpatternDecoder(patternDecoder *ref_dec);
+	~ManchesterpatternDecoder();
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
     void getMessageHexStr(String *message);
