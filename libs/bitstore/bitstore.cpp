@@ -31,6 +31,16 @@ BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
     }
 }
 
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+ BitStore::~BitStore()
+{
+	free(datastore);
+}
+
+
 void BitStore::addValue(char value)
 {
     if (bytecount >=buffsize ) return; // Out of Buffer
@@ -84,7 +94,7 @@ void BitStore::reset()
 {
   for (uint8_t i=0;i<buffsize;i++)
   {
-      datastore[i]=0;
+      datastore[i]=NULL;
   }
   bytecount=0;
   valcount=0;

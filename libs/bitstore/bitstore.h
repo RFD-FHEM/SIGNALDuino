@@ -26,6 +26,7 @@ class BitStore
     public:
         /** Default constructor */
         BitStore(uint8_t bitlength=2, uint8_t bufsize=10);
+        ~BitStore();
         void addValue(char value);
         unsigned char getValue(uint8_t pos);
         const uint8_t getSize();
@@ -34,12 +35,10 @@ class BitStore
         unsigned char getByte(uint8_t idx);
         uint8_t bytecount;  // Number of stored values
         uint8_t valcount;  // Number of total values stored
-
     protected:
 
     private:
         uint8_t valuelen;   // Number of bits for every value
-
         uint8_t bmask;
         uint8_t bcnt;
         uint8_t buffsize;
