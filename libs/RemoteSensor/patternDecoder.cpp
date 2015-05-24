@@ -735,8 +735,7 @@ void patternDecoder::processMessage()
 		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
 
 		mcdecoder.reset();
-		mcdecoder.isManchester();
-		/*
+
 		if (mcdecoder.isManchester())// && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
 			//String mcbitmsg;
@@ -757,7 +756,7 @@ void patternDecoder::processMessage()
 			// Output Manchester Bits
 			//printMsgStr(&preamble,&mcbitmsg,&postamble);
 		} else {
-		*/
+
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
 			preamble.concat("MU");
@@ -779,7 +778,7 @@ void patternDecoder::processMessage()
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			//ITTX Protokoll z.B.
-		//}
+		}
 
 		success = true;
 
