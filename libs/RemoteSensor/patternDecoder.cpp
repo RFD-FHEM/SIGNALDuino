@@ -736,10 +736,10 @@ void patternDecoder::processMessage()
 
 		mcdecoder.reset();
 
-		if (mcdecoder.isManchester())// && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
-			//String mcbitmsg;
-			//mcdecoder.getMessageHexStr(&mcbitmsg);
+			String mcbitmsg;
+			mcdecoder.getMessageHexStr(&mcbitmsg);
 
 			preamble.concat("MC");
 			preamble.concat(SERIAL_DELIMITER);
@@ -749,12 +749,12 @@ void patternDecoder::processMessage()
 			postamble.concat('\n');
 
 			//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
-			printMsgRaw(0,messageLen,&preamble,&postamble);
+			//printMsgRaw(0,messageLen,&preamble,&postamble);
 
 			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
 			// Output Manchester Bits
-			//printMsgStr(&preamble,&mcbitmsg,&postamble);
+			printMsgStr(&preamble,&mcbitmsg,&postamble);
 		} else {
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
