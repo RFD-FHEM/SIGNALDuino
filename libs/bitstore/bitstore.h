@@ -33,7 +33,7 @@ class BitStore
         unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
         void reset();
         unsigned char getByte(uint8_t idx);
-        uint8_t bytecount;  // Number of stored values
+        uint8_t bytecount;  // Number of stored bytes
         uint8_t valcount;  // Number of total values stored
     protected:
 

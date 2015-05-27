@@ -86,6 +86,7 @@ unsigned char BitStore::getValue(uint8_t pos)
 
 unsigned char BitStore::getByte(uint8_t idx)
 {
+  if (idx >= buffsize) return -1; // Out of buffer range
   return (datastore[idx]);
 }
 

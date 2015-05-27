@@ -188,13 +188,9 @@ class patternDecoder : public patternDetector{
 		bool checkSignal(const s_sigid s_signal);
 		bool checkEV1527type(s_sigid match);
 
-
 		void printMsgStr(String *first, String *second, String *third);
 		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
 		void printMessageHexStr();
-
-
-
 
 		void checkLogilink();
 		void checkITold();
@@ -209,7 +205,6 @@ class patternDecoder : public patternDetector{
 		void printNewITMessage();
 	private:
 
-
 		//uint8_t byteMessage[maxMsgSize];
 		//byte byteMessageLen;
 
@@ -223,10 +218,10 @@ class ManchesterpatternDecoder
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
     void getMessageHexStr(String *message);
+    void getMessagePulseStr(String *str);
+    void getMessageClockStr(String* str);
     bool isManchester();
 	void reset();
-
-
 
 	private:
 	bool isLong(uint8_t pulse_idx);
@@ -240,11 +235,10 @@ class ManchesterpatternDecoder
     int8_t longhigh;
     int8_t shortlow;
     int8_t shorthigh;
-//    int clock;						// Manchester calculated clock
+    int clock;						// Manchester calculated clock
 //    int dclock;						// Manchester calculated double clock
 
 	uint8_t minbitlen;
-
 };
 /*
     Detector for manchester Signals. It uses already the toolset from patternBasic.
@@ -275,9 +269,6 @@ class ManchesterpatternDetector : public patternBasic {
         unsigned char reverseByte(unsigned char original);  // Not needed anymore
    		//uint8_t message[maxMsgSize*8];
 		bool silent;                    // True to suspress output, which is the default
-
-
-
 };
 
 /*

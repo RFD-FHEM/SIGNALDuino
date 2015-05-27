@@ -233,7 +233,7 @@ void HandleCommand(String cmd)
 
   if (cmd.charAt(0) == cmd_help) {
     //Serial.println(F("? Use one of V R i t X"));//FHEM Message
-	Serial.print(cmd_help);	Serial.print(" Use one of ");
+	Serial.print(cmd_help);	Serial.print(F(" Use one of "));
 	Serial.print(cmd_Version);Serial.print(cmd_space);
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
 	Serial.print(cmd_freeRam);Serial.print(cmd_space);

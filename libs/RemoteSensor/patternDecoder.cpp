@@ -738,13 +738,20 @@ void patternDecoder::processMessage()
 
 		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
+
 			String mcbitmsg;
+			//Serial.println("MC");
 			mcdecoder.getMessageHexStr(&mcbitmsg);
+   		    //Serial.println("f");
+
 
 			preamble.concat("MC");
 			preamble.concat(SERIAL_DELIMITER);
+			mcdecoder.getMessagePulseStr(&preamble);
 
 			postamble.concat(SERIAL_DELIMITER);
+			mcdecoder.getMessageClockStr(&postamble);
+
 			postamble.concat(MSG_END);
 			postamble.concat('\n');
 
@@ -1344,18 +1351,54 @@ bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
 	char hexStr[] ="00"; // Not really needed
+	message->reserve(ManchesterBits->bytecount*3); // Todo: Reduce to exact needed size
+	if (!message)
+		return ;
 
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx=0; idx<ManchesterBits->bytecount; ++idx){
+	for (uint8_t idx=0; idx<=ManchesterBits->bytecount; ++idx){
         //Serial.print(getMCByte(idx),HEX);
         //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+        //Serial.print(".");
 		sprintf(hexStr, "%02X",getMCByte(idx));
-        *message +=hexStr;
+        message->concat(hexStr);
+
 		//Serial.print(hexStr);
 	}
 	//Serial.println();
 
 }
+
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::getMessagePulseStr(String* str)
+{
+	str->reserve(32);
+	if (!str)
+			return;
+
+	str->concat("LL=");str->concat(pdec->pattern[longlow][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("LH=");str->concat(pdec->pattern[longhigh][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("SL=");str->concat(pdec->pattern[shortlow][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("SH=");str->concat(pdec->pattern[shorthigh][0]);str->concat(SERIAL_DELIMITER);
+}
+
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::getMessageClockStr(String* str)
+{
+	str->reserve(7);
+	if (!str)
+			return;
+
+	str->concat("C=");str->concat(clock);str->concat(SERIAL_DELIMITER);
+}
+
+
 
   /** @brief (retieves one Byte out of the Bitstore for manchester decoded bits)
     *
@@ -1478,7 +1521,7 @@ bool ManchesterpatternDecoder::isManchester()
 	#if DEBUGDETECT >= 1
 	Serial.print("  tstclock: ");Serial.print(tstclock);
 	#endif
-//	clock=tstclock;
+	clock =tstclock;
 //	dclock=clock*2;
 
 	#if DEBUGDETECT >= 1
