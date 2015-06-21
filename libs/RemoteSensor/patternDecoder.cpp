@@ -741,6 +741,7 @@ void patternDecoder::processMessage()
 
 			String mcbitmsg;
 			//Serial.println("MC");
+			mcbitmsg ="D=";
 			mcdecoder.getMessageHexStr(&mcbitmsg);
    		    //Serial.println("f");
 
