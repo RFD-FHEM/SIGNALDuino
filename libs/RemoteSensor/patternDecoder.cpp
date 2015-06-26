@@ -1425,7 +1425,7 @@ bool ManchesterpatternDecoder::doDecode() {
 	bool mc_start_found=false;
 	while (i < pdec->messageLen)
 	{
-		if ( isLong(pdec->message[i]) ||  isShort(pdec->message[i])  )
+		if ( mc_start_found==false && isLong(pdec->message[i]) ||  isShort(pdec->message[i])  )
 		{
 			pdec->mstart=i;
 			mc_start_found=true;
@@ -1441,7 +1441,7 @@ bool ManchesterpatternDecoder::doDecode() {
 			{
 				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
 				  //Serial.print("SS");
-				  ++i;
+				  i++;
 			}
 			else {
 				return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
@@ -2058,6 +2058,7 @@ OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
 
 /*
 The Sync signal begins really with 01, so we need to start decoding at first 01 pattern, not 10. 10 is caused by the startingpoint of the signal
+
 
 Sync
 10 10 10 10 10 10 10 10
