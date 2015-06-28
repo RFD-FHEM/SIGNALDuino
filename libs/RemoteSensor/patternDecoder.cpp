@@ -836,12 +836,13 @@ Checks Clock, Sync, low and high puls fact
 Returns true if all values match
 */
 bool patternDecoder::checkEV1527type(s_sigid match){
+
+	if (match.syncFact==0) // No Sync fact -> no sync check, filter not valid here
+	{
+		return false;
+	}
 	bool valid = true;
-	/*valid &= messageLen==Length;
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	*/
+
 	if (match.clock !=0 )
 	{
 		if (match.clock == -1)  // Auto Mode
