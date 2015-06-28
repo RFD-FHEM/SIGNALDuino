@@ -28,7 +28,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.1.0"
+#define PROGVERS               "3.1.1"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -355,14 +355,23 @@ void changeReciver() {
   }
 }
 
+void printFilter(uint8_t id)
+{
+	Serial.print("UPD Filter");
+	Serial.print(id);
+	Serial.print(";C=");	Serial.print(musterDec.protoID[id].clock);
+	Serial.print(";SF=");	Serial.print(musterDec.protoID[id].syncFact);
+	Serial.println(";");
+
+}
 void changeFilter()
 {
 	//cmdstring.concat(0);
 	char tmp[10];
 
-	cmdstring.toCharArray(tmp,10,1);
+	cmdstring.toCharArray(tmp,10,3);
 
-	const char *param = strtok(tmp,";");
+	char *param = strtok(tmp,";");
 	const uint8_t id = atoi(param);
 	s_sigid new_entry ={NULL,NULL,NULL,NULL,NULL,undef};
 
@@ -384,6 +393,10 @@ void changeFilter()
 		// Remove entry to filter list R;<number to remove>;
 		musterDec.protoID[id] = new_entry;
 	}
+	printFilter(id);
+	if (musterDec.numprotos+1 < id)
+		musterDec.numprotos = id+1;
+
 }
 
 

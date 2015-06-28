@@ -43,7 +43,7 @@
 const uint8_t maxNumPattern=6;
 const uint8_t maxMsgSize=30;
 const uint8_t minMessageLen=40;
-const uint8_t syncMinFact=9;
+const uint8_t syncMinFact=8;
 const uint8_t prefixLen=3;
 
 const int16_t maxPulse = 32001;  // Magic Pulse Length
