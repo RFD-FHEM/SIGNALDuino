@@ -168,7 +168,7 @@ class patternDetector : protected patternBasic {
 		*/
 	    uint8_t histo[maxNumPattern];
 	    uint8_t mstart; // Temp Variable zum Testen
-    	s_sigid protoID[10]; // Speicher für Protokolldaten
+    	s_sigid protoID[30]; // Speicher für Protokolldaten
     	uint8_t numprotos;// Number of protocols in protoID
 
 };
