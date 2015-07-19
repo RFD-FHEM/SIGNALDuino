@@ -671,18 +671,26 @@ void patternDecoder::processMessage()
 
 		#if DEBUGDECODE > 1
 		Serial.print("Index: ");
-		Serial.print("SC: "); Serial.print(sync);
+		Serial.print(" MStart: "); Serial.print(mstart);
+		Serial.print(" SYNC: "); Serial.print(sync);
 		Serial.print(", CP: "); Serial.print(clock);
+		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
 
 		if (m_endfound && mend - mstart >= minMessageLen)	// Check if message Length is long enough
 		{
+            #ifdef DEBUGDECODE
+            Serial.println("Filter Match: ");;
+            #endif
+
 			for (uint8_t i=0; i<numprotos;i++)
 			{
 				#ifdef DEBUGDECODE
 				Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
 				#endif
+				preamble="";
+				postamble="";
 				if (checkSignal(protoID[i]))
 				{
 					/*				Output raw message Data				*/
@@ -763,6 +771,28 @@ void patternDecoder::processMessage()
 
 			// Output Manchester Bits
 			printMsgStr(&preamble,&mcbitmsg,&postamble);
+
+			#if DEBUGDECODE == 1
+			preamble = "MC";
+			preamble.concat(SERIAL_DELIMITER);
+
+			for (uint8_t idx=0;idx<=patternLen;idx++)
+			{
+				if (pattern[idx][0] == 0) continue;
+
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
+
+			//String postamble;
+			postamble = String(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
+
+			printMsgRaw(0,messageLen,&preamble,&postamble);
+			#endif
+
 		} else {
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
@@ -1436,22 +1466,31 @@ bool ManchesterpatternDecoder::doDecode() {
 
             if (isLong(pdec->message[i])) {
 		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
-		          //Serial.print("L");
+		          Serial.print("L");
             }
 			else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
 			{
 				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
-				  //Serial.print("SS");
+				  Serial.print("SS");
 				  i++;
 			}
 			else {
-				return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+				if (i < pdec->messageLen-minbitlen)
+				{
+					ManchesterBits->reset();
+					Serial.print("RES");
+				} else {
+					Serial.print("END");
+					return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+				}
 			}
 
 		}
 		//Serial.print(" S MC ");
 		i++;
 	}
+	return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
+
 	//Serial.print(" ES MC ");
 
 

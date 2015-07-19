@@ -53,9 +53,9 @@ const char SERIAL_DELIMITER =';';
 const char MSG_START =0x2;			// this is a non printable Char
 const char MSG_END =0x3;			// this is a non printable Char
 
-//#define DEBUGDETECT 1
+//#define DEBUGDETECT 2
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 2
+//#define DEBUGDECODE 3
 
 #define PATTERNSIZE 2
 
