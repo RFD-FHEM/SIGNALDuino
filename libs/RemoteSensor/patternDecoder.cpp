@@ -1466,21 +1466,30 @@ bool ManchesterpatternDecoder::doDecode() {
 
             if (isLong(pdec->message[i])) {
 		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+				  #ifdef DEBUGDECODE
 		          Serial.print("L");
+		          #endif
             }
 			else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
 			{
-				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
+				  #ifdef DEBUGDECODE
 				  Serial.print("SS");
+				  #endif
+
 				  i++;
 			}
 			else {
 				if (i < pdec->messageLen-minbitlen)
 				{
 					ManchesterBits->reset();
+					#ifdef DEBUGDECODE
 					Serial.print("RES");
+					#endif
 				} else {
+					#ifdef DEBUGDECODE
 					Serial.print("END");
+					#endif
 					return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
