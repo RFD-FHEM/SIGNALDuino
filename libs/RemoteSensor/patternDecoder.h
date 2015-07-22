@@ -53,9 +53,9 @@ const char SERIAL_DELIMITER =';';
 const char MSG_START =0x2;			// this is a non printable Char
 const char MSG_END =0x3;			// this is a non printable Char
 
-//#define DEBUGDETECT 2
+//#define DEBUGDETECT 0
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 3
+//#define DEBUGDECODE 1
 
 #define PATTERNSIZE 2
 
@@ -156,6 +156,8 @@ class patternDetector : protected patternBasic {
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
 		uint8_t messageLen;
+  		bool m_truncated;     // Identify if message has been truncated
+
 		/*
 		int buffer[2];
 		int* first;
@@ -182,6 +184,7 @@ class patternDecoder : public patternDetector{
 	friend class ManchesterpatternDecoder;
 	public:
 		patternDecoder();
+		void reset();
 
 		bool decode(int* pulse);
 		void processMessage();
@@ -191,6 +194,7 @@ class patternDecoder : public patternDetector{
 		void printMsgStr(String *first, String *second, String *third);
 		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
 		void printMessageHexStr();
+
 
 		void checkLogilink();
 		void checkITold();
