@@ -63,6 +63,9 @@ void patternBasic::reset()
 	clock = -1;
 	patternStore->reset();
     tol=0;
+	for (int i=0;i<maxNumPattern;i++)
+        pattern[i][0]=0;
+
 }
 
 bool patternBasic::detect(int* pulse){
@@ -378,7 +381,7 @@ void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
 	if (messageLen+1 >= maxMsgSize*8) {
-		#if DEBUGDETECT>=0
+		#if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
 		#endif
 	    processMessage();
@@ -391,9 +394,7 @@ void patternDetector::doDetectwoSync() {
 		static uint8_t pattern_pos;
         bool valid;
         bool add_new_pattern=true;
-
 		bitcnt = 0;
-
         valid=validSequence(first,last);
         valid &= (messageLen+1 == maxMsgSize*8) ? false : true;
 		if (pattern_pos > patternLen) patternLen=pattern_pos;
@@ -411,14 +412,11 @@ void patternDetector::doDetectwoSync() {
 		Serial.print(F(", mLen: ")); Serial.print(messageLen);
 		#endif
 
-
-
-
 		if (0<=fidx){
 			//gefunden
 			message[messageLen]=fidx;
 			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
-			//pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2;
+			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2; // Moving average
 			messageLen++;
 			add_new_pattern=false;
         }   else {
@@ -430,7 +428,6 @@ void patternDetector::doDetectwoSync() {
                 add_new_pattern=false;
             }
         }
-
 
         if (!valid && messageLen>=minMessageLen){
 
@@ -445,7 +442,6 @@ void patternDetector::doDetectwoSync() {
 			success=false;
 			pattern_pos=0;
         }
-
 		/*else {
 			if (messageLen>=minMessageLen){
 				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
