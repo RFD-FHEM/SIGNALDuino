@@ -678,8 +678,7 @@ void patternDecoder::processMessage()
 		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
-
-		if (m_endfound && mend - mstart >= minMessageLen)	// Check if message Length is long enough
+		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))	// Check if message Length is long enough
 		{
             #ifdef DEBUGDECODE
             Serial.println("Filter Match: ");;
