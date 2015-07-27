@@ -386,7 +386,7 @@ void decode_onoff()
 
   for ( uint8_t i=0;i<rand_data_size;i++)
   {
-       //state = ooDecode.decode(&random_data[i]);  // simulate some noise
+       state = ooDecode.decode(&random_data[i]);  // simulate some noise
   }
 
   uint16_t i=0;
@@ -411,7 +411,7 @@ void decode_onoff()
   }
   for ( uint8_t i=0;i<rand_data_size;i++)
   {
-      //state =  ooDecode.decode(&random_data[i]);
+      state =  ooDecode.decode(&random_data[i]);
   }
 
 
@@ -427,7 +427,7 @@ void decode_signalstream()
 
     for ( uint8_t i=0;i<=rand_data_size;i++)
     {
-        //state =  ooDecode.decode(&random_data[i]);
+        state =  ooDecode.decode(&random_data[i]);
     }
 
     uint16_t i=0;
@@ -442,7 +442,7 @@ void decode_signalstream()
     init_random_data();
     for ( uint8_t i=0;i<=rand_data_size;i++)
     {
-        //state =  ooDecode.decode(&random_data[i]);
+        state =  ooDecode.decode(&random_data[i]);
     }
 
 
@@ -466,6 +466,7 @@ void setup() {
   init_random_data();
   delay(2000);
   Serial.println("Startup:");
+ /*
   ooDecode.protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
   ooDecode.protoID[1]=(s_sigid){0,0,-11,560,0,twostate}; // RSL
   ooDecode.protoID[2]=(s_sigid){0,0,0,0,0,undef}; // Free Slot
@@ -477,14 +478,14 @@ void setup() {
   ooDecode.protoID[8]=(s_sigid){0,0,-8,300,0,twostate}; //  kaku switch Protocol
 
   ooDecode.numprotos=9;
-
+*/
 	// Simple ON OFF Data
   //detect_onoff();
   uint32_t start_time=0;
   uint32_t end_time=0;
   uint32_t duration=0;
 
-/*
+
     //   Oregon Scientific V2 protocol regression test
 
   pulsedata = sample_OSV2_data;
@@ -503,7 +504,7 @@ void setup() {
   Serial.print("Signal Time is=");  Serial.print(signalduration);  Serial.println(" micro seconds");
   Serial.println("--------------------------------------------------------");
 
-*/
+
 
     //   regression test, working with Signaldata and not pulsedata
   Serial.println("");
@@ -522,7 +523,7 @@ void setup() {
   Serial.println("--------------------------------------------------------");
   Serial.println("");
 
-/*
+
 
     //   M0 Logilink protocol puls pause regression test
   pulsedata = sample_onoff_data;
@@ -542,7 +543,7 @@ void setup() {
   Serial.print("Signal Time is=");  Serial.print(signalduration);  Serial.println(" micro seconds");
   Serial.println("--------------------------------------------------------");
   Serial.println("");
-*/
+
 
 
 

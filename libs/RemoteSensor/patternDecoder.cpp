@@ -1,7 +1,7 @@
 /*
-*   Pattern Decoder Library V0.1
+*   Pattern Decoder Library V1
 *   Library to decode radio signals based on patternd detection
-*   2014  N.Butzek, S.Butzek
+*   2014-2015  N.Butzek, S.Butzek
 
 *   This library contains different classes to perform decoding of radio signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -203,26 +203,6 @@ bool patternDetector::validSignal()
 	return true;									// Message seems to be valid
 }
 
-/*
-void patternDetector::ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n)
-{
-	int min[2], i, j, pos;
-	for (i=0; i < n; ++i) // Das Array an Position i teilen
-	{ // mit leerem linken Teil beginnen
-		pos = i; // suche in unsortiertem Teil
-		*min = *arr[i]; // das kleinste Element
-		for( j = i+1; j < n; j++)
-			if ( min[0] > arr[j][0])
-			{
-				pos = j;
-				*min = *arr[j];
-			}
-		*arr[pos] = *arr[i]; // Austausche
-		*arr[i] = *min;
-	}
-
-}
-*/
 bool patternDetector::getSync(){
     // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
     //
@@ -568,53 +548,6 @@ void patternDetector::processMessage()
         }
 }
 
-/* Searches a pattern in the detected message
-key[0] = Anzahl der Elemente in key
-key[1..n] = Zu suchende Elemente
-*/
-
-bool patternDetector::isPatternInMsg(int *key)
-{
-    bool valid = true;
-    //bool found = false;
-
-    uint8_t i,p=0;
-    for(i=1; i<=key[0];++i)
-    {
-        //found=false;
-        if (0<=getPatternIndex(key[i]))
-			valid &= true;
-		else
-			valid &= false;
-        /*
-        for(p=0; p<maxNumPattern;++p)
-        {
-
-            if (found=inTol(key[i],pattern[p][0]))  break;
-        }
-        valid &=found;
-		*/
-    }
-    return valid;
-}
-
-/* Searches a pattern in the detected message and returns the index where the pattern is found. returns -1 if it's not found */
-int8_t patternDetector::getPatternIndex(int key)
-{
-	//const int tolerance= abs(key)>abs(clock)*13 ? abs(key*0.1) : abs(key*0.3);
-	//const uint16_t tolerance= abs(key)>abs(clock)*13 ? tol*10 : tol;
-	const uint16_t tolerance= key>10 ? 3: 1;
-	//Serial.print("  tol: "); Serial.println(tolerance);
-//valid &= inTol(round(sync/(float)clock), match.syncFact, 3); //sync in tolerance
-
-
-	for(uint8_t p=0; p<patternLen;p++)
-    {
-		//if (inTol(key,pattern[p][0]),tolerance) return p;
-		if (inTol(key,pattern[p][0]/(float)(pattern[clock][0]),tolerance)) return p;
-	}
-	return -1;
-}
 
 
 
@@ -684,19 +617,16 @@ void patternDecoder::processMessage()
             Serial.println("Filter Match: ");;
             #endif
 
-			for (uint8_t i=0; i<numprotos;i++)
-			{
-				#ifdef DEBUGDECODE
-				Serial.print("ID:");Serial.print(i);Serial.print(" - ");;
-				#endif
+
 				preamble="";
 				postamble="";
-				if (checkSignal(protoID[i]))
-				{
+
 					/*				Output raw message Data				*/
 					preamble.concat(MSG_START);
 					//preamble.concat('\n');
-					preamble.concat('M'); preamble.concat(i); preamble.concat(SERIAL_DELIMITER);  // Message Index
+					preamble.concat("MS");   // Message Index
+					//preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
+					preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
                         if (pattern[idx][0] == 0) continue;
@@ -716,12 +646,8 @@ void patternDecoder::processMessage()
 					printMsgRaw(mstart,mend,&preamble,&postamble);
 					success = true;
 
-				} else {
-					#ifdef DEBUGDECODE || DEBUGDETECT
-					Serial.println();
-					#endif
-				}
-			}
+
+
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
         {
             messageLen=messageLen-mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
@@ -878,456 +804,11 @@ void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preambl
 }
 
 
-/*
-// Function needs to be renamed
-Checks Clock, Sync, low and high puls fact
 
-Returns true if all values match
-*/
-bool patternDecoder::checkEV1527type(s_sigid match){
-
-	if (match.syncFact==0) // No Sync fact -> no sync check, filter not valid here
-	{
-		return false;
-	}
-	bool valid = true;
-
-	if (match.clock !=0 )
-	{
-		if (match.clock == -1)  // Auto Mode
-		{
-			match.clock=pattern[clock][0];
-		}
-		valid &= inTol(pattern[clock][0], match.clock);//clock in tolerance
-	}
-
-	#ifdef DEBUGDECODE
-	Serial.print(valid);
-	#endif
-	valid &= inTol(round(pattern[sync][0]/(float)pattern[clock][0]), match.syncFact, 3); //sync in tolerance
-	#ifdef DEBUGDECODE
-	Serial.print(valid);
-	#endif
-	return valid;  // Skip further investigation of protocol and do this in FHEM
-
-/*
-
-	int check_vals[3] = {2,0,0};
-
-	//check_vals[1]= match.clock;
-	//check_vals[2]= match.lowFact* match.clock;
-
-	check_vals[1]= 1; // Clock fact
-	check_vals[2]= match.lowFact;
-
-	valid &= isPatternInMsg(check_vals);
-//	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
-	#ifdef DEBUGDECODE
-	Serial.print(valid);
-	#endif
-	check_vals[2]=  match.highFact; //* match.clock;
-	valid &= isPatternInMsg(check_vals);
-//	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	return valid;
-*/
-}
-
-bool patternDecoder::checkSignal(const s_sigid s_signal)
-{
-	bool valid = checkEV1527type(s_signal);
-	return valid;  // Exit here, let's do all decoding Stuff outside
-
-/*
-	if (valid && s_signal.messageType == twostate)
-	{
-		// Get Index for the message Pattern
-		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),getPatternIndex(s_signal.highFact),clock};
-
-		#if DEBUGDECODE > 1
-		Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(clock);
-		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
-		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
-		#endif // DEBUGDECODE
-
-
-		//valid &= (twoStateMessageBytes(p_idx) == s_signal.len);
-		//#ifdef DEBUGDECODE
-		//	Serial.print(valid);
-		//#endif
-
-		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-	}
-	else if (valid && s_signal.messageType == tristate)
-	{
-		// Get Index for the message Pattern
-		//const s_pidx p_idx = {getPatternIndex(-s_signal.lowFact*s_signal.clock),getPatternIndex(-s_signal.highFact*s_signal.clock),getPatternIndex(s_signal.clock)};
-
-		//const s_pidx p_idx = {getPatternIndex(s_signal.lowFact*s_signal.clock),
-		//					  getPatternIndex(s_signal.highFact*s_signal.clock),
-		//					  getPatternIndex(s_signal.clock),
-		//					  getPatternIndex(s_signal.syncFact*s_signal.clock)  //Todo:  Toleranz ist hierfür zu gering
-		//					  };
-
-		const s_pidx p_idx = {getPatternIndex(s_signal.lowFact),
-							  getPatternIndex(s_signal.highFact),
-							  clock,
-							  sync  //Todo:  Toleranz ist hierfür zu gering
-							  };
-
-
-		#if DEBUGDECODE > 1
-		Serial.print(F("Index: "));
-		Serial.print("SC: "); Serial.print(p_idx.sc_idx);
-		Serial.print(", CP: "); Serial.print(p_idx.ck_idx);
-		Serial.print(F(", SP: ")); Serial.print(p_idx.lf_idx);
-		Serial.print(F(", LP: ")); Serial.println(p_idx.hf_idx);
-		#endif // DEBUGDECODE
-
-		valid &= (triStateMessageBytes(p_idx) == s_signal.len);
-		valid &= (printTristateMessage(p_idx) == s_signal.len);
-		#ifdef DEBUGDECODE
-			Serial.print(valid);
-		#endif
-
-		//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-
-	}
-
-	return valid;
-	*/
-}
-
-
-
-
-void patternDecoder::checkAS(){
-/*
-AS:
-	clock: 		300
-	Sync factor: 	14
-	start sequence: [300, -4200] => [1, -14]
-	high pattern:	[300, -1500] => [1, -5]
-	low pattern:	[300, -600] => [1, -2]
-	message length:	32 bit
-
-FHEM Schnittstelle:
-    ASTTIIDDDDDD
-    AS  - Arduino Sensor
-    TT  - Bit 0..6 type
-	    - Bit 7 trigger (0 auto, 1 manual)
-    II  - Bit 0..5 id
-		- Bit 6,7 battery status (00 - bad, 01 - change, 10 - ok, 11 - optimal)
-    DD1 - LowByte
-    DD2 - HighByte
-*/
-	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-/*
-	bool valid = checkEV1527type(500, 18, 1, 2, 32); //14 kommt hier nicht durch =>12
-	twoStateMessageBytes();
-	if (valid) {//ok, it's AS
-		Serial.print("AS");
-		printMessageHexStr();
-		success = true;
-	}
-*/
-}
-
-
-
-
-void patternDecoder::checkLogilink(){
-/*
-Logilink NC_WS:
-	clock: 		500
-	Sync factor: 	18
-	start sequence: [500, -9000] => [1, -18]
-	high pattern:	[500, -4000] => [1, -8]
-	low pattern:	[500, -2000] => [1, -4]
-	message length:	36 bit
-	characteristic:	first bits allways 0101
-			checksum
-*/
-/*
-	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-	bool valid = checkSignal(protoID[0]);
-	//valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-	#ifdef DEBUGDECODE
-		Serial.println(valid);
-	#endif
-
-	if (valid) {//ok, it's Logilink
-		//byteMessage[byteMessageLen-1] <<=3; //shift last bits to align left in bitsequence
-		Serial.print("W03");
-		printMessageHexStr();
-		success = true;
-	}
-	*/
-}
-
-
-void patternDecoder::checkTCM97001(){
-/*
-TCM Art. Nr. 97001:
-	clock:	 		500
-	Sync factor: 	18
-	start sequence: [500, -9000] => [1, -18]
-	high pattern:	[500, -4000] => [1, -8]
-	low pattern:	[500, -2000] => [1, -4]
-	message length:	24 bit
-	characteristic:	first 8 bits are sensor id, which is resettet every time the battery is changed
-					Bit 9  			Battery
-					Bit 10			unknown
-					Bit 11 & 12	 	positiv (00) or negativ (11) temperature
-					Bit 13-22 	 	Temperature / 10 if positiv or Temp^0x3fe/10 if negativ
-					Bit 23			unknown may be a checksum?
-					Bit 24 			transmitting auto =0 or manual =1
-*/
-/*
-	const s_sigid tcmSignal = {4,8,18,500};
-	bool valid = checkEV1527type(tcmSignal);
-	if (valid)
-	{
-		// Get Index for the message Pattern
-		const s_pidx tcmPattern = {getPatternIndex(-tcmSignal.lowFact*clock),getPatternIndex(-tcmSignal.highFact*clock),getPatternIndex(clock)};
-		#if DEBUGDECODE > 1
-	//	Serial.print(F("Index: ")); Serial.print("CP: "); Serial.print(ck_idx);
-	//	Serial.print(F(", SP: ")); Serial.print(sp_idx);
-	//	Serial.print(F(", LP: ")); Serial.println(lp_idx);
-		#endif // DEBUGDECODE
-		valid &= (twoStateMessageBytes(tcmPattern) == 24);
-	}
-	if (valid) {//ok, it's TCM97001
-		Serial.print("W08");
-		printMessageHexStr();
-		success = true;
-	}
-*/
-}
-
-void patternDecoder::checkITautolearn(){
-/*
-IT self learning:
-	clock: 		270
-	Sync factor: 	10
-	start sequence: [270, -2700] => [1, -10]
-	low pattern:	[270, -270], [270, -1350]  => [1, -1], [1, -5]
-	high pattern:	[270, -1350], [270, -270] => [1, -5], [1, -1]
-	message length:	32 bit
-*/
-	//checkEV1527type(int clockTst, byte startFact, byte lowFact, byte highFact, byte Length)
-/*
-	bool valid = checkEV1527type(270, 10, 1, 5, 64);
-	// two bits in Message give one final bit:
-	// 01 => 0, 10 => 1
-	if (valid) {//ok, it's new IT selflearning
-		Serial.print("AR");
-		printNewITMessage();
-		Serial.println();
-		success = true;
-	}
-	*/
-}
-
-void patternDecoder::checkITold() {
-/*
-IT old with selector:
-	clock: 		400 -> Variable Clock
-	Sync factor: 	(31)  27-33
-	start sequence: [400, -13200] => [1, -31]
-	high pattern:	[1200, -400][1200, -400] => [3, -1][3, -1]
-	low pattern:	[400, -1200][400, -1200] => [1, -3][1, -3]
-	float pattern:	[400, -1200][1200, -400] => [1, -3][3, -1]
-	message length:	12 bit
-	characteristic: IT only uses 2 states: low, float
-					clock varies between controls from 340 to 400 => using measured clock leads to lower (required) tolerances
-*/
-	/*bool valid = true;
-	valid &= messageLen==24;
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	*/
-	/*
-	int clockTst = 360;
-	valid &= inTol(clock, clockTst);
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-
-
-	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-//	valid &= (inTol(*(pattern+0),3*clock) & inTol(*(pattern+1),-1*clock));//p0=[3, -1]
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-//	valid &= (inTol(*(pattern+2),1*clock) & inTol(*(pattern+3),-3*clock));//p1=[1, -3]
-	#ifdef DEBUGDECODE
-		Serial.println(valid);
-	#endif
-	if (valid){
-		//printOut();
-		triStateMessageBytes();
-		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
-		Serial.print("IR");
-	//	printTristateMessage();
-		Serial.print("_");Serial.print(clock);
-		Serial.println();
-		success = true;
-	}
-	*/
-}
-
-
-
-
-void patternDecoder::printMessageHexStr(){
-	/*
-	char hexStr[] ="00";
-	for (byte cnt=0; cnt<byteMessageLen; ++cnt){
-		sprintf(hexStr, "%02x",byteMessage[cnt]);
-		Serial.print(hexStr);
-	}
-
-	Serial.println();
-	*/
-}
-
-uint8_t patternDecoder::printTristateMessage(const s_pidx s_patt){
-	/* Message Code
-		0: [1, -3], [1, -3] => message 1,1
-		1: [3, -1], [3, -1] => message 0,0
-		F: [1, -3], [3, -1] => message 1,0
-	*/
-	/*
-	char msgChar;
-	uint8_t chrcnt=0;
-	//for (byte idx=0; idx<messageLen; idx +=2){
-	for(uint8_t idx=mstart+2; idx<messageLen; idx+=4) {
-
-		if (message[idx] == s_patt.ck_idx && message[idx+1] == s_patt.sc_idx)  // Ende neuer Sync oder sonst was
-			break;
-		else if (message[idx] == s_patt.hf_idx && message[idx]==message[idx+2] && message[idx+1] == message[idx+3] )
-			msgChar = '1';
-		else if (message[idx] == s_patt.ck_idx && message[idx]==message[idx+2] && message[idx+1] == message[idx+3] )
-			msgChar = '0';
-		else if (message[idx] == s_patt.ck_idx && message[idx] != message[idx+2] && message[idx+1] != message[idx+3] )
-			msgChar = 'F';
-		Serial.print(msgChar);
-		chrcnt++;
-	}
-	return chrcnt;
-	*/
-}
-
-void patternDecoder::printNewITMessage(){
-	/* Message Code
-		0: message 01
-		1: message 10
-	*/
-
-	/*
-	char msgChar;
-	for (byte idx=0; idx<messageLen; idx +=2){
-		if (message[idx]==0 & message[idx+1]==1)
-			msgChar = '0';
-		else if (message[idx]==1 & message[idx+1]==0)
-			msgChar = '1';
-		else
-			msgChar = '?';
-		Serial.print(msgChar);
-	}
-	*/
-}
-uint8_t patternDecoder::twoStateMessageBytes(const s_pidx s_patt){
-	/*
-	byte byteCode = 0;
-	byte byteCnt = 0;
-	uint8_t idx=0;
-	uint8_t bitcnt=0;
-	// First and second message Index is sync
-	for(idx=mstart+2; idx<messageLen; ++idx) {
-		byteCode <<= 1;
-		if (message[idx]!=s_patt.ck_idx) break;			// no Clock, abort
-
-		idx++;
-		if (message[idx]==s_patt.hf_idx){
-			byteCode |=1;						// Highpuls = 1
-			#if DEBUGDECODE >1
-			Serial.print(1);
-			#endif
-		} else if (message[idx]!=s_patt.lf_idx){
-			break;								// No low Puls, abort
-		} else {
-			#if DEBUGDECODE >1
-			Serial.print(0);
-			#endif
-		}
-        bitcnt++;
-
-		if (bitcnt==8){ //byte full
-            bitcnt=0;
-			//Serial.println(byteCode,HEX);
-			#if DEBUGDECODE >1
-			Serial.print(" ");
-			#endif
-			byteMessage[byteCnt]=byteCode;
-			byteCnt++;
-			byteCode = 0;
- 		}
-	}
-
-	if (bitcnt != 0) {//non full byte
-		//Serial.println(byteCode,HEX);
-		byteCode <<= 7-bitcnt; // Align Bits left
-		byteMessage[byteCnt]=byteCode;
-		byteMessageLen = byteCnt+1;
-	} else
-		byteMessageLen = byteCnt;
-	#if DEBUGDECODE >1
-	Serial.print(" IDX: "); Serial.print(idx);
-	Serial.print(", bitcnt: "); Serial.print(bitcnt + (byteCnt*8));
-	Serial.println();
-	#endif
-	return (bitcnt + (byteCnt*8) );  // Return number of detected bits
-	*/
-}
-
-void patternDecoder::triStateMessageBytes(){
-	//the function interpretes only two states: 0([1, -3][1, -3]),floating([1, -3][3, -1])
-	// I wouldn't know how to represent three digits => As 3^n?
-	/*
-	byte byteCode = 0;
-	byte byteCnt = 0;
-	for(byte idx=0; idx<messageLen; idx+=2) {
-		byteCode <<= 1;
-		if (message[idx] != message[idx+1]){// two succeeding equals mark 0
-			byteCode |=1;
-		}
-		if (((idx+2) % 16) ==0){ //byte full
-			//Serial.println(byteCode);
-			byteMessage[byteCnt]=byteCode;
-			byteCnt++;
-			byteCode = 0;
- 		}
-	}
-	if ((messageLen % 16) != 0) {//non full byte
-			//Serial.println(byteCode);
-			byteMessage[byteCnt]=byteCode;
-			byteMessageLen = byteCnt+1;
-	} else
-		byteMessageLen = byteCnt;
-		*/
-}
 
 /*
 ********************************************************
-************* Manchester detection class ***************
+************* Manchester DECODER class ***************
 ********************************************************
 */
 /** @brief (Constructor for Manchester decoder. ref= object of type patternDetecor which is calling the manchester decoder)
@@ -1644,8 +1125,36 @@ bool ManchesterpatternDecoder::isManchester()
 
 	return true;
 }
+/*
+
+********************************************
 
 
+
+********************************************
+
+
+
+********************************************
+
+
+
+  Stuff behind this, is not used anymore
+
+
+
+
+********************************************
+
+
+
+********************************************
+
+
+
+********************************************
+
+*/
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
 	tolFact = 5.0;
