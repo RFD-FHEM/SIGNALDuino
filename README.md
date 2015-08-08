@@ -1,1 +1,1 @@
-Special Test Sketch, to gather more information of TX3 Lacross Signal.
+Development version, to test unfiltered synced messages with fhem module
