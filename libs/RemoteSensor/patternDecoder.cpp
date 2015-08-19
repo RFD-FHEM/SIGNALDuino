@@ -68,6 +68,7 @@ void patternBasic::reset()
 
 }
 
+
 bool patternBasic::detect(int* pulse){
 	success = false;
 	//swap buffer
@@ -174,6 +175,14 @@ void patternDetector::reset() {
 
 	//Serial.println("reset");
 }
+
+const status patternDetector::getState()
+{
+	return state;
+}
+
+
+
 
 bool patternDetector::detect(int* pulse){
 	patternBasic::detect(pulse);   // Call function from base class, to do some basic stuff
@@ -421,6 +430,8 @@ void patternDetector::doDetectwoSync() {
 			reset();
 			success=false;
 			pattern_pos=0;
+        } else if (valid && messageLen>=minMessageLen){
+			state=detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
         }
 		/*else {
 			if (messageLen>=minMessageLen){

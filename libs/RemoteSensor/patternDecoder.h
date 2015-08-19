@@ -66,6 +66,7 @@ const char MSG_END =0x3;			// this is a non printable Char
 
 // Message Type
 enum mt {twostate,tristate,undef};
+enum status {searching, clockfound, syncfound,detecting};
 
 // Struct for signal identificaion
  struct s_sigid {
@@ -92,7 +93,10 @@ enum mt {twostate,tristate,undef};
  base class for pattern detector subclasses. Containing only the toolset used to define a pattern detector
 */
  class patternBasic {
+
     public:
+
+
         patternBasic();
 		virtual bool detect(int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
@@ -101,14 +105,14 @@ enum mt {twostate,tristate,undef};
 		bool inTol(int val, int set);           // checks if a value is in tolerance range
 		bool inTol(int val, int set, int tolerance);
         bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
-		enum status {searching, clockfound, syncfound,detecting};
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
-
 		int8_t clock;                           // index to clock in pattern
     protected:
+		status state;                           // holds the status of the detector
+
 		int buffer[2];                          // Internal buffer to store two pules length
         int* first;                             // Pointer to first buffer entry
 		int* last;                              // Pointer to last buffer entry
@@ -117,8 +121,8 @@ enum mt {twostate,tristate,undef};
 		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
 		BitStore *patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
-		status state;                           // holds the status of the detector
 		bool success;                           // True if a valid coding was found
+
 };
 
 
@@ -138,6 +142,7 @@ class patternDetector : protected patternBasic {
 		bool getClock(); // Searches a clock in a given signal
 		bool validSignal();						// Checks if stored message belongs to a validSignal
 		virtual void processMessage();
+		const status getState();
 
 
 		void printOut();
