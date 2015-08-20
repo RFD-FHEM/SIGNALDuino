@@ -53,9 +53,9 @@ const char SERIAL_DELIMITER =';';
 const char MSG_START =0x2;			// this is a non printable Char
 const char MSG_END =0x3;			// this is a non printable Char
 
-//#define DEBUGDETECT 2
+//#define DEBUGDETECT 255
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 1
+//#define DEBUGDECODE 2
 
 #define PATTERNSIZE 1
 
@@ -66,6 +66,7 @@ const char MSG_END =0x3;			// this is a non printable Char
 
 // Message Type
 enum mt {twostate,tristate,undef};
+enum status {searching, clockfound, syncfound,detecting};
 
 // Struct for signal identificaion
  struct s_sigid {
@@ -92,7 +93,10 @@ enum mt {twostate,tristate,undef};
  base class for pattern detector subclasses. Containing only the toolset used to define a pattern detector
 */
  class patternBasic {
+
     public:
+
+
         patternBasic();
 		virtual bool detect(int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
@@ -101,14 +105,14 @@ enum mt {twostate,tristate,undef};
 		bool inTol(int val, int set);           // checks if a value is in tolerance range
 		bool inTol(int val, int set, int tolerance);
         bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
-		enum status {searching, clockfound, syncfound,detecting};
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
-
-		uint16_t clock;                         // index to clock in pattern
+		int8_t clock;                           // index to clock in pattern
     protected:
+		status state;                           // holds the status of the detector
+
 		int buffer[2];                          // Internal buffer to store two pules length
         int* first;                             // Pointer to first buffer entry
 		int* last;                              // Pointer to last buffer entry
@@ -117,8 +121,8 @@ enum mt {twostate,tristate,undef};
 		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
 		BitStore *patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
-		status state;                           // holds the status of the detector
 		bool success;                           // True if a valid coding was found
+
 };
 
 
@@ -130,7 +134,6 @@ enum mt {twostate,tristate,undef};
 class patternDetector : protected patternBasic {
 
 	public:
-		//enum status {searching, detecting};
 		patternDetector();
 		bool detect(int* pulse);
 		void doDetectwoSync();
@@ -139,39 +142,22 @@ class patternDetector : protected patternBasic {
 		bool getClock(); // Searches a clock in a given signal
 		bool validSignal();						// Checks if stored message belongs to a validSignal
 		virtual void processMessage();
-		int8_t getPatternIndex(int key);
+		const status getState();
 
-		//void swap(int* a, int* b);
-		void sortPattern();
 
 		void printOut();
 		void calcHisto();
-        bool isPatternInMsg(int *key);
-
-		//void ArraySort(int arr[maxNumPattern][PATTERNSIZE], int n);
-		//int pattern[maxNumPattern*2];
-		int sync;
-		//uint8_t patternLen;
-		//int syncFact;
+		int8_t sync;                        // index to sync in pattern if it exists
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
 		uint8_t messageLen;
   		bool m_truncated;     // Identify if message has been truncated
 
-		/*
-		int buffer[2];
-		int* first;
-		int* last;
-		uint16_t clock;
-		int tol;
-		status state;
-		bool success;
-		float tolFact;
-		*/
+
 	    uint8_t histo[maxNumPattern];
-	    uint8_t mstart; // Temp Variable zum Testen
-    	s_sigid protoID[30]; // Speicher für Protokolldaten
-    	uint8_t numprotos;// Number of protocols in protoID
+	    uint8_t mstart; // Holds starting point for message
+    	s_sigid protoID[10]; // decrepated
+    	uint8_t numprotos;// decrepated
 
 };
 
@@ -188,25 +174,10 @@ class patternDecoder : public patternDetector{
 
 		bool decode(int* pulse);
 		void processMessage();
-		bool checkSignal(const s_sigid s_signal);
-		bool checkEV1527type(s_sigid match);
 
 		void printMsgStr(String *first, String *second, String *third);
 		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
-		void printMessageHexStr();
 
-
-		void checkLogilink();
-		void checkITold();
-		void checkITautolearn();
-		void checkAS();
-		void checkTCM97001();
-
-		uint8_t twoStateMessageBytes(const s_pidx s_patt);
-		void twoStateMessageBytes() {};
-		void triStateMessageBytes();
-		uint8_t printTristateMessage(const s_pidx s_patt);
-		void printNewITMessage();
 	private:
 
 		//uint8_t byteMessage[maxMsgSize];
