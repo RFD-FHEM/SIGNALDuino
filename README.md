@@ -1,4 +1,4 @@
-# SIGNALDuino
+# SIGNALDuino  v3.4
 
 System to receive radio signals and use them in an home automation environment like FHEM. Currently tested with 433 MHZ, but not limited to that frequency.
 
