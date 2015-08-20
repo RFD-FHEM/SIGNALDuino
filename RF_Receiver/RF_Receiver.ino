@@ -4,7 +4,7 @@
 *   for the home automation software fhem
 *   The Sketch can also encode and send data via a transmitter,
 *   while only PT2262 type-signals for Intertechno devices are implemented yet
-*   2014  N.Butzek, S.Butzek
+*   2014-2015  N.Butzek, S.Butzek
 
 *   This software focuses on remote sensors like weather sensors (temperature,
 *   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
@@ -28,7 +28,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.0raw-out-alpha"
+#define PROGVERS               "3.1.4"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -43,7 +43,7 @@
 
 RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 const uint8_t pulseMin = 100;
-bool blinkLED = false;
+volatile bool blinkLED = false;
 String cmdstring = "";
 
 void handleInterrupt();
@@ -54,16 +54,13 @@ void blinken();
 int freeRam();
 void changeReciver();
 void changeFilter();
+void HandleCommand();
+bool command_available=false;
 
-
-//volatile int fifocnt=0;
 
 //Decoder
-//SensorReceiver ASreceiver;
 patternDecoder musterDec;
-//ManchesterpatternDetector ManchesterDetect(true);
-//ASDecoder   asDec  (&ManchesterDetect);
-//OSV2Decoder osv2Dec (&ManchesterDetect);
+
 
 
 
@@ -83,15 +80,6 @@ void setup() {
 	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
 	Timer1.attachInterrupt(blinken);
 
-
-	musterDec.protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
-	musterDec.protoID[1]=(s_sigid){0,0,-11,560,0,twostate}; // RSL
-	musterDec.protoID[2]=(s_sigid){0,0,0,0,0,undef}; // Free Slot
-	musterDec.protoID[3]=(s_sigid){-1,3,-30,-1,0,tristate}; // IT old
-	musterDec.protoID[4]=(s_sigid){0,0,-10,270,0,twostate}; // IT Autolearn
-	musterDec.numprotos=5;
-	//musterDec.protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
-
 	enableReceive();
 	cmdstring.reserve(20);
 }
@@ -102,35 +90,18 @@ void blinken() {
 }
 
 void loop() {
-  //Serial.print("fcnt: ");   Serial.println(fifocnt);
-
-
-  int aktVal;
-  bool state;
-  while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
-    //Serial.print(aktVal); Serial.print(",");
-    //--fifocnt;
-	//long t1= micros();
-    state = musterDec.decode(&aktVal); //Logilink, PT2262
-	//Serial.println(micros()-t1);
-    /*
-    if (ManchesterDetect.detect(&aktVal))
-    {
-      if (asDec.decode()) {
-        state =true;
-        Serial.println(asDec.getMessageHexStr());
-      } else if (osv2Dec.decode()) {
-        state = true;
-        Serial.println(osv2Dec.getMessageHexStr());
-      }
-      ManchesterDetect.reset();
-    }
-    */
-    if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-  }
-  //long t2= micro();
-
-
+	static int aktVal;
+	static bool state;
+	if (command_available) {
+		command_available=false;
+		HandleCommand();
+		if (!command_available) { cmdstring = ""; }
+		blinkLED=true;
+	}
+	while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
+		state = musterDec.decode(&aktVal); //Logilink, PT2262
+		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+	}
 }
 
 
@@ -209,13 +180,81 @@ void sendPT2262(char* triStateMessage) {
 }
 
 
-//================================= Kommandos ======================================
-void IT_CMDs(String cmd);
+//================================= RAW Send ======================================
 
-void HandleCommand(String cmd)
+void send_raw(int16_t *buckets)
 {
-  //int val;
-  //String strVal;
+	uint8_t index=0;
+	for (uint8_t i=cmdstring.indexOf('D')+1;i<=cmdstring.length();i++ )
+	{
+		index = cmdstring.charAt(i)+0;
+		digitalWrite(PIN_SEND, !(buckets[index] >>15));
+		if (buckets[index] > 8000) // Use delay at 8000 microseconds to be more precice
+		{
+			delay(buckets[index]/1000);
+		} else {
+			delayMicroseconds(buckets[index]);
+		}
+	}
+}
+
+//SR;R=3;P0=123;P1=312;P2=400;P3=600;D=010101020302030302;
+void send_cmd()
+{
+  if (cmdstring.charAt(1) == 'R')
+  {
+	/*
+	1. state vom decoder abfragen, ob er gerade etwas aufzeichnet
+	2. daten aufsplitten
+    */
+
+	int16_t buckets[6];
+	uint8_t counter=0;
+	uint8_t repeats=0;
+	int8_t strp1=2;
+	int8_t strp2=0;
+	String msg_part;
+	strp1=cmdstring.indexOf(";",strp1);    // search first  ";", start after RS command
+
+	while (cmdstring.charAt(strp1+1) != 'D' && strp1+1 < cmdstring.indexOf('D'))
+	{
+		strp2=cmdstring.indexOf(";",strp1+2);  // search next ";" after strp1
+		msg_part = cmdstring.substring(strp1+1,strp2-1);  // substrimg
+
+		if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
+		{
+			counter = msg_part.substring(1,1).toInt(); // extract the pattern number
+			buckets[counter]=  msg_part.substring(3).toInt();
+
+		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(2) == '=')
+		{
+			repeats= msg_part.substring(2).toInt();
+		}
+		strp1=strp2;
+	}
+
+	disableReceive();  // Disable the receiver
+	for (uint8_t i=0;i<repeats;i++)
+	{
+		send_raw(buckets);
+		delay(2);
+	}
+	enableReceive();	// enable the receiver
+    Serial.println(cmdstring); // echo
+
+
+  }
+}
+
+
+
+
+
+//================================= Kommandos ======================================
+void IT_CMDs();
+
+void HandleCommand()
+{
 
   const char cmd_Version ='V';
   const char cmd_freeRam ='R';
@@ -225,78 +264,95 @@ void HandleCommand(String cmd)
   const char cmd_space =' ';
   const char cmd_help='?';
   const char cmd_changeFilter ='F';
+  const char cmd_send ='S';
 
   // ?: Kommandos anzeigen
 
 
-
-
-  if (cmd.charAt(0) == cmd_help) {
+  if (cmdstring.charAt(0) == cmd_help) {
     //Serial.println(F("? Use one of V R i t X"));//FHEM Message
-	Serial.print(cmd_help);	Serial.print(" Use one of ");
+	Serial.print(cmd_help);	Serial.print(F(" Use one of "));
 	Serial.print(cmd_Version);Serial.print(cmd_space);
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
 	Serial.print(cmd_freeRam);Serial.print(cmd_space);
 	Serial.print(cmd_uptime);Serial.print(cmd_space);
 	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
 	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
+	Serial.print(cmd_send);Serial.print(cmd_space);
+
 	Serial.println("");
 
   }
   // V: Version
-  else if (cmd.charAt(0) == cmd_Version) {
+  else if (cmdstring.charAt(0) == cmd_Version) {
     Serial.println("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
   }
   // R: FreeMemory
-  else if (cmd.charAt(0) == cmd_freeRam) {
+  else if (cmdstring.charAt(0) == cmd_freeRam) {
     Serial.println(freeRam());
   }
   // i: Intertechno
-  else if (cmd.charAt(0) == cmd_intertechno) {
-    IT_CMDs(cmd);
+  else if (cmdstring.charAt(0) == cmd_intertechno) {
+	if (musterDec.getState() != searching)
+	{
+		command_available=true;
+	} else {
+		IT_CMDs();
+	}
+
   }
-  // t: Uptime
-  else if (cmd.charAt(0) == cmd_uptime) {
+  else if (cmdstring.charAt(0) == cmd_send) {
+  	if (musterDec.getState() != searching )
+	{
+		command_available=true;
+	} else {
+		send_cmd();
+	}
+  }
+    // t: Uptime
+  else if (cmdstring.charAt(0) == cmd_uptime) {
     // tbd
   }
   // XQ disable receiver
-  else if (cmd.charAt(0) == cmd_changeReceiver) {
+  else if (cmdstring.charAt(0) == cmd_changeReceiver) {
     changeReciver();
     //Serial.flush();
 	//Serial.end();
   }
-  else if (cmd.charAt(0) == cmd_changeFilter) {
+  else if (cmdstring.charAt(0) == cmd_changeFilter) {
     changeFilter();
   }
 
 }
 
 
-void IT_CMDs(String cmd) {
 
-	// TODO: Change check to charAt, because we only need to check the 2. char here
+
+
+void IT_CMDs() {
+
   // Set Intertechno receive tolerance
-  if (cmd.startsWith("it")) {
+  if (cmdstring.charAt(1) == 't') {
     char msg[3];
-    cmd.substring(2).toCharArray(msg,3);
+    cmdstring.substring(2).toCharArray(msg,3);
     ITreceivetolerance = atoi(msg);
-    Serial.println(cmd);
+    Serial.println(cmdstring);
   }
   // Set Intertechno Repetition
-  else if (cmd.startsWith("ir")) {
+  else if (cmdstring.charAt(1) == 'r') {
     char msg[3];
-    cmd.substring(2).toCharArray(msg,3);
+    cmdstring.substring(2).toCharArray(msg,3);
     ITrepetition = atoi(msg);
-    Serial.println(cmd);
+    Serial.println(cmdstring);
   }
   // Switch Intertechno Devices
-  else if (cmd.startsWith("is")) {
+  else if (cmdstring.charAt(1) == 's') {
     digitalWrite(PIN_LED,HIGH);
     char msg[13];
-    cmd.substring(2).toCharArray(msg,13);
-    if (cmd.length() > 14)
+    cmdstring.substring(2).toCharArray(msg,13);
+    if (cmdstring.length() > 14)
     {
-       ITbaseduration=cmd.substring(14).toInt(); // Default Baseduration
+       ITbaseduration=cmdstring.substring(14).toInt(); // Default Baseduration
     }
     else
     {
@@ -304,10 +360,10 @@ void IT_CMDs(String cmd) {
     }
     sendPT2262(msg);
     digitalWrite(PIN_LED,LOW);
-    Serial.println(cmd);
+    Serial.println(cmdstring);
   }
   // Get Intertechno Parameters
-  else if (cmd.startsWith("ip")) {
+  else if (cmdstring.charAt(1) == 'p') {
     String cPrint = "ITParams: ";
     cPrint += String(ITreceivetolerance);
     cPrint += " ";
@@ -316,6 +372,7 @@ void IT_CMDs(String cmd) {
     cPrint += String(ITbaseduration);
     Serial.println(cPrint);
   }
+
 }
 
 void serialEvent()
@@ -329,9 +386,8 @@ void serialEvent()
     case '\r':
     case '\0':
     case '#':
-      HandleCommand(cmdstring);
-      cmdstring = "";
-      break;
+		command_available=true;
+		break;
     default:
       cmdstring += inChar;
     }
@@ -355,14 +411,25 @@ void changeReciver() {
   }
 }
 
+
+/* not used anymore */
+void printFilter(uint8_t id)
+{
+	Serial.print("UPD Filter");
+	Serial.print(id);
+	Serial.print(";C=");	Serial.print(musterDec.protoID[id].clock);
+	Serial.print(";SF=");	Serial.print(musterDec.protoID[id].syncFact);
+	Serial.println(";");
+
+}
 void changeFilter()
 {
 	//cmdstring.concat(0);
 	char tmp[10];
 
-	cmdstring.toCharArray(tmp,10,1);
+	cmdstring.toCharArray(tmp,10,3);
 
-	const char *param = strtok(tmp,";");
+	char *param = strtok(tmp,";");
 	const uint8_t id = atoi(param);
 	s_sigid new_entry ={NULL,NULL,NULL,NULL,NULL,undef};
 
@@ -384,6 +451,10 @@ void changeFilter()
 		// Remove entry to filter list R;<number to remove>;
 		musterDec.protoID[id] = new_entry;
 	}
+	printFilter(id);
+	if (musterDec.numprotos+1 < id)
+		musterDec.numprotos = id+1;
+
 }
 
 
