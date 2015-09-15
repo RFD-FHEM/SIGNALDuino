@@ -98,13 +98,13 @@ enum status {searching, clockfound, syncfound,detecting};
 
 
         patternBasic();
-		virtual bool detect(int* pulse);        // Runs the detection engine, must be implemented in child class
+		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
 		void swap(int* a, int* b);              // Swaps the two vars
 		int8_t findpatt(int *seq);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
-		bool inTol(int val, int set);           // checks if a value is in tolerance range
-		bool inTol(int val, int set, int tolerance);
-        bool validSequence(int *a, int *b);     // checks if two pulses are basically valid in terms of on-off signals
+		bool inTol(const int val, const int set);           // checks if a value is in tolerance range
+		bool inTol(const int val, const int set, const int tolerance);
+        bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
@@ -135,7 +135,7 @@ class patternDetector : protected patternBasic {
 
 	public:
 		patternDetector();
-		bool detect(int* pulse);
+		bool detect(const int* pulse);
 		void doDetectwoSync();
 		void reset();
 		bool getSync();	 // Searches clock and sync in given Signal
@@ -152,7 +152,7 @@ class patternDetector : protected patternBasic {
 		uint8_t message[maxMsgSize*8];
 		uint8_t messageLen;
   		bool m_truncated;     // Identify if message has been truncated
-
+		bool m_overflow;
 
 	    uint8_t histo[maxNumPattern];
 	    uint8_t mstart; // Holds starting point for message
@@ -172,11 +172,11 @@ class patternDecoder : public patternDetector{
 		patternDecoder();
 		void reset();
 
-		bool decode(int* pulse);
+		bool decode(const int* pulse);
 		void processMessage();
 
-		void printMsgStr(String *first, String *second, String *third);
-		void printMsgRaw(uint8_t start, uint8_t end,String *preamble=NULL,String *postamble=NULL);
+		void printMsgStr(const String *first, const String *second, const String *third);
+		void printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
 
 	private:
 

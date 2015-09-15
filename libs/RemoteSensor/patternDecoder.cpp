@@ -69,7 +69,7 @@ void patternBasic::reset()
 }
 
 
-bool patternBasic::detect(int* pulse){
+bool patternBasic::detect(const int* pulse){
 	success = false;
 	//swap buffer
 	swap(first, last);
@@ -105,11 +105,11 @@ int8_t patternBasic::findpatt(int *seq) {
 
 
 
-bool patternBasic::inTol(int value, int set){
+bool patternBasic::inTol(const int value, const int set){
 	return inTol(value, set, tol);
 }
 
-bool patternBasic::inTol(int value, int set, int tolerance){
+bool patternBasic::inTol(const int value, int set, const int tolerance){
 	return (abs(value-set)<=tolerance);
 }
 
@@ -125,7 +125,7 @@ void patternBasic::swap(int* a, int* b){
 /*
  Check if a pulse is followd with a pulse singed at the oppsit so + - / - + is valied - - or + + is not valid!
 */
-bool patternBasic::validSequence(int *a, int *b)
+bool patternBasic::validSequence(const int *a, const int *b)
 {
 
     //return ((*a> 0 and 0 > *b) or (*b > 0  and 0 > *a));
@@ -171,8 +171,7 @@ void patternDetector::reset() {
 	tolFact = 0.3;
 	mstart=0;
 	m_truncated=false;
-
-
+	m_overflow=false;
 	//Serial.println("reset");
 }
 
@@ -184,7 +183,7 @@ const status patternDetector::getState()
 
 
 
-bool patternDetector::detect(int* pulse){
+bool patternDetector::detect(const int* pulse){
 	patternBasic::detect(pulse);   // Call function from base class, to do some basic stuff
     doDetectwoSync();			   // Search for signal
 
@@ -373,6 +372,7 @@ void patternDetector::doDetectwoSync() {
 		#if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
 		#endif
+		m_overflow=true;
 	    processMessage();
         m_truncated&=false;
 	    //reset(); // Moved reset to processMessage function if needed
@@ -581,7 +581,7 @@ void patternDecoder::reset() {
     patternDetector::reset();
 }
 
-bool patternDecoder::decode(int* pulse) {
+bool patternDecoder::decode(const int* pulse) {
 	return detect(pulse);
 }
 
@@ -622,10 +622,10 @@ void patternDecoder::processMessage()
 		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
-		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))	// Check if message Length is long enough
+		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 		{
             #ifdef DEBUGDECODE
-            Serial.println("Filter Match: ");;
+            #Serial.println("Filter Match: ");;
             #endif
 
 
@@ -671,7 +671,7 @@ void patternDecoder::processMessage()
             reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 
 		}
-	} else if (state == clockfound) {
+	} else if (state == clockfound && messageLen >= minMessageLen) {
 
 
 		// Message has a clock puls, but no sync. Try to decode this
@@ -694,9 +694,6 @@ void patternDecoder::processMessage()
 
 		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
-
-
-
 			String mcbitmsg;
 			//Serial.println("MC");
 			mcbitmsg ="D=";
@@ -761,11 +758,14 @@ void patternDecoder::processMessage()
 			//String postamble;
 			postamble.concat(SERIAL_DELIMITER);
 			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
 			postamble.concat(MSG_END);
 			postamble.concat('\n');
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
-			//ITTX Protokoll z.B.
 		}
 
 		success = true;
@@ -786,7 +786,7 @@ void patternDecoder::processMessage()
   *
   * (documentation goes here)
   */
-void patternDecoder::printMsgStr(String *first, String *second, String *third)
+void patternDecoder::printMsgStr(const String *first, const String *second, const String *third)
 {
 	Serial.print(*first);
 	Serial.print(*second);
@@ -798,7 +798,7 @@ void patternDecoder::printMsgStr(String *first, String *second, String *third)
   * (documentation goes here)
   */
 
-void patternDecoder::printMsgRaw(uint8_t m_start, uint8_t m_end, String *preamble,String *postamble)
+void patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble,const String *postamble)
 {
 
 	Serial.print(*preamble);
