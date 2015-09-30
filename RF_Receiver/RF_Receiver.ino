@@ -56,7 +56,7 @@ void changeReciver();
 void changeFilter();
 void HandleCommand();
 bool command_available=false;
-
+int getUptime();
 
 //Decoder
 patternDecoder musterDec;
@@ -87,6 +87,7 @@ void setup() {
 void blinken() {
      digitalWrite(PIN_LED, blinkLED);
      blinkLED=false;
+
 }
 
 void loop() {
@@ -254,15 +255,15 @@ void IT_CMDs();
 void HandleCommand()
 {
 
-  const char cmd_Version ='V';
-  const char cmd_freeRam ='R';
-  const char cmd_intertechno ='i';
-  const char cmd_uptime ='t';
-  const char cmd_changeReceiver ='X';
-  const char cmd_space =' ';
-  const char cmd_help='?';
-  const char cmd_changeFilter ='F';
-  const char cmd_send ='S';
+  #define cmd_Version 'V'
+  #define cmd_freeRam 'R'
+  #define  cmd_intertechno 'i'
+  #define  cmd_uptime 't'
+  #define  cmd_changeReceiver 'X'
+  #define  cmd_space ' '
+  #define  cmd_help'?'
+  #define  cmd_changeFilter 'F'
+  #define  cmd_send 'S'
 
   // ?: Kommandos anzeigen
 
@@ -309,7 +310,8 @@ void HandleCommand()
   }
     // t: Uptime
   else if (cmdstring.charAt(0) == cmd_uptime) {
-    // tbd
+        Serial.print("Uptime: ");Serial.println(getUptime());
+
   }
   // XQ disable receiver
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {
@@ -398,6 +400,22 @@ int freeRam () {
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
+int getUptime()
+{
+	unsigned long now = millis();
+	static uint16_t times_rolled = 0;
+	static unsigned long last = 0;
+	// If this run is less than the last the counter rolled
+	unsigned long seconds = now / 1000;
+	if (now < last) {
+		times_rolled++;
+		seconds += ((long(4294967295) / 1000 )*times_rolled);
+	}
+	last = now;
+	return seconds;
+}
+
+
 void changeReciver() {
   if (cmdstring.charAt(1) == 'Q')
   {
@@ -408,6 +426,8 @@ void changeReciver() {
   	enableReceive();
   }
 }
+
+
 
 
 /* not used anymore */

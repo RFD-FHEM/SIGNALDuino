@@ -671,9 +671,9 @@ void patternDecoder::processMessage()
             #ifdef DEBUGDECODE
 			Serial.println(" Buffer overflow, flushing message array");
 			#endif
-			Serail.print(MSG_START);
-			Serail.print("Buffer overflow while processing signal");
-			Serail.print(MSG_END);
+			Serial.print(MSG_START);
+			Serial.print("Buffer overflow while processing signal");
+			Serial.print(MSG_END);
             reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 
 		}
