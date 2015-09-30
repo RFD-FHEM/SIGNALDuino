@@ -610,11 +610,11 @@ void patternDecoder::processMessage()
 			if (message[mend]==clock  && message[mend+1]==sync) {
 				mend-=1;					// Previus signal is last from message
 				m_endfound=true;
-				calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
 				break;
 			}
 			mend+=2;
 		} while ( mend<(messageLen));
+		calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
 
 
 		#if DEBUGDECODE > 1
@@ -641,9 +641,9 @@ void patternDecoder::processMessage()
 					preamble.concat("MS");   // Message Index
 					//preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
 					preamble.concat(SERIAL_DELIMITER);  // Message Index
-					for (uint8_t idx=0;idx<=patternLen;idx++)
+					for (uint8_t idx=0;idx<patternLen;idx++)
 					{
-                        if (histo[pattern[idx][0]] == 0) continue;
+                        if (histo[idx] == 0) continue;
 						preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
 					preamble.concat("D=");
@@ -729,9 +729,9 @@ void patternDecoder::processMessage()
 			preamble = "MC";
 			preamble.concat(SERIAL_DELIMITER);
 
-			for (uint8_t idx=0;idx<=patternLen;idx++)
+			for (uint8_t idx=0;idx<patternLen;idx++)
 			{
-				if (histo[pattern[idx][0]] == 0) continue;
+				if (histo[idx] == 0) continue;
 
 				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}
@@ -758,9 +758,9 @@ void patternDecoder::processMessage()
 			preamble.concat("MU");
 			preamble.concat(SERIAL_DELIMITER);
 
-			for (uint8_t idx=0;idx<=patternLen;idx++)
+			for (uint8_t idx=0;idx<patternLen;idx++)
 			{
-				if (pattern[idx][0] == 0) continue;
+				if (histo[idx] == 0) continue;
 
 				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}

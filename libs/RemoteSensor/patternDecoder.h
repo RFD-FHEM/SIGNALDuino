@@ -50,8 +50,8 @@
 
 
 #define SERIAL_DELIMITER ';'
-#define MSG_START 0x2			// this is a non printable Char
-#define MSG_END 0x3			// this is a non printable Char
+#define MSG_START char(0x2)			// this is a non printable Char
+#define MSG_END char(0x3)			// this is a non printable Char
 
 //#define DEBUGDETECT 255
 //#define DEBUGDETECT 255  // Very verbose output
