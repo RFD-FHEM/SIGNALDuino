@@ -42,7 +42,7 @@
 #include <patternDecoder.h> //Logilink, IT decoder
 
 RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
-const uint8_t pulseMin = 100;
+#define pulseMin  100
 volatile bool blinkLED = false;
 String cmdstring = "";
 
