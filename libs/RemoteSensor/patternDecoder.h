@@ -40,18 +40,18 @@
 #include <bitstore.h>
 #include <filtering.h>
 
-const uint8_t maxNumPattern=6;
-const uint8_t maxMsgSize=30;
-const uint8_t minMessageLen=40;
-const uint8_t syncMinFact=8;
-const uint8_t prefixLen=3;
+#define maxNumPattern 6
+#define maxMsgSize 30
+#define minMessageLen 40
+#define syncMinFact 8
+#define prefixLen 3
 
-const int16_t maxPulse = 32001;  // Magic Pulse Length
+#define maxPulse 32001  // Magic Pulse Length
 
 
-const char SERIAL_DELIMITER =';';
-const char MSG_START =0x2;			// this is a non printable Char
-const char MSG_END =0x3;			// this is a non printable Char
+#define SERIAL_DELIMITER ';'
+#define MSG_START 0x2			// this is a non printable Char
+#define MSG_END 0x3			// this is a non printable Char
 
 //#define DEBUGDETECT 255
 //#define DEBUGDETECT 255  // Very verbose output
