@@ -501,14 +501,16 @@ void patternDetector::doDetectwoSync() {
 }
 
 /* Berechnet Werte für ein Histogramm aus den Daten des arrays message */
-void patternDetector::calcHisto()
+void patternDetector::calcHisto(const uint8_t startpos, uint8_t endpos)
 {
     for (uint8_t i=0;i<maxNumPattern;++i)
     {
         histo[i]=0;
     }
 
-    for (uint8_t i=0;i<messageLen;++i)
+	if (endpos==0) endpos=messageLen;
+
+    for (uint8_t i=0;i<endpos;++i)
     {
         histo[message[i]]++;
     }
@@ -608,6 +610,7 @@ void patternDecoder::processMessage()
 			if (message[mend]==clock  && message[mend+1]==sync) {
 				mend-=1;					// Previus signal is last from message
 				m_endfound=true;
+				calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
 				break;
 			}
 			mend+=2;
@@ -622,7 +625,7 @@ void patternDecoder::processMessage()
 		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
-		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 		{
             #ifdef DEBUGDECODE
             #Serial.println("Filter Match: ");;
@@ -640,7 +643,7 @@ void patternDecoder::processMessage()
 					preamble.concat(SERIAL_DELIMITER);  // Message Index
 					for (uint8_t idx=0;idx<=patternLen;idx++)
 					{
-                        if (pattern[idx][0] == 0) continue;
+                        if (histo[pattern[idx][0]] == 0) continue;
 						preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
 					preamble.concat("D=");
@@ -648,16 +651,16 @@ void patternDecoder::processMessage()
 					postamble.concat(SERIAL_DELIMITER);
 					postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
 					postamble.concat("SP=");postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
-
-
+					if (m_overflow) {
+						postamble.concat("O");
+						postamble.concat(SERIAL_DELIMITER);
+					}
 					postamble.concat(MSG_END);
 					postamble.concat('\n');
 
 
 					printMsgRaw(mstart,mend,&preamble,&postamble);
 					success = true;
-
-
 
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
         {
@@ -668,6 +671,9 @@ void patternDecoder::processMessage()
             #ifdef DEBUGDECODE
 			Serial.println(" Buffer overflow, flushing message array");
 			#endif
+			Serail.print(MSG_START);
+			Serail.print("Buffer overflow while processing signal");
+			Serail.print(MSG_END);
             reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 
 		}
@@ -725,7 +731,7 @@ void patternDecoder::processMessage()
 
 			for (uint8_t idx=0;idx<=patternLen;idx++)
 			{
-				if (pattern[idx][0] == 0) continue;
+				if (histo[pattern[idx][0]] == 0) continue;
 
 				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}
@@ -734,6 +740,11 @@ void patternDecoder::processMessage()
 			//String postamble;
 			postamble = String(SERIAL_DELIMITER);
 			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
+
 			postamble.concat(MSG_END);
 			postamble.concat('\n');
 

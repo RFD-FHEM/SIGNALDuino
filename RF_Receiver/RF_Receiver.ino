@@ -111,7 +111,7 @@ void handleInterrupt() {
   static unsigned long lastTime = micros();
   unsigned long Time=micros();
   const bool state = digitalRead(PIN_RECEIVE);
-  duration = Time - lastTime;
+  const long  duration = Time - lastTime;
   lastTime = Time;
   if (duration >= pulseMin) {//kleinste zulässige Pulslänge
 	int sDuration;

@@ -146,7 +146,7 @@ class patternDetector : protected patternBasic {
 
 
 		void printOut();
-		void calcHisto();
+		void calcHisto(const uint8_t startpos=0, uint8_t endpos=0);
 		int8_t sync;                        // index to sync in pattern if it exists
 		uint8_t bitcnt;
 		uint8_t message[maxMsgSize*8];
