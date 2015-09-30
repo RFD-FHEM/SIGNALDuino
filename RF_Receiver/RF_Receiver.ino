@@ -28,7 +28,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.1.5"
+#define PROGVERS               "3.1.6"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -108,15 +108,13 @@ void loop() {
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
-  static unsigned long Time;
   static unsigned long lastTime = micros();
-  static long duration;
-  static int sDuration;
-  Time = micros();
-  bool state = digitalRead(PIN_RECEIVE);
+  unsigned long Time=micros();
+  const bool state = digitalRead(PIN_RECEIVE);
   duration = Time - lastTime;
   lastTime = Time;
   if (duration >= pulseMin) {//kleinste zulässige Pulslänge
+	int sDuration;
     if (duration <= (32000)) {//größte zulässige Pulslänge, max = 32000
       sDuration = int(duration); //das wirft bereits hier unnütige Nullen raus und vergrößert den Wertebereich
     }else {

@@ -55,7 +55,7 @@ void BitStore::addValue(char value)
     Serial.println("");
 */
     valcount++;
-    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhˆhen wir den counter zum verschieben
+    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erh√∂hen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {
