@@ -9,7 +9,7 @@
 *   alot. While the buffer and the fir classes are tested, the IIR class is still
 *   under development.Although the basic functionality is implemented, it is not properly
 *   tested yet. Please keep this in mind, if you intend to use it.
-* 
+*
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
 *   the Free Software Foundation, either version 3 of the License, or
@@ -113,14 +113,18 @@ int RingBuffer::getBuffSize()
 }
 
 // Adds Value M to the next position in the ringbuffer
-void RingBuffer::addValue( int *M)
+void RingBuffer::addValue(const int *M)
 {
 	RingBuffer::skipFwd(&_write);
 	*_write= *M; //Kopie des Wertes vom übergebenen Zeiger im Speicher ablegen
-	int *readNext = _read;
-	RingBuffer::skipFwd(&readNext);
-    if ((_write == readNext) && (_newAvailable)) { //Wenn der Schreibzeiger den Lesezeiger überholt, während gleichzeitig neue Werte im Puffer sind, dann wird der Puffer überschrieben
-	   _read = _write; // Deshalb Lesezeiger mitnehmen, sodass als nächstes der älteste Wert im Puffer gelesen wird.
+	if (_newAvailable)
+	{
+		int *readNext = _read;
+		RingBuffer::skipFwd(&readNext);
+		if ((_write == readNext)) { //Wenn der Schreibzeiger den Lesezeiger überholt, während gleichzeitig neue Werte im Puffer sind, dann wird der Puffer überschrieben
+		   _read = _write; // Deshalb Lesezeiger mitnehmen, sodass als nächstes der älteste Wert im Puffer gelesen wird.
+		}
+		return;
 	}
 	_newAvailable = true;
 #ifdef DEBUG
