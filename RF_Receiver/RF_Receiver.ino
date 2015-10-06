@@ -310,8 +310,7 @@ void HandleCommand()
   }
     // t: Uptime
   else if (cmdstring.charAt(0) == cmd_uptime) {
-        Serial.print("Uptime: ");Serial.println(getUptime());
-
+		Serial.println(getUptime());
   }
   // XQ disable receiver
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {

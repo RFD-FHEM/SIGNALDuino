@@ -612,7 +612,7 @@ void patternDecoder::processMessage()
 				m_endfound=true;
 				break;
 			}
-			mend+=2;
+			mend++;
 		} while ( mend<(messageLen));
 		calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
 
