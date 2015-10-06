@@ -223,7 +223,8 @@ bool patternDetector::getSync(){
 		// clock wurde bereits durch getclock bestimmt.
 		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
 		{
-			if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+			if (pattern[p][0] > 0 || abs(pattern[p][0])/pattern[clock][0] > syncMaxFact)  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
+			//if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
 			if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
 			if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
 				// Prüfe ob Sync und Clock valide sein können
@@ -235,7 +236,7 @@ bool patternDetector::getSync(){
 				{
 					//if (message[c] == clock && message[c+1] == p) break;
 					//if (message[c] == p && message[c-1] == clock) break;   // Faster version as bevore, but does not work
-					if (message[c+1] == p && message[c] == clock ) break;	// Fast as bevore and works.
+					if (message[c+1] == p && message[c] == clock ) break;	// Fast as before and works.
 					c++;
 				}
 
@@ -419,6 +420,7 @@ void patternDetector::doDetectwoSync() {
         }
 
         if (!valid && messageLen>=minMessageLen){
+		  //Serial.println("not valid, processing");
 
           success=true;
           processMessage();
@@ -612,7 +614,7 @@ void patternDecoder::processMessage()
 				m_endfound=true;
 				break;
 			}
-			mend++;
+			mend+=2;
 		} while ( mend<(messageLen));
 		calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
 

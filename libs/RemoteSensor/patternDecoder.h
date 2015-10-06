@@ -44,6 +44,7 @@
 #define maxMsgSize 30
 #define minMessageLen 40
 #define syncMinFact 8
+#define syncMaxFact 30
 #define prefixLen 3
 
 #define maxPulse 32001  // Magic Pulse Length
@@ -53,7 +54,7 @@
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 
-//#define DEBUGDETECT 255
+//#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 2
 
