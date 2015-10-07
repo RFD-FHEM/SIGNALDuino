@@ -616,7 +616,8 @@ void patternDecoder::processMessage()
 			}
 			mend+=2;
 		} while ( mend<(messageLen));
-		calcHisto(mstart,mend+1);	// Recalc histogram due to shortened message
+		if (mend > messageLen) mend=messageLen;  // Reduce mend if we are behind messageLen
+		calcHisto(mstart,mend);	// Recalc histogram due to shortened message
 
 
 		#if DEBUGDECODE > 1
@@ -627,7 +628,7 @@ void patternDecoder::processMessage()
 		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 		#endif // DEBUGDECODE
-		if ((m_endfound && mend - mstart >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 		{
             #ifdef DEBUGDECODE
             #Serial.println("Filter Match: ");;
@@ -666,6 +667,7 @@ void patternDecoder::processMessage()
 
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
         {
+        	Serial.print("copy");
             messageLen=messageLen-mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 			memmove(message,message+mstart,sizeof(*message)*(messageLen+1));
 			m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
@@ -817,9 +819,11 @@ void patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const Str
 	Serial.print(*preamble);
 	//String msg;
 	//msg.reserve(m_end-mstart);
+
 	for (;m_start<=m_end;m_start++)
 	{
 		//msg + =message[m_start];
+		//Serial.print((100*message[m_start])+(10*message[m_start])+message[m_start]);
 		Serial.print(message[m_start]);
 	}
 	//Serial.print(msg);
