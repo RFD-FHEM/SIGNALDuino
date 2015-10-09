@@ -223,7 +223,7 @@ bool patternDetector::getSync(){
 		// clock wurde bereits durch getclock bestimmt.
 		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
 		{
-			if (pattern[p][0] > 0 || abs(pattern[p][0])/pattern[clock][0] > syncMaxFact)  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
+			if (pattern[p][0] > 0 || (abs(pattern[p][0]) > syncMaxMicros && abs(pattern[p][0])/pattern[clock][0] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
 			//if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
 			if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
 			if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
@@ -587,11 +587,13 @@ void patternDetector::compress_pattern()
 						message[i]=idx;
                     }
 				}
+
+				#if DEBUGDETECT>2
 				Serial.print("compr: ");Serial.print(idx2);Serial.print("->");Serial.print(idx);Serial.print(";");
 				Serial.print(histo[idx2]);Serial.print("*");Serial.print(pattern[idx2][0]);
 				Serial.print("->");
 				Serial.print(histo[idx]);Serial.print("*");Serial.print(pattern[idx][0]);
-
+				#endif // DEBUGDETECT
 
 
 				int  sum = histo[idx] + histo[idx2];
@@ -601,9 +603,11 @@ void patternDetector::compress_pattern()
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
 				pattern[idx2][0]=0;
 
+				#if DEBUGDETECT>2
 				Serial.print(" idx:");Serial.print(pattern[idx][0]);
 				Serial.print(" idx2:");Serial.print(pattern[idx2][0]);
 				Serial.println(";");
+				#endif // DEBUGDETECT
 
 			}
 		}
@@ -653,7 +657,7 @@ void patternDecoder::processMessage()
 		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
 		bool m_endfound=false;
 
-		uint8_t repeat;
+		//uint8_t repeat;
 		do {
 			if (message[mend]==clock  && message[mend+1]==sync) {
 				mend-=1;					// Previus signal is last from message
@@ -681,35 +685,40 @@ void patternDecoder::processMessage()
             #endif
 
 
-				preamble="";
-				postamble="";
+			preamble="";
+			postamble="";
 
-					/*				Output raw message Data				*/
-					preamble.concat(MSG_START);
-					//preamble.concat('\n');
-					preamble.concat("MS");   // Message Index
-					//preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
-					preamble.concat(SERIAL_DELIMITER);  // Message Index
-					for (uint8_t idx=0;idx<patternLen;idx++)
-					{
-                        if (histo[idx] == 0) continue;
-						preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-					}
-					preamble.concat("D=");
+			/*				Output raw message Data				*/
+			preamble.concat(MSG_START);
+			//preamble.concat('\n');
+			preamble.concat("MS");   // Message Index
+			//preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
+			preamble.concat(SERIAL_DELIMITER);  // Message Index
+			for (uint8_t idx=0;idx<patternLen;idx++)
+			{
+				if (histo[idx] == 0) continue;
+				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
 
-					postamble.concat(SERIAL_DELIMITER);
-					postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
-					postamble.concat("SP=");postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
-					if (m_overflow) {
-						postamble.concat("O");
-						postamble.concat(SERIAL_DELIMITER);
-					}
-					postamble.concat(MSG_END);
-					postamble.concat('\n');
+			postamble.concat(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+			postamble.concat("SP=");postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
 
 
-					printMsgRaw(mstart,mend,&preamble,&postamble);
-					success = true;
+			printMsgRaw(mstart,mend,&preamble,&postamble);
+			success = true;
+			if (mend<messageLen-minMessageLen) {
+				mstart=mend+1;
+				processMessage();
+			}
+
 
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
         {

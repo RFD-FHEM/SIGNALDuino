@@ -45,6 +45,8 @@
 #define minMessageLen 40
 #define syncMinFact 8
 #define syncMaxFact 39
+#define syncMaxMicros 17000
+
 #define prefixLen 3
 
 #define maxPulse 32001  // Magic Pulse Length
