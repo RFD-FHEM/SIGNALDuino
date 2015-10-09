@@ -104,7 +104,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		void swap(int* a, int* b);              // Swaps the two vars
 		int8_t findpatt(int *seq);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 		bool inTol(const int val, const int set);           // checks if a value is in tolerance range
-		bool inTol(const int val, const int set, const int tolerance);
+		static bool inTol(const int val, const int set, const int tolerance);
         bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 
         virtual void doSearch();                // Virtual class which must be implemented in a child class
@@ -144,7 +144,7 @@ class patternDetector : protected patternBasic {
 		bool validSignal();						// Checks if stored message belongs to a validSignal
 		virtual void processMessage();
 		const status getState();
-
+		void compress_pattern();
 
 		void printOut();
 		void calcHisto(const uint8_t startpos=0, uint8_t endpos=0);
@@ -180,6 +180,8 @@ class patternDecoder : public patternDetector{
 		void printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
 
 	private:
+		String preamble;
+		String postamble;
 
 		//uint8_t byteMessage[maxMsgSize];
 		//byte byteMessageLen;
@@ -216,10 +218,32 @@ class ManchesterpatternDecoder
 
 	uint8_t minbitlen;
 };
+
+
+/*
+   small class to store pattern and modifiy them, just some ideas to introduce
+*/
+class patternO
+{
+	public:
+	int8_t patternExists(int *val); // Finds a pattern in our pattern store. returns -1 if te pattern is not found
+	int8_t getPattern(const uint8_t idx);  // gets a pattern from the store
+	int8_t setPattern(const uint8_t idx,const int16_t val);  // writes a pattern to the store
+
+	private:
+	int16_t patternStore[maxNumPattern];	// Init array
+	uint8_t patternPos;
+};
+
+
+
+
+
 /*
     Detector for manchester Signals. It uses already the toolset from patternBasic.
     Todo:  Make a interface for retrieving the Manchesterbits easily for furher processing in other classes.
  */
+
 class ManchesterpatternDetector : public patternBasic {
 	public:
 		ManchesterpatternDetector(bool silentstate=true);
@@ -274,6 +298,7 @@ class decoderBasic {
  Class for decoding oregon scientific protocol from a manchester bit signal.
  Currently only working if there is a delay between two transmissions of a signal
 */
+/*
 class OSV2Decoder : public decoderBasic {
     public:
         OSV2Decoder(ManchesterpatternDetector *detector);
@@ -287,7 +312,7 @@ class OSV2Decoder : public decoderBasic {
 
 
 };
-
+*/
 /*
  Class for decoding Arduinosensor protocol from a manchester bit signal.
 */

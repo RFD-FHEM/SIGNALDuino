@@ -552,6 +552,7 @@ void patternDetector::printOut() {
 
 void patternDetector::processMessage()
 {
+        compress_pattern();
         calcHisto();
         if (messageLen >= minMessageLen)
         {
@@ -564,6 +565,51 @@ void patternDetector::processMessage()
 }
 
 
+/** @brief (compares pattern if they are equal after moving average calculation and reduces within tolerance)
+  *
+  * (documentation goes here)
+  */
+void patternDetector::compress_pattern()
+{
+
+	calcHisto();
+	for (uint8_t idx=0; idx<patternLen;idx++)
+	{
+		for (uint8_t idx2=idx+1; idx2<patternLen;idx2++)
+		{
+			if (inTol(pattern[idx2][0],pattern[idx][0]))  // Pattern are very equal, so we can combine them
+			{
+				// Change val -> ref_val in message array
+				for (uint8_t i=0;i<messageLen;i++)
+				{
+                    if (message[i]==idx2)
+					{
+						message[i]=idx;
+                    }
+				}
+				Serial.print("compr: ");Serial.print(idx2);Serial.print("->");Serial.print(idx);Serial.print(";");
+				Serial.print(histo[idx2]);Serial.print("*");Serial.print(pattern[idx2][0]);
+				Serial.print("->");
+				Serial.print(histo[idx]);Serial.print("*");Serial.print(pattern[idx][0]);
+
+
+
+				int  sum = histo[idx] + histo[idx2];
+
+				pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
+				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
+				pattern[idx2][0]=0;
+
+				Serial.print(" idx:");Serial.print(pattern[idx][0]);
+				Serial.print(" idx2:");Serial.print(pattern[idx2][0]);
+				Serial.println(";");
+
+			}
+		}
+	}
+	//calcHisto(); // recalc histogram
+}
 
 
 //-------------------------- Decoder -------------------------------
@@ -579,6 +625,9 @@ patternDecoder::patternDecoder(): patternDetector() {
 	protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
 	protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
 	*/
+	preamble.reserve(70);
+	postamble.reserve(20);
+
 	numprotos=0;
 }
 void patternDecoder::reset() {
@@ -594,9 +643,6 @@ void patternDecoder::processMessage()
 	if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
 	//Serial.println("Message decoded:");
 	patternDetector::processMessage();//printOut();
-
-	String preamble;
-	String postamble;
 
 
 	if (state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
@@ -675,9 +721,9 @@ void patternDecoder::processMessage()
             #ifdef DEBUGDECODE
 			Serial.println(" Buffer overflow, flushing message array");
 			#endif
-			Serial.print(MSG_START);
-			Serial.print("Buffer overflow while processing signal");
-			Serial.print(MSG_END);
+			//Serial.print(MSG_START);
+			//Serial.print("Buffer overflow while processing signal");
+			//Serial.print(MSG_END);
             reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 
 		}
@@ -686,6 +732,8 @@ void patternDecoder::processMessage()
 
 		// Message has a clock puls, but no sync. Try to decode this
 
+		preamble="";
+		postamble="";
 
 		#if DEBUGDECODE > 1
 		Serial.print("Clock found: ");
@@ -1153,6 +1201,55 @@ bool ManchesterpatternDecoder::isManchester()
 
 	return true;
 }
+
+
+
+
+/** @brief (sets a pattern to the store)
+  *
+  * (documentation goes here)
+  */
+int8_t patternO::setPattern(const uint8_t idx, const int16_t val)
+{
+	patternStore[idx]=val;
+}
+
+/** @brief (gets a pattern from the store)
+  *
+  * (documentation goes here)
+  */
+int8_t patternO::getPattern(const uint8_t idx)
+{
+	return patternStore[idx];
+}
+
+/** @brief (one liner)
+  *
+  * (Finds a pattern in our pattern store. returns -1 if te pattern is not found)
+  */
+int8_t patternO::patternExists(int* val)
+{
+	//patternStore[idx]=patternval
+
+	// Iterate over patterns (1 dimension of array)
+	for (uint8_t idx=0; idx<patternPos; ++idx)
+    {
+		if (patternBasic::inTol(*val,patternStore[idx],*val*0.3))  // Skip this iteration, if pattern is not in tolerance
+		{
+			return idx;
+		}
+    }
+    // sequence was not found in pattern
+    return -1;
+}
+
+
+
+
+
+
+
+
 /*
 
 ********************************************
@@ -1183,6 +1280,7 @@ bool ManchesterpatternDecoder::isManchester()
 ********************************************
 
 */
+
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
 	tolFact = 5.0;
@@ -1665,6 +1763,7 @@ unsigned char decoderBasic::getDataBits(uint8_t startingPos,uint8_t numbits)
 /*
 	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
 */
+/*
 bool OSV2Decoder::checkMessage()
 {
 	bool valid;
@@ -1695,8 +1794,10 @@ OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
     mcdetector = detector;
 }
 
-
+*/
 /*
+
+
 The Sync signal begins really with 01, so we need to start decoding at first 01 pattern, not 10. 10 is caused by the startingpoint of the signal
 
 
@@ -1761,6 +1862,8 @@ Preamble<-|     Data ->>
  0101           1011           0011         1011          1100            1010         0111         1001                    (first bit)
  1010           1101           1100         1101          0011            0101         1110         1001                    (first bit reversed)  <<< --- Passt zum Jeelib Decoder
 */
+
+/*
 bool OSV2Decoder::processMessage()
 {
 	if (!checkMessage()) return false;
@@ -1792,12 +1895,14 @@ bool OSV2Decoder::processMessage()
 	return true;
 }
 
-
+*/
 
 /*
 returns numbit bits one , begins at position deliverd via startingPos
 skips every second bit and returns the bits in reversed (correct for OSV2) order
 */
+
+/*
 unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
 {
     uint8_t bcnt=0;
@@ -1811,28 +1916,33 @@ unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
 	}
     return cdata;
 }
-
+*/
 
 
 /*
 returns the 4 bits one nibble, begins at position deliverd via startingPos
 skips every second bit and returns the nibble in reversed (correct) order
 */
+
+/*
 unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
 {
     return getDataBits(startingPos,4);
 }
+*/
 
 /*
 returns the 8 bits / one byte, begins at position deliverd via startingPos
 skips every second bit and returns the byte in reversed (correct) order.
 // Todo use getNibble to return the byte
 */
+
+/*
 unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 {
      return getDataBits(startingPos,8);
 }
-
+*/
 
 
 ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBasic()
