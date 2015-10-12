@@ -179,7 +179,7 @@ class patternDecoder : public patternDetector{
 		void processMessage();
 
 		void printMsgStr(const String *first, const String *second, const String *third);
-		void printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
+		int8_t printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
 
 	private:
 		String preamble;

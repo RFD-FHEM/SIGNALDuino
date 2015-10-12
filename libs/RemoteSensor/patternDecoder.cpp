@@ -512,7 +512,7 @@ void patternDetector::calcHisto(const uint8_t startpos, uint8_t endpos)
 
 	if (endpos==0) endpos=messageLen;
 
-    for (uint8_t i=0;i<endpos;++i)
+    for (uint8_t i=startpos;i<endpos;++i)
     {
         histo[message[i]]++;
     }
@@ -644,7 +644,7 @@ bool patternDecoder::decode(const int* pulse) {
 
 void patternDecoder::processMessage()
 {
-	if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
+	if (messageLen < minMessageLen ) return; //mindestlänge der Message prüfen
 	//Serial.println("Message decoded:");
 	patternDetector::processMessage();//printOut();
 
@@ -711,13 +711,28 @@ void patternDecoder::processMessage()
 			postamble.concat(MSG_END);
 			postamble.concat('\n');
 
-
 			printMsgRaw(mstart,mend,&preamble,&postamble);
 			success = true;
-			if (mend<messageLen-minMessageLen) {
+
+			#ifdef mp_crc
+			const int8_t crco = printMsgRaw(mstart,mend,&preamble,&postamble);
+
+			if ((mend<messageLen-minMessageLen) && (message[mend+1] == message[mend-mstart+mend+1])) {
 				mstart=mend+1;
-				processMessage();
+				byte crcs=0x00;
+				#ifndef ARDUSIM
+				for (uint8_t i=mstart+1;i<=mend-mstart+mend;i++)
+				{
+					crcs  = _crc_ibutton_update(crcs,message[i]);
+				}
+				#endif
+				if (crcs == crco)
+				{
+					// repeat found
+				}
+				//processMessage(); // Todo: needs to be optimized
 			}
+			#endif
 
 
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
@@ -867,24 +882,28 @@ void patternDecoder::printMsgStr(const String *first, const String *second, cons
 
 /** @brief (Convertes message array into string for serial output)
   *
-  * (documentation goes here)
+  * (returns the crc value of the message)
   */
 
-void patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble,const String *postamble)
+int8_t patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble,const String *postamble)
 {
 
 	Serial.print(*preamble);
 	//String msg;
 	//msg.reserve(m_end-mstart);
-
+	byte crcv=0x00;
 	for (;m_start<=m_end;m_start++)
 	{
 		//msg + =message[m_start];
 		//Serial.print((100*message[m_start])+(10*message[m_start])+message[m_start]);
 		Serial.print(message[m_start]);
+		#ifndef ARDUSIM
+		crcv = _crc_ibutton_update(crcv,message[m_start]);
+		#endif
 	}
 	//Serial.print(msg);
 	Serial.print(*postamble);
+	return crcv;
 	//printMsgStr(preamble,&msg,postamble);
 }
 
