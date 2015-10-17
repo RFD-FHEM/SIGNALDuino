@@ -690,9 +690,11 @@
 			<Add directory="../libs/TimerOne" />
 			<Add directory="../libs/bitstore" />
 			<Add directory="../libs/RemoteSensor" />
+			<Add directory="../libs/SimpleFifo" />
 		</Compiler>
 		<Unit filename="../libs/RemoteSensor/patternDecoder.cpp" />
 		<Unit filename="../libs/RemoteSensor/patternDecoder.h" />
+		<Unit filename="../libs/SimpleFifo/SimpleFIFO.h" />
 		<Unit filename="../libs/TimerOne/TimerOne.cpp" />
 		<Unit filename="../libs/TimerOne/TimerOne.h" />
 		<Unit filename="../libs/bitstore/bitstore.cpp" />

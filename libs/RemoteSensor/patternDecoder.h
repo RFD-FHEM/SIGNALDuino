@@ -38,7 +38,7 @@
 
 #include "Arduino.h"
 #include <bitstore.h>
-#include <filtering.h>
+//#include <filtering.h>
 
 #define maxNumPattern 6
 #define maxMsgSize 30
