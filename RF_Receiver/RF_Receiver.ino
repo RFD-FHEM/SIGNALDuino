@@ -127,16 +127,18 @@ patternDecoder musterDec;
 void setup() {
 	Serial.begin(BAUDRATE);
 	#ifdef DEBUG
+	#ifdef CMP_FIFO
+	Serial.println("Using sFIFO");
+	#else
+
 	Serial.println(F("Startup:"));
 	Serial.print(F("# Bytes / Puffer: "));
 	Serial.println(sizeof(int)*FiFo.getBuffSize());
 	Serial.print(F("# Len Fifo: "));
 	Serial.println(FiFo.getBuffSize());
-	#endif
-	#ifdef CMP_FIFO
-	Serial.println("Using sFIFO");
 
 	#endif // CMP_FIFO
+	#endif
 	//delay(2000);
 	pinMode(PIN_RECEIVE,INPUT);
 	pinMode(PIN_SEND,OUTPUT);
