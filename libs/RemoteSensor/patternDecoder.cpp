@@ -46,7 +46,7 @@
 */
 
 
-
+/*
 patternBasic::patternBasic() {
 	//patternStore = new BitStore(2,1); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
 	buffer[0] = buffer[1] = 0;
@@ -57,13 +57,13 @@ patternBasic::patternBasic() {
 	//tolFact = 3.0; ///10
 	reset();
 }
-
+*/
 void patternBasic::reset()
 {
 	patternLen = 0;
 	state = searching;
 	clock = -1;
-	patternStore->reset();
+	patternStore.reset();
     tol=0;
 	for (int i=0;i<maxNumPattern;i++)
         pattern[i][0]=0;
@@ -921,13 +921,13 @@ int8_t patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const S
   *
   * Initialisation of class MancheserpatternDecoder
   */
-
+/*
 ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
 {
 	pdec = ref_dec;
 	//ManchesterBits->new BitStore(1); // use 1 Bit for every value stored, reserve 30 Bytes = 240 Bits
 	reset();
-}
+}*/
 /** @brief (one liner)
   *
   * (documentation goes here)
@@ -951,7 +951,7 @@ void ManchesterpatternDecoder::reset()
 	shortlow =  -1;
 	shorthigh = -1;
 	minbitlen = 20; // Set defaults
-	ManchesterBits->reset();
+	ManchesterBits.reset();
 }
 /** @brief (Sets internal minbitlen to new value)
   *
@@ -989,12 +989,12 @@ bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
 	char hexStr[] ="00"; // Not really needed
-	message->reserve(ManchesterBits->bytecount*3); // Todo: Reduce to exact needed size
+	message->reserve(ManchesterBits.bytecount*3); // Todo: Reduce to exact needed size
 	if (!message)
 		return ;
 
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx=0; idx<=ManchesterBits->bytecount; ++idx){
+	for (uint8_t idx=0; idx<=ManchesterBits.bytecount; ++idx){
         //Serial.print(getMCByte(idx),HEX);
         //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
         //Serial.print(".");
@@ -1045,7 +1045,7 @@ void ManchesterpatternDecoder::getMessageClockStr(String* str)
 
 unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx){
 
-    return ManchesterBits->getByte(idx);
+    return ManchesterBits.getByte(idx);
 }
 
 
@@ -1078,14 +1078,14 @@ bool ManchesterpatternDecoder::doDecode() {
 		{
 
             if (isLong(pdec->message[i])) {
-		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+		          ManchesterBits.addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
 				  #ifdef DEBUGDECODE
 		          Serial.print("L");
 		          #endif
             }
 			else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
 			{
-				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
+				  ManchesterBits.addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
 				  #ifdef DEBUGDECODE
 				  Serial.print("SS");
 				  #endif
@@ -1095,7 +1095,7 @@ bool ManchesterpatternDecoder::doDecode() {
 			else { // Found something that fits not to our manchester signal
 				if (i < pdec->messageLen-minbitlen)
 				{
-					ManchesterBits->reset();
+					ManchesterBits.reset();
 					pdec->mstart=i;
 					#ifdef DEBUGDECODE
 					Serial.print("RES");
@@ -1113,7 +1113,7 @@ bool ManchesterpatternDecoder::doDecode() {
                     Serial.print(pdec->mstart);
                     #endif
 
-					return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
 
@@ -1141,7 +1141,7 @@ bool ManchesterpatternDecoder::doDecode() {
 		pdec->m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
     }
 
-	return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
+	return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
 
 	//Serial.print(" ES MC ");
 }
@@ -1315,7 +1315,7 @@ ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBa
 	//tol = 200; //
 	tolFact = 5.0;
 	//patternStore = new BitStore(2,0); // Init our Patternstore, with 0 bytes, because we do not use it
-	free(patternStore);
+	//free(patternStore);
 	//ManchesterBits->new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
 	this->silent=silentstate;
 

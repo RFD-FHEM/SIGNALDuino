@@ -100,7 +100,7 @@ enum status {searching, clockfound, syncfound,detecting};
     public:
 
 
-        patternBasic();
+        patternBasic() : patternStore(1), success(false) ,first(buffer), last(first+1){	buffer[0] = buffer[1] = 0; reset(); };
 		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
 		void swap(int* a, int* b);              // Swaps the two vars
@@ -123,7 +123,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		uint16_t tol;                                // calculated tolerance for signal
         float tolFact;                          //
 		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
-		BitStore<0> *patternStore;                 // Store for saving detected bits or pattern index
+		BitStore<0> patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
 		bool success;                           // True if a valid coding was found
 
@@ -194,7 +194,7 @@ class patternDecoder : public patternDetector{
 class ManchesterpatternDecoder
 {
 	public:
-	ManchesterpatternDecoder(patternDecoder *ref_dec);
+	ManchesterpatternDecoder(patternDecoder *ref_dec) : ManchesterBits(1) {	pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
@@ -209,7 +209,7 @@ class ManchesterpatternDecoder
 	bool isShort(uint8_t pulse_idx);
 	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 
-    BitStore<30> *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+    BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
 
     patternDecoder *pdec;
 
