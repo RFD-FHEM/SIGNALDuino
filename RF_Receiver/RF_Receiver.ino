@@ -221,11 +221,10 @@ void disableReceive() {
 
 
 //============================== IT_Send =========================================
-byte ITrepetition = 6;
-byte ITreceivetolerance= 60;
-int ITbaseduration = 420;
+uint8_t ITrepetition = 6;
+int ITbaseduration = 300;
 
-void PT2262_transmit(int nHighPulses, int nLowPulses) {
+void PT2262_transmit(uint8_t nHighPulses, uint8_t nLowPulses) {
   digitalWrite(PIN_SEND, HIGH);
   delayMicroseconds(ITbaseduration * nHighPulses);
   digitalWrite(PIN_SEND, LOW);
@@ -413,9 +412,6 @@ void IT_CMDs() {
 
   // Set Intertechno receive tolerance
   if (cmdstring.charAt(1) == 't') {
-    char msg[3];
-    cmdstring.substring(2).toCharArray(msg,3);
-    ITreceivetolerance = atoi(msg);
     Serial.println(cmdstring);
   }
   // Set Intertechno Repetition
@@ -430,23 +426,19 @@ void IT_CMDs() {
     digitalWrite(PIN_LED,HIGH);
     char msg[13];
     cmdstring.substring(2).toCharArray(msg,13);
-    if (cmdstring.length() > 14)
-    {
-       ITbaseduration=cmdstring.substring(14).toInt(); // Default Baseduration
-    }
-    else
-    {
-       ITbaseduration=420; // Default Baseduration
-    }
-    sendPT2262(msg);
+   	sendPT2262(msg);
     digitalWrite(PIN_LED,LOW);
+    Serial.println(cmdstring);
+  }
+  else if (cmdstring.charAt(1) == 'c') {
+	ITbaseduration=cmdstring.substring(2).toInt(); // Updates Baseduration
     Serial.println(cmdstring);
   }
   // Get Intertechno Parameters
   else if (cmdstring.charAt(1) == 'p') {
-    String cPrint = "ITParams: ";
-    cPrint += String(ITreceivetolerance);
-    cPrint += " ";
+    String cPrint;
+    cPrint.reserve(20);
+    cPrint = "ITParams: ";
     cPrint += String(ITrepetition);
     cPrint += " ";
     cPrint += String(ITbaseduration);
