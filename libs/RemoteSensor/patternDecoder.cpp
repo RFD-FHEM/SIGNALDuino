@@ -1,7 +1,7 @@
 /*
-*   Pattern Decoder Library V0.1
+*   Pattern Decoder Library V1
 *   Library to decode radio signals based on patternd detection
-*   2014  N.Butzek, S.Butzek
+*   2014-2015  N.Butzek, S.Butzek
 
 *   This library contains different classes to perform decoding of radio signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -45,7 +45,7 @@
 ********************************************************
 */
 patternBasic::patternBasic() {
-	patternStore = new BitStore(2); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
+	patternStore = new BitStore(2,1); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
 
 	buffer[0] = buffer[1] = 0;
 	first = buffer;
@@ -60,18 +60,23 @@ void patternBasic::reset()
 {
 	patternLen = 0;
 	state = searching;
-	clock = 0;
+	clock = -1;
 	patternStore->reset();
-    //tol=0;
+    tol=0;
+	for (int i=0;i<maxNumPattern;i++)
+        pattern[i][0]=0;
+
 }
 
-bool patternBasic::detect(int* pulse){
+
+bool patternBasic::detect(const int* pulse){
 	success = false;
 	//swap buffer
 	swap(first, last);
 	*last = *pulse;
 }
 
+/* Returns the index of the searched pattern or -1 if not found */
 int8_t patternBasic::findpatt(int *seq) {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
@@ -81,7 +86,9 @@ int8_t patternBasic::findpatt(int *seq) {
         // Iterate over sequence in pattern (2 dimension of array)
         for (x=1; x<=seq[0]; x++)
         {
+            //if (!(seq[x] ^ pattern[idx][x-1]) >= 0)  break;  // Not same sign, we can skip
             if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+            //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
             {
                 x=0;
                 break;
@@ -98,9 +105,14 @@ int8_t patternBasic::findpatt(int *seq) {
 
 
 
-bool patternBasic::inTol(int value, int set){
-	return (abs(value-set)<tol);
+bool patternBasic::inTol(const int value, const int set){
+	return inTol(value, set, tol);
 }
+
+bool patternBasic::inTol(const int value, int set, const int tolerance){
+	return (abs(value-set)<=tolerance);
+}
+
 
 void patternBasic::swap(int* a, int* b){
 	int temp;
@@ -113,14 +125,15 @@ void patternBasic::swap(int* a, int* b){
 /*
  Check if a pulse is followd with a pulse singed at the oppsit so + - / - + is valied - - or + + is not valid!
 */
-bool patternBasic::validSequence(int *a, int *b)
+bool patternBasic::validSequence(const int *a, const int *b)
 {
 
     //return ((*a> 0 and 0 > *b) or (*b > 0  and 0 > *a));
     //return ((*a)*(*b)<0);
-    return ((*a ^ *b) < 0); // true iff a and b have opposite signs
+    return ((*a ^ *b) < 0); // true if a and b have opposite signs
 
 }
+
 
 
 void patternBasic::doSearch() {}
@@ -130,523 +143,1171 @@ void patternBasic::processMessage() {}
 
 /*
 ********************************************************
-************ Return to zero detector *******************
+*************** Puls Pause detector ********************
 ********************************************************
 */
 
 
 //	constructor
-patternDetector::patternDetector() {
+patternDetector::patternDetector():patternBasic() {
 	buffer[0] = 0; buffer[1] = 0;
 	first = buffer;
 	last = first+1;
-	success = false;
-	tol = 200; //
-	tolFact = 0.4;
+	sync=-1;
 	reset();
 }
 
 void patternDetector::reset() {
+	patternBasic::reset();
 	messageLen = 0;
 	patternLen = 0;
 	bitcnt = 0;
 	state = searching;
-	clock = 0;
+	clock = sync=-1;
+	for (uint8_t i=0; i<maxNumPattern;++i)
+		histo[i]=pattern[i][0]=0;
+	success = false;
+	tol = 150; //
+	tolFact = 0.3;
+	mstart=0;
+	m_truncated=false;
+	m_overflow=false;
 	//Serial.println("reset");
 }
 
-bool patternDetector::detect(int* pulse){
-	//swap buffer
-	success = false;
-	swap(first, last);
-	//add new value to buffer
-	*last = *pulse;
-	if (state == detecting) doDetect();
-	if (state == searching) doSearch();
+const status patternDetector::getState()
+{
+	return state;
+}
+
+
+
+
+bool patternDetector::detect(const int* pulse){
+	patternBasic::detect(pulse);   // Call function from base class, to do some basic stuff
+    doDetectwoSync();			   // Search for signal
 
 	return success;
 }
 
-void patternDetector::doSearch() {
-	//Serial.println("doSearch");
-	//Serial.print(*first); Serial.print(", ");Serial.println(*last);
-	if ((0<*first) & (*first<3276) & (syncMinFact* (*first) <= -1* (*last))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
-		clock = *first;
-		sync = *last;
-		//clock = ~(int) *last/(sync/clock);
-		state = detecting;
-		bitcnt=0;
-		tol = (int)round(clock*tolFact);
-#ifdef DEBUGDETECT
-		//debug
-		Serial.print("PD sync: ");
-		Serial.print(*first); Serial.print(", ");Serial.print(*last);
-		Serial.print(", TOL: ");Serial.print(tol);
-		Serial.print(", sFACT: ");Serial.println(sync/(float)clock);
-#endif
+/** @brief (Checks is stored message can be a valid signal)
+  *
+  * (documentation goes here)
+  */
+bool patternDetector::validSignal()
+{
+	if (messageLen < minMessageLen) return false;
+
+	//if (patternLen < 3)	return false;
+	/*uint8_t unequal_pulse_cnt=0;
+	for (uint8_t i=0;i<patternLen;i++)
+	{
+		if (histo[i] > 10) unequal_pulse_cnt++;		// Count all signaltypes in hisogram with more than 10 pulses.
 	}
+	if (unequal_pulse_cnt <3)	return false;
+	*/
+
+
+	return true;									// Message seems to be valid
 }
 
-void patternDetector::doDetect() {
+bool patternDetector::getSync(){
+    // Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
+    //
+	#if DEBUGDETECT > 3
+	Serial.println("  --  Searching Sync  -- ");
+	#endif
+
+	if (state == clockfound)		// we need a clock to find this type of sync
+	{
+		// clock wurde bereits durch getclock bestimmt.
+		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
+		{
+			if (pattern[p][0] > 0 || (abs(pattern[p][0]) > syncMaxMicros && abs(pattern[p][0])/pattern[clock][0] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
+			//if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+			if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
+			if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
+				// Prüfe ob Sync und Clock valide sein können
+				if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
+
+				// Prüfen ob der gefundene Sync auch als message [clock, p] vorkommt
+				uint8_t c = 0;
+				while (c < messageLen)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				{
+					//if (message[c] == clock && message[c+1] == p) break;
+					//if (message[c] == p && message[c-1] == clock) break;   // Faster version as bevore, but does not work
+					if (message[c+1] == p && message[c] == clock ) break;	// Fast as before and works.
+					c++;
+				}
+
+				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
+
+				// Sync wurde gefunden, Variablen setzen
+				//clock = pattern[i][0];
+				//sync = pattern[p][0];
+				sync=p;
+				state = syncfound;
+
+				mstart=c;
+
+				#ifdef DEBUGDECODE
+				//debug
+				Serial.println();
+				Serial.print("PD sync: ");
+				Serial.print(pattern[clock][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+				Serial.print(", TOL: ");Serial.print(tol);
+				Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
+				#endif
+				return true;
+				//break;
+			}
+		}
+	}
+
+/*
+    for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
+    {
+		if (pattern[i][0]<0 || pattern[i][0] > 3276)  continue;  // Werte <0 / >3276 sind keine Clockpulse
+        for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
+        {
+           	if (pattern[p][0] > 0 || pattern[p][0] == -maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+           	if (!validSequence(&pattern[i][0],&pattern[p][0])) continue;
+           	if ((syncMinFact* (pattern[i][0]) <= -1* (pattern[p][0]))) {//n>10 => langer Syncpulse (als 10*int16 darstellbar
+                // Prüfe ob Sync und Clock valide sein können
+                if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse
+                if (histo[i] < 10) continue;   // Mindestens 10 Clock Pulse
+
+				// Prüfen ob der gefundene Sync auch als message [i, p] vorkommt
+				uint8_t c = 0;
+				while (c < messageLen)
+				{
+					if (message[c] == i && message[c+1] == p) break;
+					c++;
+				}
+
+				if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
+
+				// Sync wurde gefunden, Variablen setzen
+                //clock = pattern[i][0];
+                //sync = pattern[p][0];
+                clock=i;
+                sync=p;
+                state = detecting;
+
+                mstart=c;
+                //tol = (int)round(clock*tolFact);
+
+				// Delete Messagebits bevore detected Sync. because they are trash
+				// Löschen deaktiviert, da eventuell zu viel fehlt
+
+				//messageLen-=c;
+				//memmove(message,message+c,sizeof(*message)*(messageLen));
+				//calcHisto();  // Da etwas von der Nachricht entfernt wird, brauchen wir eine neue Histogramm berechnung
+
+				#if DEBUGDETECT > 1
+                //debug
+                Serial.println();
+                Serial.print("PD sync: ");
+                Serial.print(pattern[i][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+                Serial.print(", TOL: ");Serial.print(tol);
+                Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
+                #endif
+                return true;
+                //break;
+           	}
+        }
+    }
+    */
+	sync=-1; // Workaround for sync detection bug.
+    return false;
+
+
+}
+
+
+bool patternDetector::getClock(){
+    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	#if DEBUGDETECT > 3
+	Serial.println("  --  Searching Clock in signal -- ");
+	#endif
+	int tstclock=-1;
+
+	clock=-1; // Workaround for sync detection bug.
+
+    for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
+    {
+		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
+		if (tstclock==-1 && (pattern[i][0]>=0) && (histo[i] > messageLen*0.17) )
+		{
+			tstclock = i;
+			continue;
+		}
+
+		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > messageLen*0.17)){
+			tstclock = i;
+		}
+    }
+
+
+	// Check Anzahl der Clockpulse von der Nachrichtenlänge
+	//if ((tstclock == 3276) || (maxcnt < (messageLen /7*2))) return false;
+	if (tstclock == -1) return false;
+
+	clock=tstclock;
+
+	// Todo: GGf. andere Pulse gegen die ermittelte Clock verifizieren
+
+	state=clockfound;
+	return true;
+}
+
+
+
+
+
+/* Detect without a Sync */
+void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
-	if (bitcnt >= 1) {//nächster Satz Werte (je 2 Neue) vollständig
+
+	if (messageLen+1 >= maxMsgSize*8) {
+		#if DEBUGDETECT>0
+		Serial.println("Error, overflow in message Array");
+		#endif
+		m_overflow=true;
+	    processMessage();
+        m_truncated&=false;
+	    //reset(); // Moved reset to processMessage function if needed
+	}
+	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
+		static uint8_t pattern_pos;
+        bool valid;
+        bool add_new_pattern=true;
 		bitcnt = 0;
-		//valides Muster prüfen: ([1,-n] oder [n, -1])
-		if (((inTol(*first, clock) & (syncMinFact*clock> - *last) & (*last<0)) | ((0<*first) & (*first<syncMinFact*clock) & (inTol(*last, -clock))))){
-			//wenn nicht vorhanden, aufnehmen
-			int fidx = find();
-#ifdef DEBUG2
-		 	Serial.print("Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
-			Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.println(fidx);
-#endif
-			if (0<=fidx){
-				//gefunden
-				*(message+messageLen) = fidx;
-				messageLen++;
-			} else {
-				if (patternLen <maxNumPattern){
-					//neues hinzufügen
-					//Serial.println("hinzufügen");
-					*(pattern+2*patternLen)   = *first;
-					*(pattern+2*patternLen+1) = *last;
-					patternLen++;
-					*(message+messageLen) = patternLen-1; //Index des letzten Elements
-					messageLen++;
-				} else {
-					processMessage();
-					reset();
-				}
+        valid=validSequence(first,last);
+        valid &= (messageLen+1 == maxMsgSize*8) ? false : true;
+		if (pattern_pos > patternLen) patternLen=pattern_pos;
+		if (messageLen ==0) valid=pattern_pos=patternLen=0;
+
+
+	    int seq[2] = {1,0};
+	    seq[1]=*first;
+		int8_t fidx = findpatt(seq);
+
+		#if DEBUGDETECT>3
+		Serial.print(F("Pulse: "));Serial.print(*first); Serial.print(F(", "));Serial.print(*last);
+		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
+		Serial.print(F(", pSeq: ")); Serial.print(seq[1]); Serial.print(F(", Vld: ")); Serial.print(valid);
+		Serial.print(F(", mLen: ")); Serial.print(messageLen);
+		#endif
+
+		if (0<=fidx){
+			//gefunden
+			message[messageLen]=fidx;
+			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
+			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2; // Moving average
+			messageLen++;
+			add_new_pattern=false;
+        }   else {
+            // Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
+			calcHisto();
+            if (patternLen==maxNumPattern && histo[pattern_pos] > 1)
+            {
+                valid=false;
+                add_new_pattern=false;
+            }
+        }
+
+        if (!valid && messageLen>=minMessageLen){
+		  //Serial.println("not valid, processing");
+
+          success=true;
+          processMessage();
+         // reset();  // GGF hier nicht ausführen.
+          pattern_pos=0;
+          //doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
+          return;
+        } else if (!valid) {
+			reset();
+			success=false;
+			pattern_pos=0;
+        } else if (valid && messageLen>=minMessageLen){
+			state=detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+        }
+		/*else {
+			if (messageLen>=minMessageLen){
+				// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
+				//printOut();
+				//processMessage();
+				//reset();pattern_pos=0;
 			}
-#ifdef DEBUGDETECT
-			printOut();//debug
-#endif
-		} else { //kein valides Muster (mehr)
-		 	//Serial.print("TrashPulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last); Serial.print(", MSGLen: "); Serial.println(messageLen);
-			processMessage();
-	        reset();
+        */
+        if (add_new_pattern)
+        {
+			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
+			// Array wird sozusagen nach links geschoben
+			for (int16_t i=messageLen-1;(i>=0) ;--i)
+			{
+				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+				{
+					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					memmove(message,message+i,sizeof(*message)*(messageLen+1));
+                    break;
+                }
+			}
+			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
+			message[messageLen]=pattern_pos;
+            #if DEBUGDETECT>3
+            Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
+            #endif // DEBUGDETECT
+			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
+
+			messageLen++;
+			pattern_pos++;
+
+			//printOut();
+			if (pattern_pos==maxNumPattern)
+			{
+				pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				patternLen=maxNumPattern;
+			}
+			/*
+			if (pattern_pos==maxNumPattern)
+			{
+				pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				patternLen=maxNumPattern;
+			} else {
+
+				patternLen++;
+			}
+			*/
+			/*
+			DEBUG_BEGIN(2)
+			printOut();
+			DEBUG_END
+			*/
 		}
+		#if DEBUGDETECT>3
+		Serial.println();
+		#endif // DEBUGDETECT
 	} else { //zweiten Wert für Muster sammeln
-            bitcnt++;
+		bitcnt++;
 	}
+
+
+
+
+
 }
 
-int patternDetector::find() {
-	//Todo: Use find from patternBasic :  int tmp[2]; tmp[0] = *first; tmp[1] = *last; return find(tmp);
-	int findex = -1;
-	for (int idx=0; idx<patternLen; ++idx) {
-		if ((abs(*first-(*(pattern+2*idx)))<tol) & (abs(*last-(*(pattern+2*idx+1)))<tol)){
-			findex = idx;
-		}
-	}
-	return findex;
-}
+/* Berechnet Werte für ein Histogramm aus den Daten des arrays message */
+void patternDetector::calcHisto(const uint8_t startpos, uint8_t endpos)
+{
+    for (uint8_t i=0;i<maxNumPattern;++i)
+    {
+        histo[i]=0;
+    }
 
-bool patternDetector::inTol(int value, int set){
-	return inTol(value, set, tol);
-}
-bool patternDetector::inTol(int value, int set, int tolerance){
-	return (abs(value-set)<=tolerance);
-}
+	if (endpos==0) endpos=messageLen;
 
-void patternDetector::swap(int* a, int* b){
-	int buffer;
-	buffer = *b;
-	*b = *a;
-	*a = buffer;
-}
-
-void patternDetector::sortPattern(){
-	// sort the pattern, such that the second value of the first pattern is the greatest (values are considered negative => the absolute value of the first is then the smallest)
-	// Example for the result: [1, -2]*c, [1, -6]*c, with the clock c
-	// other example: [3, -1]*c, [1, -3]*c, with the clock c
-	// for the moment only patterns of length 2 are considered
-	if (*(pattern+1)<*(pattern+3)) {
-		swap(pattern, pattern+2);
-		swap(pattern+1, pattern+3);
-		// Swap the Message
-		for (byte idx = 0; idx<messageLen; ++idx){
-			if (message[idx] == 0)
-				message[idx] = 1;
-			else //then it must be 1
-				message[idx] = 0;
-		}
-	}
+    for (uint8_t i=startpos;i<endpos;++i)
+    {
+        histo[message[i]]++;
+    }
 }
 
 void patternDetector::printOut() {
-	Serial.print("Sync: ");Serial.print(sync);
-	Serial.print(" -> SyncFact: ");Serial.print(sync/(float)clock);
-	Serial.print(", Clock: "); Serial.print(clock);
+    Serial.println();
+	Serial.print("Sync: ");Serial.print(pattern[sync][0]);
+	Serial.print(" -> SyncFact: ");Serial.print(pattern[sync][0]/(float)pattern[clock][0]);
+	Serial.print(", Clock: "); Serial.print(pattern[clock][0]);
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
-	Serial.println();Serial.print("MSG: ");
-	for (int idx=0; idx<messageLen; ++idx){
+	Serial.print(", mStart: "); Serial.print(mstart);
+
+	Serial.println();Serial.print("Signal: ");
+	for (uint8_t idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
 	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
 	Serial.print("Pattern: ");
-	for (int idx=0; idx<patternLen; ++idx){
- 		Serial.print(" P");Serial.print(idx);Serial.print(":");
-		Serial.print(*(pattern+2*idx)); Serial.print(", ");Serial.print(*(pattern+2*idx+1));Serial.print(", ");
- 		Serial.print(" Pclock");Serial.print(idx);Serial.print(":");
-		Serial.print(*(pattern+2*idx)/(float)clock); Serial.print(", ");Serial.print(*(pattern+2*idx+1)/(float)clock);Serial.print(", ");
- 		//Serial.print(" Pfact");Serial.print(idx);Serial.print(":");
-		//Serial.print(*(pattern+2*idx+1)/(float)*(pattern+2*idx));
-		//Serial.print("-i-> ");
-		//Serial.print(*(pattern+2*idx+1)/ *(pattern+2*idx));
-		//Serial.print(", ");
-		}
+	for (uint8_t idx=0; idx<patternLen; ++idx){
+        Serial.print(" P");Serial.print(idx);
+        Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
+        for (uint8_t x=0; x<PATTERNSIZE;++x)
+        {
+            if (pattern[idx][x] != 0)
+            {
+                if (x>0) Serial.print(",");
+                Serial.print(pattern[idx][x]);
+            }
+        }
+        Serial.print("]");
+	}
 	Serial.println();
 }
 
 void patternDetector::processMessage()
 {
+        compress_pattern();
+        calcHisto();
         if (messageLen >= minMessageLen)
         {
-            //mindestlänge der Message prüfen
-            Serial.println("Message detected:");
-            //printOut();
-            if (patternLen=2)
-            {
-                sortPattern();
-                printOut();
-            }
+            getClock();
+            getSync();
+            #if DEBUGDETECT >= 1
+            printOut();
+            #endif
         }
 }
+
+
+/** @brief (compares pattern if they are equal after moving average calculation and reduces within tolerance)
+  *
+  * (documentation goes here)
+  */
+void patternDetector::compress_pattern()
+{
+
+	calcHisto();
+	for (uint8_t idx=0; idx<patternLen;idx++)
+	{
+		for (uint8_t idx2=idx+1; idx2<patternLen;idx2++)
+		{
+			if (inTol(pattern[idx2][0],pattern[idx][0]))  // Pattern are very equal, so we can combine them
+			{
+				// Change val -> ref_val in message array
+				for (uint8_t i=0;i<messageLen;i++)
+				{
+                    if (message[i]==idx2)
+					{
+						message[i]=idx;
+                    }
+				}
+
+				#if DEBUGDETECT>2
+				Serial.print("compr: ");Serial.print(idx2);Serial.print("->");Serial.print(idx);Serial.print(";");
+				Serial.print(histo[idx2]);Serial.print("*");Serial.print(pattern[idx2][0]);
+				Serial.print("->");
+				Serial.print(histo[idx]);Serial.print("*");Serial.print(pattern[idx][0]);
+				#endif // DEBUGDETECT
+
+
+				int  sum = histo[idx] + histo[idx2];
+
+				pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
+				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
+				pattern[idx2][0]=0;
+
+				#if DEBUGDETECT>2
+				Serial.print(" idx:");Serial.print(pattern[idx][0]);
+				Serial.print(" idx2:");Serial.print(pattern[idx2][0]);
+				Serial.println(";");
+				#endif // DEBUGDETECT
+
+			}
+		}
+	}
+	//calcHisto(); // recalc histogram
+}
+
 
 //-------------------------- Decoder -------------------------------
 
 patternDecoder::patternDecoder(): patternDetector() {
+/*
 	tol = 200;
 	tolFact = 0.5;
+*/
+	/*
+	protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
+	protoID[1]=(s_sigid){0,0,-10,650,0,twostate}; // RSL
+	protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
+	protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
+	*/
+	preamble.reserve(70);
+	postamble.reserve(20);
+
+	numprotos=0;
+}
+void patternDecoder::reset() {
+    patternDetector::reset();
 }
 
-bool patternDecoder::decode(int* pulse){
+bool patternDecoder::decode(const int* pulse) {
 	return detect(pulse);
 }
 
 void patternDecoder::processMessage()
 {
-        if (messageLen >= minMessageLen){ //mindestlänge der Message prüfen
-		//Serial.println("Message decoded:");
-		//printOut();
-		if (patternLen==2){
-			sortPattern();
-			#ifdef DEBUGDECODE
-				printOut();
+	if (messageLen < minMessageLen ) return; //mindestlänge der Message prüfen
+	//Serial.println("Message decoded:");
+	patternDetector::processMessage();//printOut();
+
+
+	if (state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
+	{
+
+		// Setup of some protocol identifiers, should be retrieved via fhem in future
+
+		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
+		bool m_endfound=false;
+
+		//uint8_t repeat;
+		do {
+			if (message[mend]==clock  && message[mend+1]==sync) {
+				mend-=1;					// Previus signal is last from message
+				m_endfound=true;
+				break;
+			}
+			mend+=2;
+		} while ( mend<(messageLen));
+		if (mend > messageLen) mend=messageLen;  // Reduce mend if we are behind messageLen
+		calcHisto(mstart,mend);	// Recalc histogram due to shortened message
+
+
+		#if DEBUGDECODE > 1
+		Serial.print("Index: ");
+		Serial.print(" MStart: "); Serial.print(mstart);
+		Serial.print(" SYNC: "); Serial.print(sync);
+		Serial.print(", CP: "); Serial.print(clock);
+		Serial.print(" - MEFound: "); Serial.println(m_endfound);
+		Serial.print(" - MEnd: "); Serial.println(mend);
+		#endif // DEBUGDECODE
+		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+		{
+            #ifdef DEBUGDECODE
+            #Serial.println("Filter Match: ");;
+            #endif
+
+
+			preamble="";
+			postamble="";
+
+			/*				Output raw message Data				*/
+			preamble.concat(MSG_START);
+			//preamble.concat('\n');
+			preamble.concat("MS");   // Message Index
+			//preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
+			preamble.concat(SERIAL_DELIMITER);  // Message Index
+			for (uint8_t idx=0;idx<patternLen;idx++)
+			{
+				if (histo[idx] == 0) continue;
+				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
+
+			postamble.concat(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+			postamble.concat("SP=");postamble.concat(sync);postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
+
+			printMsgRaw(mstart,mend,&preamble,&postamble);
+			success = true;
+
+			#ifdef mp_crc
+			const int8_t crco = printMsgRaw(mstart,mend,&preamble,&postamble);
+
+			if ((mend<messageLen-minMessageLen) && (message[mend+1] == message[mend-mstart+mend+1])) {
+				mstart=mend+1;
+				byte crcs=0x00;
+				#ifndef ARDUSIM
+				for (uint8_t i=mstart+1;i<=mend-mstart+mend;i++)
+				{
+					crcs  = _crc_ibutton_update(crcs,message[i]);
+				}
+				#endif
+				if (crcs == crco)
+				{
+					// repeat found
+				}
+				//processMessage(); // Todo: needs to be optimized
+			}
 			#endif
-			#ifdef DEBUGDECODE
-				Serial.print("Logi: ");
+
+
+		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
+        {
+        	Serial.print("copy");
+            messageLen=messageLen-mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+			memmove(message,message+mstart,sizeof(*message)*(messageLen+1));
+			m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
+		} else {
+            #ifdef DEBUGDECODE
+			Serial.println(" Buffer overflow, flushing message array");
 			#endif
-			checkLogilink();
-			#ifdef DEBUGDECODE
-				Serial.print("ITold: ");
-			#endif
-			checkITold();
-			#ifdef DEBUGDECODE
-				Serial.print("ITauto: ");
-			#endif
-			checkITautolearn();
-			#ifdef DEBUGDECODE
-				Serial.print("AS: ");
-			#endif
-			checkAS();
-			#ifdef DEBUGDECODE
-				Serial.print("TCM97001: ");
-			#endif
-			checkTCM97001();
+			//Serial.print(MSG_START);
+			//Serial.print("Buffer overflow while processing signal");
+			//Serial.print(MSG_END);
+            reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
+
 		}
-	}
-}
-
-bool patternDecoder::checkEV1527type(int clockTst, int syncFact, int lowFact, int highFact, byte Length){
-	bool valid = true;
-	valid &= messageLen==Length;
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= inTol(clock, clockTst);//clock in tolerance
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= inTol(round(sync/(float)clock), -syncFact, 3); //sync in tolerance
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= inTol(*(pattern+0), clockTst) & inTol(*(pattern+2), clockTst); //[1, ][1, ] patternclocks in tolerance
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= inTol(*(pattern+1), -lowFact* clockTst); //p0=[ ,-nc]
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= inTol(*(pattern+3), -highFact* clockTst); //p1=[ ,-mc]
-	#ifdef DEBUGDECODE
-		Serial.println(valid);
-	#endif
-	return valid;
-}
-
-void patternDecoder::checkAS(){
-/*
-AS:
-	clock: 		300
-	Sync factor: 	14
-	start sequence: [300, -4200] => [1, -14]
-	high pattern:	[300, -1500] => [1, -5]
-	low pattern:	[300, -600] => [1, -2]
-	message length:	32 bit
-
-FHEM Schnittstelle:
-    ASTTIIDDDDDD
-    AS  - Arduino Sensor
-    TT  - Bit 0..6 type
-	    - Bit 7 trigger (0 auto, 1 manual)
-    II  - Bit 0..5 id
-		- Bit 6,7 battery status (00 - bad, 01 - change, 10 - ok, 11 - optimal)
-    DD1 - LowByte
-    DD2 - HighByte
-*/
-	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-	bool valid = checkEV1527type(500, 18, 1, 2, 32); //14 kommt hier nicht durch =>12
-	twoStateMessageBytes();
-	if (valid) {//ok, it's AS
-		Serial.print("AS");
-		printMessageHexStr();
-		success = true;
-	}
-}
-
-void patternDecoder::checkLogilink(){
-/*
-Logilink NC_WS:
-	clock: 		500
-	Sync factor: 	18
-	start sequence: [500, -9000] => [1, -18]
-	high pattern:	[500, -4000] => [1, -8]
-	low pattern:	[500, -2000] => [1, -4]
-	message length:	36 bit
-	characteristic:	first bits allways 0101
-			checksum
-*/
-	//checkEV1527type(int clockTst, byte syncFact, byte lowFact, byte highFact, byte Length)
-	bool valid = checkEV1527type(500, 18, 4, 8, 36);
-	twoStateMessageBytes();
-	valid &= ((byteMessage[0]&0b11110000)==0b01010000); //first bits has to be 0101
-	if (valid) {//ok, it's Logilink
-		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
-		Serial.print("W03");
-		printMessageHexStr();
-		success = true;
-	}
-}
+	} else if (state == clockfound && messageLen >= minMessageLen) {
 
 
-void patternDecoder::checkTCM97001(){
-/*
-TCM Art. Nr. 97001:
-	clock:	 		500
-	Sync factor: 	18
-	start sequence: [500, -9000] => [1, -18]
-	high pattern:	[500, -4000] => [1, -8]
-	low pattern:	[500, -2000] => [1, -4]
-	message length:	24 bit
-	characteristic:	first 8 bits are sensor id, which is resettet every time the battery is changed
-					Bit 9  			Battery
-					Bit 10			unknown
-					Bit 11 & 12	 	positiv (00) or negativ (11) temperature
-					Bit 13-22 	 	Temperature / 10 if positiv or Temp^0x3fe/10 if negativ
-					Bit 23			unknown may be a checksum?
-					Bit 24 			transmitting auto =0 or manual =1
-*/
-	bool valid = checkEV1527type(500, 18, 4, 8, 24);
-	twoStateMessageBytes();
-	if (valid) {//ok, it's TCM97001
-		Serial.print("W08");
-		printMessageHexStr();
-		success = true;
-	}
-}
+		// Message has a clock puls, but no sync. Try to decode this
 
-void patternDecoder::checkITautolearn(){
-/*
-IT self learning:
-	clock: 		270
-	Sync factor: 	10
-	start sequence: [270, -2700] => [1, -10]
-	low pattern:	[270, -270], [270, -1350]  => [1, -1], [1, -5]
-	high pattern:	[270, -1350], [270, -270] => [1, -5], [1, -1]
-	message length:	32 bit
-*/
-	//checkEV1527type(int clockTst, byte startFact, byte lowFact, byte highFact, byte Length)
-	bool valid = checkEV1527type(270, 10, 1, 5, 64);
-	// two bits in Message give one final bit:
-	// 01 => 0, 10 => 1
-	if (valid) {//ok, it's new IT selflearning
-		Serial.print("AR");
-		printNewITMessage();
-		Serial.println();
-		success = true;
-	}
-}
+		preamble="";
+		postamble="";
 
-void patternDecoder::checkITold() {
-/*
-IT old with selector:
-	clock: 		400 -> Variable Clock
-	Sync factor: 	(31)  27-33
-	start sequence: [400, -13200] => [1, -31]
-	high pattern:	[1200, -400][1200, -400] => [3, -1][3, -1]
-	low pattern:	[400, -1200][400, -1200] => [1, -3][1, -3]
-	float pattern:	[400, -1200][1200, -400] => [1, -3][3, -1]
-	message length:	12 bit
-	characteristic: IT only uses 2 states: low, float
-					clock varies between controls from 340 to 400 => using measured clock leads to lower (required) tolerances
-*/
-	bool valid = true;
-	valid &= messageLen==24;
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	/*
-	int clockTst = 360;
-	valid &= inTol(clock, clockTst);
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	*/
-
-	valid &= inTol(abs(sync)/clock, 30, 3); //syncValues
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= (inTol(*(pattern+0),3*clock) & inTol(*(pattern+1),-1*clock));//p0=[3, -1]
-	#ifdef DEBUGDECODE
-		Serial.print(valid);
-	#endif
-	valid &= (inTol(*(pattern+2),1*clock) & inTol(*(pattern+3),-3*clock));//p1=[1, -3]
-	#ifdef DEBUGDECODE
-		Serial.println(valid);
-	#endif
-	if (valid){
-		//printOut();
-		triStateMessageBytes();
-		byteMessage[byteMessageLen-1] <<=4; //shift last bits to align left in bitsequence
-		Serial.print("IR");
-		printTristateMessage();
-		Serial.print("_");Serial.print(clock);
-		Serial.println();
-		success = true;
-	}
-}
+		#if DEBUGDECODE > 1
+		Serial.print("Clock found: ");
+		Serial.print(", CP: "); Serial.print(clock);
+		Serial.println("");
+		#endif // DEBUGDECODE
 
 
+		//String preamble;
+
+		preamble.concat(MSG_START);
+
+		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
+
+		mcdecoder.reset();
+
+		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		{
+			String mcbitmsg;
+			//Serial.println("MC");
+			mcbitmsg ="D=";
+			mcdecoder.getMessageHexStr(&mcbitmsg);
+   		    //Serial.println("f");
 
 
-void patternDecoder::printMessageHexStr(){
-	char hexStr[] ="00";
-	for (byte cnt=0; cnt<byteMessageLen; ++cnt){
-		sprintf(hexStr, "%02x",byteMessage[cnt]);
-		Serial.print(hexStr);
-	}
-	Serial.println();
-}
+			preamble.concat("MC");
+			preamble.concat(SERIAL_DELIMITER);
+			mcdecoder.getMessagePulseStr(&preamble);
 
-void patternDecoder::printTristateMessage(){
-	/* Message Code
-		0: [1, -3], [1, -3] => message 1,1
-		1: [3, -1], [3, -1] => message 0,0
-		F: [1, -3], [3, -1] => message 1,0
-	*/
-	char msgChar;
-	for (byte idx=0; idx<messageLen; idx +=2){
-		if (message[idx]==1 & message[idx+1]==1)
-			msgChar = '0';
-		else if (message[idx]==0 & message[idx+1]==0)
-			msgChar = '1';
-		else if (message[idx]==1 & message[idx+1]==0)
-			msgChar = 'F';
-		else
-			msgChar = '?';
-		Serial.print(msgChar);
-	}
-}
+			postamble.concat(SERIAL_DELIMITER);
+			mcdecoder.getMessageClockStr(&postamble);
 
-void patternDecoder::printNewITMessage(){
-	/* Message Code
-		0: message 01
-		1: message 10
-	*/
-	char msgChar;
-	for (byte idx=0; idx<messageLen; idx +=2){
-		if (message[idx]==0 & message[idx+1]==1)
-			msgChar = '0';
-		else if (message[idx]==1 & message[idx+1]==0)
-			msgChar = '1';
-		else
-			msgChar = '?';
-		Serial.print(msgChar);
-	}
-}
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
 
-void patternDecoder::twoStateMessageBytes(){
-	byte byteCode = 0;
-	byte byteCnt = 0;
-	for(byte idx=0; idx<messageLen; ++idx) {
-		byteCode <<= 1;
-		if (message[idx]==1){
-			byteCode |=1;
+			//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
+			//printMsgRaw(0,messageLen,&preamble,&postamble);
+
+			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+
+			// Output Manchester Bits
+			printMsgStr(&preamble,&mcbitmsg,&postamble);
+
+			#if DEBUGDECODE == 1
+			preamble = "MC";
+			preamble.concat(SERIAL_DELIMITER);
+
+			for (uint8_t idx=0;idx<patternLen;idx++)
+			{
+				if (histo[idx] == 0) continue;
+
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
+
+			//String postamble;
+			postamble = String(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
+
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
+
+			printMsgRaw(0,messageLen,&preamble,&postamble);
+			#endif
+
+		} else {
+
+			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
+
+			preamble.concat("MU");
+			preamble.concat(SERIAL_DELIMITER);
+
+			for (uint8_t idx=0;idx<patternLen;idx++)
+			{
+				if (histo[idx] == 0) continue;
+
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+			}
+			preamble.concat("D=");
+
+			//String postamble;
+			postamble.concat(SERIAL_DELIMITER);
+			postamble.concat("CP=");postamble.concat(clock);postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+			if (m_overflow) {
+				postamble.concat("O");
+				postamble.concat(SERIAL_DELIMITER);
+			}
+			postamble.concat(MSG_END);
+			postamble.concat('\n');
+
+			printMsgRaw(0,messageLen,&preamble,&postamble);
 		}
-		if (((idx+1) % 8) ==0){ //byte full
-			//Serial.println(byteCode,HEX);
-			byteMessage[byteCnt]=byteCode;
-			byteCnt++;
-			byteCode = 0;
- 		}
+
+		success = true;
+
+
+	} else {
+		success=false;
+		//reset();
 	}
-	if ((messageLen % 8) != 0) {//non full byte
-			//Serial.println(byteCode,HEX);
-			byteMessage[byteCnt]=byteCode;
-			byteMessageLen = byteCnt+1;
-	} else
-		byteMessageLen = byteCnt;
+
+	if (!m_truncated)
+    {
+        reset();
+    }
+
+}
+/** @brief (Prints given strings in provided order)
+  *
+  * (documentation goes here)
+  */
+void patternDecoder::printMsgStr(const String *first, const String *second, const String *third)
+{
+	Serial.print(*first);
+	Serial.print(*second);
+	Serial.print(*third);
 }
 
-void patternDecoder::triStateMessageBytes(){
-	//the function interpretes only two states: 0([1, -3][1, -3]),floating([1, -3][3, -1])
-	// I wouldn't know how to represent three digits => As 3^n?
-	byte byteCode = 0;
-	byte byteCnt = 0;
-	for(byte idx=0; idx<messageLen; idx+=2) {
-		byteCode <<= 1;
-		if (message[idx] != message[idx+1]){// two succeeding equals mark 0
-			byteCode |=1;
-		}
-		if (((idx+2) % 16) ==0){ //byte full
-			//Serial.println(byteCode);
-			byteMessage[byteCnt]=byteCode;
-			byteCnt++;
-			byteCode = 0;
- 		}
+/** @brief (Convertes message array into string for serial output)
+  *
+  * (returns the crc value of the message)
+  */
+
+int8_t patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble,const String *postamble)
+{
+
+	Serial.print(*preamble);
+	//String msg;
+	//msg.reserve(m_end-mstart);
+	byte crcv=0x00;
+	for (;m_start<=m_end;m_start++)
+	{
+		//msg + =message[m_start];
+		//Serial.print((100*message[m_start])+(10*message[m_start])+message[m_start]);
+		Serial.print(message[m_start]);
+		#ifndef ARDUSIM
+		crcv = _crc_ibutton_update(crcv,message[m_start]);
+		#endif
 	}
-	if ((messageLen % 16) != 0) {//non full byte
-			//Serial.println(byteCode);
-			byteMessage[byteCnt]=byteCode;
-			byteMessageLen = byteCnt+1;
-	} else
-		byteMessageLen = byteCnt;
+	//Serial.print(msg);
+	Serial.print(*postamble);
+	return crcv;
+	//printMsgStr(preamble,&msg,postamble);
 }
+
+
+
 
 /*
 ********************************************************
-************* Manchester detection class ***************
+************* Manchester DECODER class ***************
 ********************************************************
 */
+/** @brief (Constructor for Manchester decoder. ref= object of type patternDetecor which is calling the manchester decoder)
+  *
+  * Initialisation of class MancheserpatternDecoder
+  */
 
+ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
+{
+	pdec = ref_dec;
+	ManchesterBits=new BitStore(1,30); // use 1 Bit for every value stored, reserve 30 Bytes = 240 Bits
+	reset();
+}
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+ManchesterpatternDecoder::~ManchesterpatternDecoder()
+{
+	delete ManchesterBits;
+
+}
+
+
+
+/** @brief (Resets internal vars to defaults)
+  *
+  * Reset internal vars to defaults. Called after error or when finished
+  */
+void ManchesterpatternDecoder::reset()
+{
+	longlow =   -1;
+	longhigh =  -1;
+	shortlow =  -1;
+	shorthigh = -1;
+	minbitlen = 20; // Set defaults
+	ManchesterBits->reset();
+}
+/** @brief (Sets internal minbitlen to new value)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::setMinBitLen(uint8_t len)
+{
+		minbitlen = len;
+}
+
+
+  /** @brief (Returns true if given pattern index matches a long puls index)
+    *
+    * (documentation goes here)
+    */
+bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
+{
+	return (pulse_idx == longlow || pulse_idx == longhigh);
+}
+
+  /** @brief (Returns true if given pattern index matches a short puls index)
+    *
+    * (documentation goes here)
+    */
+
+bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
+{
+	return (pulse_idx == shortlow || pulse_idx == shorthigh);
+}
+
+  /** @brief (Converts decoded manchester bits in a provided string as hex)
+    *
+    * ()
+    */
+void ManchesterpatternDecoder::getMessageHexStr(String *message)
+{
+	char hexStr[] ="00"; // Not really needed
+	message->reserve(ManchesterBits->bytecount*3); // Todo: Reduce to exact needed size
+	if (!message)
+		return ;
+
+    // Bytes are stored from left to right in our buffer. We reverse them for better readability
+	for (uint8_t idx=0; idx<=ManchesterBits->bytecount; ++idx){
+        //Serial.print(getMCByte(idx),HEX);
+        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+        //Serial.print(".");
+		sprintf(hexStr, "%02X",getMCByte(idx));
+        message->concat(hexStr);
+
+		//Serial.print(hexStr);
+	}
+	//Serial.println();
+
+}
+
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::getMessagePulseStr(String* str)
+{
+	str->reserve(32);
+	if (!str)
+			return;
+
+	str->concat("LL=");str->concat(pdec->pattern[longlow][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("LH=");str->concat(pdec->pattern[longhigh][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("SL=");str->concat(pdec->pattern[shortlow][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("SH=");str->concat(pdec->pattern[shorthigh][0]);str->concat(SERIAL_DELIMITER);
+}
+
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+void ManchesterpatternDecoder::getMessageClockStr(String* str)
+{
+	str->reserve(7);
+	if (!str)
+			return;
+
+	str->concat("C=");str->concat(clock);str->concat(SERIAL_DELIMITER);
+}
+
+
+
+  /** @brief (retieves one Byte out of the Bitstore for manchester decoded bits)
+    *
+    * (Returns a comlete byte from the pattern store)
+    */
+
+unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx){
+
+    return ManchesterBits->getByte(idx);
+}
+
+
+  /** @brief (Decodes the manchester pattern to bits. Returns true on success and false on error )
+    *
+    * (Call only after ismanchester returned true)
+    */
+
+bool ManchesterpatternDecoder::doDecode() {
+    //Serial.print("bitcnt:");Serial.println(bitcnt);
+
+	uint8_t i=0;
+
+	bool mc_start_found=false;
+        #ifdef DEBUGDECODE
+        Serial.print("mlen: ");
+        Serial.print(pdec->messageLen);
+        Serial.print(" mstart: ");
+        Serial.print(pdec->mstart);
+
+        #endif
+	while (i < pdec->messageLen)
+	{
+		if ( mc_start_found==false && (isLong(pdec->message[i]) ||  isShort(pdec->message[i]))  )
+		{
+			pdec->mstart=i;
+			mc_start_found=true;
+		}
+		if (mc_start_found)
+		{
+
+            if (isLong(pdec->message[i])) {
+		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+				  #ifdef DEBUGDECODE
+		          Serial.print("L");
+		          #endif
+            }
+			else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
+			{
+				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
+				  #ifdef DEBUGDECODE
+				  Serial.print("SS");
+				  #endif
+
+				  i++;
+			}
+			else { // Found something that fits not to our manchester signal
+				if (i < pdec->messageLen-minbitlen)
+				{
+					ManchesterBits->reset();
+					pdec->mstart=i;
+					#ifdef DEBUGDECODE
+					Serial.print("RES");
+					#endif
+
+				} else {
+					#ifdef DEBUGDECODE
+					Serial.print("END");
+					#endif
+
+                    #ifdef DEBUGDECODE
+                    Serial.print(" mpos: ");
+                    Serial.print(i);
+                    Serial.print(" mstart: ");
+                    Serial.print(pdec->mstart);
+                    #endif
+
+					return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+				}
+			}
+
+		}
+		//Serial.print(" S MC ");
+		i++;
+	}
+        #ifdef DEBUGDECODE
+        Serial.print("mlen: ");
+        Serial.print(pdec->messageLen);
+        Serial.print(" mstart: ");
+        Serial.print(pdec->mstart);
+
+        #endif
+
+    // Check if last entry in our message array belongs to our manchester signal
+	if (i==pdec->messageLen && pdec->mstart > 1)
+    {
+        #ifdef DEBUGDECODE
+        Serial.print("Message truncated");
+        #endif
+
+        pdec->messageLen=pdec->messageLen-pdec->mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+		memmove(pdec->message,pdec->message+pdec->mstart,sizeof(*pdec->message)*(pdec->messageLen+1));
+		pdec->m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
+    }
+
+	return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
+
+	//Serial.print(" ES MC ");
+}
+
+  /** @brief (Verifies if found signal data is a valid manchester signal, returns true or false)
+    *
+    * (Check signal based on patternLen, histogram and pattern store for valid manchester style.Provides key indexes for the 4 signal states for later decoding)
+    */
+
+bool ManchesterpatternDecoder::isManchester()
+{
+    // Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	#if DEBUGDETECT >= 1
+	Serial.print("  --  chk MC -- ");
+	#endif
+    if (pdec->patternLen < 4)	return false;
+
+	int tstclock=-1;
+
+	uint8_t pos_cnt=0;
+	uint8_t neg_cnt=0;
+	uint8_t equal_cnt=0;
+	const uint8_t minHistocnt=pdec->messageLen*0.14;
+
+
+    for (uint8_t i=0;i< pdec->patternLen;i++)
+    {
+		#if DEBUGDETECT >= 1
+		Serial.print(i);Serial.print(" ");
+		#endif
+
+		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+		int aktpulse = pdec->pattern[i][0];
+		//if (longlow == -1)
+        //    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
+
+
+		if (aktpulse > 0 )
+		{
+			equal_cnt += pdec->histo[i];
+			pos_cnt++;
+			tstclock += aktpulse;
+
+			longhigh = longhigh == -1 || pdec->pattern[longhigh][0] < aktpulse ? i  : longhigh;
+			shorthigh = shorthigh == -1 ||  pdec->pattern[shorthigh][0] > aktpulse ? i  : shorthigh;
+
+		} else {
+			equal_cnt -= pdec->histo[i];
+			neg_cnt++;
+
+			longlow = longlow == -1 || pdec->pattern[longlow][0] > aktpulse ? i  : longlow;
+			shortlow = shortlow == -1 || pdec->pattern[shortlow][0] < aktpulse ? i : shortlow;
+		}
+
+    }
+
+    if (equal_cnt > pdec->messageLen*0.02) return false;
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC equalcnt matched");
+	#endif
+
+	if (neg_cnt != pos_cnt ) return false;  // Both must be 2
+	#if DEBUGDETECT >= 1
+	Serial.print("  MC neg and pos pattern cnt is equal");
+	#endif
+
+	tstclock=tstclock/3;
+	#if DEBUGDETECT >= 1
+	Serial.print("  tstclock: ");Serial.print(tstclock);
+	#endif
+	clock =tstclock;
+//	dclock=clock*2;
+
+	#if DEBUGDETECT >= 1
+	Serial.print(" MC LL:"); Serial.print(longlow);
+	Serial.print(", MC LH:"); Serial.print(longhigh);
+
+	Serial.print(", MC SL:"); Serial.print(shortlow);
+	Serial.print(", MC SH:"); Serial.print(shorthigh);
+	Serial.println("");
+	#endif
+	if ( (longlow == -1) || (shortlow == -1) || (longlow == shortlow) || (longhigh ==-1) || (shorthigh == -1) ||(longhigh == shorthigh) ) return false; //Check if the indexes are valid
+
+	#if DEBUGDETECT >= 1
+	Serial.println("  -- MC found -- ");
+	#endif
+
+	return true;
+}
+
+
+
+
+/** @brief (sets a pattern to the store)
+  *
+  * (documentation goes here)
+  */
+int8_t patternO::setPattern(const uint8_t idx, const int16_t val)
+{
+	patternStore[idx]=val;
+}
+
+/** @brief (gets a pattern from the store)
+  *
+  * (documentation goes here)
+  */
+int8_t patternO::getPattern(const uint8_t idx)
+{
+	return patternStore[idx];
+}
+
+/** @brief (one liner)
+  *
+  * (Finds a pattern in our pattern store. returns -1 if te pattern is not found)
+  */
+int8_t patternO::patternExists(int* val)
+{
+	//patternStore[idx]=patternval
+
+	// Iterate over patterns (1 dimension of array)
+	for (uint8_t idx=0; idx<patternPos; ++idx)
+    {
+		if (patternBasic::inTol(*val,patternStore[idx],*val*0.3))  // Skip this iteration, if pattern is not in tolerance
+		{
+			return idx;
+		}
+    }
+    // sequence was not found in pattern
+    return -1;
+}
+
+
+
+
+
+
+
+
+/*
+
+********************************************
+
+
+
+********************************************
+
+
+
+********************************************
+
+
+
+  Stuff behind this, is not used anymore
+
+
+
+
+********************************************
+
+
+
+********************************************
+
+
+
+********************************************
+
+*/
 
 ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBasic(){
 	//tol = 200; //
@@ -1130,6 +1791,7 @@ unsigned char decoderBasic::getDataBits(uint8_t startingPos,uint8_t numbits)
 /*
 	Function to check if it's a valid OSV2 Protocol. Checks clock, Sync and preamble
 */
+/*
 bool OSV2Decoder::checkMessage()
 {
 	bool valid;
@@ -1160,9 +1822,12 @@ OSV2Decoder::OSV2Decoder(ManchesterpatternDetector *detector)
     mcdetector = detector;
 }
 
-
+*/
 /*
+
+
 The Sync signal begins really with 01, so we need to start decoding at first 01 pattern, not 10. 10 is caused by the startingpoint of the signal
+
 
 Sync
 10 10 10 10 10 10 10 10
@@ -1225,6 +1890,8 @@ Preamble<-|     Data ->>
  0101           1011           0011         1011          1100            1010         0111         1001                    (first bit)
  1010           1101           1100         1101          0011            0101         1110         1001                    (first bit reversed)  <<< --- Passt zum Jeelib Decoder
 */
+
+/*
 bool OSV2Decoder::processMessage()
 {
 	if (!checkMessage()) return false;
@@ -1256,12 +1923,14 @@ bool OSV2Decoder::processMessage()
 	return true;
 }
 
-
+*/
 
 /*
 returns numbit bits one , begins at position deliverd via startingPos
 skips every second bit and returns the bits in reversed (correct for OSV2) order
 */
+
+/*
 unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
 {
     uint8_t bcnt=0;
@@ -1275,28 +1944,33 @@ unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
 	}
     return cdata;
 }
-
+*/
 
 
 /*
 returns the 4 bits one nibble, begins at position deliverd via startingPos
 skips every second bit and returns the nibble in reversed (correct) order
 */
+
+/*
 unsigned char OSV2Decoder::getNibble(uint8_t startingPos)
 {
     return getDataBits(startingPos,4);
 }
+*/
 
 /*
 returns the 8 bits / one byte, begins at position deliverd via startingPos
 skips every second bit and returns the byte in reversed (correct) order.
 // Todo use getNibble to return the byte
 */
+
+/*
 unsigned char OSV2Decoder::getByte(uint8_t startingPos)
 {
      return getDataBits(startingPos,8);
 }
-
+*/
 
 
 ASDecoder::ASDecoder(ManchesterpatternDetector *detector) :decoderBasic()
@@ -1346,7 +2020,9 @@ bool ASDecoder::processMessage()
 	for (idx=syncend+4; idx<mcdetector->ManchesterBits->valcount-8; idx=idx+8){
 		b=getDataBits(idx,8);
 		sprintf(hexStr, "%02X",b);						// Migrate to valToHex to save some memory
+		#ifndef ARDUSIM
 		crcv = _crc_ibutton_update(crcv,b);
+		#endif
 #ifdef DEBUGDECODE
 		Serial.print(String(b,HEX));
 #endif

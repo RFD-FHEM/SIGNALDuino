@@ -22,7 +22,7 @@ BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
 {
     valuelen = bitlength; // How many bits shoudl be reserved for one value added ?
     bmask=0;
-    BitStore::buffsize = bufsize;
+    buffsize = bufsize;
     datastore= (unsigned char*) calloc(bufsize,sizeof(char)); // Speicher allokieren und 0 zuweisen
     reset();
     for (uint8_t x=7;x>(7-valuelen);x--)
@@ -30,6 +30,16 @@ BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
         bmask = bmask | (1<<x);
     }
 }
+
+/** @brief (one liner)
+  *
+  * (documentation goes here)
+  */
+ BitStore::~BitStore()
+{
+	free(datastore);
+}
+
 
 void BitStore::addValue(char value)
 {
@@ -45,7 +55,7 @@ void BitStore::addValue(char value)
     Serial.println("");
 */
     valcount++;
-    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhöhen wir den counter zum verschieben
+    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhÃ¶hen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {
@@ -76,6 +86,7 @@ unsigned char BitStore::getValue(uint8_t pos)
 
 unsigned char BitStore::getByte(uint8_t idx)
 {
+  if (idx >= buffsize) return -1; // Out of buffer range
   return (datastore[idx]);
 }
 
@@ -84,7 +95,7 @@ void BitStore::reset()
 {
   for (uint8_t i=0;i<buffsize;i++)
   {
-      datastore[i]=0;
+      datastore[i]=NULL;
   }
   bytecount=0;
   valcount=0;

@@ -9,7 +9,7 @@
 *   alot. While the buffer and the fir classes are tested, the IIR class is still
 *   under development.Although the basic functionality is implemented, it is not properly
 *   tested yet. Please keep this in mind, if you intend to use it.
-* 
+*
 *   This program is free software: you can redistribute it and/or modify
 *   it under the terms of the GNU General Public License as published by
 *   the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +30,7 @@
 
 /*
 struct Puffer {
-  int Value;   // Kann auch byte etc sein. Bin mir aber nicht sicher ob wir so einen Array anlegen können
+  int Value;   // Kann auch byte etc sein. Bin mir aber nicht sicher ob wir so einen Array anlegen kÃ¶nnen
 } ;
 */
 
@@ -40,9 +40,9 @@ class RingBuffer {
 	RingBuffer();
     RingBuffer(int Lsize, int StartValue=0);
 
-    void addValue(int *M);
+    void addValue(const int *M);
 	void resetBuffer();
-	void resetFReadPointer();       // Funktion liefert das Nächste Element des feien Lesezeigers und verschiebt diesen
+	void resetFReadPointer();       // Funktion liefert das NÃ¤chste Element des feien Lesezeigers und verschiebt diesen
 	void setFReadPointerToRead(int offset=0);
 	void moveFReadPointer(int offset=0);  /* Verschiebt den freien Lesezeiger um das benannte Offset */
     int* getNextValue();
@@ -75,7 +75,7 @@ class RingBuffer {
 /*
   **Experimentell**
   Multiring ist eine Erweiterung des Ringbuffers, mit der Idee dass mehrere Instanzen von Multiring,
-  den gleichen Puffer nutzen (*head und *end sind statisch über alle Instanzen). Dadurch können mehrere
+  den gleichen Puffer nutzen (*head und *end sind statisch Ã¼ber alle Instanzen). Dadurch kÃ¶nnen mehrere
   Klassen vom typ MultiRing den gleichen Ringbuffer nutzen, haben aber alle eigene Zeiger.
 */
 class MultiRing : public RingBuffer {
@@ -84,7 +84,7 @@ class MultiRing : public RingBuffer {
 		static int *stathead, *statend, *statwrite;    // Variable statisch machen!
 
 		static MultiRing *first_obj;   // Zeiger auf 1. Objekt
-		MultiRing *next_obj; // Zeiger auf Nächstes Objekt
+		MultiRing *next_obj; // Zeiger auf NÃ¤chstes Objekt
 
 		MultiRing(int Lsize, int StartValue=0);
 		void addValue(int *M);  // Fehlerhaft, deshalb auskommentiert
