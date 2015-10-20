@@ -1,6 +1,6 @@
-# SIGNALDuino  v3.1
+# SIGNALDuino uC v3.1
 
-System to receive radio signals and use them in an home automation environment like FHEM. Currently tested with 433 MHZ, but not limited to that frequency.
+System to receive digital signals and provide them to other systems pro demodulatiob. Currently tested with 433 MHZ, but not limited to that frequency or media.
 
 ### Getting started
 
@@ -9,13 +9,18 @@ Just clone the repo and open the project file with code:blocks. (currently this 
 Compile it and have fun.
 If you are using the Arduino IDE, you have to copy all the libs into your sketch folder.
 
-### Tested microcontrollers
+### Using SIGNALDuino in FHEM
 
-* Arduino mega 2560
+If you want to use the SIGNALDuino with FHEM, you can use it directly from FHEM. No neet to compile any sourcode.
+You find more Information here:
+http://www.fhemwiki.de/wiki/SIGNALDuino
+
+
+### Tested microcontrollers
 
 * Aduino Nano
 
-### Signal from my sensor ist not detected
+### Signal from my device ist not detected
 
 We have a pattern detection engine, that detect serval signal types. May not all, but most of them.
 
