@@ -30,7 +30,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.1.8"
+#define PROGVERS               "3.1.8-HF1"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -263,17 +263,22 @@ void sendPT2262(char* triStateMessage) {
 void send_raw(int16_t *buckets)
 {
 	uint8_t index=0;
-	for (uint8_t i=cmdstring.indexOf('D')+1;i<=cmdstring.length();i++ )
+	for (uint8_t i=cmdstring.indexOf('D')+2;i<cmdstring.indexOf(";",i);i++ )
 	{
-		index = cmdstring.charAt(i)+0;
+		index = cmdstring.substring(i,i+1).toInt();
+
 		digitalWrite(PIN_SEND, !(buckets[index] >>15));
-		if (buckets[index] > 8000) // Use delay at 8000 microseconds to be more precice
+		//Serial.print(!(buckets[index]>>15));Serial.print(",");
+
+		if (abs(buckets[index]) > 8000) // Use delay at 8000 microseconds to be more precice
 		{
-			delay(buckets[index]/1000);
+			delay(abs(buckets[index])/1000);
 		} else {
 			delayMicroseconds(buckets[index]);
 		}
 	}
+	//Serial.println("");
+
 }
 
 //SR;R=3;P0=123;P1=312;P2=400;P3=600;D=010101020302030302;
@@ -286,7 +291,7 @@ void send_cmd()
 	2. daten aufsplitten
     */
 
-	int16_t buckets[6];
+	int16_t buckets[6]={};
 	uint8_t counter=0;
 	uint8_t repeats=0;
 	int8_t strp1=2;
@@ -297,19 +302,33 @@ void send_cmd()
 	while (cmdstring.charAt(strp1+1) != 'D' && strp1+1 < cmdstring.indexOf('D'))
 	{
 		strp2=cmdstring.indexOf(";",strp1+2);  // search next ";" after strp1
-		msg_part = cmdstring.substring(strp1+1,strp2-1);  // substrimg
+		msg_part = cmdstring.substring(strp1+1,strp2);  // substrimg
+		//Serial.print("part: \t");		Serial.print(msg_part);
+
 
 		if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
 		{
-			counter = msg_part.substring(1,1).toInt(); // extract the pattern number
+			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
+
 			buckets[counter]=  msg_part.substring(3).toInt();
 
-		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(2) == '=')
+		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=')
 		{
 			repeats= msg_part.substring(2).toInt();
 		}
 		strp1=strp2;
 	}
+/*or (uint8_t i=0;i<5;i++)
+	{
+		Serial.print("\t bucket");Serial.print(i);Serial.print("=");
+		Serial.print(buckets[i]); // echo
+	}
+	Serial.println("");
+	Serial.print("repeats: \t");
+	Serial.print(repeats);
+	Serial.print("msg: \t");
+	Serial.println(repeats);
+*/
 
 	disableReceive();  // Disable the receiver
 	for (uint8_t i=0;i<repeats;i++)
@@ -317,6 +336,7 @@ void send_cmd()
 		send_raw(buckets);
 		delay(2);
 	}
+	//Serial.println("");
 	enableReceive();	// enable the receiver
     Serial.println(cmdstring); // echo
 
@@ -334,8 +354,8 @@ void IT_CMDs();
 void HandleCommand()
 {
 
-  #define cmd_Version 'V'
-  #define cmd_freeRam 'R'
+  #define  cmd_Version 'V'
+  #define  cmd_freeRam 'R'
   #define  cmd_intertechno 'i'
   #define  cmd_uptime 't'
   #define  cmd_changeReceiver 'X'
