@@ -268,15 +268,19 @@ void send_raw(int16_t *buckets)
 		index = cmdstring.substring(i,i+1).toInt();
 
 		digitalWrite(PIN_SEND, !(buckets[index] >>15));
-		//Serial.print(!(buckets[index]>>15));Serial.print(",");
 
-		if (abs(buckets[index]) > 8000) // Use delay at 8000 microseconds to be more precice
+		int16_t dur = abs(buckets[index]);
+		//Serial.print(!(buckets[index]>>15));Serial.print(",");
+		//delayMicroseconds(abs(buckets[index]));
+		if (dur > 8000) // Use delay at 8000 microseconds to be more precice
 		{
-			delay(abs(buckets[index])/1000);
+			delay(dur/1000);
 		} else {
-			delayMicroseconds(buckets[index]);
+			delayMicroseconds(dur);
 		}
+
 	}
+	digitalWrite(PIN_SEND, LOW); // turn off transmitter
 	//Serial.println("");
 
 }
@@ -334,6 +338,7 @@ void send_cmd()
 	for (uint8_t i=0;i<repeats;i++)
 	{
 		send_raw(buckets);
+
 		delay(2);
 	}
 	//Serial.println("");
