@@ -577,7 +577,8 @@ void patternDetector::compress_pattern()
 	{
 		for (uint8_t idx2=idx+1; idx2<patternLen;idx2++)
 		{
-			if (inTol(pattern[idx2][0],pattern[idx][0]))  // Pattern are very equal, so we can combine them
+			const int16_t tol=int( (abs(pattern[idx2][0])*tolFact)+(abs(pattern[idx2][0])*tolFact)/2);
+			if (inTol(pattern[idx2][0],pattern[idx][0],tol))  // Pattern are very equal, so we can combine them
 			{
 				// Change val -> ref_val in message array
 				for (uint8_t i=0;i<messageLen;i++)
