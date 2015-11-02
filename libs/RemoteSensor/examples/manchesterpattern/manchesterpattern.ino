@@ -62,8 +62,15 @@ int sample_AS_data[] = {-764, -524, -536, 1776, -1508, 956, -684, 1712, -784, 84
 //int patternData[]={-232,308,-904,-1092,-9464,-2548,1589};
 
 // Demo Signal like from einhell example
-int patternData[]={390,-1184,-401,1122,-20012};
-uint8_t signal_Stream []={0,2,3,2,3,2,3,1,0,1,0,2,3,2,3,1,0,2,3,1,0,1,0,1,0,1,0,1,0,2,3,2,3,2,3,1,0,1,0,2,3,1,0,1,0,1,0,2,3,2,3,2,3,2,3,2,3,2,3,1,0,2,0,4};
+//int patternData[]={390,-1184,-401,1122,-20012};
+//uint8_t signal_Stream []={0,2,3,2,3,2,3,1,0,1,0,2,3,2,3,1,0,2,3,1,0,1,0,1,0,1,0,1,0,2,3,2,3,2,3,1,0,1,0,2,3,1,0,1,0,1,0,2,3,2,3,2,3,2,3,2,3,2,3,1,0,2,0,4};
+
+// Demo Signal like from RF803E
+
+int patternData[]={306,-492,-897,708,-1704};
+uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,4,0,1,0,1,0,2,3,2,3,2,0,1,3,2,0,1,0,1,3,2,0,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,0};
+
+//uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,};
 
 //MS;P0=390;P1=-1184;P2=-401;P3=1122;P4=12754;P5=-20012;P6=1371;D=02323232310232310231010101010231010102310101010232323232323102302305023232323102323102310101010102310101023101010102323232323231023023;CP=0;SP=5;
 
@@ -442,11 +449,11 @@ void decode_signalstream()
 
     for ( uint8_t i=0;i<rand_data_size;i++)
     {
-        state =  ooDecode.decode(&random_data[i]);
+        //state =  ooDecode.decode(&random_data[i]);
     }
 
 
-    for (uint8_t j=0;j<32;++j) {
+    for (uint8_t j=0;j<2;++j) {
 
         uint16_t i=0;
 
@@ -505,6 +512,7 @@ void setup() {
   uint32_t start_time=0;
   uint32_t end_time=0;
   uint32_t duration=0;
+
 
 
     //   Oregon Scientific V2 protocol regression test
@@ -585,7 +593,7 @@ void setup() {
 
   val= (val*cnt/sum)+(val*cnt2/sum);
   val2=-1;
-  pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum); // Store the average of both pattern, may better to calculate the number of stored pattern in message
+//  pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 
   Serial.print("val=");  Serial.print(val);  Serial.println("");
 

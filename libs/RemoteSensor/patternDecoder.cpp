@@ -1163,7 +1163,7 @@ bool ManchesterpatternDecoder::isManchester()
 	uint8_t pos_cnt=0;
 	uint8_t neg_cnt=0;
 	uint8_t equal_cnt=0;
-	const uint8_t minHistocnt=pdec->messageLen*0.14;
+	const uint8_t minHistocnt=pdec->messageLen*0.04;
 
 
     for (uint8_t i=0;i< pdec->patternLen;i++)
@@ -1196,6 +1196,9 @@ bool ManchesterpatternDecoder::isManchester()
 		}
 
     }
+	#if DEBUGDETECT >= 1
+	Serial.print("equalcnt: ");Serial.print(equal_cnt);
+	#endif
 
     if (equal_cnt > pdec->messageLen*0.02) return false;
 	#if DEBUGDETECT >= 1
