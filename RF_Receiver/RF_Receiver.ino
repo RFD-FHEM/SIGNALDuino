@@ -1,5 +1,5 @@
 /*
-*   RF_RECEIVER v3.1 for Arduino
+*   RF_RECEIVER v3.2 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
 *
 *   The Sketch can also encode and send data via a transmitter,
@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.1.8-HF1"
+#define PROGVERS               "3.2.0-b1"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
