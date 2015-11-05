@@ -56,9 +56,9 @@
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 
-//#define DEBUGDETECT 1
+#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 2
+#define DEBUGDECODE 2
 
 #define PATTERNSIZE 1
 
@@ -159,6 +159,8 @@ class patternDetector : protected patternBasic {
 
 	    uint8_t histo[maxNumPattern];
 	    uint8_t mstart; // Holds starting point for message
+	    uint8_t mend; // Holds end point for message if detected
+
     	s_sigid protoID[10]; // decrepated
     	uint8_t numprotos;// decrepated
 

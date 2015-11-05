@@ -173,6 +173,8 @@ void patternDetector::reset() {
 	m_truncated=false;
 	m_overflow=false;
 	//Serial.println("reset");
+    mend=0;
+
 }
 
 const status patternDetector::getState()
@@ -184,7 +186,9 @@ const status patternDetector::getState()
 
 
 bool patternDetector::detect(const int* pulse){
+
 	patternBasic::detect(pulse);   // Call function from base class, to do some basic stuff
+
     doDetectwoSync();			   // Search for signal
 
 	return success;
@@ -370,15 +374,20 @@ void patternDetector::doDetectwoSync() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
 	if (messageLen+1 >= maxMsgSize*8) {
+
 		#if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
 		#endif
 		m_overflow=true;
 	    processMessage();
-        m_truncated&=false;
+
+
+
+        //m_truncated&=false;
 	    //reset(); // Moved reset to processMessage function if needed
 	}
 	if (bitcnt >= 0) {//nächster Satz Werte (je 2 Neue) vollständig
+
 		//Serial.println("doDetect");
 		//Serial.print(*first); Serial.print(", ");Serial.println(*last);
 		static uint8_t pattern_pos;
@@ -403,6 +412,7 @@ void patternDetector::doDetectwoSync() {
 		#endif
 
 		if (0<=fidx){
+
 			//gefunden
 			message[messageLen]=fidx;
 			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
@@ -529,10 +539,11 @@ void patternDetector::printOut() {
 	Serial.print(", mStart: "); Serial.print(mstart);
 
 	Serial.println();Serial.print("Signal: ");
-	for (uint8_t idx=0; idx<messageLen; ++idx){
+	uint8_t idx;
+	for (idx=0; idx<messageLen; ++idx){
 		Serial.print(*(message+idx));
 	}
-	Serial.print(". ");Serial.print(" [");Serial.print(messageLen);Serial.println("]");
+	Serial.print(". ");Serial.print(" [");Serial.print(messageLen+1);Serial.println("]");
 	Serial.print("Pattern: ");
 	for (uint8_t idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
@@ -598,8 +609,10 @@ void patternDetector::compress_pattern()
 
 
 				int  sum = histo[idx] + histo[idx2];
-
-				pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+				if (sum == 0)
+					pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+				else
+					pattern[idx][0] = (pattern[idx][0] + pattern[idx2][0]) /2;
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
 				pattern[idx2][0]=0;
@@ -655,7 +668,7 @@ void patternDecoder::processMessage()
 
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
 
-		uint8_t mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
+		mend=mstart+2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
 		bool m_endfound=false;
 
 		//uint8_t repeat;
@@ -682,7 +695,7 @@ void patternDecoder::processMessage()
 		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize*8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 		{
             #ifdef DEBUGDECODE
-            #Serial.println("Filter Match: ");;
+            Serial.println("Filter Match: ");;
             #endif
 
 
@@ -738,7 +751,7 @@ void patternDecoder::processMessage()
 
 		} else if (m_endfound == false && mstart > 1 && mend+1 >= maxMsgSize*8) // Start found, but no end. We remove everything bevore start and hope to find the end later
         {
-        	Serial.print("copy");
+        	//Serial.print("copy");
             messageLen=messageLen-mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 			memmove(message,message+mstart,sizeof(*message)*(messageLen+1));
 			m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
@@ -774,7 +787,7 @@ void patternDecoder::processMessage()
 		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
 
 		mcdecoder.reset();
-
+		mcdecoder.setMinBitLen(17);
 		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
 			String mcbitmsg;
@@ -793,6 +806,10 @@ void patternDecoder::processMessage()
 
 			postamble.concat(MSG_END);
 			postamble.concat('\n');
+
+            //messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+			//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
+			//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
 
 			//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
 			//printMsgRaw(0,messageLen,&preamble,&postamble);
@@ -868,6 +885,7 @@ void patternDecoder::processMessage()
     {
         reset();
     }
+    //Serial.println("process finished");
 
 }
 /** @brief (Prints given strings in provided order)
@@ -1059,13 +1077,14 @@ bool ManchesterpatternDecoder::doDecode() {
 	uint8_t i=0;
 
 	bool mc_start_found=false;
-        #ifdef DEBUGDECODE
-        Serial.print("mlen: ");
-        Serial.print(pdec->messageLen);
-        Serial.print(" mstart: ");
-        Serial.print(pdec->mstart);
+    pdec->mstart=0;
+    #ifdef DEBUGDECODE
+    Serial.print("mlen: ");
+    Serial.print(pdec->messageLen);
+    Serial.print(" mstart: ");
+    Serial.print(pdec->mstart);
+    #endif
 
-        #endif
 	while (i < pdec->messageLen)
 	{
 		if ( mc_start_found==false && (isLong(pdec->message[i]) ||  isShort(pdec->message[i]))  )
@@ -1082,7 +1101,7 @@ bool ManchesterpatternDecoder::doDecode() {
 		          Serial.print("L");
 		          #endif
             }
-			else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
+            else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
 			{
 				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
 				  #ifdef DEBUGDECODE
@@ -1090,29 +1109,39 @@ bool ManchesterpatternDecoder::doDecode() {
 				  #endif
 
 				  i++;
-			}
-			else { // Found something that fits not to our manchester signal
-				if (i < pdec->messageLen-minbitlen)
+			} else { // Found something that fits not to our manchester signal
+				//if (i < pdec->messageLen-minbitlen)
+				if (ManchesterBits->valcount < minbitlen)
 				{
-					ManchesterBits->reset();
-					pdec->mstart=i;
+					//pdec->mstart=i;
+					mc_start_found=false; // Reset to find new starting position
 					#ifdef DEBUGDECODE
-					Serial.print("RES");
+					Serial.print(" mlen ");
+					Serial.print(ManchesterBits->valcount);
+
+					Serial.print(" RES ");
 					#endif
+					ManchesterBits->reset();
 
 				} else {
 					#ifdef DEBUGDECODE
-					Serial.print("END");
-					#endif
-
-                    #ifdef DEBUGDECODE
+					Serial.print("END ");
                     Serial.print(" mpos: ");
                     Serial.print(i);
                     Serial.print(" mstart: ");
                     Serial.print(pdec->mstart);
                     #endif
+                    pdec->mend=i;
 
-					return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+                    #ifdef DEBUGDECODE
+                    Serial.print("Message found");
+                    #endif
+
+                    pdec->messageLen=pdec->messageLen-pdec->mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+                    memmove(pdec->message,pdec->message+pdec->mend,sizeof(*pdec->message)*(pdec->messageLen+1));
+                    pdec->m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
+                    //if (i+minbitlen > pdec->messageLen)
+                    return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
 
@@ -1120,13 +1149,13 @@ bool ManchesterpatternDecoder::doDecode() {
 		//Serial.print(" S MC ");
 		i++;
 	}
-        #ifdef DEBUGDECODE
-        Serial.print("mlen: ");
-        Serial.print(pdec->messageLen);
-        Serial.print(" mstart: ");
-        Serial.print(pdec->mstart);
+    #ifdef DEBUGDECODE
+    Serial.print("mlen: ");
+    Serial.print(pdec->messageLen);
+    Serial.print(" mstart: ");
+    Serial.print(pdec->mstart);
 
-        #endif
+    #endif
 
     // Check if last entry in our message array belongs to our manchester signal
 	if (i==pdec->messageLen && pdec->mstart > 1)
