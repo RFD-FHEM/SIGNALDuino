@@ -66,9 +66,15 @@ int sample_AS_data[] = {-764, -524, -536, 1776, -1508, 956, -684, 1712, -784, 84
 //uint8_t signal_Stream []={0,2,3,2,3,2,3,1,0,1,0,2,3,2,3,1,0,2,3,1,0,1,0,1,0,1,0,1,0,2,3,2,3,2,3,1,0,1,0,2,3,1,0,1,0,1,0,2,3,2,3,2,3,2,3,2,3,2,3,1,0,2,0,4};
 
 // Demo Signal like from RF803E
+//int patternData[]={306,-492,-897,708,-1704};
+//uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,4,0,1,0,1,0,2,3,2,3,2,0,1,3,2,0,1,0,1,3,2,0,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,0}
 
-int patternData[]={306,-492,-897,708,-1704};
-uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,4,0,1,0,1,0,2,3,2,3,2,0,1,3,2,0,1,0,1,3,2,0,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,0};
+int patternData[]={291,-506,0,-926,695,-1758};
+uint8_t signal_Stream []={0,1,0,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,4,3,4,1,0,1,0,3,4,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,5,0,1,0,1,0,3,4,3,4,3,0,1,4,3,0,1,0,1,4,3,0,1,4,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,3,0,1,4,1,0,1,0,1,0,1,0,3,4,1,0,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,4,3,4,1,0,1,0,3,4,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,5,0,1,0,1,0,3,4,3,4,3,0,1,4,3,0,1,0,1,4,3,0,1};
+
+
+
+
 
 //uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,};
 
@@ -452,8 +458,7 @@ void decode_signalstream()
         //state =  ooDecode.decode(&random_data[i]);
     }
 
-
-    for (uint8_t j=0;j<2;++j) {
+    for (uint8_t j=0;j<1;++j) {
 
         uint16_t i=0;
 
@@ -464,7 +469,6 @@ void decode_signalstream()
           //delay(100);
           signalduration+=abs(patternData[signal_Stream[i]]);
         }
-
     }
 
     init_random_data();
@@ -472,7 +476,6 @@ void decode_signalstream()
     {
         state =  ooDecode.decode(&random_data[i]);
     }
-
 
     if (!state)
     {
@@ -516,7 +519,7 @@ void setup() {
 
 
     //   Oregon Scientific V2 protocol regression test
-
+/*
   pulsedata = sample_OSV2_data;
   lendata = sizeof(sample_OSV2_data)/sizeof(sample_OSV2_data[0]);
   Serial.println("");
@@ -533,7 +536,7 @@ void setup() {
   Serial.print("Signal Time is=");  Serial.print(signalduration);  Serial.println(" micro seconds");
   Serial.println("--------------------------------------------------------");
 
-
+*/
 
     //   regression test, working with Signaldata and not pulsedata
   Serial.println("");
@@ -553,7 +556,7 @@ void setup() {
   Serial.println("");
 
 
-
+/*
     //   M0 Logilink protocol puls pause regression test
   pulsedata = sample_onoff_data;
   lendata = sizeof(sample_onoff_data)/sizeof(sample_onoff_data[0]);
@@ -573,29 +576,9 @@ void setup() {
   Serial.println("--------------------------------------------------------");
   Serial.println("");
 
+*/
 
 //compr: 4->2;7*-1020->32*-1036 idx:-1028 idx2:-1;
-
-  int val=-1020;
-  int val2=-1036;
-
-  uint8_t cnt=7;
-  uint8_t cnt2=32;
-
-  int sum=cnt+cnt2;
-
-  Serial.print("cnt=");  Serial.print(cnt);  Serial.println("");
-  Serial.print("cnt2=");  Serial.print(cnt2);  Serial.println("");
-  Serial.print("val=");  Serial.print(val);  Serial.println("");
-  Serial.print("val2=");  Serial.print(val2);  Serial.println("");
-  Serial.print("sum=");  Serial.print(sum);  Serial.println("");
-
-
-  val= (val*cnt/sum)+(val*cnt2/sum);
-  val2=-1;
-//  pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum); // Store the average of both pattern, may better to calculate the number of stored pattern in message
-
-  Serial.print("val=");  Serial.print(val);  Serial.println("");
 
 
 
