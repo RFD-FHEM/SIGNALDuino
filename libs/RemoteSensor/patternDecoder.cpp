@@ -597,7 +597,11 @@ void patternDetector::compress_pattern()
 				#endif // DEBUGDETECT
 
 
-				int  sum = histo[idx] + histo[idx2];
+				const int  sum = histo[idx] + histo[idx2];
+				if (sum == 0)
+					pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+				else
+					pattern[idx][0] = (pattern[idx][0] + pattern[idx2][0]) /2;
 
 				pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
