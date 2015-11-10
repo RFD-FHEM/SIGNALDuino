@@ -380,7 +380,6 @@ void patternDetector::doDetectwoSync() {
 		#endif
 		m_overflow=true;
 	    processMessage();
-		m_truncated&=false;
 
 
         //m_truncated&=false;
