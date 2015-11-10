@@ -870,6 +870,7 @@ void patternDecoder::processMessage()
 			postamble.concat('\n');
 
 			printMsgRaw(0,messageLen,&preamble,&postamble);
+			m_truncated=false;
 		}
 
 		success = true;
