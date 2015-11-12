@@ -1113,6 +1113,10 @@ bool ManchesterpatternDecoder::doDecode() {
 				//if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits->valcount < minbitlen)
 				{
+					if (isShort(pdec->message[i]) && i < pdec->messageLen-1 && !isShort(pdec->message[i+1])) {
+						// unequal number of short pulses. Restart, but one pulse ahead
+						i=pdec->mstart;
+					}
 					//pdec->mstart=i;
 					mc_start_found=false; // Reset to find new starting position
 					#ifdef DEBUGDECODE
