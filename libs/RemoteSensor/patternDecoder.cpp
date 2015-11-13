@@ -1,7 +1,8 @@
 /*
-*   Pattern Decoder Library V1
+*   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
+*   2015  S.Butzek
 
 *   This library contains different classes to perform decoding of radio signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -645,7 +646,7 @@ patternDecoder::patternDecoder(): patternDetector() {
 	preamble.reserve(70);
 	postamble.reserve(20);
 
-	numprotos=0;
+//	numprotos=0;
 }
 void patternDecoder::reset() {
     patternDetector::reset();
@@ -1076,6 +1077,7 @@ bool ManchesterpatternDecoder::doDecode() {
 
 	uint8_t i=0;
 
+    pdec->m_truncated=false;
 	bool mc_start_found=false;
     pdec->mstart=0;
     #ifdef DEBUGDECODE

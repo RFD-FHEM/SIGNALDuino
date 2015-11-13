@@ -1,7 +1,8 @@
 /*
-*   Pattern Decoder Library V0.1
+*   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014  N.Butzek, S.Butzek
+*   2015  S.Butzek
 
 *   This library contains different classes to perform decoding of radio signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -43,11 +44,11 @@
 #define maxNumPattern 6
 #define maxMsgSize 30
 #define minMessageLen 40
-#define syncMinFact 8
+#define syncMinFact 7
 #define syncMaxFact 39
 #define syncMaxMicros 17000
 
-#define prefixLen 3
+//#define prefixLen 3
 
 #define maxPulse 32001  // Magic Pulse Length
 
@@ -68,11 +69,11 @@
 //#define DEBUG
 
 // Message Type
-enum mt {twostate,tristate,undef};
+//enum mt {twostate,tristate,undef};
 enum status {searching, clockfound, syncfound,detecting};
 
 // Struct for signal identificaion
- struct s_sigid {
+/* struct s_sigid {
 	int8_t lowFact;			// not used
 	int8_t highFact;		// not used
 	int8_t syncFact;		// used
@@ -90,16 +91,13 @@ enum status {searching, clockfound, syncfound,detecting};
 
 };
 
-
+*/
 
 /*
  base class for pattern detector subclasses. Containing only the toolset used to define a pattern detector
 */
  class patternBasic {
-
     public:
-
-
         patternBasic();
 		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
@@ -161,8 +159,8 @@ class patternDetector : protected patternBasic {
 	    uint8_t mstart; // Holds starting point for message
 	    uint8_t mend; // Holds end point for message if detected
 
-    	s_sigid protoID[10]; // decrepated
-    	uint8_t numprotos;// decrepated
+//    	s_sigid protoID[10]; // decrepated
+//    	uint8_t numprotos;// decrepated
 
 };
 
