@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b3"
+#define PROGVERS               "3.2.0-b4"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -262,14 +262,12 @@ void sendPT2262(char* triStateMessage) {
 
 
 //================================= RAW Send ======================================
-
-void send_raw(int16_t *buckets)
+void send_raw(String *msg_part,const int16_t *buckets)
 {
 	uint8_t index=0;
-	for (uint8_t i=cmdstring.indexOf('D')+2;i<cmdstring.indexOf(";",i);i++ )
+	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->indexOf(";",i);i++ )
 	{
-		index = cmdstring.substring(i,i+1).toInt();
-
+		index = msg_part->substring(i,i+1).toInt();
 		digitalWrite(PIN_SEND, !(buckets[index] >>15));
 
 		int16_t dur = abs(buckets[index]);
@@ -287,23 +285,127 @@ void send_raw(int16_t *buckets)
 	//Serial.println("");
 
 }
+void send_mc(String *msg_part,const int16_t *buckets,const int16_t clock)
+{
+	char b;
+
+	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->indexOf(";",i);i++ )
+	{
+	  msg_part->substring(i,i+1).toCharArray(&b,1);
+	  for (uint8_t  bit=0x80; bit>0; bit>>=1)
+      {
+		if ((b & bit) == bit){
+		  // one
+		  delayMicroseconds(clock);
+		  digitalWrite(PIN_SEND, LOW);
+		  delayMicroseconds(clock);
+		  digitalWrite(PIN_SEND, HIGH);
+		} else {
+		  // zero
+		  delayMicroseconds(clock);
+		  digitalWrite(PIN_SEND, HIGH);
+		  delayMicroseconds(clock);
+		  digitalWrite(PIN_SEND, LOW);
+        }
+	  }
+	}
+}
+
 
 //SR;R=3;P0=123;P1=312;P2=400;P3=600;D=010101020302030302;
+
+bool split_cmdpart(int16_t *startpos, String *msg_part)
+{
+	int16_t endpos=0;
+	//startpos=cmdstring.indexOf(";",startpos);   			 // search first  ";"
+	endpos=cmdstring.indexOf(";",*startpos);     			 // search next   ";"
+
+	if (endpos ==-1 || *startpos== -1) return false;
+	*msg_part = cmdstring.substring(*startpos+1,endpos);
+	*startpos=endpos;    // Set startpos to endpos to extract next part
+	return true;
+}
+//SC;R=3;SM;.....;SR;....;SM;.....;
+// SR;R=5;D=...;
 void send_cmd()
 {
-  if (cmdstring.charAt(1) == 'R')
-  {
-	/*
-	1. state vom decoder abfragen, ob er gerade etwas aufzeichnet
-	2. daten aufsplitten
-    */
+	#define combined 0
+	#define manchester 1
+	#define raw 2
 
+	String msg_part;
+	msg_part.reserve(30);
+	uint8_t repeats=1;  // Default is always one iteration so repeat is 1 if not set
+	uint8_t type;
+	int16_t start_pos=0;
 	int16_t buckets[6]={};
 	uint8_t counter=0;
-	uint8_t repeats=0;
+	uint16_t sendclock;
+
+
+	disableReceive();
+
+	for (uint8_t i=0;i<repeats;i++)
+	{
+		while (split_cmdpart(&start_pos,&msg_part))
+		{
+			if (msg_part.charAt(0) == 'S')
+			{
+				if (msg_part.charAt(1) == 'C')  // send combined informatio flag
+				{
+					type=combined;
+				}
+				else if (msg_part.charAt(1) == 'M') // send manchester
+				{
+					type=manchester;
+				}
+				else if (msg_part.charAt(1) == 'R') // send raw
+				{
+					type=raw;
+				}
+			}
+			else if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
+			{
+				counter = msg_part.substring(1,2).toInt(); // extract the pattern number
+				buckets[counter]=  msg_part.substring(3).toInt();
+			} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
+				repeats= msg_part.substring(2).toInt();
+			} else if (msg_part.charAt(0) == 'D') {
+				if (type==raw) send_raw(&msg_part,buckets);
+				if (type==manchester) send_mc(&msg_part,buckets,sendclock);
+			} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
+			{
+				sendclock = msg_part.substring(3).toInt();
+			}
+		}
+		start_pos=3; // for next iteration we set start to 3;
+
+	}
+	enableReceive();	// enable the receiver
+    Serial.println(cmdstring); // echo
+
+	/*
+	if (cmdstring.charAt(1) == 'C')  // Send Combined
+	{	// Split send parts
+		// Find repeats
+
+		uint8_t r=cmdstring.substring(cmdstring.indexof('R')+2,cmdstring.indexOf(';',));
+
+		uint8_t p=cmdstring.indexOf('('); // Start for a complex send part
+		uint8_t p2=0;
+		do{			// SC;R=2;(SR;...;SM;.....;SR....;)
+			p=cmdstring.indexOf('S',p);
+			p2=cmdstring.indexOf('S',p)-1;
+		} while (p>0);
+		if (p2==-1) p2=cmdstring.length();
+	}
+
+
+  if (cmdstring.charAt(1) == 'R')
+  {
+
 	int8_t strp1=2;
 	int8_t strp2=0;
-	String msg_part;
 	strp1=cmdstring.indexOf(";",strp1);    // search first  ";", start after RS command
 
 	while (cmdstring.charAt(strp1+1) != 'D' && strp1+1 < cmdstring.indexOf('D'))
@@ -325,17 +427,7 @@ void send_cmd()
 		}
 		strp1=strp2;
 	}
-/*or (uint8_t i=0;i<5;i++)
-	{
-		Serial.print("\t bucket");Serial.print(i);Serial.print("=");
-		Serial.print(buckets[i]); // echo
-	}
-	Serial.println("");
-	Serial.print("repeats: \t");
-	Serial.print(repeats);
-	Serial.print("msg: \t");
-	Serial.println(repeats);
-*/
+
 
 	disableReceive();  // Disable the receiver
 	for (uint8_t i=0;i<repeats;i++)
@@ -349,7 +441,7 @@ void send_cmd()
     Serial.println(cmdstring); // echo
 
 
-  }
+  }*/
 }
 
 
@@ -413,7 +505,7 @@ void HandleCommand()
 	{
 		command_available=true;
 	} else {
-		send_cmd();
+		send_cmd(); // Part of Send
 	}
   }
     // t: Uptime
