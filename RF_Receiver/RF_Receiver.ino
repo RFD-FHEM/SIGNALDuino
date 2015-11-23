@@ -264,8 +264,6 @@ void sendPT2262(char* triStateMessage) {
 //================================= RAW Send ======================================
 void send_raw(String *msg_part,const int16_t *buckets)
 {
-    Serial.println(*msg_part);
-
 	uint8_t index=0;
 	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
 	{
@@ -287,10 +285,10 @@ void send_raw(String *msg_part,const int16_t *buckets)
 
 }
 //SM;C=400;D=2;
-//SM;C=400;D=AAAAAAAAFFFF;
+
 void send_mc(String *msg_part,const int16_t clock)
 {
-	uint8_t b;
+	int8_t b;
 	char c;
 
 	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
@@ -327,7 +325,6 @@ void send_mc(String *msg_part,const int16_t clock)
 }
 
 
-//SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
 
 bool split_cmdpart(int16_t *startpos, String *msg_part)
 {
@@ -340,8 +337,9 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 	*startpos=endpos+1;    // Set startpos to endpos to extract next part
 	return true;
 }
-//SC;R=3;SM;.....;SR;....;SM;.....;
-// SR;R=5;D=...;
+// SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-2500;P1=400;;D=101;SM;D=AB6180;SR;D=101;
+// SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
+// SM;C=400;D=AAAAAAAAFFFF;
 void send_cmd()
 {
 	#define combined 0
