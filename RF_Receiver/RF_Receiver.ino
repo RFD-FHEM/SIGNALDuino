@@ -264,8 +264,10 @@ void sendPT2262(char* triStateMessage) {
 //================================= RAW Send ======================================
 void send_raw(String *msg_part,const int16_t *buckets)
 {
+    Serial.println(*msg_part);
+
 	uint8_t index=0;
-	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->indexOf(";",i);i++ )
+	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
 	{
 		index = msg_part->substring(i,i+1).toInt();
 		digitalWrite(PIN_SEND, !(buckets[index] >>15));
@@ -281,26 +283,39 @@ void send_raw(String *msg_part,const int16_t *buckets)
 		}
 
 	}
-	digitalWrite(PIN_SEND, LOW); // turn off transmitter
 	//Serial.println("");
 
 }
-void send_mc(String *msg_part,const int16_t *buckets,const int16_t clock)
+//SM;C=400;D=2;
+//SM;C=400;D=AAAAAAAAFFFF;
+void send_mc(String *msg_part,const int16_t clock)
 {
-	char b;
+	uint8_t b;
+	char c;
 
-	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->indexOf(";",i);i++ )
+	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
 	{
-	  msg_part->substring(i,i+1).toCharArray(&b,1);
-	  for (uint8_t  bit=0x80; bit>0; bit>>=1)
+
+	 c = msg_part->charAt(i);
+
+
+     if(c >= '0' && c <= '9')
+       b= (byte)(c - '0');
+     else
+       b=(byte)(c-'A'+10);
+
+	  for (uint8_t bit=0x8; bit>0; bit>>=1)
       {
 		if ((b & bit) == bit){
+		  //Serial.print(1);
 		  // one
 		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, LOW);
 		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, HIGH);
 		} else {
+		  //Serial.print(0);
+
 		  // zero
 		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, HIGH);
@@ -312,7 +327,7 @@ void send_mc(String *msg_part,const int16_t *buckets,const int16_t clock)
 }
 
 
-//SR;R=3;P0=123;P1=312;P2=400;P3=600;D=010101020302030302;
+//SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
 
 bool split_cmdpart(int16_t *startpos, String *msg_part)
 {
@@ -321,8 +336,8 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 	endpos=cmdstring.indexOf(";",*startpos);     			 // search next   ";"
 
 	if (endpos ==-1 || *startpos== -1) return false;
-	*msg_part = cmdstring.substring(*startpos+1,endpos);
-	*startpos=endpos;    // Set startpos to endpos to extract next part
+	*msg_part = cmdstring.substring(*startpos,endpos);
+	*startpos=endpos+1;    // Set startpos to endpos to extract next part
 	return true;
 }
 //SC;R=3;SM;.....;SR;....;SM;.....;
@@ -372,10 +387,11 @@ void send_cmd()
 				repeats= msg_part.substring(2).toInt();
 			} else if (msg_part.charAt(0) == 'D') {
 				if (type==raw) send_raw(&msg_part,buckets);
-				if (type==manchester) send_mc(&msg_part,buckets,sendclock);
+				if (type==manchester) send_mc(&msg_part,sendclock);
+				digitalWrite(PIN_SEND, LOW); // turn off transmitter
 			} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
 			{
-				sendclock = msg_part.substring(3).toInt();
+				sendclock = msg_part.substring(2).toInt();
 			}
 		}
 		start_pos=3; // for next iteration we set start to 3;
