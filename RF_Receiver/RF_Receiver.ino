@@ -290,6 +290,7 @@ void send_mc(String *msg_part,const int16_t clock)
 {
 	int8_t b;
 	char c;
+    digitalWrite(PIN_SEND, HIGH);
 
 	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
 	{
@@ -307,20 +308,22 @@ void send_mc(String *msg_part,const int16_t clock)
 		if ((b & bit) == bit){
 		  //Serial.print(1);
 		  // one
-		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, LOW);
 		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, HIGH);
+		  delayMicroseconds(clock);
 		} else {
 		  //Serial.print(0);
-
 		  // zero
-		  delayMicroseconds(clock);
+
 		  digitalWrite(PIN_SEND, HIGH);
 		  delayMicroseconds(clock);
 		  digitalWrite(PIN_SEND, LOW);
+  		  delayMicroseconds(clock);
+
         }
 	  }
+	 // Serial.println("");
 	}
 }
 
@@ -339,7 +342,7 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 }
 // SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-2500;P1=400;;D=101;SM;D=AB6180;SR;D=101;
 // SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
-// SM;C=400;D=AAAAAAAAFFFF;
+// SM;C=400;D=AAAAFFFF;
 void send_cmd()
 {
 	#define combined 0
