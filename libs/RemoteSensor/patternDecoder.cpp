@@ -1079,6 +1079,7 @@ bool ManchesterpatternDecoder::doDecode() {
 
     pdec->m_truncated=false;
 	bool mc_start_found=false;
+	bool mc_sync=false;
     pdec->mstart=0;
     #ifdef DEBUGDECODE
     Serial.print("mlen: ");
@@ -1086,31 +1087,50 @@ bool ManchesterpatternDecoder::doDecode() {
     Serial.print(" mstart: ");
     Serial.print(pdec->mstart);
     #endif
+	char  lastbit;
 
 	while (i < pdec->messageLen)
 	{
+
 		if ( mc_start_found==false && (isLong(pdec->message[i]) ||  isShort(pdec->message[i]))  )
 		{
 			pdec->mstart=i;
 			mc_start_found=true;
 		}
-		if (mc_start_found)
+		if (mc_start_found && !mc_sync)
 		{
+			while (!isLong(pdec->message[i]) && i < pdec->messageLen) {
+				i++;
+			}
+			if (i < pdec->messageLen) {
+				lastbit=(char)((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15);
+				ManchesterBits->addValue((lastbit));
+				mc_sync=true;
+				i++;
+			}
+		}
 
+		if (mc_sync && mc_start_found)
+		{
             if (isLong(pdec->message[i])) {
-		          ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 15 is set
+		          //ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 16 is set
+				  //ManchesterBits->addValue(1 ^ ((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15)));
+  				  lastbit=lastbit^1;
 				  #ifdef DEBUGDECODE
+  				  //ManchesterBits->addValue(lastbit);
 		          Serial.print("L");
 		          #endif
             }
             else if(isShort(pdec->message[i]) && i < pdec->messageLen-1 && isShort(pdec->message[i+1])  )
 			{
-				  ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 15 is set
+
+				  i++;
+				  //ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 16 is set
+				 // ManchesterBits->addValue(1 ^ ((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15)));
 				  #ifdef DEBUGDECODE
 				  Serial.print("SS");
 				  #endif
 
-				  i++;
 			} else { // Found something that fits not to our manchester signal
 				//if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits->valcount < minbitlen)
@@ -1121,6 +1141,7 @@ bool ManchesterpatternDecoder::doDecode() {
 					}
 					//pdec->mstart=i;
 					mc_start_found=false; // Reset to find new starting position
+					mc_sync = false;
 					#ifdef DEBUGDECODE
 					Serial.print(" mlen ");
 					Serial.print(ManchesterBits->valcount);
@@ -1150,6 +1171,8 @@ bool ManchesterpatternDecoder::doDecode() {
                     return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
+   		    ManchesterBits->addValue((lastbit));
+
 
 		}
 		//Serial.print(" S MC ");

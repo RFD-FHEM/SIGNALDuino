@@ -284,7 +284,7 @@ void send_raw(String *msg_part,const int16_t *buckets)
 	//Serial.println("");
 
 }
-//SM;C=400;D=2;
+//SM;R=2;C=400;D=AFAFAF;
 
 void send_mc(String *msg_part,const int16_t clock)
 {
