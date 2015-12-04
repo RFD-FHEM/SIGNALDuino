@@ -1103,10 +1103,12 @@ bool ManchesterpatternDecoder::doDecode() {
 				i++;
 			}
 			if (i < pdec->messageLen) {
-				lastbit=(char)1^((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15);
-				ManchesterBits->addValue((lastbit));
+				lastbit=(char)((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15);
+				i=pdec->mstart;
+
+				//ManchesterBits->addValue((lastbit));
 				mc_sync=true;
-				i++;
+				//i++;
 			}
 		}
 
@@ -1136,7 +1138,7 @@ bool ManchesterpatternDecoder::doDecode() {
 				if (ManchesterBits->valcount < minbitlen)
 				{
 					if (isShort(pdec->message[i]) && i < pdec->messageLen-1 && !isShort(pdec->message[i+1])) {
-						// unequal number of short pulses. Restart, but one pulse ahead
+						// unequal number of short pulses. Restart, but one pulse ahead i is incremented at end of while loop
 						i=pdec->mstart;
 					}
 					//pdec->mstart=i;

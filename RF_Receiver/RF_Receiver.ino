@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b5"
+#define PROGVERS               "3.2.0-b6"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
