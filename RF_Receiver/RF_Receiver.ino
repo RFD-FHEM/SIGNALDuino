@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b6"
+#define PROGVERS               "3.2.0-b7"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -120,7 +120,7 @@ void changeFilter();
 void HandleCommand();
 bool command_available=false;
 int getUptime();
-
+void getPing();
 //Decoder
 patternDecoder musterDec;
 
@@ -480,11 +480,13 @@ void HandleCommand()
   #define  cmd_help'?'
   #define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
+  #define  cmd_ping 'P'
 
-  // ?: Kommandos anzeigen
 
-
-  if (cmdstring.charAt(0) == cmd_help) {
+  if (cmdstring.charAt(0) == cmd_ping){
+	getPing();
+  }  // ?: Kommandos anzeigen
+  else if (cmdstring.charAt(0) == cmd_help) {
     //Serial.println(F("? Use one of V R i t X"));//FHEM Message
 	Serial.print(cmd_help);	Serial.print(F(" Use one of "));
 	Serial.print(cmd_Version);Serial.print(cmd_space);
@@ -494,9 +496,8 @@ void HandleCommand()
 	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
 	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
 	Serial.print(cmd_send);Serial.print(cmd_space);
-
+	Serial.print(cmd_ping);Serial.print(cmd_space);
 	Serial.println("");
-
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
@@ -683,6 +684,11 @@ int getUptime()
 	return seconds;
 }
 
+void getPing()
+{
+	Serial.println("OK");
+	delay(1);
+}
 
 void changeReciver() {
   if (cmdstring.charAt(1) == 'Q')

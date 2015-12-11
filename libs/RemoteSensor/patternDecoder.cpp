@@ -1104,8 +1104,11 @@ bool ManchesterpatternDecoder::doDecode() {
 			}
 			if (i < pdec->messageLen) {
 				lastbit=(char)((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15);
-				i=pdec->mstart;
-
+				uint8_t z=i-pdec->mstart;
+				if ((z<1) or ((z %2) == 0))
+					i=pdec->mstart;
+				else
+					i=pdec->mstart+1;
 				//ManchesterBits->addValue((lastbit));
 				mc_sync=true;
 				//i++;
