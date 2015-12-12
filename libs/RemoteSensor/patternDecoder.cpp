@@ -65,7 +65,7 @@ void patternBasic::reset()
 	patternStore->reset();
     tol=0;
 	for (int i=0;i<maxNumPattern;i++)
-        pattern[i][0]=0;
+        pattern[i]=0;
 
 }
 
@@ -88,7 +88,7 @@ int8_t patternBasic::findpatt(int *seq) {
         for (x=1; x<=seq[0]; x++)
         {
             //if (!(seq[x] ^ pattern[idx][x-1]) >= 0)  break;  // Not same sign, we can skip
-            if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+            if (!inTol(seq[x],pattern[idx]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
             //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
             {
                 x=0;
@@ -166,7 +166,7 @@ void patternDetector::reset() {
 	state = searching;
 	clock = sync=-1;
 	for (uint8_t i=0; i<maxNumPattern;++i)
-		histo[i]=pattern[i][0]=0;
+		histo[i]=pattern[i]=0;
 	success = false;
 	tol = 150; //
 	tolFact = 0.3;
@@ -228,10 +228,10 @@ bool patternDetector::getSync(){
 		// clock wurde bereits durch getclock bestimmt.
 		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
 		{
-			if (pattern[p][0] > 0 || (abs(pattern[p][0]) > syncMaxMicros && abs(pattern[p][0])/pattern[clock][0] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
+			if (pattern[p] > 0 || (abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
 			//if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
-			if (!validSequence(&pattern[clock][0],&pattern[p][0])) continue;
-			if ((syncMinFact* (pattern[clock][0]) <= -1*pattern[p][0])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
+			if (!validSequence(&pattern[clock],&pattern[p])) continue;
+			if ((syncMinFact* (pattern[clock]) <= -1*pattern[p])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
 				// Prüfe ob Sync und Clock valide sein können
 				if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
 
@@ -259,9 +259,9 @@ bool patternDetector::getSync(){
 				//debug
 				Serial.println();
 				Serial.print("PD sync: ");
-				Serial.print(pattern[clock][0]); Serial.print(", ");Serial.print(pattern[p][0]);
+				Serial.print(pattern[clock]); Serial.print(", ");Serial.print(pattern[p]);
 				Serial.print(", TOL: ");Serial.print(tol);
-				Serial.print(", sFACT: ");Serial.println(pattern[sync][0]/(float)pattern[clock][0]);
+				Serial.print(", sFACT: ");Serial.println(pattern[sync]/(float)pattern[clock]);
 				#endif
 				return true;
 				//break;
@@ -342,13 +342,13 @@ bool patternDetector::getClock(){
     for (uint8_t i=0;i<patternLen;++i) 		  // Schleife für Clock
     {
 		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
-		if (tstclock==-1 && (pattern[i][0]>=0) && (histo[i] > messageLen*0.17) )
+		if (tstclock==-1 && (pattern[i]>=0) && (histo[i] > messageLen*0.17) )
 		{
 			tstclock = i;
 			continue;
 		}
 
-		if ((pattern[i][0]>=0) && (pattern[i][0] < pattern[tstclock][0]) && (histo[i] > messageLen*0.17)){
+		if ((pattern[i]>=0) && (pattern[i] < pattern[tstclock]) && (histo[i] > messageLen*0.17)){
 			tstclock = i;
 		}
     }
@@ -416,7 +416,7 @@ void patternDetector::doDetectwoSync() {
 			//gefunden
 			message[messageLen]=fidx;
 			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
-			pattern[fidx][0] = (pattern[fidx][0]+seq[1])/2; // Moving average
+			pattern[fidx] = (pattern[fidx]+seq[1])/2; // Moving average
 			messageLen++;
 			add_new_pattern=false;
         }   else {
@@ -468,7 +468,7 @@ void patternDetector::doDetectwoSync() {
                     break;
                 }
 			}
-			pattern[pattern_pos][0] = seq[1];						//Store pulse in pattern array
+			pattern[pattern_pos] = seq[1];						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
             #if DEBUGDETECT>3
             Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
@@ -531,9 +531,9 @@ void patternDetector::calcHisto(const uint8_t startpos, uint8_t endpos)
 
 void patternDetector::printOut() {
     Serial.println();
-	Serial.print("Sync: ");Serial.print(pattern[sync][0]);
-	Serial.print(" -> SyncFact: ");Serial.print(pattern[sync][0]/(float)pattern[clock][0]);
-	Serial.print(", Clock: "); Serial.print(pattern[clock][0]);
+	Serial.print("Sync: ");Serial.print(pattern[sync]);
+	Serial.print(" -> SyncFact: ");Serial.print(pattern[sync]/(float)pattern[clock]);
+	Serial.print(", Clock: "); Serial.print(pattern[clock]);
 	Serial.print(", Tol: "); Serial.print(tol);
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
@@ -549,14 +549,12 @@ void patternDetector::printOut() {
 	for (uint8_t idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);
         Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
-        for (uint8_t x=0; x<PATTERNSIZE;++x)
-        {
-            if (pattern[idx][x] != 0)
-            {
-                if (x>0) Serial.print(",");
-                Serial.print(pattern[idx][x]);
-            }
-        }
+		if (pattern[idx] != 0)
+		{
+			Serial.print(",");
+			Serial.print(pattern[idx]);
+		}
+
         Serial.print("]");
 	}
 	Serial.println();
@@ -589,8 +587,8 @@ void patternDetector::compress_pattern()
 	{
 		for (uint8_t idx2=idx+1; idx2<patternLen;idx2++)
 		{
-			const int16_t tol=int( (abs(pattern[idx2][0])*tolFact)+(abs(pattern[idx2][0])*tolFact)/2);
-			if (inTol(pattern[idx2][0],pattern[idx][0],tol))  // Pattern are very equal, so we can combine them
+			const int16_t tol=int( (abs(pattern[idx2])*tolFact)+(abs(pattern[idx2])*tolFact)/2);
+			if (inTol(pattern[idx2],pattern[idx],tol))  // Pattern are very equal, so we can combine them
 			{
 				// Change val -> ref_val in message array
 				for (uint8_t i=0;i<messageLen;i++)
@@ -603,24 +601,24 @@ void patternDetector::compress_pattern()
 
 				#if DEBUGDETECT>2
 				Serial.print("compr: ");Serial.print(idx2);Serial.print("->");Serial.print(idx);Serial.print(";");
-				Serial.print(histo[idx2]);Serial.print("*");Serial.print(pattern[idx2][0]);
+				Serial.print(histo[idx2]);Serial.print("*");Serial.print(pattern[idx2]);
 				Serial.print("->");
-				Serial.print(histo[idx]);Serial.print("*");Serial.print(pattern[idx][0]);
+				Serial.print(histo[idx]);Serial.print("*");Serial.print(pattern[idx]);
 				#endif // DEBUGDETECT
 
 
 				int  sum = histo[idx] + histo[idx2];
 				if (sum == 0)
-					pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum);
+					pattern[idx] = (pattern[idx]*histo[idx]/ sum)+(pattern[idx2]*histo[idx2]/ sum);
 				else
-					pattern[idx][0] = (pattern[idx][0] + pattern[idx2][0]) /2;
+					pattern[idx] = (pattern[idx] + pattern[idx2]) /2;
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
-				pattern[idx2][0]=0;
+				pattern[idx2]=0;
 
 				#if DEBUGDETECT>2
-				Serial.print(" idx:");Serial.print(pattern[idx][0]);
-				Serial.print(" idx2:");Serial.print(pattern[idx2][0]);
+				Serial.print(" idx:");Serial.print(pattern[idx]);
+				Serial.print(" idx2:");Serial.print(pattern[idx2]);
 				Serial.println(";");
 				#endif // DEBUGDETECT
 
@@ -712,7 +710,7 @@ void patternDecoder::processMessage()
 			for (uint8_t idx=0;idx<patternLen;idx++)
 			{
 				if (histo[idx] == 0) continue;
-				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+				preamble.concat('P');preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}
 			preamble.concat("D=");
 
@@ -828,7 +826,7 @@ void patternDecoder::processMessage()
 			{
 				if (histo[idx] == 0) continue;
 
-				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}
 			preamble.concat("D=");
 
@@ -857,7 +855,7 @@ void patternDecoder::processMessage()
 			{
 				if (histo[idx] == 0) continue;
 
-				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx][0]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+				preamble.concat("P");preamble.concat(idx);preamble.concat("=");preamble.concat(pattern[idx]);preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 			}
 			preamble.concat("D=");
 
@@ -1036,10 +1034,10 @@ void ManchesterpatternDecoder::getMessagePulseStr(String* str)
 	if (!str)
 			return;
 
-	str->concat("LL=");str->concat(pdec->pattern[longlow][0]);str->concat(SERIAL_DELIMITER);
-	str->concat("LH=");str->concat(pdec->pattern[longhigh][0]);str->concat(SERIAL_DELIMITER);
-	str->concat("SL=");str->concat(pdec->pattern[shortlow][0]);str->concat(SERIAL_DELIMITER);
-	str->concat("SH=");str->concat(pdec->pattern[shorthigh][0]);str->concat(SERIAL_DELIMITER);
+	str->concat("LL=");str->concat(pdec->pattern[longlow]);str->concat(SERIAL_DELIMITER);
+	str->concat("LH=");str->concat(pdec->pattern[longhigh]);str->concat(SERIAL_DELIMITER);
+	str->concat("SL=");str->concat(pdec->pattern[shortlow]);str->concat(SERIAL_DELIMITER);
+	str->concat("SH=");str->concat(pdec->pattern[shorthigh]);str->concat(SERIAL_DELIMITER);
 }
 
 /** @brief (one liner)
@@ -1104,7 +1102,7 @@ bool ManchesterpatternDecoder::doDecode() {
 				i++;
 			}
 			if (i < pdec->messageLen) {
-				lastbit=(char)((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15);
+				lastbit=(char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15);
 				uint8_t z=i-pdec->mstart;
 				if ((z<1) or ((z %2) == 0))
 					i=pdec->mstart;
@@ -1237,7 +1235,7 @@ bool ManchesterpatternDecoder::isManchester()
 		#endif
 
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		int aktpulse = pdec->pattern[i][0];
+		int aktpulse = pdec->pattern[i];
 		//if (longlow == -1)
         //    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
 
@@ -1248,15 +1246,15 @@ bool ManchesterpatternDecoder::isManchester()
 			pos_cnt++;
 			tstclock += aktpulse;
 
-			longhigh = longhigh == -1 || pdec->pattern[longhigh][0] < aktpulse ? i  : longhigh;
-			shorthigh = shorthigh == -1 ||  pdec->pattern[shorthigh][0] > aktpulse ? i  : shorthigh;
+			longhigh = longhigh == -1 || pdec->pattern[longhigh] < aktpulse ? i  : longhigh;
+			shorthigh = shorthigh == -1 ||  pdec->pattern[shorthigh] > aktpulse ? i  : shorthigh;
 
 		} else {
 			equal_cnt -= pdec->histo[i];
 			neg_cnt++;
 
-			longlow = longlow == -1 || pdec->pattern[longlow][0] > aktpulse ? i  : longlow;
-			shortlow = shortlow == -1 || pdec->pattern[shortlow][0] < aktpulse ? i : shortlow;
+			longlow = longlow == -1 || pdec->pattern[longlow] > aktpulse ? i  : longlow;
+			shortlow = shortlow == -1 || pdec->pattern[shortlow] < aktpulse ? i : shortlow;
 		}
 
     }
@@ -1305,24 +1303,28 @@ bool ManchesterpatternDecoder::isManchester()
   *
   * (documentation goes here)
   */
+/*
 int8_t patternO::setPattern(const uint8_t idx, const int16_t val)
 {
 	patternStore[idx]=val;
 }
+*/
 
 /** @brief (gets a pattern from the store)
   *
   * (documentation goes here)
   */
+  /*
 int8_t patternO::getPattern(const uint8_t idx)
 {
 	return patternStore[idx];
 }
-
+*/
 /** @brief (one liner)
   *
   * (Finds a pattern in our pattern store. returns -1 if te pattern is not found)
   */
+  /*
 int8_t patternO::patternExists(int* val)
 {
 	//patternStore[idx]=patternval
@@ -1340,7 +1342,7 @@ int8_t patternO::patternExists(int* val)
 }
 
 
-
+*/
 
 
 
@@ -1640,8 +1642,8 @@ void ManchesterpatternDetector::doDetect() {
 
             //neues hinzufügen
 			//Serial.println("hinzufügen");
-            pattern[patternLen][0] = seq[1];
-            pattern[patternLen][1] = seq[2];
+            pattern[patternLen] = seq[1];
+            pattern[patternLen] = seq[2];
 
             //patternStore->addValue(patternLen); // Add current pattern index to our store
 			//*(message+messageLen) = patternLen; //Index des eben angefügten Elementes

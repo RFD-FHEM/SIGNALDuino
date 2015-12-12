@@ -119,7 +119,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		int* last;                              // Pointer to last buffer entry
 		uint16_t tol;                                // calculated tolerance for signal
         float tolFact;                          //
-		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
+		int pattern[maxNumPattern];				// 1d array to store the pattern
 		BitStore *patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
 		bool success;                           // True if a valid coding was found
@@ -225,6 +225,7 @@ class ManchesterpatternDecoder
 /*
    small class to store pattern and modifiy them, just some ideas to introduce
 */
+/*
 class patternO
 {
 	public:
@@ -237,7 +238,7 @@ class patternO
 	uint8_t patternPos;
 };
 
-
+*/
 
 
 
