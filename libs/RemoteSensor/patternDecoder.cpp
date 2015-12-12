@@ -464,6 +464,7 @@ void patternDetector::doDetectwoSync() {
 					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
 					messageLen=messageLen-i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 					memmove(message,message+i,sizeof(*message)*(messageLen+1));
+                    messageLen++;  //Move messagelen pointer one forward to avoid overwrite
                     break;
                 }
 			}
