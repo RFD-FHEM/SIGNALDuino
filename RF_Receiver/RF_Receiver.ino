@@ -481,6 +481,7 @@ void HandleCommand()
   #define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
+  #define  cmd_config 'C'
 
 
   if (cmdstring.charAt(0) == cmd_ping){
@@ -497,6 +498,9 @@ void HandleCommand()
 	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
 	Serial.print(cmd_send);Serial.print(cmd_space);
 	Serial.print(cmd_ping);Serial.print(cmd_space);
+	Serial.print(cmd_config);Serial.print(cmd_space);
+
+
 	Serial.println("");
   }
   // V: Version
@@ -516,7 +520,6 @@ void HandleCommand()
 	} else {
 		IT_CMDs();
 	}
-
   }
   else if (cmdstring.charAt(0) == cmd_send) {
   	if (musterDec.getState() != searching )
@@ -538,6 +541,9 @@ void HandleCommand()
   }
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
     changeFilter();
+  }
+  else if (cmdstring.charAt(0) == cmd_config) {
+    // Todo: support for enable / disable MU,MS,MC
   }
 
 }

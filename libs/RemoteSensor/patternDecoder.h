@@ -171,7 +171,8 @@ class patternDetector : protected patternBasic {
 class patternDecoder : public patternDetector{
 	friend class ManchesterpatternDecoder;
 	public:
-		patternDecoder();
+        patternDecoder() : patternDetector(), MUenabled(true), MCenabled(true), MSenabled(true) { preamble.reserve(70); postamble.reserve(20); reset(); };
+
 		void reset();
 
 		bool decode(const int* pulse);
@@ -184,6 +185,9 @@ class patternDecoder : public patternDetector{
 		String preamble;
 		String postamble;
 
+		bool MUenabled;
+		bool MCenabled;
+		bool MSenabled;
 		//uint8_t byteMessage[maxMsgSize];
 		//byte byteMessageLen;
 

@@ -621,23 +621,12 @@ void patternDetector::compress_pattern()
 
 
 //-------------------------- Decoder -------------------------------
-
-patternDecoder::patternDecoder(): patternDetector() {
 /*
-	tol = 200;
-	tolFact = 0.5;
-*/
-	/*
-	protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
-	protoID[1]=(s_sigid){0,0,-10,650,0,twostate}; // RSL
-	protoID[2]=(s_sigid){-1,-2,-18,500,0,twostate}; // AS
-	protoID[3]=(s_sigid){-1,3,-30,pattern[clock][0],0,tristate}; // IT old
-	*/
+patternDecoder::patternDecoder(): patternDetector() {
 	preamble.reserve(70);
 	postamble.reserve(20);
 
-//	numprotos=0;
-}
+}*/
 void patternDecoder::reset() {
     patternDetector::reset();
 }
@@ -653,7 +642,7 @@ void patternDecoder::processMessage()
 	patternDetector::processMessage();//printOut();
 
 
-	if (state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
+	if (MSenabled && state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
 	{
 
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
@@ -755,7 +744,7 @@ void patternDecoder::processMessage()
             reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 
 		}
-	} else if (state == clockfound && messageLen >= minMessageLen) {
+	} else if ((MUenabled || MCenabled) && state == clockfound && messageLen >= minMessageLen) {
 
 
 		// Message has a clock puls, but no sync. Try to decode this
@@ -778,7 +767,7 @@ void patternDecoder::processMessage()
 
 		mcdecoder.reset();
 		mcdecoder.setMinBitLen(17);
-		if (mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		if (MCenabled && mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
 			String mcbitmsg;
 			//Serial.println("MC");
@@ -835,7 +824,7 @@ void patternDecoder::processMessage()
 			printMsgRaw(0,messageLen,&preamble,&postamble);
 			#endif
 
-		} else {
+		} else if (MUenabled){
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
