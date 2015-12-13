@@ -1128,7 +1128,7 @@ bool ManchesterpatternDecoder::doDecode() {
 
 			} else { // Found something that fits not to our manchester signal
 				//if (i < pdec->messageLen-minbitlen)
-				if (ManchesterBits->valcount < minbitlen)
+				if (ManchesterBits.valcount < minbitlen)
 				{
 					if (isShort(pdec->message[i]) && i < pdec->messageLen-1 && !isShort(pdec->message[i+1])) {
 						// unequal number of short pulses. Restart, but one pulse ahead i is incremented at end of while loop
@@ -1143,7 +1143,7 @@ bool ManchesterpatternDecoder::doDecode() {
 
 					Serial.print(" RES ");
 					#endif
-					ManchesterBits->reset();
+					ManchesterBits.reset();
 
 				} else {
 					#ifdef DEBUGDECODE
@@ -1163,10 +1163,10 @@ bool ManchesterpatternDecoder::doDecode() {
                     memmove(pdec->message,pdec->message+pdec->mend,sizeof(*pdec->message)*(pdec->messageLen+1));
                     pdec->m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
                     //if (i+minbitlen > pdec->messageLen)
-                    return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed
+                    return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
-   		    ManchesterBits->addValue((lastbit));
+   		    ManchesterBits.addValue(lastbit);
 
 
 		}
