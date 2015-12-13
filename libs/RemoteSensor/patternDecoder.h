@@ -98,7 +98,7 @@ enum status {searching, clockfound, syncfound,detecting};
 */
  class patternBasic {
     public:
-        patternBasic();
+        patternBasic() : patternStore(1), success(false) ,first(buffer), last(first+1){	buffer[0] = buffer[1] = 0; reset(); };
 		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
 		void swap(int* a, int* b);              // Swaps the two vars
@@ -111,6 +111,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
 		int8_t clock;                           // index to clock in pattern
+
     protected:
 		status state;                           // holds the status of the detector
 
@@ -120,7 +121,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		uint16_t tol;                                // calculated tolerance for signal
         float tolFact;                          //
 		int pattern[maxNumPattern];				// 1d array to store the pattern
-		BitStore *patternStore;                 // Store for saving detected bits or pattern index
+		BitStore<0> patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
 		bool success;                           // True if a valid coding was found
 
@@ -193,7 +194,7 @@ class patternDecoder : public patternDetector{
 class ManchesterpatternDecoder
 {
 	public:
-	ManchesterpatternDecoder(patternDecoder *ref_dec);
+	ManchesterpatternDecoder(patternDecoder *ref_dec) : ManchesterBits(1) {	pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
@@ -208,7 +209,8 @@ class ManchesterpatternDecoder
 	bool isShort(uint8_t pulse_idx);
 	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 
-    BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+    BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+
     patternDecoder *pdec;
 
     int8_t longlow;
@@ -255,7 +257,8 @@ class ManchesterpatternDetector : public patternBasic {
         void printMessageHexStr();      // Gehört eigenlich in die Decoder Klasse
         bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
         unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
-        BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data
+        BitStore<30> *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data
+
 	private:
 		bool isShort(int *pulse);       // Returns true if it's a short pulse
 		bool isLong(int *pulse);        // Returns true if it's a long pulse

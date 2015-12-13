@@ -45,9 +45,11 @@
 ********** Generic detection methods and vars **********
 ********************************************************
 */
-patternBasic::patternBasic() {
-	patternStore = new BitStore(2,1); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
 
+
+/*
+patternBasic::patternBasic() {
+	//patternStore = new BitStore(2,1); // Init our Patternstore, default is 10 bytes. So we can save 40 Values.
 	buffer[0] = buffer[1] = 0;
 	first = buffer;
 	last = first+1;
@@ -56,13 +58,13 @@ patternBasic::patternBasic() {
 	//tolFact = 3.0; ///10
 	reset();
 }
-
+*/
 void patternBasic::reset()
 {
 	patternLen = 0;
 	state = searching;
 	clock = -1;
-	patternStore->reset();
+	patternStore.reset();
     tol=0;
 	for (int i=0;i<maxNumPattern;i++)
         pattern[i]=0;
@@ -927,20 +929,20 @@ int8_t patternDecoder::printMsgRaw(uint8_t m_start, const uint8_t m_end, const S
   *
   * Initialisation of class MancheserpatternDecoder
   */
-
+/*
 ManchesterpatternDecoder::ManchesterpatternDecoder(patternDecoder *ref_dec)
 {
 	pdec = ref_dec;
-	ManchesterBits=new BitStore(1,30); // use 1 Bit for every value stored, reserve 30 Bytes = 240 Bits
+	//ManchesterBits->new BitStore(1); // use 1 Bit for every value stored, reserve 30 Bytes = 240 Bits
 	reset();
-}
+}*/
 /** @brief (one liner)
   *
   * (documentation goes here)
   */
 ManchesterpatternDecoder::~ManchesterpatternDecoder()
 {
-	delete ManchesterBits;
+	//delete ManchesterBits->
 
 }
 
@@ -957,7 +959,7 @@ void ManchesterpatternDecoder::reset()
 	shortlow =  -1;
 	shorthigh = -1;
 	minbitlen = 20; // Set defaults
-	ManchesterBits->reset();
+	ManchesterBits.reset();
 }
 /** @brief (Sets internal minbitlen to new value)
   *
@@ -995,14 +997,14 @@ bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
 	char hexStr[] ="00"; // Not really needed
-	message->reserve(ManchesterBits->bytecount*3); // Todo: Reduce to exact needed size
+	message->reserve(ManchesterBits.bytecount*3); // Todo: Reduce to exact needed size
 	if (!message)
 		return ;
 
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx=0; idx<=ManchesterBits->bytecount; ++idx){
+	for (uint8_t idx=0; idx<=ManchesterBits.bytecount; ++idx){
         //Serial.print(getMCByte(idx),HEX);
-        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
         //Serial.print(".");
 		sprintf(hexStr, "%02X",getMCByte(idx));
         message->concat(hexStr);
@@ -1051,7 +1053,7 @@ void ManchesterpatternDecoder::getMessageClockStr(String* str)
 
 unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx){
 
-    return ManchesterBits->getByte(idx);
+    return ManchesterBits.getByte(idx);
 }
 
 
@@ -1191,7 +1193,7 @@ bool ManchesterpatternDecoder::doDecode() {
 		pdec->m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
     }
 
-	return (ManchesterBits->valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
+	return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
 
 	//Serial.print(" ES MC ");
 }
@@ -1372,8 +1374,8 @@ ManchesterpatternDetector::ManchesterpatternDetector(bool silentstate):patternBa
 	//tol = 200; //
 	tolFact = 5.0;
 	//patternStore = new BitStore(2,0); // Init our Patternstore, with 0 bytes, because we do not use it
-	free(patternStore);
-	ManchesterBits=new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
+	//free(patternStore);
+	//ManchesterBits->new BitStore(1,28); // use 1 Bit for every value stored, reserve 28 Bytes = 224 Bits
 	this->silent=silentstate;
 
 }
@@ -1575,9 +1577,9 @@ void ManchesterpatternDetector::doDetect() {
         updateClock(*first/2);
         seq[0] = 1;
         seq[1] = *first;
-        //ManchesterBits->addValue(!(*first & (1<<7))); // Check if bit 7 is set
+        //ManchesterBits->>addValue(!(*first & (1<<7))); // Check if bit 7 is set
         //Serial.println(*first,BIN);
-        //ManchesterBits->addValue((*first >>15)? 0 :1 ); // Check if bit 7 is set
+        //ManchesterBits->>addValue((*first >>15)? 0 :1 ); // Check if bit 7 is set
         ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
     }
     else if(isShort(first) && isShort(last) )
@@ -1590,7 +1592,7 @@ void ManchesterpatternDetector::doDetect() {
         seq[2] = *last;
         //updateClock(last); // Update Clock also with last pulse, because we will skip this in the next iteration
         skip=true; // Skip next iteration
-        //ManchesterBits->addValue(!(*last & (1<<7)));  // Check if bit 7 is set
+        //ManchesterBits->>addValue(!(*last & (1<<7)));  // Check if bit 7 is set
         ManchesterBits->addValue(!(*first >>15)); // Check if bit 7 is set
 /*  } else if(isShort(first))
     {
@@ -1688,11 +1690,11 @@ void ManchesterpatternDetector::printOut() {
 	}
 	Serial.println();
     Serial.print("Manchester Bits: ");
-    for (uint8_t idx=0; idx<ManchesterBits->valcount; ++idx){
+    for (uint8_t idx=0; idx<ManchesterBits->>valcount; ++idx){
 		//Serial.print(*(message+idx));
-		Serial.print(ManchesterBits->getValue(idx),DEC);
+		Serial.print(ManchesterBits->>getValue(idx),DEC);
 	}
-	Serial.print("  ["); Serial.print(ManchesterBits->valcount); Serial.print("]");
+	Serial.print("  ["); Serial.print(ManchesterBits->>valcount); Serial.print("]");
 	Serial.println();
 
     Serial.print("Hex: 0x");
@@ -1722,7 +1724,7 @@ void ManchesterpatternDetector::printMessageHexStr(){
     // Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (uint8_t idx=4; idx<ManchesterBits->bytecount; ++idx){
         //Serial.print(getMCByte(idx),HEX);
-        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->getByte(idx)));
+        //sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
         sprintf(hexStr, "%02X",getMCByte(idx));
 		Serial.print(hexStr);
 	}
@@ -1777,7 +1779,7 @@ bool decoderBasic::checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t 
 	Serial.print("  Clock: ");
 	Serial.print(mcdetector->clock);
 	Serial.print("  num bits : ");
-	Serial.print(mcdetector->ManchesterBits->valcount);
+	Serial.print(mcdetector->ManchesterBits->>valcount);
 	DEBUG_END
 	#endif // DEBUGDECODE
 	bool valid;
@@ -1956,7 +1958,7 @@ bool OSV2Decoder::processMessage()
 	if (!checkMessage()) return false;
 	unsigned char cdata;
     uint8_t idx;
-	uint8_t numbits = int((mcdetector->ManchesterBits->valcount-syncend)/16)*8;  // Stores number of bits
+	uint8_t numbits = int((mcdetector->ManchesterBits->>valcount-syncend)/16)*8;  // Stores number of bits
 #ifdef DEBUGDECODE
     // Now exract all of the message  // Todo: Check for a new sync signal, because we may have no delay between two transmissions of the messages may easy possible to check for occurence of 10101010 or 01010101
     Serial.print("OSV2 protocol len(0x");  // Print the OSV2 hex message
@@ -1965,9 +1967,9 @@ bool OSV2Decoder::processMessage()
 #endif
 	this->protomessage.reserve((numbits/4)+2); 							 	 // Reserve buffer for Hex String
 	this->protomessage= String(numbits,HEX);
-    for (idx=syncend; idx<mcdetector->ManchesterBits->valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
+    for (idx=syncend; idx<mcdetector->ManchesterBits->>valcount; idx+=16) 	 // Iterate over every byte which uses 16 bits
     {
-        if (mcdetector->ManchesterBits->valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
+        if (mcdetector->ManchesterBits->>valcount-idx<16) break;			  	 // Break if we do not have a full byte data left
   		cdata = getByte(idx);
 
   		this->protomessage.concat(valToHex(cdata));
@@ -1999,7 +2001,7 @@ unsigned char OSV2Decoder::getDataBits(uint8_t startingPos,uint8_t numbits)
     numbits=numbits*2;
 
 	for (uint8_t idx=startingPos; idx<startingPos+numbits; idx=idx+2, bcnt++){
-         cdata = cdata | (mcdetector->ManchesterBits->getValue(idx) << (bcnt)); // add bits in reversed order
+         cdata = cdata | (mcdetector->ManchesterBits->>getValue(idx) << (bcnt)); // add bits in reversed order
 	}
     return cdata;
 }
