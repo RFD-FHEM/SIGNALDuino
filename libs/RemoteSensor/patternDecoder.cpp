@@ -78,28 +78,18 @@ bool patternBasic::detect(const int* pulse){
 }
 
 /* Returns the index of the searched pattern or -1 if not found */
-int8_t patternBasic::findpatt(int *seq) {
+int8_t patternBasic::findpatt(const int val) {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
 	for (uint8_t idx=0; idx<patternLen; ++idx)
     {
-        uint8_t x;
-        // Iterate over sequence in pattern (2 dimension of array)
-        for (x=1; x<=seq[0]; x++)
-        {
-            //if (!(seq[x] ^ pattern[idx][x-1]) >= 0)  break;  // Not same sign, we can skip
-            if (!inTol(seq[x],pattern[idx]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
-            //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
-            {
-                x=0;
-                break;
-            }
-            if (x==seq[0])  // Pattern was found
-            {
-                return idx;
-            }
-        }
-    }
+
+		if (inTol(val,pattern[idx]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+		//if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+		{
+			return idx;
+		}
+	}
     // sequence was not found in pattern
     return -1;
 }
@@ -400,9 +390,8 @@ void patternDetector::doDetectwoSync() {
 		if (messageLen ==0) valid=pattern_pos=patternLen=0;
 
 
-	    int seq[2] = {1,0};
-	    seq[1]=*first;
-		int8_t fidx = findpatt(seq);
+
+		int8_t fidx = findpatt(*first);
 
 		#if DEBUGDETECT>3
 		Serial.print(F("Pulse: "));Serial.print(*first); Serial.print(F(", "));Serial.print(*last);
@@ -416,7 +405,7 @@ void patternDetector::doDetectwoSync() {
 			//gefunden
 			message[messageLen]=fidx;
 			if (messageLen>1 && message[messageLen-1] == message[messageLen]) reset();  // haut Rauschen weg.
-			pattern[fidx] = (pattern[fidx]+seq[1])/2; // Moving average
+			pattern[fidx] = (pattern[fidx]+*first)/2; // Moving average
 			messageLen++;
 			add_new_pattern=false;
         }   else {
@@ -468,7 +457,7 @@ void patternDetector::doDetectwoSync() {
                     break;
                 }
 			}
-			pattern[pattern_pos] = seq[1];						//Store pulse in pattern array
+			pattern[pattern_pos] = *first;						//Store pulse in pattern array
 			message[messageLen]=pattern_pos;
             #if DEBUGDETECT>3
             Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
@@ -1617,7 +1606,7 @@ void ManchesterpatternDetector::doDetect() {
         return;
     }
 
-	int8_t fidx = findpatt(seq);
+	int8_t fidx = findpatt(*seq);  // Todo: This call is broken due to changes to the function
 #if DEBUGDETECT==255
 	Serial.print("MCPD Pulse: ");Serial.print(*first); Serial.print(", ");Serial.print(*last);
 	Serial.print(", Clock: "); Serial.print(clock); Serial.print(", Found: "); Serial.println(fidx);

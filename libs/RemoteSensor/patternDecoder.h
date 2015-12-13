@@ -102,7 +102,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
 		void swap(int* a, int* b);              // Swaps the two vars
-		int8_t findpatt(int *seq);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
+		int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 		bool inTol(const int val, const int set);           // checks if a value is in tolerance range
 		static bool inTol(const int val, const int set, const int tolerance);
         bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
