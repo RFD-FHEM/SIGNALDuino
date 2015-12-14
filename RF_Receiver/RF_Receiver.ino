@@ -51,7 +51,7 @@ SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 #endif
 #include <patternDecoder.h> //Logilink, IT decoder
-
+#include <EEPROM.h>
 
 
 #define pulseMin  90
@@ -121,6 +121,9 @@ void HandleCommand();
 bool command_available=false;
 int getUptime();
 void getPing();
+void configCMD();
+void storeFunctions(int8_t ms=1, int8_t mu=1, int8_t mc=1);
+void getFunctions(bool *ms,bool *mu,bool *mc);
 //Decoder
 patternDecoder musterDec;
 
@@ -148,6 +151,13 @@ void setup() {
 	pinMode(PIN_LED,OUTPUT);
 	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
 	Timer1.attachInterrupt(blinken);
+
+	getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
+
+	/*Serial.print("MS:"); 	Serial.println(musterDec.MSenabled);
+	Serial.print("MU:"); 	Serial.println(musterDec.MUenabled);
+	Serial.print("MC:"); 	Serial.println(musterDec.MCenabled);*/
+
 
 	enableReceive();
 	cmdstring.reserve(20);
@@ -540,16 +550,37 @@ void HandleCommand()
 	//Serial.end();
   }
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
-    changeFilter();
   }
   else if (cmdstring.charAt(0) == cmd_config) {
     // Todo: support for enable / disable MU,MS,MC
+    configCMD();
   }
 
 }
 
 
+void configCMD()
+{
+  bool *bptr;
 
+  if (cmdstring.charAt(2) == 'S') {  	  //MS
+	bptr=&musterDec.MSenabled;;
+  }
+  else if (cmdstring.charAt(2) == 'U') {  //MU
+	bptr=&musterDec.MUenabled;;
+  }
+  else if (cmdstring.charAt(2) == 'C') {  //MC
+	bptr=&musterDec.MCenabled;;
+  }
+
+  if (cmdstring.charAt(1) == 'E') {
+	*bptr=true;
+  }
+  else if (cmdstring.charAt(1) == 'D') {
+	*bptr=false;
+  }
+  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled);
+}
 
 
 void IT_CMDs() {
@@ -710,17 +741,30 @@ void changeReciver() {
 
 
 
-/* not used anymore */
-void printFilter(uint8_t id)
+
+
+
+
+
+
+//================================= EEProm commands ======================================
+#define addr_features 0
+
+void storeFunctions(int8_t ms, int8_t mu, int8_t mc)
 {
+	mu=mu<<1;
+	mc=mc<<2;
+	int8_t dat =  ms | mu | mc;
+    EEPROM.write(addr_features,dat);
+}
+
+void getFunctions(bool *ms,bool *mu,bool *mc)
+{
+    int8_t dat = EEPROM.read(addr_features);
+
+    *ms=bool (dat &(1<<0));
+    *mu=bool (dat &(1<<1));
+    *mc=bool (dat &(1<<2));
+
 
 }
-void changeFilter()
-{
-
-}
-
-
-
-
-

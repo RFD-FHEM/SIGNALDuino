@@ -181,13 +181,14 @@ class patternDecoder : public patternDetector{
 		void printMsgStr(const String *first, const String *second, const String *third);
 		int8_t printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
 
+		bool MUenabled;
+		bool MCenabled;
+		bool MSenabled;
+
 	private:
 		String preamble;
 		String postamble;
 
-		bool MUenabled;
-		bool MCenabled;
-		bool MSenabled;
 		//uint8_t byteMessage[maxMsgSize];
 		//byte byteMessageLen;
 
