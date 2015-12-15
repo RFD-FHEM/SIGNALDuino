@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b8"
+#define PROGVERS               "3.2.0-b9"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -104,8 +104,9 @@ int16_t freeMem2=0;  // available ram calculation #2
 #endif
 
 
-
-
+// EEProm Addresscommands
+#define addr_init 0
+#define addr_features 1
 
 
 
@@ -122,7 +123,7 @@ bool command_available=false;
 int getUptime();
 void getPing();
 void configCMD();
-void storeFunctions(int8_t ms=1, int8_t mu=1, int8_t mc=1);
+void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
 void getFunctions(bool *ms,bool *mu,bool *mc);
 //Decoder
 patternDecoder musterDec;
@@ -152,7 +153,19 @@ void setup() {
 	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
 	Timer1.attachInterrupt(blinken);
 
-	getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
+	if (EEPROM.read(addr_init) == 0xB)
+	{
+		#ifdef DEBUG
+		Serial.println("Reading values fom eeprom");
+		#endif
+		getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
+	} else {
+		EEPROM.write(addr_init,0xB);
+		storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
+		#ifdef DEBUG
+		Serial.println("Init eeprom to defaults after flash");
+		#endif
+	}
 
 	/*Serial.print("MS:"); 	Serial.println(musterDec.MSenabled);
 	Serial.print("MU:"); 	Serial.println(musterDec.MUenabled);
@@ -748,9 +761,10 @@ void changeReciver() {
 
 
 //================================= EEProm commands ======================================
-#define addr_features 0
 
-void storeFunctions(int8_t ms, int8_t mu, int8_t mc)
+
+
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc)
 {
 	mu=mu<<1;
 	mc=mc<<2;
