@@ -33,7 +33,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b9"
+#define PROGVERS               "3.2.0-b10"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -57,6 +57,27 @@ RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 #define pulseMin  90
 volatile bool blinkLED = false;
 String cmdstring = "";
+
+
+
+#define portOfPin(P)\
+  (((P)>=0&&(P)<8)?&PORTD:(((P)>7&&(P)<14)?&PORTB:&PORTC))
+#define ddrOfPin(P)\
+  (((P)>=0&&(P)<8)?&DDRD:(((P)>7&&(P)<14)?&DDRB:&DDRC))
+#define pinOfPin(P)\
+  (((P)>=0&&(P)<8)?&PIND:(((P)>7&&(P)<14)?&PINB:&PINC))
+#define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
+#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
+
+#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
+#define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
+#define pinAsOutput(P) *(ddrOfPin(P))|=pinMask(P)
+#define digitalLow(P) *(portOfPin(P))&=~pinMask(P)
+#define digitalHigh(P) *(portOfPin(P))|=pinMask(P)
+#define isHigh(P)((*(pinOfPin(P))& pinMask(P))>0)
+#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
+#define digitalState(P)((uint8_t)isHigh(P))
+
 
 
 
@@ -211,7 +232,7 @@ void loop() {
 void handleInterrupt() {
   static unsigned long lastTime = micros();
   unsigned long Time=micros();
-  const bool state = digitalRead(PIN_RECEIVE);
+  //const bool state = digitalRead(PIN_RECEIVE);
   const long  duration = Time - lastTime;
   lastTime = Time;
   if (duration >= pulseMin) {//kleinste zulässige Pulslänge
@@ -221,8 +242,8 @@ void handleInterrupt() {
     }else {
       sDuration = maxPulse; // Maximalwert set to maxPulse defined in lib.
     }
-    if (state) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafür gilt die gemessene Dauer.
-      sDuration=sDuration*-1;
+    if (isLow(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafür gilt die gemessene Dauer.
+      sDuration=-sDuration;
     }
     #ifdef CMP_FIFO
     FiFo.enqueue(sDuration);
@@ -251,9 +272,11 @@ uint8_t ITrepetition = 6;
 int ITbaseduration = 300;
 
 void PT2262_transmit(uint8_t nHighPulses, uint8_t nLowPulses) {
-  digitalWrite(PIN_SEND, HIGH);
+  //digitalWrite(PIN_SEND, HIGH);
+  digitalHigh(PIN_SEND);
   delayMicroseconds(ITbaseduration * nHighPulses);
-  digitalWrite(PIN_SEND, LOW);
+  //digitalWrite(PIN_SEND, LOW);
+  digitalLow(PIN_SEND);
   delayMicroseconds(ITbaseduration * nLowPulses);
 }
 
@@ -313,7 +336,8 @@ void send_mc(String *msg_part,const int16_t clock)
 {
 	int8_t b;
 	char c;
-    digitalWrite(PIN_SEND, HIGH);
+    digitalHigh(PIN_SEND);
+    //digitalWrite(PIN_SEND, HIGH);
 
 	for (uint8_t i=msg_part->indexOf('D')+2;i<msg_part->length();i++ )
 	{
@@ -331,17 +355,21 @@ void send_mc(String *msg_part,const int16_t clock)
 		if ((b & bit) == bit){
 		  //Serial.print(1);
 		  // one
-		  digitalWrite(PIN_SEND, LOW);
+		  //digitalWrite(PIN_SEND, LOW);
+		  digitalLow(PIN_SEND);
 		  delayMicroseconds(clock);
-		  digitalWrite(PIN_SEND, HIGH);
+		  //digitalWrite(PIN_SEND, HIGH);
+		  digitalHigh(PIN_SEND);
 		  delayMicroseconds(clock);
 		} else {
 		  //Serial.print(0);
 		  // zero
 
-		  digitalWrite(PIN_SEND, HIGH);
+		  //digitalWrite(PIN_SEND, HIGH);
+		  digitalHigh(PIN_SEND);
 		  delayMicroseconds(clock);
-		  digitalWrite(PIN_SEND, LOW);
+		  //digitalWrite(PIN_SEND, LOW);
+  		  digitalLow(PIN_SEND);
   		  delayMicroseconds(clock);
 
         }
@@ -412,7 +440,8 @@ void send_cmd()
 			} else if (msg_part.charAt(0) == 'D') {
 				if (type==raw) send_raw(&msg_part,buckets);
 				if (type==manchester) send_mc(&msg_part,sendclock);
-				digitalWrite(PIN_SEND, LOW); // turn off transmitter
+				//digitalWrite(PIN_SEND, LOW); // turn off transmitter
+				digitalLow(PIN_SEND);
 			} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
 			{
 				sendclock = msg_part.substring(2).toInt();
@@ -611,11 +640,13 @@ void IT_CMDs() {
   }
   // Switch Intertechno Devices
   else if (cmdstring.charAt(1) == 's') {
-    digitalWrite(PIN_LED,HIGH);
+    //digitalWrite(PIN_LED,HIGH);
+    digitalHigh(PIN_SEND);
     char msg[13];
     cmdstring.substring(2).toCharArray(msg,13);
    	sendPT2262(msg);
-    digitalWrite(PIN_LED,LOW);
+    //digitalWrite(PIN_LED,LOW);
+    digitalLow(PIN_SEND);
     Serial.println(cmdstring);
   }
   else if (cmdstring.charAt(1) == 'c') {
