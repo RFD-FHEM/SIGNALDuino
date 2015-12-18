@@ -311,24 +311,38 @@ void sendPT2262(char* triStateMessage) {
 void send_raw(const uint8_t startpos,const uint8_t endpos,const int16_t *buckets)
 {
 	uint8_t index=0;
-
+	unsigned long stoptime=micros();
+	bool isLow;
+	int16_t dur;
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
-		Serial.print(cmdstring.substring(i,i+1));
-		index = cmdstring.substring(i,i+1).toInt();
-		digitalWrite(PIN_SEND, !(buckets[index] >>15));
+		//Serial.print(cmdstring.substring(i,i+1));
+		index = cmdstring.charAt(i) - '0';
+		//Serial.print(index);
 
-		int16_t dur = abs(buckets[index]);
-		//Serial.print(!(buckets[index]>>15));Serial.print(",");
-		//delayMicroseconds(abs(buckets[index]));
-		if (dur > 8000) // Use delay at 8000 microseconds to be more precice
-		{
-			delay(dur/1000);
-		} else {
-			delayMicroseconds(dur);
+		isLow=buckets[index] >> 15;
+		isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index])-24;
+		//dur = abs(buckets[index]);
+		//if (!isLow) dur-=24;
+		//Serial.print(dur);
+		//Serial.print(",");
+
+		while (stoptime > micros()){
+			;
 		}
+		isLow ? digitalLow(PIN_SEND): digitalHigh(PIN_SEND);
+		stoptime+=dur;
+		//isLow ? Serial.print('L'): Serial.print('H');
+
+		//stoptime = micros()+dur;
+
 	}
-    Serial.println("");
+	while (stoptime > micros()){
+		;
+	}
+
+	//Serial.println("");
+   // Serial.println("");
 
 	//Serial.println("");
 
@@ -347,7 +361,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	{
 
 	 c = cmdstring.charAt(i);
- 	 Serial.print(c);
+ 	// Serial.print(c);
 
 
      if(c >= '0' && c <= '9')
@@ -402,6 +416,7 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 // SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-2500;P1=400;D=101;SM;D=AB6180;SR;D=101;
 // SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
 // SM;C=400;D=AAAAFFFF;
+// SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
 
 struct s_sendcmd {
 	int sendclock;
@@ -430,32 +445,32 @@ void send_cmd()
 
 	disableReceive();
 
-	uint8_t cmdNo=0;
+	uint8_t cmdNo=255;
 
 
 	while (split_cmdpart(&start_pos,&msg_part))
 	{
-		Serial.println(msg_part);
+		//Serial.println(msg_part);
 		if (msg_part.charAt(0) == 'S')
 		{
 			if (msg_part.charAt(1) == 'C')  // send combined informatio flag
 			{
 				type=combined;
-				cmdNo=255;
+				//cmdNo=255;
 			}
 			else if (msg_part.charAt(1) == 'M') // send manchester
 			{
 				type=manchester;
 				cmdNo++;
 				command[cmdNo].type=manchester;
-				Serial.println("Adding manchester");
+				//Serial.println("Adding manchester");
 			}
 			else if (msg_part.charAt(1) == 'R') // send raw
 			{
 				type=raw;
 				cmdNo++;
 				command[cmdNo].type=raw;
-				Serial.println("Adding raw");
+				//Serial.println("Adding raw");
 
 			}
 		}
@@ -464,19 +479,19 @@ void send_cmd()
 			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
 			buckets[counter]=  msg_part.substring(3).toInt();
 			command[cmdNo].buckets[counter]=msg_part.substring(3).toInt();
-		    Serial.println("Adding bucket");
+		    //Serial.println("Adding bucket");
 
 		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
 			repeats= msg_part.substring(2).toInt();
-		    Serial.println("Adding repeats");
+		    //Serial.println("Adding repeats");
 
 		} else if (msg_part.charAt(0) == 'D') {
 			command[cmdNo].datastart = start_pos - msg_part.length()+1;
 			command[cmdNo].dataend = start_pos-2;
-		    Serial.print("locating data start:");
-		    Serial.print(command[cmdNo].datastart);
-		    Serial.print(" end:");
-			Serial.println(command[cmdNo].dataend);
+		    //Serial.print("locating data start:");
+		   // Serial.print(command[cmdNo].datastart);
+		    //Serial.print(" end:");
+			//Serial.println(command[cmdNo].dataend);
 			//if (type==raw) send_raw(&msg_part,buckets);
 			//if (type==manchester) send_mc(&msg_part,sendclock);
 			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
@@ -485,7 +500,7 @@ void send_cmd()
 		{
 			sendclock = msg_part.substring(2).toInt();
 			command[cmdNo].sendclock = msg_part.substring(2).toInt();
-		    Serial.println("adding sendclock");
+		    //Serial.println("adding sendclock");
 		}
 	}
 
@@ -503,64 +518,6 @@ void send_cmd()
 	enableReceive();	// enable the receiver
     Serial.println(cmdstring); // echo
 
-	/*
-	if (cmdstring.charAt(1) == 'C')  // Send Combined
-	{	// Split send parts
-		// Find repeats
-
-		uint8_t r=cmdstring.substring(cmdstring.indexof('R')+2,cmdstring.indexOf(';',));
-
-		uint8_t p=cmdstring.indexOf('('); // Start for a complex send part
-		uint8_t p2=0;
-		do{			// SC;R=2;(SR;...;SM;.....;SR....;)
-			p=cmdstring.indexOf('S',p);
-			p2=cmdstring.indexOf('S',p)-1;
-		} while (p>0);
-		if (p2==-1) p2=cmdstring.length();
-	}
-
-
-  if (cmdstring.charAt(1) == 'R')
-  {
-
-	int8_t strp1=2;
-	int8_t strp2=0;
-	strp1=cmdstring.indexOf(";",strp1);    // search first  ";", start after RS command
-
-	while (cmdstring.charAt(strp1+1) != 'D' && strp1+1 < cmdstring.indexOf('D'))
-	{
-		strp2=cmdstring.indexOf(";",strp1+2);  // search next ";" after strp1
-		msg_part = cmdstring.substring(strp1+1,strp2);  // substrimg
-		//Serial.print("part: \t");		Serial.print(msg_part);
-
-
-		if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
-		{
-			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
-
-			buckets[counter]=  msg_part.substring(3).toInt();
-
-		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=')
-		{
-			repeats= msg_part.substring(2).toInt();
-		}
-		strp1=strp2;
-	}
-
-
-	disableReceive();  // Disable the receiver
-	for (uint8_t i=0;i<repeats;i++)
-	{
-		send_raw(buckets);
-
-		delay(2);
-	}
-	//Serial.println("");
-	enableReceive();	// enable the receiver
-    Serial.println(cmdstring); // echo
-
-
-  }*/
 }
 
 
