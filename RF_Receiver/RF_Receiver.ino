@@ -308,42 +308,29 @@ void sendPT2262(char* triStateMessage) {
 
 
 //================================= RAW Send ======================================
-void send_raw(const uint8_t startpos,const uint8_t endpos,const int16_t *buckets)
+void send_raw(const uint8_t startpos,const uint8_t endpos,const int16_t *buckets, String *source=&cmdstring)
 {
 	uint8_t index=0;
 	unsigned long stoptime=micros();
 	bool isLow;
-	int16_t dur;
+	uint16_t dur;
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
 		//Serial.print(cmdstring.substring(i,i+1));
-		index = cmdstring.charAt(i) - '0';
+		index = source->charAt(i) - '0';
 		//Serial.print(index);
-
 		isLow=buckets[index] >> 15;
 		isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index])-24;
-		//dur = abs(buckets[index]);
-		//if (!isLow) dur-=24;
-		//Serial.print(dur);
-		//Serial.print(",");
 
 		while (stoptime > micros()){
 			;
 		}
 		isLow ? digitalLow(PIN_SEND): digitalHigh(PIN_SEND);
 		stoptime+=dur;
-		//isLow ? Serial.print('L'): Serial.print('H');
-
-		//stoptime = micros()+dur;
-
 	}
 	while (stoptime > micros()){
 		;
 	}
-
-	//Serial.println("");
-   // Serial.println("");
-
 	//Serial.println("");
 
 }
@@ -353,50 +340,66 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 {
 	int8_t b;
 	char c;
-    digitalHigh(PIN_SEND);
-    //digitalWrite(PIN_SEND, HIGH);
+	digitalHigh(PIN_SEND);
+	//digitalWrite(PIN_SEND, HIGH);
+	/*
+	int16_t buckets[2];
+	buckets[0] = -clock;
+	buckets[1] = clock;
+	String data="";
+	data.reserve(8);
+	*/
 
-
+	unsigned long stoptime=micros();
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
+		c = cmdstring.charAt(i);
+		// Serial.print(c);
 
-	 c = cmdstring.charAt(i);
- 	// Serial.print(c);
+		if(c >= '0' && c <= '9')
+			b= (byte)(c - '0');
+		else
+			b=(byte)(c-'A'+10);
 
+		for (uint8_t bit=0x8; bit>0; bit>>=1)
+		{
+			while (stoptime > micros()){
+				;
+			}
+			//if ((b & bit) == bit){
+            /*
+			b&bit  ? digitalLow(PIN_SEND) : digitalHigh(PIN_SEND);
+			stoptime +=clock;
+			while (stoptime > micros()){
+				;
+			}
+			b&bit ? digitalHigh(PIN_SEND) : digitalLow(PIN_SEND);
+			stoptime +=clock;
+			*/
 
-     if(c >= '0' && c <= '9')
-       b= (byte)(c - '0');
-     else
-       b=(byte)(c-'A'+10);
-
-	  for (uint8_t bit=0x8; bit>0; bit>>=1)
-      {
-		if ((b & bit) == bit){
-		  //Serial.print(1);
-		  // one
-		  //digitalWrite(PIN_SEND, LOW);
-		  digitalLow(PIN_SEND);
-		  delayMicroseconds(clock);
-		  //digitalWrite(PIN_SEND, HIGH);
-		  digitalHigh(PIN_SEND);
-		  delayMicroseconds(clock);
-		} else {
-		  //Serial.print(0);
-		  // zero
-
-		  //digitalWrite(PIN_SEND, HIGH);
-		  digitalHigh(PIN_SEND);
-		  delayMicroseconds(clock);
-		  //digitalWrite(PIN_SEND, LOW);
-  		  digitalLow(PIN_SEND);
-  		  delayMicroseconds(clock);
-
-        }
-	  }
-	 // Serial.println("");
+			if (b & bit){
+				digitalLow(PIN_SEND);
+				stoptime +=clock;
+				while (stoptime > micros()){
+					;
+				}
+				digitalHigh(PIN_SEND);
+			} else {
+				digitalHigh(PIN_SEND);
+				stoptime +=clock;
+				while (stoptime > micros()){
+					;
+				}
+				digitalLow(PIN_SEND);
+			}
+			stoptime +=clock;
+		}
 	}
-	Serial.println("");
+	while (stoptime > micros()){
+		;
+	}
 
+	// Serial.println("");
 }
 
 
@@ -413,7 +416,7 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 	return true;
 }
 // SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;
-// SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-2500;P1=400;D=101;SM;D=AB6180;SR;D=101;
+// SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-400;P1=400;D=101;SM;D=AB6180;SR;D=101;
 // SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
 // SM;C=400;D=AAAAFFFF;
 // SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
