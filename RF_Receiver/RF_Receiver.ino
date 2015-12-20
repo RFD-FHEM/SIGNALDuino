@@ -341,15 +341,6 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	int8_t b;
 	char c;
 	digitalHigh(PIN_SEND);
-	//digitalWrite(PIN_SEND, HIGH);
-	/*
-	int16_t buckets[2];
-	buckets[0] = -clock;
-	buckets[1] = clock;
-	String data="";
-	data.reserve(8);
-	*/
-
 	unsigned long stoptime=micros();
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
@@ -417,7 +408,7 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 }
 // SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;
 // SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-400;P1=400;D=101;SM;D=AB6180;SR;D=101;
-// SR;R=3;P0=1230;P1=-3120;P2=400;P3=-600;D=010101020302030302;
+// SR;R=3;P0=1230;P1=-3120;P2=-400;P3=-900;D=030301010101010202020202020101010102020202010101010202010120202;
 // SM;C=400;D=AAAAFFFF;
 // SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
 

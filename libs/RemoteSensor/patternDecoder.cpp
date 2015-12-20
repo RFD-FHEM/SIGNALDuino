@@ -221,7 +221,7 @@ bool patternDetector::getSync(){
 		for (int8_t p=patternLen-1;p>=0;--p)  // Schleife für langen Syncpuls
 		{
 			if (pattern[p] > 0 || (abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
-			//if (pattern[p][0] > 0 || pattern[p][0] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
+			if (pattern[p] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
 			if (!validSequence(&pattern[clock],&pattern[p])) continue;
 			if ((syncMinFact* (pattern[clock]) <= -1*pattern[p])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
 				// Prüfe ob Sync und Clock valide sein können
@@ -1667,23 +1667,21 @@ void ManchesterpatternDetector::printOut() {
 	Serial.print(", Pattern: ");
 	for (int idx=0; idx<patternLen; ++idx){
         Serial.print(" P");Serial.print(idx);Serial.print(": [");
-        for (uint8_t x=0; x<PATTERNSIZE;++x)
-        {
-            if (pattern[idx][x] != 0)
-            {
-                if (x>0) Serial.print(",");
-                Serial.print(pattern[idx][x]);
-            }
-        }
+		if (pattern[idx] != 0)
+		{
+			if (idx>0) Serial.print(",");
+			Serial.print(pattern[idx]);
+		}
+
         Serial.print("]");
 	}
 	Serial.println();
     Serial.print("Manchester Bits: ");
-    for (uint8_t idx=0; idx<ManchesterBits->>valcount; ++idx){
+    for (uint8_t idx=0; idx<ManchesterBits->valcount; ++idx){
 		//Serial.print(*(message+idx));
-		Serial.print(ManchesterBits->>getValue(idx),DEC);
+		Serial.print(ManchesterBits->getValue(idx),DEC);
 	}
-	Serial.print("  ["); Serial.print(ManchesterBits->>valcount); Serial.print("]");
+	Serial.print("  ["); Serial.print(ManchesterBits->valcount); Serial.print("]");
 	Serial.println();
 
     Serial.print("Hex: 0x");
