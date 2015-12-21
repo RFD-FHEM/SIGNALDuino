@@ -197,7 +197,7 @@ class patternDecoder : public patternDetector{
 class ManchesterpatternDecoder
 {
 	public:
-	ManchesterpatternDecoder(patternDecoder *ref_dec) : ManchesterBits(1) {	pdec = ref_dec; 	reset(); };
+	ManchesterpatternDecoder(patternDecoder *ref_dec) : ManchesterBits(1), longlow(-1),longhigh(-1),shorthigh(-1),shortlow(-1) {	pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
@@ -220,7 +220,7 @@ class ManchesterpatternDecoder
     int8_t longhigh;
     int8_t shortlow;
     int8_t shorthigh;
-    int clock;						// Manchester calculated clock
+    int clock;						    // Manchester calculated clock
 //    int dclock;						// Manchester calculated double clock
 
 	uint8_t minbitlen;
