@@ -248,11 +248,14 @@ bool patternDetector::getSync(){
 
 				// Prüfen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
-				while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+
+				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+
+				while (c < messageLen-1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 				{
+					if (message[c+1] == p && message[c] == clock) break;
 					c++;
 				}
-
 
 				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
 				if (c<messageLen-minMessageLen)
@@ -608,15 +611,18 @@ void patternDecoder::processMessage()
 		bool m_endfound=false;
 
 		//uint8_t repeat;
-		do {
-			if (message[mend]==clock  && message[mend+1]==sync) {
+		while ( mend<messageLen-1)
+		{
+			if (message[mend+1]==sync && message[mend]==clock) {
 				mend-=1;					// Previus signal is last from message
 				m_endfound=true;
 				break;
 			}
 			mend+=2;
-		} while ( mend<(messageLen));
+		}
 		if (mend > messageLen) mend=messageLen;  // Reduce mend if we are behind messageLen
+		//if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
+
 		calcHisto(mstart,mend);	// Recalc histogram due to shortened message
 
 
