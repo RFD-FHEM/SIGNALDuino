@@ -141,7 +141,7 @@ void changeReciver();
 void changeFilter();
 void HandleCommand();
 bool command_available=false;
-int getUptime();
+unsigned long getUptime();
 void getPing();
 void configCMD();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
@@ -751,7 +751,7 @@ int freeRam () {
 
  }
 
-int getUptime()
+unsigned long getUptime()
 {
 	unsigned long now = millis();
 	static uint16_t times_rolled = 0;
