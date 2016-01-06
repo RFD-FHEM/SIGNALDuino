@@ -42,7 +42,7 @@
 #define FIFO_LENGTH			   80
 //#define DEBUG				   1
 #include <TimerOne.h>  // Timer for LED Blinking
-#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
+#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benötigt.
 #ifdef CMP_FIFO
 #include <SimpleFIFO.h>
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
@@ -142,8 +142,6 @@ void changeFilter();
 void HandleCommand();
 bool command_available=false;
 unsigned long getUptime();
-void getConfig();
-void enDisPrint(bool enDis);
 void getPing();
 void configCMD();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
@@ -173,7 +171,7 @@ void setup() {
 	pinMode(PIN_RECEIVE,INPUT);
 	pinMode(PIN_SEND,OUTPUT);
 	pinMode(PIN_LED,OUTPUT);
-	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgeloest
+	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgelöst
 	Timer1.attachInterrupt(blinken);
 
 	if (EEPROM.read(addr_init) == 0xB)
@@ -215,13 +213,13 @@ void loop() {
 		blinkLED=true;
 	}
 	#ifdef CMP_FIFO
-	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
+	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder übergeben
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); //Logilink, PT2262
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
 	#else
-	while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder uebergeben
+	while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder übergeben
 		state = musterDec.decode(&aktVal); //Logilink, PT2262
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
@@ -237,14 +235,14 @@ void handleInterrupt() {
   //const bool state = digitalRead(PIN_RECEIVE);
   const long  duration = Time - lastTime;
   lastTime = Time;
-  if (duration >= pulseMin) {//kleinste zulaessige Pulslaenge
+  if (duration >= pulseMin) {//kleinste zulässige Pulslänge
 	int sDuration;
-    if (duration <= (32000)) {//groesste zulaessige Pulslaenge, max = 32000
-      sDuration = int(duration); //das wirft bereits hier unnoetige Nullen raus und vergroessert den Wertebereich
+    if (duration <= (32000)) {//größte zulässige Pulslänge, max = 32000
+      sDuration = int(duration); //das wirft bereits hier unnütige Nullen raus und vergrößert den Wertebereich
     }else {
       sDuration = maxPulse; // Maximalwert set to maxPulse defined in lib.
     }
-    if (isHigh(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafuer gilt die gemessene Dauer.
+    if (isHigh(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafür gilt die gemessene Dauer.
       sDuration=-sDuration;
     }
     #ifdef CMP_FIFO
@@ -537,7 +535,6 @@ void HandleCommand()
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
   #define  cmd_config 'C'
-  #define  cmd_getConfig 'G'
 
 
   if (cmdstring.charAt(0) == cmd_ping){
@@ -555,7 +552,7 @@ void HandleCommand()
 	Serial.print(cmd_send);Serial.print(cmd_space);
 	Serial.print(cmd_ping);Serial.print(cmd_space);
 	Serial.print(cmd_config);Serial.print(cmd_space);
-	Serial.print(cmd_getConfig);Serial.print(cmd_space);
+
 
 	Serial.println("");
   }
@@ -601,33 +598,7 @@ void HandleCommand()
     // Todo: support for enable / disable MU,MS,MC
     configCMD();
   }
-  // get config
-  else if (cmdstring.charAt(0) == cmd_getConfig) {
-     getConfig();
-  }
-}
 
-
-void getConfig()
-{
-   Serial.print(F("MS"));
-   enDisPrint(musterDec.MSenabled);
-   Serial.print(F(", MU"));
-   enDisPrint(musterDec.MUenabled);
-   Serial.print(F(", MC"));
-   enDisPrint(musterDec.MCenabled);
-   Serial.println("");
-}
-
-
-void enDisPrint(bool enDis)
-{
-   if (enDis) {
-      Serial.print(F("enable"));
-   }
-   else {
-      Serial.print(F("disable"));
-   }
 }
 
 
