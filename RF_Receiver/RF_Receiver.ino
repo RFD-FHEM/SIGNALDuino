@@ -6,6 +6,7 @@
 *   while only PT2262 type-signals for Intertechno devices are implemented in the sketch,
 *   there is an option to send almost any data over a send raw interface
 *   2014-2015  N.Butzek, S.Butzek
+*   2016 S.Butzek
 
 *   This software focuses on remote sensors like weather sensors (temperature,
 *   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
@@ -33,7 +34,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b10"
+#define PROGVERS               "3.2.0-b11"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -57,6 +58,7 @@ RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 #define pulseMin  90
 volatile bool blinkLED = false;
 String cmdstring = "";
+unsigned long lastTime = micros();
 
 
 
@@ -173,7 +175,7 @@ void setup() {
 	pinMode(PIN_RECEIVE,INPUT);
 	pinMode(PIN_SEND,OUTPUT);
 	pinMode(PIN_LED,OUTPUT);
-	Timer1.initialize(25*1000); //Interrupt wird jede n Millisekunden ausgeloest
+	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(blinken);
 
 	if (EEPROM.read(addr_init) == 0xB)
@@ -200,8 +202,14 @@ void setup() {
 }
 
 void blinken() {
-     digitalWrite(PIN_LED, blinkLED);
+	 digitalWrite(PIN_LED, blinkLED);
      blinkLED=false;
+	 
+	 unsigned long  duration = micros() - lastTime;
+	 if (duration > maxPulse) { //Auf Maximalwert prüfen.
+		 handleInterrupt();
+		 //Serial.println("PTout");
+	 }
 
 }
 
@@ -226,20 +234,20 @@ void loop() {
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
 	#endif
-}
+
+ }
 
 
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
-  static unsigned long lastTime = micros();
-  unsigned long Time=micros();
+  const unsigned long Time=micros();
   //const bool state = digitalRead(PIN_RECEIVE);
-  const long  duration = Time - lastTime;
+  const unsigned long  duration = Time - lastTime;
   lastTime = Time;
   if (duration >= pulseMin) {//kleinste zulaessige Pulslaenge
 	int sDuration;
-    if (duration <= (32000)) {//groesste zulaessige Pulslaenge, max = 32000
+    if (duration < maxPulse) {//groesste zulaessige Pulslaenge, max = 32000
       sDuration = int(duration); //das wirft bereits hier unnoetige Nullen raus und vergroessert den Wertebereich
     }else {
       sDuration = maxPulse; // Maximalwert set to maxPulse defined in lib.
