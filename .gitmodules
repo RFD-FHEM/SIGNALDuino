@@ -1,9 +1,0 @@
-[submodule "libs/lowpower"]
-	path = libs/lowpower
-	url = git@github.com:rocketscream/Low-Power.git
-[submodule "libs/MemoryFree"]
-	path = libs/MemoryFree
-	url = git@github.com:McNeight/MemoryFree.git
-[submodule "libs/SimpleFifo"]
-	path = libs/SimpleFifo
-	url = git@github.com:rambo/SimpleFIFO.git
