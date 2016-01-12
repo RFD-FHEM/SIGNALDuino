@@ -31,7 +31,7 @@
 */
 #define CMP_FIFO 1
 //#define CMP_MEMDBG 1
-
+#define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
 #define PROGVERS               "3.2.0-b11"
@@ -51,7 +51,16 @@ SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 #include <filtering.h> //for FiFo Buffer
 RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 #endif
-#include <patternDecoder.h> //Logilink, IT decoder
+#ifdef CMP_NEWSD
+#include <signalDecoder.h>
+SignalDecoderClass musterDec;
+
+#else
+#include <patternDecoder.h> 
+patternDecoder musterDec;
+
+#endif
+
 #include <EEPROM.h>
 
 
@@ -150,8 +159,6 @@ void getPing();
 void configCMD();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
 void getFunctions(bool *ms,bool *mu,bool *mc);
-//Decoder
-patternDecoder musterDec;
 
 
 
@@ -540,7 +547,7 @@ void HandleCommand()
   #define  cmd_uptime 't'
   #define  cmd_changeReceiver 'X'
   #define  cmd_space ' '
-  #define  cmd_help'?'
+  #define  cmd_help '?'
   #define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
