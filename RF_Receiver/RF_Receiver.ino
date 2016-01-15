@@ -53,7 +53,7 @@ RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
 #endif
 #ifdef CMP_NEWSD
 #include <signalDecoder.h>
-SignalDecoderClass musterDec;
+SignalDetectorClass musterDec;
 
 #else
 #include <patternDecoder.h> 
@@ -446,11 +446,11 @@ void send_cmd()
 	String msg_part;
 	msg_part.reserve(30);
 	uint8_t repeats=1;  // Default is always one iteration so repeat is 1 if not set
-	uint8_t type;
+	//uint8_t type;
 	int16_t start_pos=0;
-	int16_t buckets[6]={};
+	//int16_t buckets[6]={};
 	uint8_t counter=0;
-	uint16_t sendclock;
+	//uint16_t sendclock;
 
 	s_sendcmd command[5];
 
@@ -466,19 +466,19 @@ void send_cmd()
 		{
 			if (msg_part.charAt(1) == 'C')  // send combined informatio flag
 			{
-				type=combined;
+				//type=combined;
 				//cmdNo=255;
 			}
 			else if (msg_part.charAt(1) == 'M') // send manchester
 			{
-				type=manchester;
+				//type=manchester;
 				cmdNo++;
 				command[cmdNo].type=manchester;
 				//Serial.println("Adding manchester");
 			}
 			else if (msg_part.charAt(1) == 'R') // send raw
 			{
-				type=raw;
+				//type=raw;
 				cmdNo++;
 				command[cmdNo].type=raw;
 				//Serial.println("Adding raw");
@@ -488,7 +488,7 @@ void send_cmd()
 		else if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
 		{
 			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
-			buckets[counter]=  msg_part.substring(3).toInt();
+			//buckets[counter]=  msg_part.substring(3).toInt();
 			command[cmdNo].buckets[counter]=msg_part.substring(3).toInt();
 		    //Serial.println("Adding bucket");
 
@@ -509,7 +509,7 @@ void send_cmd()
 			//digitalLow(PIN_SEND);
 		} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
 		{
-			sendclock = msg_part.substring(2).toInt();
+			//sendclock = msg_part.substring(2).toInt();
 			command[cmdNo].sendclock = msg_part.substring(2).toInt();
 		    //Serial.println("adding sendclock");
 		}

@@ -32,7 +32,7 @@
 #include "signalDecoder.h"
 
 
-void SignalDecoderClass::doDetect()
+void SignalDetectorClass::doDetect()
 {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
@@ -173,11 +173,11 @@ void SignalDecoderClass::doDetect()
 
 }
 
-bool SignalDecoderClass::decode(const int * pulse)
+bool SignalDetectorClass::decode(const int * pulse)
 {
 	success = false;
 
-	int temp;
+	//int temp;
 	*first = *last;
 	*last = *pulse;
 	doDetect();
@@ -185,7 +185,7 @@ bool SignalDecoderClass::decode(const int * pulse)
 }
 
 
-void SignalDecoderClass::compress_pattern()
+void SignalDetectorClass::compress_pattern()
 {
 
 	calcHisto();
@@ -233,7 +233,7 @@ void SignalDecoderClass::compress_pattern()
 	}
 }
 
-void SignalDecoderClass::processMessage()
+void SignalDetectorClass::processMessage()
 {
 	if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
 											//Serial.println("Message decoded:");
@@ -484,7 +484,7 @@ void SignalDecoderClass::processMessage()
 
 
 
-void SignalDecoderClass::reset()
+void SignalDetectorClass::reset()
 {
 	messageLen = 0;
 	patternLen = 0;
@@ -503,13 +503,13 @@ void SignalDecoderClass::reset()
 	mend = 0;
 }
 
-const status SignalDecoderClass::getState()
+const status SignalDetectorClass::getState()
 {
 	return status();
 }
 
 
-const bool SignalDecoderClass::inTol(const int val, const int set, const int tolerance)
+const bool SignalDetectorClass::inTol(const int val, const int set, const int tolerance)
 {
 	
 	// tolerance = tolerance == 0 ? tol : tolerance;
@@ -517,7 +517,7 @@ const bool SignalDecoderClass::inTol(const int val, const int set, const int tol
 	return (abs(val - set) <= tolerance);
 }
 
-void SignalDecoderClass::printOut()
+void SignalDetectorClass::printOut()
 {
 	Serial.println();
 	Serial.print("Sync: "); Serial.print(pattern[sync]);
@@ -549,7 +549,7 @@ void SignalDecoderClass::printOut()
 	Serial.println();
 }
 
-int8_t SignalDecoderClass::findpatt(const int val)
+int8_t SignalDetectorClass::findpatt(const int val)
 {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
@@ -572,7 +572,7 @@ bool SignalDecoderClass::validSequence(const int * a, const int * b)
 }
 */
 
-void SignalDecoderClass::calcHisto(const uint8_t startpos, uint8_t endpos)
+void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 {
 	for (uint8_t i = 0; i<maxNumPattern; ++i)
 	{
@@ -587,7 +587,7 @@ void SignalDecoderClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	}
 }
 
-bool SignalDecoderClass::getClock()
+bool SignalDetectorClass::getClock()
 {
 	// Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
 #if DEBUGDETECT > 3
@@ -624,7 +624,7 @@ bool SignalDecoderClass::getClock()
 	return true;
 }
 
-bool SignalDecoderClass::getSync()
+bool SignalDetectorClass::getSync()
 {
 	// Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
 	//
@@ -698,7 +698,7 @@ bool SignalDecoderClass::getSync()
 	return false;
 }
 
-void SignalDecoderClass::printMsgStr(const String * first, const String * second, const String * third)
+void SignalDetectorClass::printMsgStr(const String * first, const String * second, const String * third)
 {
 	Serial.print(*first);
 	Serial.print(*second);
@@ -706,7 +706,7 @@ void SignalDecoderClass::printMsgStr(const String * first, const String * second
 
 }
 
-int8_t SignalDecoderClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String * preamble, const String * postamble)
+int8_t SignalDetectorClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String * preamble, const String * postamble)
 {
 	Serial.print(*preamble);
 	//String msg;
@@ -779,7 +779,7 @@ void ManchesterpatternDecoder::reset()
 *
 * (documentation goes here)
 */
-void ManchesterpatternDecoder::setMinBitLen(uint8_t len)
+void ManchesterpatternDecoder::setMinBitLen(const uint8_t len)
 {
 	minbitlen = len;
 }
@@ -789,7 +789,7 @@ void ManchesterpatternDecoder::setMinBitLen(uint8_t len)
 *
 * (documentation goes here)
 */
-bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
+const bool ManchesterpatternDecoder::isLong(const uint8_t pulse_idx)
 {
 	return (pulse_idx == longlow || pulse_idx == longhigh);
 }
@@ -799,7 +799,7 @@ bool ManchesterpatternDecoder::isLong(uint8_t pulse_idx)
 * (documentation goes here)
 */
 
-bool ManchesterpatternDecoder::isShort(uint8_t pulse_idx)
+const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 {
 	return (pulse_idx == shortlow || pulse_idx == shorthigh);
 }
@@ -865,7 +865,7 @@ void ManchesterpatternDecoder::getMessageClockStr(String* str)
 * (Returns a comlete byte from the pattern store)
 */
 
-unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx) {
+unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 
 	return ManchesterBits.getByte(idx);
 }
@@ -876,7 +876,7 @@ unsigned char ManchesterpatternDecoder::getMCByte(uint8_t idx) {
 * (Call only after ismanchester returned true)
 */
 
-bool ManchesterpatternDecoder::doDecode() {
+const bool ManchesterpatternDecoder::doDecode() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
 	uint8_t i = 0;
@@ -1019,7 +1019,7 @@ bool ManchesterpatternDecoder::doDecode() {
 * (Check signal based on patternLen, histogram and pattern store for valid manchester style.Provides key indexes for the 4 signal states for later decoding)
 */
 
-bool ManchesterpatternDecoder::isManchester()
+const bool ManchesterpatternDecoder::isManchester()
 {
 	// Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
 #if DEBUGDETECT >= 1

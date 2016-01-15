@@ -60,12 +60,12 @@
 
 enum status { searching, clockfound, syncfound, detecting };
 
-class SignalDecoderClass
+class SignalDetectorClass
 {
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDecoderClass() : first(buffer), last(first + 1) { buffer[0] = buffer[1] = 0; reset(); };
+	SignalDetectorClass() : first(buffer), last(first + 1) { buffer[0] = buffer[1] = 0; reset(); };
 
 	void reset();
 	bool decode(const int* pulse);
@@ -122,33 +122,29 @@ protected:
 class ManchesterpatternDecoder
 {
 public:
-	ManchesterpatternDecoder(SignalDecoderClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) { pdec = ref_dec; 	reset(); };
+	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) { pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
-	bool doDecode();
-	void setMinBitLen(uint8_t len);
+	const bool doDecode();
+	void setMinBitLen(const uint8_t len);
 	void getMessageHexStr(String *message);
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
-	bool isManchester();
+	const bool isManchester();
 	void reset();
 
 private:
-	bool isLong(uint8_t pulse_idx);
-	bool isShort(uint8_t pulse_idx);
-	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
-
 	BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
-
-	SignalDecoderClass *pdec;
-
+	SignalDetectorClass *pdec;
 	int8_t longlow;
 	int8_t longhigh;
 	int8_t shortlow;
 	int8_t shorthigh;
-	int clock;						    // Manchester calculated clock
-										//    int dclock;						// Manchester calculated double clock
-
-	uint8_t minbitlen;
+	int clock; // Manchester calculated clock		
+	int8_t minbitlen;
+	
+	const bool isLong(const uint8_t pulse_idx);
+	const bool isShort(const uint8_t pulse_idx);
+	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 };
 
 
