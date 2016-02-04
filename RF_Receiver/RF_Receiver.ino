@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b11"
+#define PROGVERS               "3.2.0-b12"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -325,13 +325,13 @@ void sendPT2262(char* triStateMessage) {
 
 
 //================================= RAW Send ======================================
-void send_raw(const uint8_t startpos,const uint8_t endpos,const int16_t *buckets, String *source=&cmdstring)
+void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *buckets, String *source=&cmdstring)
 {
 	uint8_t index=0;
 	unsigned long stoptime=micros();
 	bool isLow;
 	uint16_t dur;
-	for (uint8_t i=startpos;i<=endpos;i++ )
+	for (uint16_t i=startpos;i<=endpos;i++ )
 	{
 		//Serial.print(cmdstring.substring(i,i+1));
 		index = source->charAt(i) - '0';
@@ -433,7 +433,7 @@ struct s_sendcmd {
 	int sendclock;
 	uint8_t type;
 	uint8_t datastart;
-	uint8_t dataend;
+	uint16_t dataend;
 	int16_t buckets[6];
 } ;
 
@@ -687,8 +687,8 @@ void IT_CMDs() {
   else if (cmdstring.charAt(1) == 's') {
     //digitalWrite(PIN_LED,HIGH);
     digitalHigh(PIN_SEND);
-    char msg[13];
-    cmdstring.substring(2).toCharArray(msg,13);
+    char msg[40];
+    cmdstring.substring(2).toCharArray(msg);
    	sendPT2262(msg);
     //digitalWrite(PIN_LED,LOW);
     digitalLow(PIN_SEND);

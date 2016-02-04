@@ -375,7 +375,7 @@ void SignalDetectorClass::processMessage()
 		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
 
 		mcdecoder.reset();
-		mcdecoder.setMinBitLen(17);
+		mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
 		if (MCenabled && mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 		{
 			String mcbitmsg;
