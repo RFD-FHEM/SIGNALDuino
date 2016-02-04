@@ -688,7 +688,7 @@ void IT_CMDs() {
     //digitalWrite(PIN_LED,HIGH);
     digitalHigh(PIN_SEND);
     char msg[40];
-    cmdstring.substring(2).toCharArray(msg);
+    cmdstring.substring(2).toCharArray(msg,40);
    	sendPT2262(msg);
     //digitalWrite(PIN_LED,LOW);
     digitalLow(PIN_SEND);
