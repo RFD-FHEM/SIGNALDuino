@@ -92,6 +92,6 @@ extern "C" void __cxa_pure_virtual() {;}
 #include <src\_micro-api\libraries\TimerOne\src\TimerOne.h>
 #include <src\_micro-api\libraries\bitstore\src\bitstore.cpp>
 #include <src\_micro-api\libraries\bitstore\src\bitstore.h>
-#include <..\SIGNALDuino\signalDecoder.cpp>
-#include <..\SIGNALDuino\signalDecoder.h>
+#include <src\_micro-api\libraries\signalDecoder\src\signalDecoder.cpp>
+#include <src\_micro-api\libraries\signalDecoder\src\signalDecoder.h>
 #endif

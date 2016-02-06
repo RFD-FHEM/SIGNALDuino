@@ -146,7 +146,7 @@ void handleInterrupt();
 void enableReceive();
 void disableReceive();
 void serialEvent();
-void blinken();
+void cronjob();
 int freeRam();
 void changeReciver();
 void changeFilter();
@@ -183,7 +183,7 @@ void setup() {
 	pinMode(PIN_SEND,OUTPUT);
 	pinMode(PIN_LED,OUTPUT);
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
-	Timer1.attachInterrupt(blinken);
+	Timer1.attachInterrupt(cronjob);
 
 	if (EEPROM.read(addr_init) == 0xB)
 	{
@@ -208,7 +208,7 @@ void setup() {
 	cmdstring.reserve(20);
 }
 
-void blinken() {
+void cronjob() {
 	 digitalWrite(PIN_LED, blinkLED);
      blinkLED=false;
 	 
@@ -552,14 +552,13 @@ void HandleCommand()
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
   #define  cmd_config 'C'
-  #define  cmd_getConfig 'G'
+  #define  cmd_getConfig 'G' //decrepated
 
 
   if (cmdstring.charAt(0) == cmd_ping){
 	getPing();
   }  // ?: Kommandos anzeigen
   else if (cmdstring.charAt(0) == cmd_help) {
-    //Serial.println(F("? Use one of V R i t X"));//FHEM Message
 	Serial.print(cmd_help);	Serial.print(F(" Use one of "));
 	Serial.print(cmd_Version);Serial.print(cmd_space);
 	Serial.print(cmd_intertechno);Serial.print(cmd_space);
@@ -570,7 +569,7 @@ void HandleCommand()
 	Serial.print(cmd_send);Serial.print(cmd_space);
 	Serial.print(cmd_ping);Serial.print(cmd_space);
 	Serial.print(cmd_config);Serial.print(cmd_space);
-	Serial.print(cmd_getConfig);Serial.print(cmd_space);
+	Serial.print(cmd_getConfig);Serial.print(cmd_space);  //decrepated
 
 	Serial.println("");
   }
@@ -607,31 +606,33 @@ void HandleCommand()
   // XQ disable receiver
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {
     changeReciver();
-    //Serial.flush();
-	//Serial.end();
   }
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
   }
   else if (cmdstring.charAt(0) == cmd_config) {
-    // Todo: support for enable / disable MU,MS,MC
     configCMD();
   }
   // get config
   else if (cmdstring.charAt(0) == cmd_getConfig) {
      getConfig();
   }
+  else {
+	  Serial.println(F("Unsupported command"));
+  }
 }
 
 
 void getConfig()
 {
-   Serial.print(F("MS"));
-   enDisPrint(musterDec.MSenabled);
-   Serial.print(F(", MU"));
-   enDisPrint(musterDec.MUenabled);
-   Serial.print(F(", MC"));
-   enDisPrint(musterDec.MCenabled);
-   Serial.println("");
+   Serial.print(F("MS="));
+   //enDisPrint(musterDec.MSenabled);
+   Serial.print(musterDec.MSenabled,DEC);
+   Serial.print(F(";MU="));
+   //enDisPrint(musterDec.MUenabled);
+   Serial.print(musterDec.MUenabled, DEC);
+   Serial.print(F(";MC="));
+   //enDisPrint(musterDec.MCenabled);
+   Serial.println(musterDec.MCenabled, DEC);
 }
 
 
@@ -648,6 +649,11 @@ void enDisPrint(bool enDis)
 
 void configCMD()
 {
+  if (cmdstring.charAt(1) == 'G') {  // Get, no change to configuration
+	getConfig();
+	return;
+  }
+
   bool *bptr;
 
   if (cmdstring.charAt(2) == 'S') {  	  //MS
@@ -660,11 +666,13 @@ void configCMD()
 	bptr=&musterDec.MCenabled;;
   }
 
-  if (cmdstring.charAt(1) == 'E') {
+  if (cmdstring.charAt(1) == 'E') {   // Enable
 	*bptr=true;
   }
-  else if (cmdstring.charAt(1) == 'D') {
+  else if (cmdstring.charAt(1) == 'D') {  // Disable
 	*bptr=false;
+  } else {
+	return;
   }
   storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled);
 }
