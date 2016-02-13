@@ -36,7 +36,7 @@ void SignalDetectorClass::doDetect()
 {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
-	if (messageLen + 1 >= maxMsgSize * 8) {
+	if (messageLen + 1 >= maxMsgSize) {
 
 #if DEBUGDETECT>0
 		Serial.println("Error, overflow in message Array");
@@ -58,7 +58,7 @@ void SignalDetectorClass::doDetect()
 		//valid = validSequence(first, last);
 		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
 
-		valid &= (messageLen + 1 == maxMsgSize * 8) ? false : true;
+		valid &= (messageLen + 1 == maxMsgSize) ? false : true;
 		if (pattern_pos > patternLen) patternLen = pattern_pos;
 		if (messageLen == 0) valid = pattern_pos = patternLen = 0;
 
@@ -277,7 +277,7 @@ void SignalDetectorClass::processMessage()
 		Serial.print(" - MEFound: "); Serial.println(m_endfound);
 		Serial.print(" - MEnd: "); Serial.println(mend);
 #endif // DEBUGDECODE
-		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize * 8)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 		{
 #ifdef DEBUGDECODE
 			Serial.println("Filter Match: ");;
@@ -335,7 +335,7 @@ void SignalDetectorClass::processMessage()
 
 
 		}
-		else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize * 8) // Start found, but no end. We remove everything bevore start and hope to find the end later
+		else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 		{
 			//Serial.print("copy");
 			messageLen = messageLen - mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
@@ -495,7 +495,7 @@ void SignalDetectorClass::reset()
 	histo[i] = pattern[i] = 0;
 	success = false;
 	tol = 150; //
-	tolFact = 0.3;
+	tolFact = 0.2;
 	mstart = 0;
 	m_truncated = false;
 	m_overflow = false;

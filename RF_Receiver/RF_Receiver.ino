@@ -40,7 +40,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   80
+#define FIFO_LENGTH			   75
 //#define DEBUG				   1
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.

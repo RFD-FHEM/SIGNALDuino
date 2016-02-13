@@ -40,7 +40,7 @@
 #include <bitstore.h>
 
 #define maxNumPattern 6
-#define maxMsgSize 30
+#define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 7
 #define syncMaxFact 39
@@ -76,7 +76,7 @@ public:
 	bool MCenabled;
 	bool MSenabled;
 	int8_t histo[maxNumPattern];
-	uint8_t message[maxMsgSize * 8];
+	uint8_t message[maxMsgSize];
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
 	uint8_t mend; // Holds end point for message if detected
