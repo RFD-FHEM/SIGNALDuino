@@ -235,8 +235,10 @@ void SignalDetectorClass::compress_pattern()
 
 void SignalDetectorClass::processMessage()
 {
-	if (messageLen < minMessageLen) return; //mindestlänge der Message prüfen
-											//Serial.println("Message decoded:");
+	
+	if (mcDetected == false && messageLen < minMessageLen) return; //mindestlänge der Message prüfen
+		
+	//Serial.println("Message decoded:");
 	compress_pattern();
 	calcHisto();
 	getClock();
@@ -371,68 +373,76 @@ void SignalDetectorClass::processMessage()
 		//String preamble;
 
 		preamble.concat(MSG_START);
-
-		ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
-
-		mcdecoder.reset();
-		mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
-		if (MCenabled && mcdecoder.isManchester() && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+		if (MCenabled)
 		{
-			String mcbitmsg;
-			//Serial.println("MC");
-			mcbitmsg = "D=";
-			mcdecoder.getMessageHexStr(&mcbitmsg);
-			//Serial.println("f");
+			static ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
+
+			if (mcDetected == false)
+			{
+				mcdecoder.reset();
+				mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
+			}
+			if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+			{
+
+				String mcbitmsg;
+				//Serial.println("MC");
+				mcbitmsg = "D=";
+				mcdecoder.getMessageHexStr(&mcbitmsg);
+				//Serial.println("f");
 
 
-			preamble.concat("MC");
-			preamble.concat(SERIAL_DELIMITER);
-			mcdecoder.getMessagePulseStr(&preamble);
+				preamble.concat("MC");
+				preamble.concat(SERIAL_DELIMITER);
+				mcdecoder.getMessagePulseStr(&preamble);
 
-			postamble.concat(SERIAL_DELIMITER);
-			mcdecoder.getMessageClockStr(&postamble);
+				postamble.concat(SERIAL_DELIMITER);
+				mcdecoder.getMessageClockStr(&postamble);
 
-			postamble.concat(MSG_END);
-			postamble.concat('\n');
+				postamble.concat(MSG_END);
+				postamble.concat('\n');
 
-			//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-			//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
-			//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
+				//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+				//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
+				//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
 
-			//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
-			//printMsgRaw(0,messageLen,&preamble,&postamble);
+				//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
+				//printMsgRaw(0,messageLen,&preamble,&postamble);
 
-			//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+				//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
-			// Output Manchester Bits
-			printMsgStr(&preamble, &mcbitmsg, &postamble);
+				// Output Manchester Bits
+				printMsgStr(&preamble, &mcbitmsg, &postamble);
+				mcDetected = false;
+
 
 #if DEBUGDECODE == 1
-			preamble = "MC";
-			preamble.concat(SERIAL_DELIMITER);
+				preamble = "MC";
+				preamble.concat(SERIAL_DELIMITER);
 
-			for (uint8_t idx = 0; idx<patternLen; idx++)
-			{
-				if (histo[idx] == 0) continue;
+				for (uint8_t idx = 0; idx < patternLen; idx++)
+				{
+					if (histo[idx] == 0) continue;
 
-				preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-			}
-			preamble.concat("D=");
+					preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+				}
+				preamble.concat("D=");
 
-			//String postamble;
-			postamble = String(SERIAL_DELIMITER);
-			postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-			if (m_overflow) {
-				postamble.concat("O");
-				postamble.concat(SERIAL_DELIMITER);
-			}
+				//String postamble;
+				postamble = String(SERIAL_DELIMITER);
+				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+				if (m_overflow) {
+					postamble.concat("O");
+					postamble.concat(SERIAL_DELIMITER);
+				}
 
-			postamble.concat(MSG_END);
-			postamble.concat('\n');
+				postamble.concat(MSG_END);
+				postamble.concat('\n');
 
-			printMsgRaw(0, messageLen, &preamble, &postamble);
+				printMsgRaw(0, messageLen, &preamble, &postamble);
 #endif
 
+			}
 		}
 		else if (MUenabled) {
 
@@ -772,6 +782,8 @@ void ManchesterpatternDecoder::reset()
 	shortlow =  -1;
 	shorthigh = -1;
 	*/
+	bool mc_start_found = false;
+	bool mc_sync = false;
 	minbitlen = 20; // Set defaults
 	ManchesterBits.reset();
 }
@@ -880,10 +892,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
 
 	uint8_t i = 0;
-
 	pdec->m_truncated = false;
-	bool mc_start_found = false;
-	bool mc_sync = false;
+//	bool mc_start_found = false;
+//	bool mc_sync = false;
 	pdec->mstart = 0;
 #ifdef DEBUGDECODE
 	Serial.print("mlen: ");
@@ -895,12 +906,14 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 	while (i < pdec->messageLen)
 	{
-
+		
+		// Start vom MC Signal suchen
 		if (mc_start_found == false && (isLong(pdec->message[i]) || isShort(pdec->message[i])))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
 		}
+		// Sync to a long pulse to detect 0 / 1 proper
 		if (mc_start_found && !mc_sync)
 		{
 			while (!isLong(pdec->message[i]) && i < pdec->messageLen) {
@@ -909,7 +922,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			if (i < pdec->messageLen) {
 				lastbit = (char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15);
 				uint8_t z = i - pdec->mstart;
-				if ((z<1) or ((z % 2) == 0))
+				if ((z < 1) or ((z % 2) == 0))
 					i = pdec->mstart;
 				else
 					i = pdec->mstart + 1;
@@ -919,6 +932,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 		}
 
+		// Decoding occures here
 		if (mc_sync && mc_start_found)
 		{
 			if (isLong(pdec->message[i])) {
@@ -942,7 +956,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			}
 			else { // Found something that fits not to our manchester signal
-				   //if (i < pdec->messageLen-minbitlen)
+					//if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits.valcount < minbitlen)
 				{
 					if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && !isShort(pdec->message[i + 1])) {
@@ -978,7 +992,13 @@ const bool ManchesterpatternDecoder::doDecode() {
 					pdec->messageLen = pdec->messageLen - pdec->mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 					memmove(pdec->message, pdec->message + pdec->mend, sizeof(*pdec->message)*(pdec->messageLen + 1));
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-											   //if (i+minbitlen > pdec->messageLen)
+												//if (i+minbitlen > pdec->messageLen)
+					if ( isShort(pdec->message[pdec->messageLen]) )
+					{
+
+						pdec->mcDetected = true;
+						return false;
+					}
 					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
@@ -1007,6 +1027,16 @@ const bool ManchesterpatternDecoder::doDecode() {
 		pdec->messageLen = pdec->messageLen - pdec->mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 		memmove(pdec->message, pdec->message + pdec->mstart, sizeof(*pdec->message)*(pdec->messageLen + 1));
 		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+		
+		pdec->mcDetected = true;
+		return false;
+	}
+	// Buffer is full with mc signal, so we clear the buffer and caputre additional signaldata
+	else if (i == pdec->messageLen && pdec->mstart == 0) 
+	{
+		pdec->mcDetected = true;
+		pdec->messageLen = 0;
+		return false;
 	}
 
 	return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false

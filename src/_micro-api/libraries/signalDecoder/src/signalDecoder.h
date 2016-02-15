@@ -98,6 +98,7 @@ protected:
 	int8_t sync;                        // index to sync in pattern if it exists
 	String preamble;
 	String postamble;
+	bool mcDetected;						// MC Signal alread detected flag
 	
 	void doDetect();
 	void processMessage();
@@ -113,7 +114,7 @@ protected:
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
-
+	
 
 
 
@@ -142,6 +143,9 @@ private:
 	int clock; // Manchester calculated clock		
 	int8_t minbitlen;
 	
+	bool mc_start_found = false;
+	bool mc_sync = false;
+
 	const bool isLong(const uint8_t pulse_idx);
 	const bool isShort(const uint8_t pulse_idx);
 	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
