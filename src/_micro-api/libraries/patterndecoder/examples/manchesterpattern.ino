@@ -62,8 +62,27 @@ int sample_AS_data[] = {-764, -524, -536, 1776, -1508, 956, -684, 1712, -784, 84
 //int patternData[]={-232,308,-904,-1092,-9464,-2548,1589};
 
 // Demo Signal like from einhell example
-int patternData[]={390,-1184,-401,1122,-20012};
-uint8_t signal_Stream []={0,2,3,2,3,2,3,1,0,1,0,2,3,2,3,1,0,2,3,1,0,1,0,1,0,1,0,1,0,2,3,2,3,2,3,1,0,1,0,2,3,1,0,1,0,1,0,2,3,2,3,2,3,2,3,2,3,2,3,1,0,2,0,4};
+//int patternData[]={390,-1184,-401,1122,-20012};
+//uint8_t signal_Stream []={0,2,3,2,3,2,3,1,0,1,0,2,3,2,3,1,0,2,3,1,0,1,0,1,0,1,0,1,0,2,3,2,3,2,3,1,0,1,0,2,3,1,0,1,0,1,0,2,3,2,3,2,3,2,3,2,3,2,3,1,0,2,0,4};
+
+// Demo Signal like from RF803E
+
+//int patternData[]={291,-506,0,-926,695,-1758};
+//uint8_t signal_Stream []={0,1,0,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,4,3,4,1,0,1,0,3,4,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,5,0,1,0,1,0,3,4,3,4,3,0,1,4,3,0,1,0,1,4,3,0,1,4,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,3,0,1,4,1,0,1,0,1,0,1,0,3,4,1,0,3,0,1,0,1,0,1,0,1,0,1,0,1,0,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,3,4,3,4,1,0,1,0,3,4,1,4,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,5,0,1,0,1,0,3,4,3,4,3,0,1,4,3,0,1,0,1,4,3,0,1};
+
+// Demo Signal like from Oregon NR868
+int patternData[]={
+1139,-1494,-504,596,
+};
+
+uint8_t signal_Stream []= {
+0,1,0,2,3,2,3,1,3,2,3,2,0,1,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,0,1,3,2,0,1,0,1,0,1,0,2,3,2,3,1,3,2,3,2,0,1,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,0,1,3,2,0,1,0,1,0,1,0,2,3,2,3,1,3,2,3,2,0,1,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,0,1,3,2,0,1,0,1,0,1,0,2,3,2,3,1,3,2,3,2,0,1,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,0,1,3,2,0,1,0,1,0,1,0,2,3,2,3,1,3,2,3,2,0,1,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,2,3,0,
+
+};
+
+
+
+//uint8_t signal_Stream []={ 0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,3,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,2,0,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,3,1,3,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,};
 
 //MS;P0=390;P1=-1184;P2=-401;P3=1122;P4=12754;P5=-20012;P6=1371;D=02323232310232310231010101010231010102310101010232323232323102302305023232323102323102310101010102310101023101010102323232323231023023;CP=0;SP=5;
 
@@ -94,280 +113,6 @@ void init_random_data()
 }
 
 
-class DecodeOOK {
-  protected:
-    byte total_bits, bits, flip, state, pos, data[25];
-
-    virtual char decode (word width) = 0;
-
-  public:
-
-    enum { UNKNOWN, T0, T1, T2, T3, OK, DONE };
-
-    DecodeOOK () {
-      resetDecoder();
-    }
-
-    bool nextPulse (word width) {
-      if (state != DONE)
-
-        switch (decode(width)) {
-          case -1: resetDecoder(); break;
-          case 1:  done(); break;
-        }
-      return isDone();
-    }
-
-    bool isDone () const {
-      return state == DONE;
-    }
-
-    const byte* getData (byte& count) const {
-      count = pos;
-      return data;
-    }
-
-    void resetDecoder () {
-      total_bits = bits = pos = flip = 0;
-      state = UNKNOWN;
-    }
-
-    // add one bit to the packet data buffer
-
-    virtual void gotBit (char value) {
-      total_bits++;
-      byte *ptr = data + pos;
-      *ptr = (*ptr >> 1) | (value << 7);
-
-      if (++bits >= 8) {
-        bits = 0;
-        if (++pos >= sizeof data) {
-          resetDecoder();
-          return;
-        }
-      }
-      state = OK;
-    }
-
-    // store a bit using Manchester encoding
-    void manchester (char value) {
-      flip ^= value; // manchester code, long pulse flips the bit
-      gotBit(flip);
-    }
-
-
-
-
-    void done () {
-      while (bits)
-        gotBit(0); // padding
-      state = DONE;
-    }
-};
-
-class OregonDecoderV2 : public DecodeOOK {
-  public:
-
-    OregonDecoderV2() {}
-
-    // add one bit to the packet data buffer
-    virtual void gotBit (char value) {
-      Serial.print((value ? 0x01 : 00));
-      if (!(total_bits & 0x01))
-      {
-        data[pos] = (data[pos] >> 1) | (value ? 0x80 : 00);
-      }
-      total_bits++;
-      pos = total_bits >> 4;
-      if (pos >= sizeof data) {
-        resetDecoder();
-        return;
-      }
-      state = OK;
-    }
-
-    virtual char decode (word width) {
-      if (200 <= width && width < 1200) {
-        //Serial.print("Dauer="); Serial.println(width);
-        //Serial.println(width);
-        byte w = width >= 700;
-
-        switch (state) {
-          case UNKNOWN:
-            if (w != 0) {
-              // Long pulse
-              ++flip;
-            } else if (w == 0 && 24 <= flip) {
-              // Short pulse, start bit
-              Serial.print("flip="); Serial.println(flip);
-              flip = 0;
-              state = T0;
-            } else {
-              // Reset decoder
-              return -1;
-            }
-            break;
-          case OK:
-            if (w == 0) {
-              // Short pulse
-              state = T0;
-            } else {
-              // Long pulse
-              manchester(1);
-            }
-            break;
-          case T0:
-            if (w == 0) {
-              // Second short pulse
-              manchester(0);
-            } else {
-              // Reset decoder
-              return -1;
-            }
-            break;
-        }
-      } else if (width >= 2500  && pos >= 8) {
-        return 1;
-      } else {
-        return -1;
-      }
-      return 0;
-    }
-};
-
-/*
-void detect_mc()
-{
-   bool state;
-  uint16_t len = sizeof(sample_OSV2_data)/sizeof(sample_OSV2_data[0]);
-  for (uint16_t i=0;i<=len;++i)
-  {
-      //Serial.print("#");Serial.println(i);
-      state = ManchesterDetect.detect(&sample_OSV2_data[i]); //OSV2
-      delay(400);
-      if (state)
-      {
-        Serial.println("Mc Message dekodiert");
-        ManchesterDetect.reset();
-        delay(1000);
-      }
-  }
-  if (!state)
-  {
-    Serial.println("Message nicht dekodiert");
-    delay(1000);
-   }
-
-}
-*/
-/*
-void decode_mc()
-{
-  bool state;
-
-  for (uint16_t i=0;i<=lendata;++i)
-  {
-      //Serial.print("#");Serial.println(i);
-      //delay(1);
-      if (ManchesterDetect.detect(&pulsedata[i]))
-      {
-        Serial.println("Manchester erkannt");
-        state = osv2Dec.decode(); //OSV2 Decoder
-        delay(2000);
-        if (state)
-        {
-            Serial.println("OSV2 Message dekodiert");
-            Serial.println(osv2Dec.getMessageHexStr());
-            //ManchesterDetect.reset();
-            delay(1000);
-        }
-        state = asDec.decode(); //OSV2 Decoder
-        if (state)
-        {
-            Serial.println("AS Message dekodiert");
-        	Serial.println(asDec.getMessageHexStr());
-
-            //ManchesterDetect.reset();
-            delay(1000);
-        }
-
-        ManchesterDetect.reset();
-
-      }
-
-      //delay(100);
-
-  }
-  if (!state)
-  {
-    //Serial.println("Message nicht dekodiert");
-    delay(1000);
-   }
-
-}
-
-*/
-
-
-void decode_osv2_jeelib()
-{
-    String message = "";
-    OregonDecoderV2 orscV2;
-    for (uint16_t i=0; i<=lendata; ++i)
-    {
-        if (orscV2.nextPulse(abs(pulsedata[i])) )
-        {
-            uint8_t len;
-            const byte* data = orscV2.getData(len);
-            byte bdata;
-            byte idx;
-
-            Serial.print("Binary ("); Serial.print(len); Serial.print(") : ");
-            for (idx=0;idx<len;++idx);
-            {
-                Serial.println("");
-                Serial.println(idx);
-                for (byte p=0;p<8;p++)
-                {
-
-                    bdata = data[idx];
-    //                Serial.print(bdata >> p & 0x1);
-                }
-            }
-            Serial.println(idx);
-
-            char tmp[36]="";
-            char len_field[2]="";
-            uint8_t tmp_len = 0;
-            //strcat(tmp, "OSV2:");
-            //tmp_len = 5;
-#ifdef DEBUG
-            Serial.print("HEXStream");
-#endif
-
-            for (byte i = 0; i < len; ++i)
-            {
-                Serial.print(data[i] >> 4, HEX);
-                Serial.print(data[i] & 0x0F, HEX);
-                Serial.print("=");
-                Serial.print(data[i],BIN);
-                Serial.print(",");
-                tmp_len += snprintf(tmp + tmp_len, 36, "%02X", data[i]);
-            }
-
-#ifdef DEBUG
-            Serial.println(" ");
-            Serial.println("Length:");
-#endif
-            message=(String(len*8, HEX));
-            message.concat(tmp);
-            Serial.println(message);
-            orscV2.resetDecoder();
-        }
-
-    }
-
-}
 
 void detect_onoff()
 {
@@ -389,7 +134,7 @@ void detect_onoff()
     ooDetect.processMessage();
     Serial.println("Message nicht dekodiert");
     delay(1000);
-   }
+  }
 
 }
 
@@ -442,11 +187,10 @@ void decode_signalstream()
 
     for ( uint8_t i=0;i<rand_data_size;i++)
     {
-        state =  ooDecode.decode(&random_data[i]);
+        //state =  ooDecode.decode(&random_data[i]);
     }
 
-
-    for (uint8_t j=0;j<32;++j) {
+    for (uint8_t j=0;j<1;++j) {
 
         uint16_t i=0;
 
@@ -457,7 +201,6 @@ void decode_signalstream()
           //delay(100);
           signalduration+=abs(patternData[signal_Stream[i]]);
         }
-
     }
 
     init_random_data();
@@ -465,7 +208,6 @@ void decode_signalstream()
     {
         state =  ooDecode.decode(&random_data[i]);
     }
-
 
     if (!state)
     {
@@ -487,19 +229,6 @@ void setup() {
   init_random_data();
   delay(2000);
   Serial.println("Startup:");
- /*
-  ooDecode.protoID[0]=(s_sigid){-4,-8,-18,500,0,twostate}; // Logi, TCM 97001 etc.
-  ooDecode.protoID[1]=(s_sigid){0,0,-11,560,0,twostate}; // RSL
-  ooDecode.protoID[2]=(s_sigid){0,0,0,0,0,undef}; // Free Slot
-  ooDecode.protoID[3]=(s_sigid){-1,3,-30,-1,0,tristate}; // IT old
-  ooDecode.protoID[4]=(s_sigid){0,0,-10,270,0,twostate}; // IT Autolearn
-  ooDecode.protoID[5]=(s_sigid){0,0,0,-1,0,twostate}; // Similar protocol as intertechno, but without sync
-  ooDecode.protoID[6]=(s_sigid){0,0,-36,212,0,twostate}; // Eurochron Protocol
-  ooDecode.protoID[7]=(s_sigid){0,0,-8,484,0,twostate}; // unkown Protocol
-  ooDecode.protoID[8]=(s_sigid){0,0,-8,300,0,twostate}; //  kaku switch Protocol
-
-  ooDecode.numprotos=9;
-*/
 	// Simple ON OFF Data
   //detect_onoff();
   uint32_t start_time=0;
@@ -507,8 +236,9 @@ void setup() {
   uint32_t duration=0;
 
 
-    //   Oregon Scientific V2 protocol regression test
 
+    //   Oregon Scientific V2 protocol regression test
+/*
   pulsedata = sample_OSV2_data;
   lendata = sizeof(sample_OSV2_data)/sizeof(sample_OSV2_data[0]);
   Serial.println("");
@@ -524,8 +254,7 @@ void setup() {
   Serial.print("Detection Time =");  Serial.print(duration);  Serial.println(" micro seconds");
   Serial.print("Signal Time is=");  Serial.print(signalduration);  Serial.println(" micro seconds");
   Serial.println("--------------------------------------------------------");
-
-
+*/
 
     //   regression test, working with Signaldata and not pulsedata
   Serial.println("");
@@ -545,6 +274,7 @@ void setup() {
   Serial.println("");
 
 
+return;
 
     //   M0 Logilink protocol puls pause regression test
   pulsedata = sample_onoff_data;
@@ -566,28 +296,8 @@ void setup() {
   Serial.println("");
 
 
+
 //compr: 4->2;7*-1020->32*-1036 idx:-1028 idx2:-1;
-
-  int val=-1020;
-  int val2=-1036;
-
-  uint8_t cnt=7;
-  uint8_t cnt2=32;
-
-  int sum=cnt+cnt2;
-
-  Serial.print("cnt=");  Serial.print(cnt);  Serial.println("");
-  Serial.print("cnt2=");  Serial.print(cnt2);  Serial.println("");
-  Serial.print("val=");  Serial.print(val);  Serial.println("");
-  Serial.print("val2=");  Serial.print(val2);  Serial.println("");
-  Serial.print("sum=");  Serial.print(sum);  Serial.println("");
-
-
-  val= (val*cnt/sum)+(val*cnt2/sum);
-  val2=-1;
-  pattern[idx][0] = (pattern[idx][0]*histo[idx]/ sum)+(pattern[idx2][0]*histo[idx2]/ sum); // Store the average of both pattern, may better to calculate the number of stored pattern in message
-
-  Serial.print("val=");  Serial.print(val);  Serial.println("");
 
 
 

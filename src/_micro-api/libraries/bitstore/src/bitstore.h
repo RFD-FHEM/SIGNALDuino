@@ -16,14 +16,63 @@
 *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "bitstore.h"
+#ifndef BITSTORE_H
+#define BITSTORE_H
 
-BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
+#include "Arduino.h"
+
+template<uint8_t bufSize>
+class BitStore
+{
+    public:
+        /** Default constructor */
+        BitStore(uint8_t bitlength);
+        //~BitStore();
+        void addValue(char value);
+        unsigned char getValue(uint8_t pos);
+        const uint8_t getSize();
+        //unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
+        unsigned char datastore[bufSize];
+        void reset();
+        unsigned char getByte(uint8_t idx);
+        uint8_t bytecount;  // Number of stored bytes
+        uint8_t valcount;  // Number of total values stored
+    protected:
+
+    private:
+        uint8_t valuelen;   // Number of bits for every value
+        uint8_t bmask;
+        uint8_t bcnt;
+        const uint8_t buffsize;
+
+};
+
+
+/*
+*   Library for storing and retrieving multibple bits in one byte
+*   Copyright (C) 2014  S.Butzek
+*
+*   This program is free software: you can redistribute it and/or modify
+*   it under the terms of the GNU General Public License as published by
+*   the Free Software Foundation, either version 3 of the License, or
+*   (at your option) any later version.
+*
+*   This program is distributed in the hope that it will be useful,
+*   but WITHOUT ANY WARRANTY; without even the implied warranty of
+*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*   GNU General Public License for more details.
+*
+*   You should have received a copy of the GNU General Public License
+*   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+template<uint8_t bufSize>
+BitStore<bufSize>::BitStore(uint8_t bitlength):buffsize(bufSize)
 {
     valuelen = bitlength; // How many bits shoudl be reserved for one value added ?
     bmask=0;
-    buffsize = bufsize;
-    datastore= (unsigned char*) calloc(bufsize,sizeof(char)); // Speicher allokieren und 0 zuweisen
+    //buffsize = bufsize;
+    //datastore= (unsigned char*) calloc(bufsize,sizeof(char)); // Speicher allokieren und 0 zuweisen
     reset();
     for (uint8_t x=7;x>(7-valuelen);x--)
     {
@@ -35,13 +84,15 @@ BitStore::BitStore(uint8_t bitlength,uint8_t bufsize)
   *
   * (documentation goes here)
   */
- BitStore::~BitStore()
+/*template<uint8_t bufSize>
+ BitStore<bufSize>::~BitStore()
 {
-	free(datastore);
+	//free(datastore);
 }
+*/
+template<uint8_t bufSize>
 
-
-void BitStore::addValue(char value)
+void BitStore<bufSize>::addValue(char value)
 {
     if (bytecount >=buffsize ) return; // Out of Buffer
     //store[bytecount]=datastore[bytecount] | (value<<bcnt)
@@ -55,7 +106,7 @@ void BitStore::addValue(char value)
     Serial.println("");
 */
     valcount++;
-    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhÃ¶hen wir den counter zum verschieben
+    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhöhen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {
@@ -65,12 +116,14 @@ void BitStore::addValue(char value)
     }
 
 }
-const uint8_t BitStore::getSize()
+template<uint8_t bufSize>
+const uint8_t BitStore<bufSize>::getSize()
 {
     return valcount;
 }
 
-unsigned char BitStore::getValue(uint8_t pos)
+template<uint8_t bufSize>
+unsigned char BitStore<bufSize>::getValue(uint8_t pos)
 {
    if ((pos*valuelen/8) >=buffsize ) return -1; // Out of Buffer
 
@@ -84,14 +137,15 @@ unsigned char BitStore::getValue(uint8_t pos)
    return ret;
 }
 
-unsigned char BitStore::getByte(uint8_t idx)
+template<uint8_t bufSize>
+unsigned char BitStore<bufSize>::getByte(uint8_t idx)
 {
   if (idx >= buffsize) return -1; // Out of buffer range
   return (datastore[idx]);
 }
 
-
-void BitStore::reset()
+template<uint8_t bufSize>
+void BitStore<bufSize>::reset()
 {
   for (uint8_t i=0;i<buffsize;i++)
   {
@@ -101,3 +155,6 @@ void BitStore::reset()
   valcount=0;
   bcnt=7;
 }
+
+
+#endif // BITSTORE_H

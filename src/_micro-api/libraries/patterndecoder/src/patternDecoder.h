@@ -1,7 +1,8 @@
 /*
-*   Pattern Decoder Library V0.1
+*   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014  N.Butzek, S.Butzek
+*   2015  S.Butzek
 
 *   This library contains different classes to perform decoding of radio signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -43,11 +44,11 @@
 #define maxNumPattern 6
 #define maxMsgSize 30
 #define minMessageLen 40
-#define syncMinFact 8
+#define syncMinFact 7
 #define syncMaxFact 39
 #define syncMaxMicros 17000
 
-#define prefixLen 3
+//#define prefixLen 3
 
 #define maxPulse 32001  // Magic Pulse Length
 
@@ -56,11 +57,9 @@
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 
-//#define DEBUGDETECT 1
+//#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 2
-
-#define PATTERNSIZE 1
+//#define DEBUGDECODE 0
 
 #define DEBUG_BEGIN(i) Serial.print(F("(D:"));Serial.print(i);
 #define DEBUG_END Serial.println(F(")"));
@@ -68,11 +67,11 @@
 //#define DEBUG
 
 // Message Type
-enum mt {twostate,tristate,undef};
+//enum mt {twostate,tristate,undef};
 enum status {searching, clockfound, syncfound,detecting};
 
 // Struct for signal identificaion
- struct s_sigid {
+/* struct s_sigid {
 	int8_t lowFact;			// not used
 	int8_t highFact;		// not used
 	int8_t syncFact;		// used
@@ -90,21 +89,18 @@ enum status {searching, clockfound, syncfound,detecting};
 
 };
 
-
+*/
 
 /*
  base class for pattern detector subclasses. Containing only the toolset used to define a pattern detector
 */
  class patternBasic {
-
     public:
-
-
-        patternBasic();
+        patternBasic() : patternStore(1), success(false) ,first(buffer), last(first+1){	buffer[0] = buffer[1] = 0; reset(); };
 		virtual bool detect(const int* pulse);        // Runs the detection engine, must be implemented in child class
 		void reset();                           // resets serval internal vars to start with a fresh pattern
 		void swap(int* a, int* b);              // Swaps the two vars
-		int8_t findpatt(int *seq);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
+		int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 		bool inTol(const int val, const int set);           // checks if a value is in tolerance range
 		static bool inTol(const int val, const int set, const int tolerance);
         bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
@@ -113,6 +109,7 @@ enum status {searching, clockfound, syncfound,detecting};
 		virtual void doDetect();                // Virtual class which must be implemented in a child class
 		virtual void processMessage();          // Virtual class which must be implemented in a child class
 		int8_t clock;                           // index to clock in pattern
+
     protected:
 		status state;                           // holds the status of the detector
 
@@ -121,8 +118,8 @@ enum status {searching, clockfound, syncfound,detecting};
 		int* last;                              // Pointer to last buffer entry
 		uint16_t tol;                                // calculated tolerance for signal
         float tolFact;                          //
-		int pattern[maxNumPattern][PATTERNSIZE];// 2d array to store the pattern
-		BitStore *patternStore;                 // Store for saving detected bits or pattern index
+		int pattern[maxNumPattern];				// 1d array to store the pattern
+		BitStore<0> patternStore;                 // Store for saving detected bits or pattern index
 		uint8_t patternLen;                     // counter for length of pattern
 		bool success;                           // True if a valid coding was found
 
@@ -159,8 +156,10 @@ class patternDetector : protected patternBasic {
 
 	    uint8_t histo[maxNumPattern];
 	    uint8_t mstart; // Holds starting point for message
-    	s_sigid protoID[10]; // decrepated
-    	uint8_t numprotos;// decrepated
+	    uint8_t mend; // Holds end point for message if detected
+
+//    	s_sigid protoID[10]; // decrepated
+//    	uint8_t numprotos;// decrepated
 
 };
 
@@ -172,7 +171,8 @@ class patternDetector : protected patternBasic {
 class patternDecoder : public patternDetector{
 	friend class ManchesterpatternDecoder;
 	public:
-		patternDecoder();
+        patternDecoder() : patternDetector(), MUenabled(true), MCenabled(true), MSenabled(true) { preamble.reserve(70); postamble.reserve(20); reset(); };
+
 		void reset();
 
 		bool decode(const int* pulse);
@@ -180,6 +180,10 @@ class patternDecoder : public patternDetector{
 
 		void printMsgStr(const String *first, const String *second, const String *third);
 		int8_t printMsgRaw(uint8_t start, const uint8_t end,const String *preamble=NULL,const String *postamble=NULL);
+
+		bool MUenabled;
+		bool MCenabled;
+		bool MSenabled;
 
 	private:
 		String preamble;
@@ -190,10 +194,11 @@ class patternDecoder : public patternDetector{
 
 };
 
+
 class ManchesterpatternDecoder
 {
 	public:
-	ManchesterpatternDecoder(patternDecoder *ref_dec);
+	ManchesterpatternDecoder(patternDecoder *ref_dec) : ManchesterBits(1), longlow(-1),longhigh(-1),shorthigh(-1),shortlow(-1) {	pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
 	bool doDecode();
 	void setMinBitLen(uint8_t len);
@@ -208,124 +213,23 @@ class ManchesterpatternDecoder
 	bool isShort(uint8_t pulse_idx);
 	unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 
-    BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+    BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+
     patternDecoder *pdec;
 
     int8_t longlow;
     int8_t longhigh;
     int8_t shortlow;
     int8_t shorthigh;
-    int clock;						// Manchester calculated clock
+    int clock;						    // Manchester calculated clock
 //    int dclock;						// Manchester calculated double clock
 
 	uint8_t minbitlen;
 };
 
 
-/*
-   small class to store pattern and modifiy them, just some ideas to introduce
-*/
-class patternO
-{
-	public:
-	int8_t patternExists(int *val); // Finds a pattern in our pattern store. returns -1 if te pattern is not found
-	int8_t getPattern(const uint8_t idx);  // gets a pattern from the store
-	int8_t setPattern(const uint8_t idx,const int16_t val);  // writes a pattern to the store
-
-	private:
-	int16_t patternStore[maxNumPattern];	// Init array
-	uint8_t patternPos;
-};
 
 
-
-
-
-/*
-    Detector for manchester Signals. It uses already the toolset from patternBasic.
-    Todo:  Make a interface for retrieving the Manchesterbits easily for furher processing in other classes.
- */
-
-class ManchesterpatternDetector : public patternBasic {
-	public:
-		ManchesterpatternDetector(bool silentstate=true);
-        bool detect(int* pulse);        // Runs the detection engine, It's mainly the only function which is calles from ourside. Input is one pule
-        void reset();                   // Resets servals vars to start with a fresh engine
-        void printMessageHexStr();      // Gehört eigenlich in die Decoder Klasse
-        bool manchesterfound();         // returns true if the detection engine has found a manchester sequence. Returns true not bevore other signals will be processed
-        unsigned char getMCByte(uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
-        BitStore *ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data
-	private:
-		bool isShort(int *pulse);       // Returns true if it's a short pulse
-		bool isLong(int *pulse);        // Returns true if it's a long pulse
-
-        void doSearch();                // Seatchs for a valid manchester sequence
-		void updateClock(int *pulse);   // Updates the clock with given pulse
-		void updateClock(int newClock); // Updates clock with the provided newClock and sets clock to the new average
-
-		void doDetect();                // Detect the manchester signal and store the detected manchester bits
-        void processMessage();          // Checks if there are enough bits to have a message
-        void printOut();                // Prints out the detected message, mor for debug purpose
-
-
-        unsigned char reverseByte(unsigned char original);  // Not needed anymore
-   		//uint8_t message[maxMsgSize*8];
-		bool silent;                    // True to suspress output, which is the default
-};
-
-/*
- base class for decoding subclasses. Containing only the toolset used to decode a signal
-*/
-
-class decoderBasic {
-    public:
-        decoderBasic(); 								// Constructor
-  		String getMessageHexStr() const;             	// Returns the hex message on serial
-		bool decode();                        			// Currently not implemented, must be defined in the subclass
-
-		virtual bool processMessage() {} ;              // Currently not implemented, must be defined in the subclass
-	protected:
-		bool message_decoded;							// Is set to true if we have decoded a valid signal
-		ManchesterpatternDetector *mcdetector;
-    	String protomessage;							// Holds the message from the protocol (hex)
-        bool checkMessage(uint16_t min_clock, uint16_t max_clock, uint8_t min_Length,uint8_t max_Length);			 // Checks the pattern data against protocol
-        bool checkSync(unsigned char pattern, uint8_t startpos, uint8_t mincount,uint8_t maxcount,uint8_t *syncend); // Checks two bits against pattern beginning at startpos returns last position at syncend
-        unsigned char getNibble(uint8_t startingPos);           													 // returns data bits 4 bits (nibble) in received order
-        unsigned char getDataBits(uint8_t startingPos,uint8_t numbits); 											 // returns data bits numbits bits (max 8) in received order
-		String valToHex(unsigned char Value, uint8_t desiredStringLength=2);													 // returns a hex string with padded 0 up to desired length
-};
-
-
-/*
- Class for decoding oregon scientific protocol from a manchester bit signal.
- Currently only working if there is a delay between two transmissions of a signal
-*/
-/*
-class OSV2Decoder : public decoderBasic {
-    public:
-        OSV2Decoder(ManchesterpatternDetector *detector);
-	private:
-        bool processMessage();                                  // Checks the Protocol
-        unsigned char getNibble(uint8_t startingPos);           // returns data bits 4 bits (nibble) in correct order
-        unsigned char getByte(uint8_t startingPos);				// returns data bits 8 bits (byte) in correct order
-		bool checkMessage();									// Verify if we have OSV2 Message Type
-		uint8_t syncend;										// Variable to hold the last syncend counter
-		unsigned char getDataBits(uint8_t startingPos,uint8_t numbits);
-
-
-};
-*/
-/*
- Class for decoding Arduinosensor protocol from a manchester bit signal.
-*/
-class ASDecoder : public decoderBasic {
-    public:
-        ASDecoder(ManchesterpatternDetector *detector);
-	private:
-        bool processMessage();                              // Check, conversion and outpuz
-   		bool checkMessage();									// Verify if we have OSV2 Message Type
-		uint8_t syncend;										// Variable to hold the last syncend counter
-};
 
 
 #endif //PATTERNDEC_H
