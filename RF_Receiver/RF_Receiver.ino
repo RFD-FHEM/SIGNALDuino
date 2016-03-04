@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b13"
+#define PROGVERS               "3.2.0-b14"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -221,7 +221,7 @@ void cronjob() {
 }
 
 void loop() {
-	int aktVal;
+	static int aktVal=0;
 	bool state;
 	if (command_available) {
 		command_available=false;
@@ -337,7 +337,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 		index = source->charAt(i) - '0';
 		//Serial.print(index);
 		isLow=buckets[index] >> 15;
-		isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index])-24;
+		isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
 
 		while (stoptime > micros()){
 			;

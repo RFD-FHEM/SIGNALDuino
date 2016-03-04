@@ -414,7 +414,7 @@ void SignalDetectorClass::processMessage()
 				// Output Manchester Bits
 				printMsgStr(&preamble, &mcbitmsg, &postamble);
 				mcDetected = false;
-
+				success = true;
 
 #if DEBUGDECODE == 1
 				preamble = "MC";
@@ -444,7 +444,7 @@ void SignalDetectorClass::processMessage()
 
 			}
 		}
-		else if (MUenabled) {
+		if (MUenabled && success == false) {
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
@@ -471,9 +471,9 @@ void SignalDetectorClass::processMessage()
 
 			printMsgRaw(0, messageLen - 1, &preamble, &postamble);
 			m_truncated = false;
+			success = true;
 		}
 
-		success = true;
 
 
 	}
