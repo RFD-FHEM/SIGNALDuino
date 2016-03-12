@@ -69,7 +69,7 @@ void SignalDetectorClass::doDetect()
 #if DEBUGDETECT>3
 		Serial.print(F("Pulse: ")); Serial.print(*first); Serial.print(F(", ")); Serial.print(*last);
 		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
-		Serial.print(F(", pSeq: ")); Serial.print(seq[1]); Serial.print(F(", Vld: ")); Serial.print(valid);
+		Serial.print(F(", Vld: ")); Serial.print(valid);
 		Serial.print(F(", mLen: ")); Serial.print(messageLen);
 #endif
 
@@ -355,9 +355,13 @@ void SignalDetectorClass::processMessage()
 
 		}
 	}
-	else if ((MUenabled || MCenabled) && state == clockfound && messageLen >= minMessageLen) {
+	else if (MUenabled || MCenabled) {
+		
+		#if DEBUGDECODE >0
+		Serial.print("MU/MC check: ");
 
-
+		printOut();
+		#endif	
 		// Message has a clock puls, but no sync. Try to decode this
 
 		preamble = "";
@@ -442,9 +446,11 @@ void SignalDetectorClass::processMessage()
 				printMsgRaw(0, messageLen, &preamble, &postamble);
 #endif
 
+			} else if(mcDetected == true && m_truncated ==true) {
+				return;  // Abort processing here, to prevent resetting 
 			}
 		}
-		if (MUenabled && success == false) {
+		if (MUenabled && state == clockfound && success == false) {
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
@@ -1036,6 +1042,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	{
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
+		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+
 		return false;
 	}
 

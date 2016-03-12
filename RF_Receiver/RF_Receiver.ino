@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b14"
+#define PROGVERS               "3.2.0-b15"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -42,6 +42,7 @@
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   75
 //#define DEBUG				   1
+
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
 #ifdef CMP_FIFO
@@ -67,7 +68,7 @@ patternDecoder musterDec;
 #define pulseMin  90
 volatile bool blinkLED = false;
 String cmdstring = "";
-unsigned long lastTime = micros();
+volatile unsigned long lastTime = micros();
 
 
 
@@ -214,8 +215,19 @@ void cronjob() {
 	 
 	 unsigned long  duration = micros() - lastTime;
 	 if (duration > maxPulse) { //Auf Maximalwert prüfen.
-		 handleInterrupt();
+		 //handleInterrupt();
 		 //Serial.println("PTout");
+		 int sDuration = maxPulse;
+		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
+			 sDuration = -sDuration;
+		 }
+		#ifdef CMP_FIFO
+		 FiFo.enqueue(sDuration);
+		#else
+		 FiFo.addValue(&sDuration);
+		#endif // CMP_FIFO
+		lastTime = micros();;
+
 	 }
 
 }
