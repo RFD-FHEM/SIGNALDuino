@@ -340,6 +340,9 @@ void SignalDetectorClass::processMessage()
 		else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 		{
 			//Serial.print("copy");
+#ifdef DEBUGDECODE
+			Serial.print(" move msg ");;
+#endif
 			messageLen = messageLen - mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 			memmove(message, message + mstart, sizeof(*message)*(messageLen + 1));
 			m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data

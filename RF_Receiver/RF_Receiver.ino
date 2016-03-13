@@ -210,10 +210,9 @@ void setup() {
 }
 
 void cronjob() {
-	 digitalWrite(PIN_LED, blinkLED);
-     blinkLED=false;
-	 
-	 unsigned long  duration = micros() - lastTime;
+
+	/*	
+	 const unsigned long  duration = micros() - lastTime;
 	 if (duration > maxPulse) { //Auf Maximalwert prüfen.
 		 //handleInterrupt();
 		 //Serial.println("PTout");
@@ -226,9 +225,11 @@ void cronjob() {
 		#else
 		 FiFo.addValue(&sDuration);
 		#endif // CMP_FIFO
-		lastTime = micros();;
+		lastTime = micros();
 
-	 }
+	 }*/
+	 digitalWrite(PIN_LED, blinkLED);
+	 blinkLED = false;
 
 }
 
