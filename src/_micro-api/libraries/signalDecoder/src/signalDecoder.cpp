@@ -76,8 +76,11 @@ void SignalDetectorClass::doDetect()
 		if (0 <= fidx) {
 
 			//gefunden
+			if (messageLen > 1 && message[messageLen - 1] == fidx) {
+				processMessage();  reset();// haut Rauschen weg. // Todo: processMessage aufrufen und ggf danach ein reset
+			} 
+
 			message[messageLen] = fidx;
-			if (messageLen>1 && message[messageLen - 1] == message[messageLen]) reset();  // haut Rauschen weg.
 			pattern[fidx] = (pattern[fidx] + *first) / 2; // Moving average
 			messageLen++;
 			add_new_pattern = false;
@@ -92,21 +95,22 @@ void SignalDetectorClass::doDetect()
 			}
 		}
 
-		if (!valid && messageLen >= minMessageLen) {
+		if (!valid) {
 			//Serial.println("not valid, processing");
 
-			success = true;
+			//success = true;
 			processMessage();
 			// reset();  // GGF hier nicht ausführen.
 			pattern_pos = 0;
 			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
+		
 			return;
 		}
-		else if (!valid) {
+		/*else if (!valid) {
 			reset();
 			success = false;
 			pattern_pos = 0;
-		}
+		}*/
 		else if (valid && messageLen >= minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
 		}
