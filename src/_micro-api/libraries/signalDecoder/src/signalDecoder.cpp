@@ -52,16 +52,15 @@ void SignalDetectorClass::doDetect()
 					  //Serial.println("doDetect");
 					  //Serial.print(*first); Serial.print(", ");Serial.println(*last);
 		static uint8_t pattern_pos;
-		bool valid;
+		bool valid=true;
 		bool add_new_pattern = true;
-		bitcnt = 0;
 		//valid = validSequence(first, last);
 		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
 
 		valid &= (messageLen + 1 == maxMsgSize) ? false : true;
 		if (pattern_pos > patternLen) patternLen = pattern_pos;
-		if (messageLen == 0) valid = pattern_pos = patternLen = 0;
-
+		if (messageLen == 0) pattern_pos = patternLen = 0;
+		//if (messageLen == 0) valid = true;
 
 
 		int8_t fidx = findpatt(*first);
@@ -76,14 +75,15 @@ void SignalDetectorClass::doDetect()
 		if (0 <= fidx) {
 
 			//gefunden
-			if (messageLen > 1 && message[messageLen - 1] == fidx) {
-				processMessage();  reset();// haut Rauschen weg. // Todo: processMessage aufrufen und ggf danach ein reset
-			} 
-
-			message[messageLen] = fidx;
-			pattern[fidx] = (pattern[fidx] + *first) / 2; // Moving average
-			messageLen++;
-			add_new_pattern = false;
+			if (messageLen > 0 && message[messageLen - 1] == fidx) {  // Der Fall darf eigentlich nicht vorkommen da hier Valid = 0 sein muss
+				add_new_pattern = true;
+				valid = false;
+			} else {
+				add_new_pattern = false;
+				message[messageLen] = fidx;
+				pattern[fidx] = (long(pattern[fidx]) + *first) / 2; // Moving average
+				messageLen++;
+			}
 		}
 		else {
 			// Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
@@ -91,7 +91,7 @@ void SignalDetectorClass::doDetect()
 			if (patternLen == maxNumPattern && histo[pattern_pos] > 1)
 			{
 				valid = false;
-				add_new_pattern = false;
+				add_new_pattern = true;
 			}
 		}
 
@@ -104,7 +104,7 @@ void SignalDetectorClass::doDetect()
 			pattern_pos = 0;
 			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
 		
-			return;
+			//return;
 		}
 		/*else if (!valid) {
 			reset();
@@ -219,9 +219,9 @@ void SignalDetectorClass::compress_pattern()
 
 				int  sum = histo[idx] + histo[idx2];
 				if (sum == 0)
-					pattern[idx] = (pattern[idx] * histo[idx] / sum) + (pattern[idx2] * histo[idx2] / sum);
+					pattern[idx] = (long(pattern[idx]) * histo[idx] / sum) + (pattern[idx2] * histo[idx2] / sum);
 				else
-					pattern[idx] = (pattern[idx] + pattern[idx2]) / 2;
+					pattern[idx] = (long(pattern[idx]) + pattern[idx2]) / 2;
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
 				pattern[idx2] = 0;

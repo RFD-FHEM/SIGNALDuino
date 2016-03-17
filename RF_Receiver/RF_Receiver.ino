@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b15"
+#define PROGVERS               "3.2.0-b17"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
