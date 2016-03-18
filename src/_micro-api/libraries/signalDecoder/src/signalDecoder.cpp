@@ -52,16 +52,15 @@ void SignalDetectorClass::doDetect()
 					  //Serial.println("doDetect");
 					  //Serial.print(*first); Serial.print(", ");Serial.println(*last);
 		static uint8_t pattern_pos;
-		bool valid;
+		bool valid=true;
 		bool add_new_pattern = true;
-		bitcnt = 0;
 		//valid = validSequence(first, last);
 		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
 
 		valid &= (messageLen + 1 == maxMsgSize) ? false : true;
 		if (pattern_pos > patternLen) patternLen = pattern_pos;
-		if (messageLen == 0) valid = pattern_pos = patternLen = 0;
-
+		if (messageLen == 0) pattern_pos = patternLen = 0;
+		//if (messageLen == 0) valid = true;
 
 
 		int8_t fidx = findpatt(*first);
@@ -69,18 +68,22 @@ void SignalDetectorClass::doDetect()
 #if DEBUGDETECT>3
 		Serial.print(F("Pulse: ")); Serial.print(*first); Serial.print(F(", ")); Serial.print(*last);
 		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
-		Serial.print(F(", pSeq: ")); Serial.print(seq[1]); Serial.print(F(", Vld: ")); Serial.print(valid);
+		Serial.print(F(", Vld: ")); Serial.print(valid);
 		Serial.print(F(", mLen: ")); Serial.print(messageLen);
 #endif
 
 		if (0 <= fidx) {
 
 			//gefunden
-			message[messageLen] = fidx;
-			if (messageLen>1 && message[messageLen - 1] == message[messageLen]) reset();  // haut Rauschen weg.
-			pattern[fidx] = (pattern[fidx] + *first) / 2; // Moving average
-			messageLen++;
-			add_new_pattern = false;
+			if (messageLen > 0 && message[messageLen - 1] == fidx) {  // Der Fall darf eigentlich nicht vorkommen da hier Valid = 0 sein muss
+				add_new_pattern = true;
+				valid = false;
+			} else {
+				add_new_pattern = false;
+				message[messageLen] = fidx;
+				pattern[fidx] = (long(pattern[fidx]) + *first) / 2; // Moving average
+				messageLen++;
+			}
 		}
 		else {
 			// Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
@@ -88,25 +91,26 @@ void SignalDetectorClass::doDetect()
 			if (patternLen == maxNumPattern && histo[pattern_pos] > 1)
 			{
 				valid = false;
-				add_new_pattern = false;
+				add_new_pattern = true;
 			}
 		}
 
-		if (!valid && messageLen >= minMessageLen) {
+		if (!valid) {
 			//Serial.println("not valid, processing");
 
-			success = true;
+			//success = true;
 			processMessage();
 			// reset();  // GGF hier nicht ausführen.
 			pattern_pos = 0;
 			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
-			return;
+		
+			//return;
 		}
-		else if (!valid) {
+		/*else if (!valid) {
 			reset();
 			success = false;
 			pattern_pos = 0;
-		}
+		}*/
 		else if (valid && messageLen >= minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
 		}
@@ -215,9 +219,9 @@ void SignalDetectorClass::compress_pattern()
 
 				int  sum = histo[idx] + histo[idx2];
 				if (sum == 0)
-					pattern[idx] = (pattern[idx] * histo[idx] / sum) + (pattern[idx2] * histo[idx2] / sum);
+					pattern[idx] = (long(pattern[idx]) * histo[idx] / sum) + (pattern[idx2] * histo[idx2] / sum);
 				else
-					pattern[idx] = (pattern[idx] + pattern[idx2]) / 2;
+					pattern[idx] = (long(pattern[idx]) + pattern[idx2]) / 2;
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
 				pattern[idx2] = 0;
@@ -340,6 +344,9 @@ void SignalDetectorClass::processMessage()
 		else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 		{
 			//Serial.print("copy");
+#ifdef DEBUGDECODE
+			Serial.print(" move msg ");;
+#endif
 			messageLen = messageLen - mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 			memmove(message, message + mstart, sizeof(*message)*(messageLen + 1));
 			m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
@@ -355,9 +362,13 @@ void SignalDetectorClass::processMessage()
 
 		}
 	}
-	else if ((MUenabled || MCenabled) && state == clockfound && messageLen >= minMessageLen) {
+	else if (MUenabled || MCenabled) {
+		
+		#if DEBUGDECODE >0
+		Serial.print("MU/MC check: ");
 
-
+		printOut();
+		#endif	
 		// Message has a clock puls, but no sync. Try to decode this
 
 		preamble = "";
@@ -442,9 +453,11 @@ void SignalDetectorClass::processMessage()
 				printMsgRaw(0, messageLen, &preamble, &postamble);
 #endif
 
+			} else if(mcDetected == true && m_truncated ==true) {
+				return;  // Abort processing here, to prevent resetting 
 			}
 		}
-		if (MUenabled && success == false) {
+		if (MUenabled && state == clockfound && success == false) {
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
@@ -1036,6 +1049,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	{
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
+		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+
 		return false;
 	}
 
