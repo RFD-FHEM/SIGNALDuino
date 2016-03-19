@@ -54,9 +54,9 @@
 
 
 
-//#define DEBUGDETECT 3
+#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 2
+#define DEBUGDECODE 2
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -134,7 +134,7 @@ public:
 	void reset();
 
 private:
-	BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+	BitStore<50> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
 	SignalDetectorClass *pdec;
 	int8_t longlow;
 	int8_t longhigh;

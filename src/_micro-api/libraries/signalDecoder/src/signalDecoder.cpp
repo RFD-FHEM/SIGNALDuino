@@ -241,7 +241,7 @@ void SignalDetectorClass::processMessage()
 {
 	
 	if (mcDetected == false && messageLen < minMessageLen) return; //mindestlänge der Message prüfen
-		
+	success = false;
 	//Serial.println("Message decoded:");
 	compress_pattern();
 	calcHisto();
@@ -251,7 +251,7 @@ void SignalDetectorClass::processMessage()
 		printOut();
 #endif
 
-	if (MSenabled && state == syncfound)// Messages mit clock / Sync Verhältnis prüfen
+	if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
 	{
 
 		// Setup of some protocol identifiers, should be retrieved via fhem in future
@@ -365,20 +365,14 @@ void SignalDetectorClass::processMessage()
 	else if (MUenabled || MCenabled) {
 		
 		#if DEBUGDECODE >0
-		Serial.print("MU/MC check: ");
+		Serial.print(" MU/MC check: ");
 
-		printOut();
+		//printOut();
 		#endif	
 		// Message has a clock puls, but no sync. Try to decode this
 
 		preamble = "";
 		postamble = "";
-
-#if DEBUGDECODE > 1
-		Serial.print("Clock found: ");
-		Serial.print(", CP: "); Serial.print(clock);
-		Serial.println("");
-#endif // DEBUGDECODE
 
 
 		//String preamble;
@@ -395,6 +389,9 @@ void SignalDetectorClass::processMessage()
 			}
 			if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 			{
+			#if DEBUGDECODE > 1
+			Serial.print(" MC found: ");
+			#endif // DEBUGDECODE
 
 				String mcbitmsg;
 				//Serial.println("MC");
@@ -453,11 +450,16 @@ void SignalDetectorClass::processMessage()
 				printMsgRaw(0, messageLen, &preamble, &postamble);
 #endif
 
-			} else if(mcDetected == true && m_truncated ==true) {
-				return;  // Abort processing here, to prevent resetting 
+			} 
+			else if(mcDetected == true && m_truncated == true) {
+				success = true;   // Prevents MU Processing
 			}
 		}
-		if (MUenabled && state == clockfound && success == false) {
+		if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
+
+			#if DEBUGDECODE > 1
+			Serial.print(" MU found: ");
+			#endif // DEBUGDECODE
 
 			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
@@ -987,8 +989,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 					ManchesterBits.reset();
 
-				}
-				else {
+				} else {
 #ifdef DEBUGDECODE
 					Serial.print("END ");
 					Serial.print(" mpos: ");
@@ -1006,12 +1007,14 @@ const bool ManchesterpatternDecoder::doDecode() {
 					memmove(pdec->message, pdec->message + pdec->mend, sizeof(*pdec->message)*(pdec->messageLen + 1));
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 												//if (i+minbitlen > pdec->messageLen)
+					/*
 					if ( isShort(pdec->message[pdec->messageLen]) )
 					{
 
 						pdec->mcDetected = true;
 						return false;
 					}
+					*/
 					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 			}
@@ -1087,7 +1090,7 @@ const bool ManchesterpatternDecoder::isManchester()
 #endif
 
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		int aktpulse = pdec->pattern[i];
+		const int aktpulse = pdec->pattern[i];
 		//if (longlow == -1)
 		//    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
 
@@ -1141,6 +1144,8 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.println("");
 #endif
 	if ((longlow == -1) || (shortlow == -1) || (longlow == shortlow) || (longhigh == -1) || (shorthigh == -1) || (longhigh == shorthigh)) return false; //Check if the indexes are valid
+	
+	if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) return false; //Check if the indexes are valid
 
 #if DEBUGDETECT >= 1
 	Serial.println("  -- MC found -- ");
