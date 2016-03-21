@@ -517,13 +517,14 @@ void SignalDetectorClass::reset()
 	state = searching;
 	clock = sync = -1;
 	for (uint8_t i = 0; i<maxNumPattern; ++i)
-	histo[i] = pattern[i] = 0;
+	  histo[i] = pattern[i] = 0;
 	success = false;
 	tol = 150; //
 	tolFact = 0.2;
 	mstart = 0;
 	m_truncated = false;
 	m_overflow = false;
+	mcDetected = false;
 	//Serial.println("reset");
 	mend = 0;
 }
@@ -680,7 +681,7 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < 6)
+				(histo[p] < 8) && (histo[p] > 1)
 				//(syncMinFact*pattern[clock] <= syncabs)
 				)
 			{
@@ -1082,7 +1083,16 @@ const bool ManchesterpatternDecoder::isManchester()
 	uint8_t equal_cnt = 0;
 	const uint8_t minHistocnt = pdec->messageLen*0.04;
 
+/*
 
+Sync: 15948 -> SyncFact: 17.56, Clock: 908, Tol: 150, PattLen: 6 , Pulse: -8876, 912, mStart: 0
+Signal: 43301010101010101010101010101010102313202313202313201010231013201023101320231010101013202310101010101010101320102310101010132010231320231013202310101010101010101320231320101023101013202310132010231320.  [201]
+Pattern:  P0: 69*[,908] P1: 68*[,-1061] P2: 30*[,-569] P3: 32*[,392] P4: 1*[,143] P5: 0*[,105]
+MU/MC check:   --  chk MC -- 0 1 2 3 4 5 equalcnt: 3  MC equalcnt matched  MC neg and pos pattern cnt is equal  tstclock: 433 MC LL:1, MC LH:0, MC SL:3, MC SH:5
+-- MC found --
+mlen: 200 mstart: 0 mlen 0 RES SSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLEND  mpos: 34 mstart: 1Message found MC found: MC;LL=-1061;LH=908;SL=392;SH=105;D=2AAAAAAA80;C=433;
+
+*/
 	for (uint8_t i = 0; i< pdec->patternLen; i++)
 	{
 #if DEBUGDETECT >= 1
