@@ -126,6 +126,7 @@ void SignalDetectorClass::doDetect()
 		{
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
 			// Array wird sozusagen nach links geschoben
+			
 			for (int16_t i = messageLen - 1; (i >= 0); --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
@@ -153,6 +154,9 @@ void SignalDetectorClass::doDetect()
 				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
 				patternLen = maxNumPattern;
 			}
+
+			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+
 			/*
 			if (pattern_pos==maxNumPattern)
 			{
@@ -553,6 +557,8 @@ void SignalDetectorClass::printOut()
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.print(", mStart: "); Serial.print(mstart);
+	Serial.print(", MCD: "); Serial.print(mcDetected);
+
 
 	Serial.println(); Serial.print("Signal: ");
 	uint8_t idx;
@@ -792,12 +798,12 @@ ManchesterpatternDecoder::~ManchesterpatternDecoder()
 */
 void ManchesterpatternDecoder::reset()
 {
-	/*
+	
 	longlow =   -1;
 	longhigh =  -1;
 	shortlow =  -1;
 	shorthigh = -1;
-	*/
+	
 	bool mc_start_found = false;
 	bool mc_sync = false;
 	minbitlen = 20; // Set defaults
@@ -1035,7 +1041,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 
 	// Check if last entry in our message array belongs to our manchester signal
-	if (i == pdec->messageLen && pdec->mstart > 1 && ManchesterBits.valcount >minbitlen / 2)
+	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 1 && ManchesterBits.valcount >minbitlen / 2)
 	{
 #ifdef DEBUGDECODE
 		Serial.print("Message truncated");
@@ -1083,16 +1089,6 @@ const bool ManchesterpatternDecoder::isManchester()
 	uint8_t equal_cnt = 0;
 	const uint8_t minHistocnt = pdec->messageLen*0.04;
 
-/*
-
-Sync: 15948 -> SyncFact: 17.56, Clock: 908, Tol: 150, PattLen: 6 , Pulse: -8876, 912, mStart: 0
-Signal: 43301010101010101010101010101010102313202313202313201010231013201023101320231010101013202310101010101010101320102310101010132010231320231013202310101010101010101320231320101023101013202310132010231320.  [201]
-Pattern:  P0: 69*[,908] P1: 68*[,-1061] P2: 30*[,-569] P3: 32*[,392] P4: 1*[,143] P5: 0*[,105]
-MU/MC check:   --  chk MC -- 0 1 2 3 4 5 equalcnt: 3  MC equalcnt matched  MC neg and pos pattern cnt is equal  tstclock: 433 MC LL:1, MC LH:0, MC SL:3, MC SH:5
--- MC found --
-mlen: 200 mstart: 0 mlen 0 RES SSLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLEND  mpos: 34 mstart: 1Message found MC found: MC;LL=-1061;LH=908;SL=392;SH=105;D=2AAAAAAA80;C=433;
-
-*/
 	for (uint8_t i = 0; i< pdec->patternLen; i++)
 	{
 #if DEBUGDETECT >= 1
