@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b18"
+#define PROGVERS               "3.2.0-b19"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -243,10 +243,10 @@ void loop() {
 		blinkLED=true;
 	}
 	#ifdef CMP_FIFO
-	if (FiFo.count() >3)
+	/*if (FiFo.count() >3)
 	{
 		Serial.print("SFIFO "); Serial.println(FiFo.count());
-	}
+	}*/
 
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 		aktVal=FiFo.dequeue();
