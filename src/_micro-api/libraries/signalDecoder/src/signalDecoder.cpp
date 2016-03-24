@@ -32,6 +32,19 @@
 #include "signalDecoder.h"
 
 
+void SignalDetectorClass::bufferMove(const uint8_t start)
+{
+	static uint8_t len_single_entry = sizeof(*message);
+
+	if (start > messageLen) return;
+
+	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+	memmove(message, message + start, len_single_entry*(messageLen+1));
+
+}
+
+
+
 void SignalDetectorClass::doDetect()
 {
 	//Serial.print("bitcnt:");Serial.println(bitcnt);
@@ -132,8 +145,7 @@ void SignalDetectorClass::doDetect()
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
 					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-					messageLen = messageLen - i; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-					memmove(message, message + i, sizeof(*message)*(messageLen + 1));
+					bufferMove(i);
 					messageLen++;  //Move messagelen pointer one forward to avoid overwrite
 					break;
 				}
@@ -351,8 +363,7 @@ void SignalDetectorClass::processMessage()
 #ifdef DEBUGDECODE
 			Serial.print(" move msg ");;
 #endif
-			messageLen = messageLen - mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-			memmove(message, message + mstart, sizeof(*message)*(messageLen + 1));
+			bufferMove(mstart);
 			m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 		}
 		else {
@@ -1009,9 +1020,10 @@ const bool ManchesterpatternDecoder::doDecode() {
 #ifdef DEBUGDECODE
 					Serial.print("Message found");
 #endif
-
-					pdec->messageLen = pdec->messageLen - pdec->mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-					memmove(pdec->message, pdec->message + pdec->mend, sizeof(*pdec->message)*(pdec->messageLen + 1));
+					if (isShort(pdec->message[i]) && i == maxMsgSize - 1) {
+						pdec->mend--;
+					}
+					pdec->bufferMove(pdec->mend);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 												//if (i+minbitlen > pdec->messageLen)
 					/*
@@ -1047,8 +1059,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		Serial.print("Message truncated");
 #endif
 
-		pdec->messageLen = pdec->messageLen - pdec->mstart; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-		memmove(pdec->message, pdec->message + pdec->mstart, sizeof(*pdec->message)*(pdec->messageLen + 1));
+		pdec->bufferMove(pdec->mstart);
 		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 		
 		pdec->mcDetected = true;

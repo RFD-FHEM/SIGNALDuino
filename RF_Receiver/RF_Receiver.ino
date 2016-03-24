@@ -40,7 +40,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   75
+#define FIFO_LENGTH			   20
 //#define DEBUG				   1
 
 #include <TimerOne.h>  // Timer for LED Blinking
@@ -243,6 +243,11 @@ void loop() {
 		blinkLED=true;
 	}
 	#ifdef CMP_FIFO
+	if (FiFo.count() >3)
+	{
+		Serial.print("SFIFO "); Serial.println(FiFo.count());
+	}
+
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); //Logilink, PT2262
@@ -254,7 +259,6 @@ void loop() {
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
 	#endif
-
  }
 
 
