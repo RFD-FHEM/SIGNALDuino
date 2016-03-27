@@ -95,6 +95,12 @@ template<uint8_t bufSize>
 void BitStore<bufSize>::addValue(char value)
 {
     if (bytecount >=buffsize ) return; // Out of Buffer
+	if (bcnt==7 &&valcount > 0)
+	{ 
+		bytecount++;
+		datastore[bytecount] = 0;
+	}
+
     //store[bytecount]=datastore[bytecount] | (value<<bcnt)
     datastore[bytecount]=datastore[bytecount] | (value<<bcnt);  // (valcount*valuelen%8)
 /*
@@ -106,21 +112,21 @@ void BitStore<bufSize>::addValue(char value)
     Serial.println("");
 */
     valcount++;
-    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit geppeichert wurden, erhöhen wir den counter zum verschieben
+    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhöhen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {
         bcnt=7;
-        bytecount++;
-        datastore[bytecount]=0;
     }
 
 }
 template<uint8_t bufSize>
 const uint8_t BitStore<bufSize>::getSize()
 {
-    return valcount;
+    return valcount-1;
 }
+
+
 
 template<uint8_t bufSize>
 unsigned char BitStore<bufSize>::getValue(uint8_t pos)

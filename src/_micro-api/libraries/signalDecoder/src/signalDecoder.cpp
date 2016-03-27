@@ -435,6 +435,10 @@ void SignalDetectorClass::processMessage()
 				//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
 
 				// Output Manchester Bits
+#ifdef DEBUGDECODE
+				Serial.println(" ");
+#endif
+
 				printMsgStr(&preamble, &mcbitmsg, &postamble);
 				mcDetected = false;
 				success = true;
@@ -861,7 +865,7 @@ void ManchesterpatternDecoder::getMessageHexStr(String *message)
 		return;
 
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx = 0; idx <= ManchesterBits.bytecount; ++idx) {
+	for (uint8_t idx = 0; idx < ManchesterBits.bytecount; ++idx) {
 		//Serial.print(getMCByte(idx),HEX);
 		//sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
 		//Serial.print(".");
@@ -916,6 +920,8 @@ unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 }
 
 
+
+
 /** @brief (Decodes the manchester pattern to bits. Returns true on success and false on error )
 *
 * (Call only after ismanchester returned true)
@@ -930,9 +936,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 //	bool mc_sync = false;
 	pdec->mstart = 0;
 #ifdef DEBUGDECODE
-	Serial.print("mlen: ");
+	Serial.print("mlen:");
 	Serial.print(pdec->messageLen);
-	Serial.print(" mstart: ");
+	Serial.print(":mstart: ");
 	Serial.print(pdec->mstart);
 #endif
 	char  lastbit;
@@ -989,7 +995,13 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			}
 			else { // Found something that fits not to our manchester signal
-					//if (i < pdec->messageLen-minbitlen)
+#ifdef DEBUGDECODE
+				Serial.print("H(");
+				Serial.print("vcnt:");
+				Serial.print(ManchesterBits.valcount);
+#endif
+
+				   //if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits.valcount < minbitlen)
 				{
 					if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && !isShort(pdec->message[i + 1])) {
@@ -1000,29 +1012,24 @@ const bool ManchesterpatternDecoder::doDecode() {
 					mc_start_found = false; // Reset to find new starting position
 					mc_sync = false;
 #ifdef DEBUGDECODE
-					Serial.print(" mlen ");
-					Serial.print(ManchesterBits.valcount);
-
-					Serial.print(" RES ");
+					Serial.print(":RES:");
 #endif
 					ManchesterBits.reset();
 
 				} else {
-#ifdef DEBUGDECODE
-					Serial.print("END ");
-					Serial.print(" mpos: ");
-					Serial.print(i);
-					Serial.print(" mstart: ");
-					Serial.print(pdec->mstart);
-#endif
 					pdec->mend = i;
-
-#ifdef DEBUGDECODE
-					Serial.print("Message found");
-#endif
 					if (isShort(pdec->message[i]) && i == maxMsgSize - 1) {
 						pdec->mend--;
 					}
+#ifdef DEBUGDECODE
+					Serial.print(":mpos:");
+					Serial.print(i);
+					Serial.print(":mstart:");
+					Serial.print(pdec->mstart);
+					Serial.print(":mend:");
+					Serial.print(pdec->mend);
+					Serial.print(":found:");
+#endif
 					pdec->bufferMove(pdec->mend);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 												//if (i+minbitlen > pdec->messageLen)
@@ -1036,27 +1043,35 @@ const bool ManchesterpatternDecoder::doDecode() {
 					*/
 					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
+#ifdef DEBUGDECODE
+				Serial.print(")");
+#endif
 			}
-			ManchesterBits.addValue(lastbit);
+			if (mc_sync)
+				ManchesterBits.addValue(lastbit);
 
 
 		}
 		//Serial.print(" S MC ");
 		i++;
 	}
-#ifdef DEBUGDECODE
-	Serial.print("mlen: ");
-	Serial.print(pdec->messageLen);
-	Serial.print(" mstart: ");
-	Serial.print(pdec->mstart);
 
+#ifdef DEBUGDECODE
+	Serial.print(":mpos:");
+	Serial.print(i);
+	Serial.print(":mstart:");
+	Serial.print(pdec->mstart);
+	Serial.print(":mend:");
+	Serial.print(pdec->mend);
+	Serial.print(":bfin:");
 #endif
 
+
 	// Check if last entry in our message array belongs to our manchester signal
-	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 1 && ManchesterBits.valcount >minbitlen / 2)
+	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 1 && ManchesterBits.valcount > minbitlen / 2)
 	{
 #ifdef DEBUGDECODE
-		Serial.print("Message truncated");
+		Serial.print(":bmove:");
 #endif
 
 		pdec->bufferMove(pdec->mstart);
@@ -1071,6 +1086,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
 		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+#ifdef DEBUGDECODE
+		Serial.print(":bflush:");
+#endif
 
 		return false;
 	}
