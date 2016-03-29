@@ -36,54 +36,97 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	static uint8_t len_single_entry = sizeof(*message);
 
-	if (start > messageLen) return;
+	if (start > messageLen-1) return;
 
 	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-	memmove(message, message + start, len_single_entry*(messageLen+1));
+	memmove(message, message + start, len_single_entry*messageLen);
 
 }
 
 
+inline void SignalDetectorClass::addData(const uint8_t value)
+{
+	message[messageLen] = value;
+	messageLen++;
+}
+
+inline void SignalDetectorClass::addPattern()
+{
+	pattern[pattern_pos] = *first;						//Store pulse in pattern array
+	pattern_pos++;
+}
+
+inline void SignalDetectorClass::updPattern( const uint8_t ppos)
+{
+	pattern[ppos] = (long(pattern[ppos]) + *first) / 2; // Moving average
+}
+
 
 void SignalDetectorClass::doDetect()
 {
-	//Serial.print("bitcnt:");Serial.println(bitcnt);
-
-	if (messageLen + 1 >= maxMsgSize) {
-
-#if DEBUGDETECT>0
-		Serial.println("Error, overflow in message Array");
-#endif
-		m_overflow = true;
-		processMessage();
-
-
-		//m_truncated&=false;
-		//reset(); // Moved reset to processMessage function if needed
-	}
-
-					  //Serial.println("doDetect");
-					  //Serial.print(*first); Serial.print(", ");Serial.println(*last);
-		static uint8_t pattern_pos;
+		 
 		bool valid=true;
-		bool add_new_pattern = true;
-		//valid = validSequence(first, last);
 		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
+		valid &=  (messageLen == maxMsgSize) ? false : true;
 
-		valid &= (messageLen + 1 == maxMsgSize) ? false : true;
 		if (pattern_pos > patternLen) patternLen = pattern_pos;
-		if (messageLen == 0) pattern_pos = patternLen = 0;
+//		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
 
 
+		if (!valid)
+		{
+			// Try output
+			
+			m_overflow = (messageLen == maxMsgSize) ? true : false;
+			processMessage();
+		}	else if (messageLen >= minMessageLen) {
+			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+		}
+
 		int8_t fidx = findpatt(*first);
+		if (fidx >= 0) {
+			// Upd pattern
+
+			updPattern(fidx);
+		}
+		else { 			
+			// Add pattern
+
+			for (int16_t i = messageLen - 1; (patternLen == maxNumPattern) && (i >= 0); --i)
+			{
+				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+				{
+					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+					bufferMove(i);
+					break;
+				}
+			}
+			fidx = pattern_pos;
+			addPattern();
+
+			if (pattern_pos == maxNumPattern)
+			{
+				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				patternLen = maxNumPattern;
+			}
+			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+		}
+		
+		// Add data to buffer
+		addData(fidx);
+
 
 #if DEBUGDETECT>3
-		Serial.print(F("Pulse: ")); Serial.print(*first); Serial.print(F(", ")); Serial.print(*last);
-		Serial.print(F(", TOL: ")); Serial.print(tol); Serial.print(F(", Found: ")); Serial.print(fidx);
-		Serial.print(F(", Vld: ")); Serial.print(valid);
-		Serial.print(F(", mLen: ")); Serial.print(messageLen);
+		Serial.print("Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
+		Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.print(fidx);
+		Serial.print(", Vld: "); Serial.print(valid);
+		Serial.print(", pattPos: "); Serial.print(pattern_pos);
+		Serial.print(", mLen: "); Serial.println(messageLen);
 #endif
+		return;
+
+		bool add_new_pattern = true;
 
 		if (0 <= fidx) {
 
@@ -93,9 +136,8 @@ void SignalDetectorClass::doDetect()
 				valid = false;
 			} else {
 				add_new_pattern = false;
-				message[messageLen] = fidx;
-				pattern[fidx] = (long(pattern[fidx]) + *first) / 2; // Moving average
-				messageLen++;
+				//addData(fidx);
+				updPattern(fidx);
 			}
 		}
 		else {
@@ -140,7 +182,7 @@ void SignalDetectorClass::doDetect()
 			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
 			// Array wird sozusagen nach links geschoben
 			
-			for (int16_t i = messageLen - 1; (i >= 0); --i)
+			for (uint8_t  i = messageLen - 1; (i >= 0); --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
@@ -256,195 +298,234 @@ void SignalDetectorClass::compress_pattern()
 void SignalDetectorClass::processMessage()
 {
 	
-	if (mcDetected == false && messageLen < minMessageLen) return; //mindestlänge der Message prüfen
-	success = false;
-	//Serial.println("Message decoded:");
-	compress_pattern();
-	calcHisto();
-	getClock();
-	getSync();
+	if (mcDetected == true || messageLen >= minMessageLen) {
+
+		success = false;
+		//Serial.println("Message decoded:");
+		compress_pattern();
+		calcHisto();
+		getClock();
+		getSync();
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
 
-	if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
-	{
-
-		// Setup of some protocol identifiers, should be retrieved via fhem in future
-
-		mend = mstart + 2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
-		bool m_endfound = false;
-
-		//uint8_t repeat;
-		while (mend<messageLen - 1)
+		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
 		{
-			if (message[mend + 1] == sync && message[mend] == clock) {
-				mend -= 1;					// Previus signal is last from message
-				m_endfound = true;
-				break;
-			}
-			mend += 2;
-		}
-		if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
-												   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
 
-		calcHisto(mstart, mend);	// Recalc histogram due to shortened message
+			// Setup of some protocol identifiers, should be retrieved via fhem in future
+
+			mend = mstart + 2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
+			bool m_endfound = false;
+
+			//uint8_t repeat;
+			while (mend < messageLen - 1)
+			{
+				if (message[mend + 1] == sync && message[mend] == clock) {
+					mend -= 1;					// Previus signal is last from message
+					m_endfound = true;
+					break;
+				}
+				mend += 2;
+			}
+			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
+													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
+
+			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
 
 
 #if DEBUGDECODE > 1
-		Serial.print("Index: ");
-		Serial.print(" MStart: "); Serial.print(mstart);
-		Serial.print(" SYNC: "); Serial.print(sync);
-		Serial.print(", CP: "); Serial.print(clock);
-		Serial.print(" - MEFound: "); Serial.println(m_endfound);
-		Serial.print(" - MEnd: "); Serial.println(mend);
+			Serial.print("Index: ");
+			Serial.print(" MStart: "); Serial.print(mstart);
+			Serial.print(" SYNC: "); Serial.print(sync);
+			Serial.print(", CP: "); Serial.print(clock);
+			Serial.print(" - MEFound: "); Serial.println(m_endfound);
+			Serial.print(" - MEnd: "); Serial.println(mend);
 #endif // DEBUGDECODE
-		if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
-		{
+			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+			{
 #ifdef DEBUGDECODE
-			Serial.println("Filter Match: ");;
+				Serial.println("Filter Match: ");;
 #endif
 
+
+				preamble = "";
+				postamble = "";
+
+				/*				Output raw message Data				*/
+				preamble.concat(MSG_START);
+				//preamble.concat('\n');
+				preamble.concat("MS");   // Message Index
+										 //preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
+				preamble.concat(SERIAL_DELIMITER);  // Message Index
+				for (uint8_t idx = 0; idx < patternLen; idx++)
+				{
+					if (histo[idx] == 0) continue;
+					preamble.concat('P'); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+				}
+				preamble.concat("D=");
+
+				postamble.concat(SERIAL_DELIMITER);
+				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
+				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+				if (m_overflow) {
+					postamble.concat("O");
+					postamble.concat(SERIAL_DELIMITER);
+				}
+				postamble.concat(MSG_END);
+				postamble.concat('\n');
+
+				printMsgRaw(mstart, mend, &preamble, &postamble);
+				success = true;
+
+#ifdef mp_crc
+				const int8_t crco = printMsgRaw(mstart, mend, &preamble, &postamble);
+
+				if ((mend < messageLen - minMessageLen) && (message[mend + 1] == message[mend - mstart + mend + 1])) {
+					mstart = mend + 1;
+					byte crcs = 0x00;
+#ifndef ARDUSIM
+					for (uint8_t i = mstart + 1; i <= mend - mstart + mend; i++)
+					{
+						crcs = _crc_ibutton_update(crcs, message[i]);
+					}
+#endif
+					if (crcs == crco)
+					{
+						// repeat found
+					}
+					//processMessage(); // Todo: needs to be optimized
+				}
+#endif
+
+
+			}
+			else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
+			{
+				//Serial.print("copy");
+#ifdef DEBUGDECODE
+				Serial.print(" move msg ");;
+#endif
+				bufferMove(mstart);
+				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+			}
+			else {
+#ifdef DEBUGDECODE
+				Serial.println(" Buffer overflow, flushing message array");
+#endif
+				//Serial.print(MSG_START);
+				//Serial.print("Buffer overflow while processing signal");
+				//Serial.print(MSG_END);
+				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
+
+			}
+		}
+		else if (MUenabled || MCenabled) {
+
+#if DEBUGDECODE >0
+			Serial.print(" MU/MC check: ");
+
+			//printOut();
+#endif	
+// Message has a clock puls, but no sync. Try to decode this
 
 			preamble = "";
 			postamble = "";
 
-			/*				Output raw message Data				*/
+
+			//String preamble;
+
 			preamble.concat(MSG_START);
-			//preamble.concat('\n');
-			preamble.concat("MS");   // Message Index
-									 //preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
-			preamble.concat(SERIAL_DELIMITER);  // Message Index
-			for (uint8_t idx = 0; idx<patternLen; idx++)
+			if (MCenabled)
 			{
-				if (histo[idx] == 0) continue;
-				preamble.concat('P'); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-			}
-			preamble.concat("D=");
+				static ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
 
-			postamble.concat(SERIAL_DELIMITER);
-			postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
-			postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
-			if (m_overflow) {
-				postamble.concat("O");
-				postamble.concat(SERIAL_DELIMITER);
-			}
-			postamble.concat(MSG_END);
-			postamble.concat('\n');
-
-			printMsgRaw(mstart, mend, &preamble, &postamble);
-			success = true;
-
-#ifdef mp_crc
-			const int8_t crco = printMsgRaw(mstart, mend, &preamble, &postamble);
-
-			if ((mend<messageLen - minMessageLen) && (message[mend + 1] == message[mend - mstart + mend + 1])) {
-				mstart = mend + 1;
-				byte crcs = 0x00;
-#ifndef ARDUSIM
-				for (uint8_t i = mstart + 1; i <= mend - mstart + mend; i++)
+				if (mcDetected == false)
 				{
-					crcs = _crc_ibutton_update(crcs, message[i]);
+					mcdecoder.reset();
+					mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
 				}
-#endif
-				if (crcs == crco)
+				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 				{
-					// repeat found
-				}
-				//processMessage(); // Todo: needs to be optimized
-			}
-#endif
+#if DEBUGDECODE > 1
+					Serial.print(" MC found: ");
+#endif // DEBUGDECODE
+
+					String mcbitmsg;
+					//Serial.println("MC");
+					mcbitmsg = "D=";
+					mcdecoder.getMessageHexStr(&mcbitmsg);
+					//Serial.println("f");
 
 
-		}
-		else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
-		{
-			//Serial.print("copy");
+					preamble.concat("MC");
+					preamble.concat(SERIAL_DELIMITER);
+					mcdecoder.getMessagePulseStr(&preamble);
+
+					postamble.concat(SERIAL_DELIMITER);
+					mcdecoder.getMessageClockStr(&postamble);
+
+					postamble.concat(MSG_END);
+					postamble.concat('\n');
+
+					//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
+					//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
+
+					//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
+					//printMsgRaw(0,messageLen,&preamble,&postamble);
+
+					//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
+
+					// Output Manchester Bits
 #ifdef DEBUGDECODE
-			Serial.print(" move msg ");;
-#endif
-			bufferMove(mstart);
-			m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-		}
-		else {
-#ifdef DEBUGDECODE
-			Serial.println(" Buffer overflow, flushing message array");
-#endif
-			//Serial.print(MSG_START);
-			//Serial.print("Buffer overflow while processing signal");
-			//Serial.print(MSG_END);
-			reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
-
-		}
-	}
-	else if (MUenabled || MCenabled) {
-		
-		#if DEBUGDECODE >0
-		Serial.print(" MU/MC check: ");
-
-		//printOut();
-		#endif	
-		// Message has a clock puls, but no sync. Try to decode this
-
-		preamble = "";
-		postamble = "";
-
-
-		//String preamble;
-
-		preamble.concat(MSG_START);
-		if (MCenabled)
-		{
-			static ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
-
-			if (mcDetected == false)
-			{
-				mcdecoder.reset();
-				mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
-			}
-			if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
-			{
-			#if DEBUGDECODE > 1
-			Serial.print(" MC found: ");
-			#endif // DEBUGDECODE
-
-				String mcbitmsg;
-				//Serial.println("MC");
-				mcbitmsg = "D=";
-				mcdecoder.getMessageHexStr(&mcbitmsg);
-				//Serial.println("f");
-
-
-				preamble.concat("MC");
-				preamble.concat(SERIAL_DELIMITER);
-				mcdecoder.getMessagePulseStr(&preamble);
-
-				postamble.concat(SERIAL_DELIMITER);
-				mcdecoder.getMessageClockStr(&postamble);
-
-				postamble.concat(MSG_END);
-				postamble.concat('\n');
-
-				//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
-				//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
-				//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
-
-				//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
-				//printMsgRaw(0,messageLen,&preamble,&postamble);
-
-				//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
-
-				// Output Manchester Bits
-#ifdef DEBUGDECODE
-				Serial.println(" ");
+					Serial.println(" ");
 #endif
 
-				printMsgStr(&preamble, &mcbitmsg, &postamble);
-				mcDetected = false;
-				success = true;
+					printMsgStr(&preamble, &mcbitmsg, &postamble);
+					mcDetected = false;
+					success = true;
 
 #if DEBUGDECODE == 1
-				preamble = "MC";
+					preamble = "MC";
+					preamble.concat(SERIAL_DELIMITER);
+
+					for (uint8_t idx = 0; idx < patternLen; idx++)
+					{
+						if (histo[idx] == 0) continue;
+
+						preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+					}
+					preamble.concat("D=");
+
+					//String postamble;
+					postamble = String(SERIAL_DELIMITER);
+					postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+					if (m_overflow) {
+						postamble.concat("O");
+						postamble.concat(SERIAL_DELIMITER);
+					}
+
+					postamble.concat(MSG_END);
+					postamble.concat('\n');
+
+					printMsgRaw(0, messageLen, &preamble, &postamble);
+#endif
+
+				}
+				else if (mcDetected == true && m_truncated == true) {
+					success = true;   // Prevents MU Processing
+				}
+			}
+			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
+
+#if DEBUGDECODE > 1
+				Serial.print(" MU found: ");
+#endif // DEBUGDECODE
+
+				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
+
+				preamble.concat("MU");
 				preamble.concat(SERIAL_DELIMITER);
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -456,66 +537,28 @@ void SignalDetectorClass::processMessage()
 				preamble.concat("D=");
 
 				//String postamble;
-				postamble = String(SERIAL_DELIMITER);
+				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 				if (m_overflow) {
 					postamble.concat("O");
 					postamble.concat(SERIAL_DELIMITER);
 				}
-
 				postamble.concat(MSG_END);
 				postamble.concat('\n');
 
-				printMsgRaw(0, messageLen, &preamble, &postamble);
-#endif
-
-			} 
-			else if(mcDetected == true && m_truncated == true) {
-				success = true;   // Prevents MU Processing
+				printMsgRaw(0, messageLen - 1, &preamble, &postamble);
+				m_truncated = false;
+				success = true;
 			}
+
+
+
 		}
-		if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
-
-			#if DEBUGDECODE > 1
-			Serial.print(" MU found: ");
-			#endif // DEBUGDECODE
-
-			//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
-
-			preamble.concat("MU");
-			preamble.concat(SERIAL_DELIMITER);
-
-			for (uint8_t idx = 0; idx<patternLen; idx++)
-			{
-				if (histo[idx] == 0) continue;
-
-				preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-			}
-			preamble.concat("D=");
-
-			//String postamble;
-			postamble.concat(SERIAL_DELIMITER);
-			postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-			if (m_overflow) {
-				postamble.concat("O");
-				postamble.concat(SERIAL_DELIMITER);
-			}
-			postamble.concat(MSG_END);
-			postamble.concat('\n');
-
-			printMsgRaw(0, messageLen - 1, &preamble, &postamble);
-			m_truncated = false;
-			success = true;
+		else {
+			success = false;
+			//reset();
 		}
-
-
-
 	}
-	else {
-		success = false;
-		//reset();
-	}
-
 	if (!m_truncated)
 	{
 		reset();
@@ -532,6 +575,7 @@ void SignalDetectorClass::reset()
 {
 	messageLen = 0;
 	patternLen = 0;
+	pattern_pos = 0;
 	bitcnt = 0;
 	state = searching;
 	clock = sync = -1;
@@ -580,7 +624,7 @@ void SignalDetectorClass::printOut()
 	for (idx = 0; idx<messageLen; ++idx) {
 		Serial.print(*(message + idx));
 	}
-	Serial.print(". "); Serial.print(" ["); Serial.print(messageLen + 1); Serial.println("]");
+	Serial.print(". "); Serial.print(" ["); Serial.print(messageLen); Serial.println("]");
 	Serial.print("Pattern: ");
 	for (uint8_t idx = 0; idx<patternLen; ++idx) {
 		Serial.print(" P"); Serial.print(idx);
@@ -1055,6 +1099,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		//Serial.print(" S MC ");
 		i++;
 	}
+	pdec->mend = i;
 
 #ifdef DEBUGDECODE
 	Serial.print(":mpos:");

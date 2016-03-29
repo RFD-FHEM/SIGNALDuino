@@ -95,11 +95,17 @@ public:
 	float tolFact;                          //
 	int pattern[maxNumPattern];				// 1d array to store the pattern
 	uint8_t patternLen;                     // counter for length of pattern
+	uint8_t pattern_pos;
 	int8_t sync;                        // index to sync in pattern if it exists
 	String preamble;
 	String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	
+
+	void addData(const uint8_t value);
+	void addPattern();
+	inline void updPattern(const uint8_t ppos);
+
 	void doDetect();
 	void processMessage();
 	void compress_pattern();
