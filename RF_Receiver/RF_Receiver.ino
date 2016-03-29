@@ -295,7 +295,7 @@ void handleInterrupt() {
 }
 
 void enableReceive() {
-  attachInterrupt(0,handleInterrupt,CHANGE);
+  attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
 }
 
 void disableReceive() {
