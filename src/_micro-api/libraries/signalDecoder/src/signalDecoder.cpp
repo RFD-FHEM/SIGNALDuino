@@ -69,7 +69,7 @@ void SignalDetectorClass::doDetect()
 		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
 		valid &=  (messageLen == maxMsgSize) ? false : true;
 
-		if (pattern_pos > patternLen) patternLen = pattern_pos;
+
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
 
@@ -110,6 +110,8 @@ void SignalDetectorClass::doDetect()
 				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
 				patternLen = maxNumPattern;
 			}
+			if (pattern_pos > patternLen) patternLen = pattern_pos;
+
 			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
 		}
 		
@@ -240,8 +242,12 @@ bool SignalDetectorClass::decode(const int * pulse)
 	success = false;
 
 	//int temp;
-	*first = *last;
-	*last = *pulse;
+	//*first = *last;
+	//*last = *pulse;
+	
+	last = &pattern[message[messageLen-1]];
+	*first = *pulse;
+	
 	doDetect();
 	return success;
 }
@@ -904,12 +910,12 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
 	char hexStr[] = "00"; // Not really needed
-	message->reserve(ManchesterBits.bytecount * 3); // Todo: Reduce to exact needed size
+	message->reserve((ManchesterBits.valcount /4)+2); // Todo: Reduce to exact needed size
 	if (!message)
 		return;
 
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx = 0; idx < ManchesterBits.bytecount; ++idx) {
+	for (uint8_t idx = 0; idx <= ManchesterBits.bytecount; ++idx) {
 		//Serial.print(getMCByte(idx),HEX);
 		//sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
 		//Serial.print(".");

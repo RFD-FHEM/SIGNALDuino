@@ -37,10 +37,12 @@ class BitStore
         unsigned char getByte(uint8_t idx);
         uint8_t bytecount;  // Number of stored bytes
         uint8_t valcount;  // Number of total values stored
-    protected:
+#ifndef UNITTEST
+	protected:
 
     private:
-        uint8_t valuelen;   // Number of bits for every value
+#endif
+		uint8_t valuelen;   // Number of bits for every value
         uint8_t bmask;
         uint8_t bcnt;
         const uint8_t buffsize;
@@ -103,14 +105,14 @@ void BitStore<bufSize>::addValue(char value)
 
     //store[bytecount]=datastore[bytecount] | (value<<bcnt)
     datastore[bytecount]=datastore[bytecount] | (value<<bcnt);  // (valcount*valuelen%8)
-/*
+	/*
     Serial.print("Adding value:");   Serial.print(value,DEC);
     Serial.print(" at byte: ");   Serial.print(bytecount,DEC);
     Serial.print(" at pos: ");   Serial.print(bcnt,DEC);
     Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount],BIN);
     Serial.print("  (dec)");   Serial.print(datastore[bytecount],DEC);
     Serial.println("");
-*/
+	*/
     valcount++;
     if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhöhen wir den counter zum verschieben
     {
