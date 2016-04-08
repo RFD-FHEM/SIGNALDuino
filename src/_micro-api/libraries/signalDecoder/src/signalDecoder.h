@@ -139,7 +139,7 @@ public:
 	const bool isManchester();
 	void reset();
 #ifndef UNITTEST
-private:
+//private:
 #endif
 	BitStore<50> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
 	SignalDetectorClass *pdec;

@@ -62,11 +62,11 @@ inline void SignalDetectorClass::updPattern( const uint8_t ppos)
 }
 
 
-void SignalDetectorClass::doDetect()
+inline void SignalDetectorClass::doDetect()
 {
 		 
 		bool valid=true;
-		valid = ((*first ^ *last) < 0); // true if a and b have opposite signs
+		valid = (messageLen==0 || (*first ^ *last) < 0); // true if a and b have opposite signs
 		valid &=  (messageLen == maxMsgSize) ? false : true;
 
 
@@ -80,7 +80,8 @@ void SignalDetectorClass::doDetect()
 			
 			m_overflow = (messageLen == maxMsgSize) ? true : false;
 			processMessage();
-		}	else if (messageLen >= minMessageLen) {
+			
+		}	else if (messageLen == minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
 		}
 
@@ -109,10 +110,11 @@ void SignalDetectorClass::doDetect()
 			{
 				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
 				patternLen = maxNumPattern;
+				mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+
 			}
 			if (pattern_pos > patternLen) patternLen = pattern_pos;
 
-			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
 		}
 		
 		// Add data to buffer
@@ -244,8 +246,8 @@ bool SignalDetectorClass::decode(const int * pulse)
 	//int temp;
 	//*first = *last;
 	//*last = *pulse;
-	
-	last = &pattern[message[messageLen-1]];
+	if (messageLen > 0)
+		last = &pattern[message[messageLen - 1]];
 	*first = *pulse;
 	
 	doDetect();
@@ -458,6 +460,10 @@ void SignalDetectorClass::processMessage()
 					mcdecoder.reset();
 					mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
 				}
+#if DEBUGDETECT>3
+				Serial.print("vcnt: "); Serial.print(mcdecoder.ManchesterBits.valcount);
+#endif;
+
 				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 				{
 #if DEBUGDECODE > 1
@@ -529,6 +535,7 @@ void SignalDetectorClass::processMessage()
 				else if (mcDetected == true && m_truncated == true) {
 					success = true;   // Prevents MU Processing
 				}
+
 			}
 			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
 
@@ -1124,6 +1131,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.print(pdec->mstart);
 	Serial.print(":mend:");
 	Serial.print(pdec->mend);
+	Serial.print(":vcnt:");
+	Serial.print(ManchesterBits.valcount);
 	Serial.print(":bfin:");
 #endif
 
@@ -1142,7 +1151,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		return false;
 	}
 	// Buffer is full with mc signal, so we clear the buffer and caputre additional signaldata
-	else if (i == pdec->messageLen && pdec->mstart == 0) 
+	else if (i == maxMsgSize && i == pdec->messageLen && pdec->mstart == 0)
 	{
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
@@ -1150,7 +1159,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 #ifdef DEBUGDECODE
 		Serial.print(":bflush:");
 #endif
-
 		return false;
 	}
 
