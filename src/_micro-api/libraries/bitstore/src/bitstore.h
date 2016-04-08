@@ -29,14 +29,14 @@ class BitStore
         BitStore(uint8_t bitlength);
         //~BitStore();
         void addValue(char value);
-        unsigned char getValue(uint8_t pos);
-        const uint8_t getSize();
+        unsigned char getValue(const uint16_t pos);
+        const uint16_t getSize();
         //unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
         unsigned char datastore[bufSize];
         void reset();
-        unsigned char getByte(uint8_t idx);
+        unsigned char getByte(const int8_t idx);
         uint8_t bytecount;  // Number of stored bytes
-        uint8_t valcount;  // Number of total values stored
+        uint16_t valcount;  // Number of total values stored
 #ifndef UNITTEST
 	protected:
 
@@ -123,7 +123,7 @@ void BitStore<bufSize>::addValue(char value)
 
 }
 template<uint8_t bufSize>
-const uint8_t BitStore<bufSize>::getSize()
+const uint16_t BitStore<bufSize>::getSize()
 {
     return valcount-1;
 }
@@ -131,7 +131,7 @@ const uint8_t BitStore<bufSize>::getSize()
 
 
 template<uint8_t bufSize>
-unsigned char BitStore<bufSize>::getValue(uint8_t pos)
+unsigned char BitStore<bufSize>::getValue(const uint16_t pos)
 {
    if ((pos*valuelen/8) >=buffsize ) return -1; // Out of Buffer
 
@@ -146,7 +146,7 @@ unsigned char BitStore<bufSize>::getValue(uint8_t pos)
 }
 
 template<uint8_t bufSize>
-unsigned char BitStore<bufSize>::getByte(uint8_t idx)
+unsigned char BitStore<bufSize>::getByte(const int8_t idx)
 {
   if (idx >= buffsize) return -1; // Out of buffer range
   return (datastore[idx]);
