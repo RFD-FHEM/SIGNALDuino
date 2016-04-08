@@ -305,19 +305,26 @@ void SignalDetectorClass::processMessage()
 {
 	
 	if (mcDetected == true || messageLen >= minMessageLen) {
-
 		success = false;
-		//Serial.println("Message decoded:");
+#if DEBUGDETECT >= 1
+		Serial.println("Message received:");
+#endif
 		compress_pattern();
 		calcHisto();
 		getClock();
-		getSync();
+		if (state == clockfound) getSync();
+
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
 
 		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
 		{
+#if DEBUGDECODE >0
+			Serial.print(" MS check: ");
+
+			//printOut();
+#endif	
 
 			// Setup of some protocol identifiers, should be retrieved via fhem in future
 
@@ -426,7 +433,7 @@ void SignalDetectorClass::processMessage()
 
 			}
 		}
-		else if (MUenabled || MCenabled) {
+		if (success == false && (MUenabled || MCenabled)) {
 
 #if DEBUGDECODE >0
 			Serial.print(" MU/MC check: ");
@@ -560,9 +567,12 @@ void SignalDetectorClass::processMessage()
 
 
 		}
-		else {
-			success = false;
-			//reset();
+		
+		if (success == false) 
+		{
+#if DEBUGDETECT >= 1
+			Serial.println("nothing to to");
+#endif
 		}
 	}
 	if (!m_truncated)
