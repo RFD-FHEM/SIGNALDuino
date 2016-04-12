@@ -483,6 +483,8 @@ void SignalDetectorClass::processMessage()
 
 					postamble.concat(SERIAL_DELIMITER);
 					mcdecoder.getMessageClockStr(&postamble);
+					mcdecoder.getMessageLenStr(&postamble);
+
 
 					postamble.concat(MSG_END);
 					postamble.concat('\n');
@@ -926,21 +928,30 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 */
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 {
-	char hexStr[] = "00"; // Not really needed
-	message->reserve((ManchesterBits.valcount /4)+2); // Todo: Reduce to exact needed size
+	char hexStr[] = "00" ; // Not really needed
+
+	message->reserve((ManchesterBits.valcount /4)+2);
 	if (!message)
 		return;
-
+	uint8_t idx;
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
-	for (uint8_t idx = 0; idx <= ManchesterBits.bytecount; ++idx) {
+	for ( idx = 0; idx <= ManchesterBits.bytecount-1; ++idx) {
 		//Serial.print(getMCByte(idx),HEX);
 		//sprintf(hexStr, "%02X",reverseByte(ManchesterBits->>getByte(idx)));
 		//Serial.print(".");
 		sprintf(hexStr, "%02X", getMCByte(idx));
 		message->concat(hexStr);
-
 		//Serial.print(hexStr);
 	}
+	
+	sprintf(hexStr, "%01X", getMCByte(idx) >> 4 & 0xf);
+	message->concat(hexStr);
+	if (ManchesterBits.valcount % 8 > 4)
+	{
+		sprintf(hexStr, "%01X", getMCByte(idx) & 0xF);
+		message->concat(hexStr);
+	}
+
 	//Serial.println();
 
 }
@@ -974,6 +985,11 @@ void ManchesterpatternDecoder::getMessageClockStr(String* str)
 	str->concat("C="); str->concat(clock); str->concat(SERIAL_DELIMITER);
 }
 
+void ManchesterpatternDecoder::getMessageLenStr(String* str)
+{
+
+	str->concat("L="); str->concat(ManchesterBits.valcount); str->concat(SERIAL_DELIMITER);
+}
 
 
 /** @brief (retieves one Byte out of the Bitstore for manchester decoded bits)

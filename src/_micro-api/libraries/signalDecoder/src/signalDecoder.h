@@ -136,6 +136,8 @@ public:
 	void getMessageHexStr(String *message);
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
+	void getMessageLenStr(String* str);
+
 	const bool isManchester();
 	void reset();
 #ifndef UNITTEST
