@@ -39,7 +39,7 @@
 #endif
 #include <bitstore.h>
 
-#define maxNumPattern 6
+#define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 7

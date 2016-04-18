@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b20"
+#define PROGVERS               "3.2.0-b22"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -295,7 +295,7 @@ void handleInterrupt() {
 }
 
 void enableReceive() {
-  attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
+   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
 }
 
 void disableReceive() {
