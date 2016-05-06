@@ -157,7 +157,7 @@ void BitStore<bufSize>::reset()
 {
   for (uint8_t i=0;i<buffsize;i++)
   {
-      datastore[i]=NULL;
+      datastore[i]=0;
   }
   bytecount=0;
   valcount=0;
