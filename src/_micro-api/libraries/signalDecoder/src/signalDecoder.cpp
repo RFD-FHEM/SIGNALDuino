@@ -93,8 +93,9 @@ inline void SignalDetectorClass::doDetect()
 		}
 		else { 			
 			// Add pattern
-
-			for (int16_t i = messageLen - 1; (patternLen == maxNumPattern) && (i >= 0); --i)
+			calcHisto();
+			if (histo[patternLen] > 2) processMessage();
+			for (int16_t i = messageLen - 1; (patternLen == maxNumPattern) && (i > 0); --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
 				{
@@ -641,7 +642,7 @@ void SignalDetectorClass::printOut()
 	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.print(", mStart: "); Serial.print(mstart);
-	Serial.print(", MCD: "); Serial.print(mcDetected);
+	Serial.print(", MCD: "); Serial.print(mcDetected,DEC);
 
 
 	Serial.println(); Serial.print("Signal: ");
@@ -882,16 +883,22 @@ ManchesterpatternDecoder::~ManchesterpatternDecoder()
 */
 void ManchesterpatternDecoder::reset()
 {
-	
+#ifdef DEBUGDECODE
+	Serial.print("mcrst:");
+#endif
 	longlow =   -1;
 	longhigh =  -1;
 	shortlow =  -1;
 	shorthigh = -1;
 	
-	bool mc_start_found = false;
-	bool mc_sync = false;
+	mc_start_found = false;
+	mc_sync = false;
+
+	clock = 0;
 	minbitlen = 20; // Set defaults
 	ManchesterBits.reset();
+
+
 }
 /** @brief (Sets internal minbitlen to new value)
 *
@@ -1200,7 +1207,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 	uint8_t pos_cnt = 0;
 	uint8_t neg_cnt = 0;
-	uint8_t equal_cnt = 0;
+	int16_t equal_cnt = 0;
 	const uint8_t minHistocnt = pdec->messageLen*0.04;
 
 	for (uint8_t i = 0; i< pdec->patternLen; i++)
@@ -1238,7 +1245,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.print("equalcnt: "); Serial.print(equal_cnt);
 #endif
 
-	if (equal_cnt > pdec->messageLen*0.02) return false;
+	if (abs(equal_cnt) > pdec->messageLen*0.02) return false;
 #if DEBUGDETECT >= 1
 	Serial.print("  MC equalcnt matched");
 #endif
