@@ -93,15 +93,18 @@ inline void SignalDetectorClass::doDetect()
 		}
 		else { 			
 			// Add pattern
-			calcHisto();
-			if (histo[patternLen] > 2) processMessage();
-			for (int16_t i = messageLen - 1; (patternLen == maxNumPattern) && (i > 0); --i)
+			if (patternLen == maxNumPattern)
 			{
-				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+				calcHisto();
+				if (histo[patternLen] > 2) processMessage();
+				for (int16_t i = messageLen - 1; i > 0; --i)
 				{
-					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-					bufferMove(i);
-					break;
+					if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+					{
+						i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+						bufferMove(i);
+						break;
+					}
 				}
 			}
 			fidx = pattern_pos;
@@ -670,6 +673,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
+	tol = abs(val)*0.1;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
 
@@ -953,7 +957,7 @@ void ManchesterpatternDecoder::getMessageHexStr(String *message)
 	
 	sprintf(hexStr, "%01X", getMCByte(idx) >> 4 & 0xf);
 	message->concat(hexStr);
-	if (ManchesterBits.valcount % 8 > 4)
+	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
 		sprintf(hexStr, "%01X", getMCByte(idx) & 0xF);
 		message->concat(hexStr);
@@ -1058,6 +1062,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				//ManchesterBits->addValue((lastbit));
 				mc_sync = true;
 				//i++;
+				//Serial.print("lb:"); Serial.print(lastbit,DEC);
 			}
 		}
 

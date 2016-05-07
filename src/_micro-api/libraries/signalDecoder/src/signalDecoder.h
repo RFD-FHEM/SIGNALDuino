@@ -75,7 +75,7 @@ public:
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
-	int8_t histo[maxNumPattern];
+	uint8_t histo[maxNumPattern];
 	uint8_t message[maxMsgSize];
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message

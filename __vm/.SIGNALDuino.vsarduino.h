@@ -63,7 +63,7 @@ extern "C" void __cxa_pure_virtual() {;}
 #define portOutputRegister(P)
 #define portInputRegister(P)
 #define portModeRegister(P)
-#include <..\SIGNALDuino\SIGNALDuino.ino>
+#include <SIGNALDuino.ino>
 #include <RF_Receiver\RF_Receiver.ino>
 #include <src\_micro-api\libraries\SimpleFIFO\src\SimpleFIFO.cpp>
 #include <src\_micro-api\libraries\SimpleFIFO\src\SimpleFIFO.h>
