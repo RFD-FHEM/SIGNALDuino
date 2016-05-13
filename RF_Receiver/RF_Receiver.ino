@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b23"
+#define PROGVERS               "3.2.0-b24"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -379,15 +379,32 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	char c;
 	digitalHigh(PIN_SEND);
 	unsigned long stoptime=micros();
+
+
+
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
 		c = cmdstring.charAt(i);
-		// Serial.print(c);
+		//Serial.print(c);
 
 		if(c >= '0' && c <= '9')
 			b= (byte)(c - '0');
 		else
 			b=(byte)(c-'A'+10);
+
+		if (i == startpos)
+		{
+			if (b & 0x8) {
+				digitalLow(PIN_SEND);
+				stoptime += clock;
+				//Serial.print("l");
+			}
+			else {
+				digitalHigh(PIN_SEND);
+				stoptime += clock;
+				//Serial.print("h");
+			}
+		}
 
 		for (uint8_t bit=0x8; bit>0; bit>>=1)
 		{
@@ -408,20 +425,31 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 			if (b & bit){
 				digitalLow(PIN_SEND);
 				stoptime +=clock;
+				//Serial.print("l");
 				while (stoptime > micros()){
+					yield();
 					;
 				}
 				digitalHigh(PIN_SEND);
+				//Serial.print("h");
 			} else {
 				digitalHigh(PIN_SEND);
 				stoptime +=clock;
+				//Serial.print("h");
+				
 				while (stoptime > micros()){
+					yield();
 					;
 				}
 				digitalLow(PIN_SEND);
+				//Serial.print("l");
+
 			}
+
 			stoptime +=clock;
 		}
+		//Serial.print(" ");
+
 	}
 	while (stoptime > micros()){
 		;
