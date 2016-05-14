@@ -68,7 +68,7 @@ inline void SignalDetectorClass::doDetect()
 		bool valid=true;
 		valid = (messageLen==0 || (*first ^ *last) < 0); // true if a and b have opposite signs
 		valid &=  (messageLen == maxMsgSize) ? false : true;
-
+		valid &= (*first > -maxPulse);
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
@@ -1053,7 +1053,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				i++;
 			}
 			if (i < pdec->messageLen) {
-				lastbit = (char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15);
+				lastbit = !(char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15); //TODO: Prüfen ob negiert korrekt ist.
 				uint8_t z = i - pdec->mstart;
 				if ((z < 1) or ((z % 2) == 0))
 					i = pdec->mstart;
@@ -1226,7 +1226,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		//if (longlow == -1)
 		//    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
 
-
+		//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
 		if (aktpulse > 0)
 		{
 			equal_cnt += pdec->histo[i];
@@ -1255,7 +1255,8 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.print("  MC equalcnt matched");
 #endif
 
-	if (neg_cnt != pos_cnt) return false;  // Both must be 2
+
+	if (neg_cnt != pos_cnt) return false;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
 #if DEBUGDETECT >= 1
 	Serial.print("  MC neg and pos pattern cnt is equal");
 #endif
@@ -1275,6 +1276,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.print(", MC SH:"); Serial.print(shorthigh);
 	Serial.println("");
 #endif
+	// TOdo: Bei FFFF passt diese Prüfung nicht.
 	if ((longlow == -1) || (shortlow == -1) || (longlow == shortlow) || (longhigh == -1) || (shorthigh == -1) || (longhigh == shorthigh)) return false; //Check if the indexes are valid
 	
 	if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) return false; //Check if the indexes are valid

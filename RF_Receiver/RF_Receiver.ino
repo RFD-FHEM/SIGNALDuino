@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b24"
+#define PROGVERS               "3.2.0-b25"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -211,7 +211,7 @@ void setup() {
 
 void cronjob() {
 
-	/*	
+	/*
 	 const unsigned long  duration = micros() - lastTime;
 	 if (duration > maxPulse) { //Auf Maximalwert prüfen.
 		 //handleInterrupt();
@@ -283,6 +283,7 @@ void handleInterrupt() {
       sDuration=-sDuration;
     }
     #ifdef CMP_FIFO
+	//Serial.println(sDuration);
     FiFo.enqueue(sDuration);
 	#else
 	FiFo.addValue(&sDuration);
@@ -373,14 +374,65 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 }
 //SM;R=2;C=400;D=AFAFAF;
 
+
+inline void send_mc_one(const int16_t clock)
+{
+	digitalLow(PIN_SEND);
+	unsigned long stoptime = micros() + clock;
+	//unsigned long t = micros();
+
+	//Serial.print("l");
+	//Serial.println(-clock);
+	while (stoptime > micros()) {
+		;// yield();
+
+	}
+	//Serial.println(-(micros() - t));
+
+	digitalHigh(PIN_SEND);
+	stoptime += clock;
+	//Serial.println(clock);
+
+	//Serial.print("h");
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println((micros() - t));
+
+}
+
+ void send_mc_zero(const int16_t clock)
+{
+	digitalHigh(PIN_SEND);
+	unsigned long stoptime = micros() + clock;
+	//unsigned long t = micros();
+	//Serial.print("h");
+
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println(micros()-t);
+
+	digitalLow(PIN_SEND);
+	stoptime += clock;
+
+	//Serial.print("l");
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println(-(micros() - t));
+
+}
+
+
 void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 {
 	int8_t b;
 	char c;
-	digitalHigh(PIN_SEND);
-	unsigned long stoptime=micros();
-
-
+	//digitalHigh(PIN_SEND);
+	//delay(1);
+	uint8_t bit;
+	unsigned long stoptime = micros();
 
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
@@ -391,69 +443,34 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 			b= (byte)(c - '0');
 		else
 			b=(byte)(c-'A'+10);
-
-		if (i == startpos)
-		{
-			if (b & 0x8) {
-				digitalLow(PIN_SEND);
-				stoptime += clock;
-				//Serial.print("l");
-			}
-			else {
-				digitalHigh(PIN_SEND);
-				stoptime += clock;
-				//Serial.print("h");
-			}
+		
+		if (i==startpos && (b & 0x8)) {
+			//send_mc_one(clock);
+			send_mc_zero(clock);
+		}
+		else if (i==startpos) {
+			send_mc_one(clock);
 		}
 
-		for (uint8_t bit=0x8; bit>0; bit>>=1)
+		
+		for (bit=0x8; bit>0; bit>>=1)
 		{
-			while (stoptime > micros()){
-				;
-			}
-			//if ((b & bit) == bit){
-            /*
-			b&bit  ? digitalLow(PIN_SEND) : digitalHigh(PIN_SEND);
-			stoptime +=clock;
-			while (stoptime > micros()){
-				;
-			}
-			b&bit ? digitalHigh(PIN_SEND) : digitalLow(PIN_SEND);
-			stoptime +=clock;
-			*/
-
 			if (b & bit){
-				digitalLow(PIN_SEND);
-				stoptime +=clock;
-				//Serial.print("l");
-				while (stoptime > micros()){
-					yield();
-					;
-				}
-				digitalHigh(PIN_SEND);
-				//Serial.print("h");
+				send_mc_one(clock);
 			} else {
-				digitalHigh(PIN_SEND);
-				stoptime +=clock;
-				//Serial.print("h");
-				
-				while (stoptime > micros()){
-					yield();
-					;
-				}
-				digitalLow(PIN_SEND);
-				//Serial.print("l");
-
+				send_mc_zero(clock);
 			}
-
-			stoptime +=clock;
 		}
 		//Serial.print(" ");
 
 	}
-	while (stoptime > micros()){
-		;
+	if (b & bit) {
+		//send_mc_zero(clock);
 	}
+	else {
+		//send_mc_one(clock);
+	}
+
 
 	// Serial.println("");
 }
@@ -478,7 +495,7 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 // SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
 
 struct s_sendcmd {
-	int sendclock;
+	int16_t sendclock;
 	uint8_t type;
 	uint8_t datastart;
 	uint16_t dataend;
@@ -571,7 +588,7 @@ void send_cmd()
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
 			digitalLow(PIN_SEND);
 		}
-
+		delay(1);
 	}
 
 	enableReceive();	// enable the receiver
