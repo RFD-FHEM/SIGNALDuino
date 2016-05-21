@@ -40,7 +40,7 @@
 #define PIN_LED                13 // Message-LED
 #define PIN_SEND               11
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   25
+#define FIFO_LENGTH			   50
 //#define DEBUG				   1
 
 #include <TimerOne.h>  // Timer for LED Blinking
@@ -432,7 +432,6 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	//digitalHigh(PIN_SEND);
 	//delay(1);
 	uint8_t bit;
-	unsigned long stoptime = micros();
 
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
@@ -444,31 +443,27 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		else
 			b=(byte)(c-'A'+10);
 		
-		if (i==startpos && (b & 0x8)) {
-			//send_mc_one(clock);
-			send_mc_zero(clock);
-		}
-		else if (i==startpos) {
-			send_mc_one(clock);
-		}
 
 		
 		for (bit=0x8; bit>0; bit>>=1)
 		{
 			if (b & bit){
 				send_mc_one(clock);
+
 			} else {
 				send_mc_zero(clock);
+			}
+				// Generate a syncable start transmission. 
+			if ((i == startpos) && (bit == 0x8) && ( (b & 0xC) == 0 || (b & 0xC) == 0xC))
+			{
+				unsigned long stoptime = micros() + clock;
+				while (stoptime > micros()) {
+					yield();
+				}
 			}
 		}
 		//Serial.print(" ");
 
-	}
-	if (b & bit) {
-		//send_mc_zero(clock);
-	}
-	else {
-		//send_mc_one(clock);
 	}
 
 

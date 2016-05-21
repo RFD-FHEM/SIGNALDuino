@@ -1036,6 +1036,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.print(pdec->mstart);
 #endif
 	char  lastbit;
+	bool ht = false;
+	bool hasbit = false;
 
 	while (i < pdec->messageLen)
 	{
@@ -1045,15 +1047,19 @@ const bool ManchesterpatternDecoder::doDecode() {
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
+			mc_sync = true;
 		}
-		// Sync to a long pulse to detect 0 / 1 proper
+		// Sync to a long or short pulse 
+		/*
 		if (mc_start_found && !mc_sync)
 		{
-			while (!isLong(pdec->message[i]) && i < pdec->messageLen) {
+			while ( (!isShort(pdec->message[i]  || !isLong(pdec->message[i])) && i < pdec->messageLen) {
 				i++;
 			}
 			if (i < pdec->messageLen) {
-				lastbit = !(char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15); //TODO: Prüfen ob negiert korrekt ist.
+				lastbit = (char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15); // 1, wenn Pegel Low war, 0 bei einem High Pegel.
+				//lastbit = ~lastbit;  //TODO: Prüfen ob negiert korrekt ist.
+
 				uint8_t z = i - pdec->mstart;
 				if ((z < 1) or ((z % 2) == 0))
 					i = pdec->mstart;
@@ -1065,29 +1071,29 @@ const bool ManchesterpatternDecoder::doDecode() {
 				//Serial.print("lb:"); Serial.print(lastbit,DEC);
 			}
 		}
-
+		*/
 		// Decoding occures here
 		if (mc_sync && mc_start_found)
 		{
-			if (isLong(pdec->message[i])) {
-				//ManchesterBits->addValue(!(pdec->pattern[pdec->message[i]][0] >>15)); // Check if bit 16 is set
-				//ManchesterBits->addValue(1 ^ ((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15)));
-				lastbit = lastbit ^ 1;
+			
+			if (isShort(pdec->message[i]))
+			{
+				if (ht == false)
+					hasbit = false;
+				else
+					hasbit = true;
+				ht = !ht;
 #ifdef DEBUGDECODE
-				//ManchesterBits->addValue(lastbit);
+					Serial.print("S");
+#endif
+
+			}
+			else if (isLong(pdec->message[i])) {
+				hasbit = true;
+				ht = true;
+#ifdef DEBUGDECODE
 				Serial.print("L");
 #endif
-			}
-			else if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && isShort(pdec->message[i + 1]))
-			{
-
-				i++;
-				//ManchesterBits->addValue(!(pdec->pattern[pdec->message[i+1]][0] >>15)); // Check if bit 16 is set
-				// ManchesterBits->addValue(1 ^ ((unsigned int)pdec->pattern[pdec->message[i]][0] >> 15)));
-#ifdef DEBUGDECODE
-				Serial.print("SS");
-#endif
-
 			}
 			else { // Found something that fits not to our manchester signal
 #ifdef DEBUGDECODE
@@ -1142,8 +1148,26 @@ const bool ManchesterpatternDecoder::doDecode() {
 				Serial.print(")");
 #endif
 			}
-			if (mc_sync)
-				ManchesterBits.addValue(lastbit);
+
+			if (hasbit) {
+				if (pdec->pattern[pdec->message[i]] < 0)
+				{
+#ifdef DEBUGDECODE
+					Serial.print("0");
+#endif
+
+					ManchesterBits.addValue(0);
+				}
+				else {
+#ifdef DEBUGDECODE
+					Serial.print("1");
+#endif
+
+					ManchesterBits.addValue(1);
+				}
+				hasbit = false;
+			}
+
 
 
 		}
@@ -1213,7 +1237,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	uint8_t pos_cnt = 0;
 	uint8_t neg_cnt = 0;
 	int16_t equal_cnt = 0;
-	const uint8_t minHistocnt = pdec->messageLen*0.04;
+	const uint8_t minHistocnt = round(pdec->messageLen*0.04);
 
 	for (uint8_t i = 0; i< pdec->patternLen; i++)
 	{
@@ -1221,7 +1245,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		Serial.print(i); Serial.print(" ");
 #endif
 
-		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
 		const int aktpulse = pdec->pattern[i];
 		//if (longlow == -1)
 		//    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
@@ -1250,7 +1274,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.print("equalcnt: "); Serial.print(equal_cnt);
 #endif
 
-	if (abs(equal_cnt) > pdec->messageLen*0.02) return false;
+	if (abs(equal_cnt) > round(pdec->messageLen*0.04)) return false;
 #if DEBUGDETECT >= 1
 	Serial.print("  MC equalcnt matched");
 #endif
