@@ -1076,7 +1076,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		if (mc_sync && mc_start_found)
 		{
 			
-			if (isShort(pdec->message[i]))
+			if (isShort(pdec->message[i])) //Todo: Check for second short
 			{
 				if (ht == false)
 					hasbit = false;
@@ -1084,15 +1084,22 @@ const bool ManchesterpatternDecoder::doDecode() {
 					hasbit = true;
 				ht = !ht;
 #ifdef DEBUGDECODE
+				if (pdec->pattern[pdec->message[i]] > 0)
 					Serial.print("S");
-#endif
+				else
+					Serial.print("s");
 
+#endif
+				
 			}
 			else if (isLong(pdec->message[i])) {
 				hasbit = true;
 				ht = true;
 #ifdef DEBUGDECODE
-				Serial.print("L");
+				if (pdec->pattern[pdec->message[i]] > 0 )
+					Serial.print("L");
+				else
+					Serial.print("l");
 #endif
 			}
 			else { // Found something that fits not to our manchester signal
@@ -1155,7 +1162,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 #ifdef DEBUGDECODE
 					Serial.print("0");
 #endif
-
 					ManchesterBits.addValue(0);
 				}
 				else {
