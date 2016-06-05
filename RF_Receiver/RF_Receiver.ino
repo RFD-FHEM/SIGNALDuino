@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b25"
+#define PROGVERS               "3.2.0-b27"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -206,7 +206,7 @@ void setup() {
 
 
 	enableReceive();
-	cmdstring.reserve(20);
+	cmdstring.reserve(40);
 }
 
 void cronjob() {
@@ -358,7 +358,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 		index = source->charAt(i) - '0';
 		//Serial.print(index);
 		isLow=buckets[index] >> 15;
-		isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
+		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
 
 		while (stoptime > micros()){
 			;
@@ -511,6 +511,7 @@ void send_cmd()
 	//int16_t buckets[6]={};
 	uint8_t counter=0;
 	//uint16_t sendclock;
+	bool extraDelay = true;
 
 	s_sendcmd command[5];
 
@@ -528,6 +529,7 @@ void send_cmd()
 			{
 				//type=combined;
 				//cmdNo=255;
+				extraDelay = false;
 			}
 			else if (msg_part.charAt(1) == 'M') // send manchester
 			{
@@ -583,7 +585,7 @@ void send_cmd()
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
 			digitalLow(PIN_SEND);
 		}
-		delay(1);
+		if (extraDelay) delay(1);
 	}
 
 	enableReceive();	// enable the receiver

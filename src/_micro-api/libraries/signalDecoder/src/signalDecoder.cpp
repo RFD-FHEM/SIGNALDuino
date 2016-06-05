@@ -309,9 +309,11 @@ void SignalDetectorClass::compress_pattern()
 
 void SignalDetectorClass::processMessage()
 {
-	
+	yield();
+
 	if (mcDetected == true || messageLen >= minMessageLen) {
 		success = false;
+
 #if DEBUGDETECT >= 1
 		Serial.println("Message received:");
 #endif
