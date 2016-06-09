@@ -385,22 +385,22 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const uint16_t clock)
 	unsigned long stoptime = micros();
 
 	for (uint8_t i=startpos;i<=endpos;i++ ) {
-  		c = cmdstring.charAt(i);
+    c = cmdstring.charAt(i);
 
-	  	b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
+	  b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
 
 		for (bit=0x8; bit>0; bit>>=1) {
-		      for (byte i=0; i<=1; i++) {
-		        if ((i==0 ? (b & bit) : !(b & bit)))
-				digitalLow(PIN_SEND);
-		        else
-				digitalHigh(PIN_SEND);
-		   
-		        stoptime += clock;
-		        while (stoptime > micros())
-		          	;
-			}
-		}
+      for (byte i=0; i<=1; i++) {
+        if ((i==0 ? (b & bit) : !(b & bit)))
+      	  digitalLow(PIN_SEND);
+        else
+      	  digitalHigh(PIN_SEND);
+         
+        stoptime += clock;
+        while (stoptime > micros())
+          ;
+      }
+    }
 	}
 
 	// 3 clocks are invalid for manchester and marks the end
