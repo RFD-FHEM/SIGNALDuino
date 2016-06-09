@@ -1246,6 +1246,19 @@ const bool ManchesterpatternDecoder::isManchester()
 	uint8_t neg_cnt = 0;
 	int16_t equal_cnt = 0;
 	const uint8_t minHistocnt = round(pdec->messageLen*0.04);
+	int16_t maxPwidh = 0;
+
+	int8_t numCnt = 0;
+	for (uint8_t i = 0; i < pdec->patternLen; i++)
+	{
+		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+		if (pdec->pattern[i] > 0)
+		{
+			maxPwidh += pdec->pattern[i];
+			numCnt++;
+		}
+	}
+	maxPwidh = (maxPwidh / numCnt) * 2;
 
 	for (uint8_t i = 0; i< pdec->patternLen; i++)
 	{
@@ -1254,6 +1267,7 @@ const bool ManchesterpatternDecoder::isManchester()
 #endif
 
 		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+		if (pdec->pattern[i] < -maxPwidh || pdec->pattern[i] > maxPwidh) continue;  //Dirty hack to prevent to long signals
 		const int aktpulse = pdec->pattern[i];
 		//if (longlow == -1)
 		//    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
