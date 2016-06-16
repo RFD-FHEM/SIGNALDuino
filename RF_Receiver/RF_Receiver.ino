@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b27"
+#define PROGVERS               "3.2.0-b28"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -185,7 +185,7 @@ void setup() {
 	pinMode(PIN_LED,OUTPUT);
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
-
+	
 	if (EEPROM.read(addr_init) == 0xB)
 	{
 		#ifdef DEBUG
