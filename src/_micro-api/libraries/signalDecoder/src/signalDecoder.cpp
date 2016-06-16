@@ -1244,75 +1244,130 @@ const bool ManchesterpatternDecoder::isManchester()
 
 	uint8_t pos_cnt = 0;
 	uint8_t neg_cnt = 0;
-	int16_t equal_cnt = 0;
+	int equal_cnt = 0;
 	const uint8_t minHistocnt = round(pdec->messageLen*0.04);
-	int16_t maxPwidh = 0;
+				                          //     3     1    0     2
+	uint8_t sortedPattern[maxNumPattern]; // 1300,-1300,-734,..800
+	uint8_t p=0;
 
-	int8_t numCnt = 0;
 	for (uint8_t i = 0; i < pdec->patternLen; i++)
 	{
 		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		if (pdec->pattern[i] > 0)
-		{
-			maxPwidh += pdec->pattern[i];
-			numCnt++;
-		}
-	}
-	maxPwidh = (maxPwidh / numCnt) * 2;
+		
+		uint8_t ptmp = p;
 
-	for (uint8_t i = 0; i< pdec->patternLen; i++)
+		while ( p!= 0 && pdec->pattern[i] < pdec->pattern[sortedPattern[p-1]])
+		{
+			sortedPattern[p] = sortedPattern[p-1];
+			p--;
+		}
+#if DEBUGDETECT >= 1
+		Serial.print(p); Serial.print("="); Serial.print(i); Serial.print(" ");
+#endif
+		sortedPattern[p] = i;
+		p = ++ptmp;
+	}
+#if DEBUGDETECT >= 3
+	Serial.print("Sorted");
+	for (uint8_t i = 0; i < p; i++)
 	{
-#if DEBUGDETECT >= 1
-		Serial.print(i); Serial.print(" ");
+		Serial.print(sortedPattern[i]); Serial.print(",");
+	}
+	Serial.print(";");
 #endif
 
-		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		if (pdec->pattern[i] < -maxPwidh || pdec->pattern[i] > maxPwidh) continue;  //Dirty hack to prevent to long signals
-		const int aktpulse = pdec->pattern[i];
-		//if (longlow == -1)
-		//    longlow=longhigh=shortlow=shorthigh=i;  // Init to first valid mc index to allow further ajustment
 
-		//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
-		if (aktpulse > 0)
+	for (uint8_t i = 0; i<p ; i++)
+	{
+		if (pdec->pattern[sortedPattern[i]] <=0) continue;
+#if DEBUGDETECT >= 2
+		Serial.print("CL="); Serial.print(sortedPattern[i]); Serial.print(":");
+#endif
+		longlow = -1;
+		longhigh = -1;
+		shortlow = -1;
+		shorthigh = -1;
+		pos_cnt=0;
+		neg_cnt = 0;
+		tstclock = -1;
+		equal_cnt = 0;
+
+		const int clockpulse = pdec->pattern[sortedPattern[i]];
+		for (uint8_t x = 0; x < p; x++)
 		{
-			equal_cnt += pdec->histo[i];
-			pos_cnt++;
-			tstclock += aktpulse;
+#if DEBUGDETECT >= 1
+			Serial.print(sortedPattern[x]); Serial.print("^=");
+#endif
 
-			longhigh = longhigh == -1 || pdec->pattern[longhigh] < aktpulse ? i : longhigh;
-			shorthigh = shorthigh == -1 || pdec->pattern[shorthigh] > aktpulse ? i : shorthigh;
+			const int aktpulse = pdec->pattern[sortedPattern[x]];
+			bool pshort = false;
+			bool plong = false;
+
+			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
+				pshort = true;
+			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+				plong = true;
+
+			#if DEBUGDETECT >= 3
+			Serial.print("PS="); Serial.print(pshort); Serial.print(";");
+			Serial.print("PL="); Serial.print(plong); Serial.print(";");
+			#endif
+
+
+			if (aktpulse > 0)
+			{
+				if (pshort) shorthigh = sortedPattern[x];
+				else if (plong) longhigh = sortedPattern[x];
+				else continue;
+				equal_cnt += pdec->histo[sortedPattern[x]];
+
+				pos_cnt++;
+				tstclock += aktpulse;
+			}
+			else {
+				if (pshort) shortlow = sortedPattern[x];
+				else if (plong) longlow = sortedPattern[x];
+				else continue;
+
+				equal_cnt -= pdec->histo[sortedPattern[x]];
+				neg_cnt++;
+			}
+
+			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
+			{
+
+				#if DEBUGDETECT >= 1
+				Serial.print("equalcnt: "); Serial.print(equal_cnt); Serial.print(" ");
+				#endif
+
+				if (abs(equal_cnt) > round(pdec->messageLen*0.04))  break;
+				#if DEBUGDETECT >= 1
+				Serial.print("  MC equalcnt matched");
+				#endif
+				if (neg_cnt != pos_cnt) break;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
+				#if DEBUGDETECT >= 1
+					Serial.print("  MC neg and pos pattern cnt is equal");
+				#endif
+
+				if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
+
+				goto mcDetected;
+			}
+
 
 		}
-		else {
-			equal_cnt -= pdec->histo[i];
-			neg_cnt++;
-
-			longlow = longlow == -1 || pdec->pattern[longlow] > aktpulse ? i : longlow;
-			shortlow = shortlow == -1 || pdec->pattern[shortlow] < aktpulse ? i : shortlow;
-		}
+		//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
 
 	}
-#if DEBUGDETECT >= 1
-	Serial.print("equalcnt: "); Serial.print(equal_cnt);
-#endif
+	return false;
 
-	if (abs(equal_cnt) > round(pdec->messageLen*0.04)) return false;
-#if DEBUGDETECT >= 1
-	Serial.print("  MC equalcnt matched");
-#endif
-
-
-	if (neg_cnt != pos_cnt) return false;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
-#if DEBUGDETECT >= 1
-	Serial.print("  MC neg and pos pattern cnt is equal");
-#endif
+	mcDetected:
 
 	tstclock = tstclock / 3;
 #if DEBUGDETECT >= 1
 	Serial.print("  tstclock: "); Serial.print(tstclock);
 #endif
 	clock = tstclock;
-	//	dclock=clock*2;
 
 #if DEBUGDETECT >= 1
 	Serial.print(" MC LL:"); Serial.print(longlow);
@@ -1323,9 +1378,6 @@ const bool ManchesterpatternDecoder::isManchester()
 	Serial.println("");
 #endif
 	// TOdo: Bei FFFF passt diese Prüfung nicht.
-	if ((longlow == -1) || (shortlow == -1) || (longlow == shortlow) || (longhigh == -1) || (shorthigh == -1) || (longhigh == shorthigh)) return false; //Check if the indexes are valid
-	
-	if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) return false; //Check if the indexes are valid
 
 #if DEBUGDETECT >= 1
 	Serial.println("  -- MC found -- ");
