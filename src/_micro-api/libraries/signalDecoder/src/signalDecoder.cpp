@@ -1036,6 +1036,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.print(pdec->messageLen);
 	Serial.print(":mstart: ");
 	Serial.print(pdec->mstart);
+	Serial.println("");
+
 #endif
 	char  lastbit;
 	bool ht = false;
@@ -1077,32 +1079,25 @@ const bool ManchesterpatternDecoder::doDecode() {
 		// Decoding occures here
 		if (mc_sync && mc_start_found)
 		{
-			
+			#ifdef DEBUGDECODE
+			char value;
+			#endif
 			if (isShort(pdec->message[i])) //Todo: Check for second short
 			{
-				if (ht == false)
-					hasbit = false;
-				else
-					hasbit = true;
+				
+				hasbit = ht;
 				ht = !ht;
-#ifdef DEBUGDECODE
-				if (pdec->pattern[pdec->message[i]] > 0)
-					Serial.print("S");
-				else
-					Serial.print("s");
-
-#endif
+				#ifdef DEBUGDECODE
+				value = 'S';
+				#endif
 				
 			}
 			else if (isLong(pdec->message[i])) {
 				hasbit = true;
 				ht = true;
-#ifdef DEBUGDECODE
-				if (pdec->pattern[pdec->message[i]] > 0 )
-					Serial.print("L");
-				else
-					Serial.print("l");
-#endif
+				#ifdef DEBUGDECODE
+				value = 'L';
+				#endif
 			}
 			else { // Found something that fits not to our manchester signal
 #ifdef DEBUGDECODE
@@ -1158,21 +1153,19 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 			}
 
-			if (hasbit) {
-				if (pdec->pattern[pdec->message[i]] < 0)
-				{
-#ifdef DEBUGDECODE
-					Serial.print("0");
-#endif
-					ManchesterBits.addValue(0);
-				}
-				else {
-#ifdef DEBUGDECODE
-					Serial.print("1");
-#endif
 
-					ManchesterBits.addValue(1);
-				}
+
+#			ifdef DEBUGDECODE
+			if (pdec->pattern[pdec->message[i]] < 0)
+				value = (value + 0x20); //lowwecase
+			Serial.print(value);
+			#endif
+
+			if (hasbit) {
+				ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
+				#ifdef DEBUGDECODE
+				Serial.print(ManchesterBits.getValue(ManchesterBits.valcount-1));
+				#endif;
 				hasbit = false;
 			}
 
@@ -1192,7 +1185,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.print(":mend:");
 	Serial.print(pdec->mend);
 	Serial.print(":vcnt:");
-	Serial.print(ManchesterBits.valcount);
+	Serial.print(ManchesterBits.valcount-1);
 	Serial.print(":bfin:");
 #endif
 
@@ -1252,8 +1245,11 @@ const bool ManchesterpatternDecoder::isManchester()
 
 	for (uint8_t i = 0; i < pdec->patternLen; i++)
 	{
-		if (pdec->histo[i] <= minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		
+		#if DEBUGDETECT >= 1
+		Serial.print(p);
+		#endif		
+		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+
 		uint8_t ptmp = p;
 
 		while ( p!= 0 && pdec->pattern[i] < pdec->pattern[sortedPattern[p-1]])
@@ -1262,7 +1258,7 @@ const bool ManchesterpatternDecoder::isManchester()
 			p--;
 		}
 #if DEBUGDETECT >= 1
-		Serial.print(p); Serial.print("="); Serial.print(i); Serial.print(" ");
+		Serial.print("="); Serial.print(i); Serial.print(" ");
 #endif
 		sortedPattern[p] = i;
 		p = ++ptmp;
