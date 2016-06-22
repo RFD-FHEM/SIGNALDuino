@@ -1093,6 +1093,12 @@ const bool ManchesterpatternDecoder::doDecode() {
 				
 			}
 			else if (isLong(pdec->message[i])) {
+				// first long should be a short
+				if (pdec->mstart == i) {
+					i++;
+					continue;
+				}
+
 				hasbit = true;
 				ht = true;
 				#ifdef DEBUGDECODE
@@ -1167,6 +1173,10 @@ const bool ManchesterpatternDecoder::doDecode() {
 				Serial.print(ManchesterBits.getValue(ManchesterBits.valcount-1));
 				#endif;
 				hasbit = false;
+			} else {
+#ifdef DEBUGDECODE
+				Serial.print("_");
+#endif;
 			}
 
 

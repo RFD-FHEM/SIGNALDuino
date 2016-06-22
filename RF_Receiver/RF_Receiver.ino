@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b28"
+#define PROGVERS               "3.2.0-b28+recompiled"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -213,7 +213,7 @@ void cronjob() {
 
 	/*
 	 const unsigned long  duration = micros() - lastTime;
-	 if (duration > maxPulse) { //Auf Maximalwert prüfen.
+	 if (duration > maxPulse) { //Auf Maximalwert pr�fen.
 		 //handleInterrupt();
 		 //Serial.println("PTout");
 		 int sDuration = maxPulse;
@@ -374,44 +374,102 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 }
 //SM;R=2;C=400;D=AFAFAF;
 
-void send_mc(const uint8_t startpos,const uint8_t endpos, const uint16_t clock)
+
+inline void send_mc_one(const int16_t clock)
 {
-	uint8_t b;
+	digitalLow(PIN_SEND);
+	unsigned long stoptime = micros() + clock;
+	//unsigned long t = micros();
+
+	//Serial.print("l");
+	//Serial.println(-clock);
+	while (stoptime > micros()) {
+		;// yield();
+
+	}
+	//Serial.println(-(micros() - t));
+
+	digitalHigh(PIN_SEND);
+	stoptime += clock;
+	//Serial.println(clock);
+
+	//Serial.print("h");
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println((micros() - t));
+
+}
+
+ void send_mc_zero(const int16_t clock)
+{
+	digitalHigh(PIN_SEND);
+	unsigned long stoptime = micros() + clock;
+	//unsigned long t = micros();
+	//Serial.print("h");
+
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println(micros()-t);
+
+	digitalLow(PIN_SEND);
+	stoptime += clock;
+
+	//Serial.print("l");
+	while (stoptime > micros()) {
+		;// yield();
+	}
+	//Serial.println(-(micros() - t));
+
+}
+
+
+void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
+{
+	int8_t b;
 	char c;
 	//digitalHigh(PIN_SEND);
 	//delay(1);
 	uint8_t bit;
 
-	unsigned long stoptime = micros();
+	for (uint8_t i=startpos;i<=endpos;i++ )
+	{
+		c = cmdstring.charAt(i);
+		//Serial.print(c);
 
-	for (uint8_t i=startpos;i<=endpos;i++ ) {
-    c = cmdstring.charAt(i);
+		if(c >= '0' && c <= '9')
+			b= (byte)(c - '0');
+		else
+			b=(byte)(c-'A'+10);
+		
 
-	  b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
+		
+		for (bit=0x8; bit>0; bit>>=1)
+		{
+			if (b & bit){
+				send_mc_one(clock);
 
-		for (bit=0x8; bit>0; bit>>=1) {
-      for (byte i=0; i<=1; i++) {
-        if ((i==0 ? (b & bit) : !(b & bit)))
-      	  digitalLow(PIN_SEND);
-        else
-      	  digitalHigh(PIN_SEND);
-         
-        stoptime += clock;
-        while (stoptime > micros())
-          ;
-      }
-    }
+			} else {
+				send_mc_zero(clock);
+			}
+				// Generate a syncable start transmission. 
+			if ((i == startpos) && (bit == 0x8) && ( (b & 0xC) == 0 || (b & 0xC) == 0xC))
+			{
+				unsigned long stoptime = micros() + clock;
+				while (stoptime > micros()) {
+					yield();
+				}
+			}
+		}
+		//Serial.print(" ");
+
 	}
 
-	// 3 clocks are invalid for manchester and marks the end
-	stoptime += clock * (isHigh(PIN_SEND) ? 5 : 4);
-	if (isHigh(PIN_SEND))
-		digitalLow(PIN_SEND);
-	while (stoptime > micros())
-		;
 
 	// Serial.println("");
 }
+
 
 
 bool split_cmdpart(int16_t *startpos, String *msg_part)
@@ -525,11 +583,10 @@ void send_cmd()
 		{
 			if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
+			digitalLow(PIN_SEND);
 		}
+		if (extraDelay) delay(1);
 	}
-
-	digitalLow(PIN_SEND);
-	if (extraDelay) delay(1);
 
 	enableReceive();	// enable the receiver
     Serial.println(cmdstring); // echo
