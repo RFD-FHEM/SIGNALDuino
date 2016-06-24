@@ -433,6 +433,8 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	//delay(1);
 	uint8_t bit;
 
+  unsigned long stoptime;
+    
 	for (uint8_t i=startpos;i<=endpos;i++ )
 	{
 		c = cmdstring.charAt(i);
@@ -443,29 +445,17 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		else
 			b=(byte)(c-'A'+10);
 		
-
-		
 		for (bit=0x8; bit>0; bit>>=1)
 		{
 			if (b & bit){
 				send_mc_one(clock);
-
 			} else {
 				send_mc_zero(clock);
-			}
-				// Generate a syncable start transmission. 
-			if ((i == startpos) && (bit == 0x8) && ( (b & 0xC) == 0 || (b & 0xC) == 0xC))
-			{
-				unsigned long stoptime = micros() + clock;
-				while (stoptime > micros()) {
-					yield();
-				}
 			}
 		}
 		//Serial.print(" ");
 
 	}
-
 
 	// Serial.println("");
 }
@@ -585,7 +575,7 @@ void send_cmd()
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
 			digitalLow(PIN_SEND);
 		}
-		if (extraDelay) delay(1);
+		if (extraDelay) delay(32);
 	}
 
 	enableReceive();	// enable the receiver

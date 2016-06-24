@@ -120,8 +120,6 @@ public:
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	
 
-
-
 };
 
 class ManchesterpatternDecoder
