@@ -93,31 +93,53 @@ inline void SignalDetectorClass::doDetect()
 		}
 		else { 			
 			// Add pattern
+			uint8_t empty = 0xff;
 			if (patternLen == maxNumPattern)
 			{
 				calcHisto();
-				if (histo[patternLen] > 2) processMessage();
-				for (int16_t i = messageLen - 1; i > 0; --i)
-				{
-					if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
-					{
-						i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-						bufferMove(i);
+//				compress_pattern();
+
+				// search empty pattern
+				for (uint8_t p=0; p<patternLen; p++) {
+					if (histo[p] == 0) {
+						empty = p;
+#ifdef DEBUGDECODE
+						Serial.print(F("\nreuse: "));Serial.println(empty);
+#endif
 						break;
 					}
 				}
+				
+				if (empty == 0xff) {
+					if (histo[patternLen] > 2) processMessage();
+					for (int16_t i = messageLen - 1; i > 0; --i)
+					{
+						if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+						{
+							i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+							bufferMove(i);
+							break;
+						}
+					}
+				}
 			}
-			fidx = pattern_pos;
-			addPattern();
-
-			if (pattern_pos == maxNumPattern)
-			{
-				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
-				patternLen = maxNumPattern;
-				mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
-
+			
+			if (empty == 0xff) {
+				fidx = pattern_pos;
+				addPattern();
+	
+				if (pattern_pos == maxNumPattern)
+				{
+					pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+					patternLen = maxNumPattern;
+					mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+	
+				}
+				if (pattern_pos > patternLen) patternLen = pattern_pos;
+			} else {
+				fidx = pattern_pos = empty;
+				pattern[pattern_pos] = *first;
 			}
-			if (pattern_pos > patternLen) patternLen = pattern_pos;
 
 		}
 		
@@ -134,113 +156,113 @@ inline void SignalDetectorClass::doDetect()
 #endif
 		return;
 
-		bool add_new_pattern = true;
-
-		if (0 <= fidx) {
-
-			//gefunden
-			if (messageLen > 0 && message[messageLen - 1] == fidx) {  // Der Fall darf eigentlich nicht vorkommen da hier Valid = 0 sein muss
-				add_new_pattern = true;
-				valid = false;
-			} else {
-				add_new_pattern = false;
-				//addData(fidx);
-				updPattern(fidx);
-			}
-		}
-		else {
-			// Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
-			calcHisto();
-			if (patternLen == maxNumPattern && histo[pattern_pos] > 1)
-			{
-				valid = false;
-				add_new_pattern = true;
-			}
-		}
-
-		if (!valid) {
-			//Serial.println("not valid, processing");
-
-			//success = true;
-			processMessage();
-			// reset();  // GGF hier nicht ausführen.
-			pattern_pos = 0;
-			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
-		
-			//return;
-		}
-		/*else if (!valid) {
-			reset();
-			success = false;
-			pattern_pos = 0;
-		}*/
-		else if (valid && messageLen >= minMessageLen) {
-			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-		}
-		/*else {
-		if (messageLen>=minMessageLen){
-		// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
-		//printOut();
-		//processMessage();
-		//reset();pattern_pos=0;
-		}
-		*/
-		if (add_new_pattern)
-		{
-			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
-			// Array wird sozusagen nach links geschoben
-			
-			for (uint8_t  i = messageLen - 1; (i >= 0); --i)
-			{
-				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
-				{
-					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-					bufferMove(i);
-					messageLen++;  //Move messagelen pointer one forward to avoid overwrite
-					break;
-				}
-			}
-			pattern[pattern_pos] = *first;						//Store pulse in pattern array
-			message[messageLen] = pattern_pos;
-#if DEBUGDETECT>3
-			Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
-#endif // DEBUGDETECT
-			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
-
-			messageLen++;
-			pattern_pos++;
-
-			//printOut();
-			if (pattern_pos == maxNumPattern)
-			{
-				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
-				patternLen = maxNumPattern;
-			}
-
-			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
-
-			/*
-			if (pattern_pos==maxNumPattern)
-			{
-			pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
-			patternLen=maxNumPattern;
-			} else {
-
-			patternLen++;
-			}
-			*/
-			/*
-			DEBUG_BEGIN(2)
-			printOut();
-			DEBUG_END
-			*/
-		}
-#if DEBUGDETECT>3
-		Serial.println();
-#endif // DEBUGDETECT
-
-
-
+//		bool add_new_pattern = true;
+//
+//		if (0 <= fidx) {
+//
+//			//gefunden
+//			if (messageLen > 0 && message[messageLen - 1] == fidx) {  // Der Fall darf eigentlich nicht vorkommen da hier Valid = 0 sein muss
+//				add_new_pattern = true;
+//				valid = false;
+//			} else {
+//				add_new_pattern = false;
+//				//addData(fidx);
+//				updPattern(fidx);
+//			}
+//		}
+//		else {
+//			// Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
+//			calcHisto();
+//			if (patternLen == maxNumPattern && histo[pattern_pos] > 1)
+//			{
+//				valid = false;
+//				add_new_pattern = true;
+//			}
+//		}
+//
+//		if (!valid) {
+//			//Serial.println("not valid, processing");
+//
+//			//success = true;
+//			processMessage();
+//			// reset();  // GGF hier nicht ausführen.
+//			pattern_pos = 0;
+//			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
+//		
+//			//return;
+//		}
+//		/*else if (!valid) {
+//			reset();
+//			success = false;
+//			pattern_pos = 0;
+//		}*/
+//		else if (valid && messageLen >= minMessageLen) {
+//			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+//		}
+//		/*else {
+//		if (messageLen>=minMessageLen){
+//		// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
+//		//printOut();
+//		//processMessage();
+//		//reset();pattern_pos=0;
+//		}
+//		*/
+//		if (add_new_pattern)
+//		{
+//			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
+//			// Array wird sozusagen nach links geschoben
+//			
+//			for (uint8_t  i = messageLen - 1; (i >= 0); --i)
+//			{
+//				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+//				{
+//					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+//					bufferMove(i);
+//					messageLen++;  //Move messagelen pointer one forward to avoid overwrite
+//					break;
+//				}
+//			}
+//			pattern[pattern_pos] = *first;						//Store pulse in pattern array
+//			message[messageLen] = pattern_pos;
+//#if DEBUGDETECT>3
+//			Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
+//#endif // DEBUGDETECT
+//			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
+//
+//			messageLen++;
+//			pattern_pos++;
+//
+//			//printOut();
+//			if (pattern_pos == maxNumPattern)
+//			{
+//				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+//				patternLen = maxNumPattern;
+//			}
+//
+//			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+//
+//			/*
+//			if (pattern_pos==maxNumPattern)
+//			{
+//			pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+//			patternLen=maxNumPattern;
+//			} else {
+//
+//			patternLen++;
+//			}
+//			*/
+//			/*
+//			DEBUG_BEGIN(2)
+//			printOut();
+//			DEBUG_END
+//			*/
+//		}
+//#if DEBUGDETECT>3
+//		Serial.println();
+//#endif // DEBUGDETECT
+//
+//
+//
 }
 
 bool SignalDetectorClass::decode(const int * pulse)
@@ -262,10 +284,17 @@ bool SignalDetectorClass::decode(const int * pulse)
 void SignalDetectorClass::compress_pattern()
 {
 	calcHisto();
+
 	for (uint8_t idx = 0; idx<patternLen; idx++)
 	{
+		if (histo[idx] == 0)
+			continue;
+
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
+			if (histo[idx2] == 0)
+				continue;
+			
 			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
@@ -294,6 +323,8 @@ void SignalDetectorClass::compress_pattern()
 				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
 				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
 				pattern[idx2] = 0;
+				histo[idx] += histo[idx2];
+				histo[idx2] = 0;
 
 #if DEBUGDETECT>2
 				Serial.print(" idx:"); Serial.print(pattern[idx]);
@@ -638,6 +669,7 @@ const bool SignalDetectorClass::inTol(const int val, const int set, const int to
 
 void SignalDetectorClass::printOut()
 {
+#if DEBUGDETECT >= 1
 	Serial.println();
 	Serial.print("Sync: "); Serial.print(pattern[sync]);
 	Serial.print(" -> SyncFact: "); Serial.print(pattern[sync] / (float)pattern[clock]);
@@ -668,6 +700,7 @@ void SignalDetectorClass::printOut()
 		Serial.print("]");
 	}
 	Serial.println();
+#endif
 }
 
 int8_t SignalDetectorClass::findpatt(const int val)
@@ -677,13 +710,13 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	tol = abs(val)*0.1;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
-
-		if (inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+		if (inTol(val, pattern[idx], tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 		{
 			return idx;
 		}
 	}
+	
 	// sequence was not found in pattern
 	return -1;
 }
@@ -1075,6 +1108,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #ifdef DEBUGDECODE
 							Serial.print(F("preamble:"));Serial.print(pClocks);Serial.print(F("C"));
 #endif
+							pdec->mstart--;	// keep in buffer
 							preamble = true;
 							break;
 						}

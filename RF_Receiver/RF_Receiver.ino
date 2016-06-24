@@ -65,7 +65,7 @@ patternDecoder musterDec;
 #include <EEPROM.h>
 
 
-#define pulseMin  90
+#define pulseMin  150
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
