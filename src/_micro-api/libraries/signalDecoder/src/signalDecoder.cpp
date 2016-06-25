@@ -261,7 +261,6 @@ bool SignalDetectorClass::decode(const int * pulse)
 
 void SignalDetectorClass::compress_pattern()
 {
-
 	calcHisto();
 	for (uint8_t idx = 0; idx<patternLen; idx++)
 	{
@@ -1045,13 +1044,59 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 	while (i < pdec->messageLen)
 	{
-		
 		// Start vom MC Signal suchen
 		if (mc_start_found == false && (isLong(pdec->message[i]) || isShort(pdec->message[i])))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
 			mc_sync = true;
+
+			// lookup for first long
+			int pulseCnt = 0; 
+			bool preamble = false;
+			for (uint8_t l=i; l<pdec->messageLen; l++) {
+				bool pulseIsLong = isLong(pdec->message[l]);
+				
+				// no manchester
+				if (!(pulseIsLong || isShort(pdec->message[l]))) {
+					break;
+				}
+				
+				pulseCnt += (pulseIsLong ? 2 : 1);
+				// probe signal to match manchester
+				if (pulseIsLong) {
+					// probe clock based preamble
+					if (l == i && i > 0) {
+						int clock = (pdec->pattern[shorthigh] + abs(pdec->pattern[shortlow])) / 2;
+						int pClock = abs(pdec->pattern[pdec->message[l-1]]); 
+						int pClocks = round(pClock / (float)clock); 
+
+						if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.02) {
+#ifdef DEBUGDECODE
+							Serial.print(F("preamble:"));Serial.print(pClocks);Serial.print(F("C"));
+#endif
+							preamble = true;
+							break;
+						}
+					}
+					
+					ht=((pulseCnt & 0x1) == 0);
+#ifdef DEBUGDECODE
+					if (ht) {
+						Serial.print(F("pulseShift:"));Serial.print(l);
+					}
+#endif
+					break;
+				}
+			}
+			
+			// interpret first long as short if preamble was found 
+			if (preamble) {
+				ht = true;
+				i++;
+				continue;
+			}
+			
 		}
 		// Sync to a long or short pulse 
 		/*
@@ -1084,7 +1129,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 			#endif
 			if (isShort(pdec->message[i])) //Todo: Check for second short
 			{
-				
 				hasbit = ht;
 				ht = !ht;
 				#ifdef DEBUGDECODE
@@ -1109,23 +1153,24 @@ const bool ManchesterpatternDecoder::doDecode() {
 				   //if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits.valcount < minbitlen)
 				{
-					if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && !isShort(pdec->message[i + 1])) {
-						// unequal number of short pulses. Restart, but one pulse ahead i is incremented at end of while loop
-						i = pdec->mstart;
-					}
+//					if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && !isShort(pdec->message[i + 1])) {
+//						// unequal number of short pulses. Restart, but one pulse ahead i is incremented at end of while loop
+//						i = pdec->mstart;
+//					}
 					//pdec->mstart=i;
 					mc_start_found = false; // Reset to find new starting position
 					mc_sync = false;
+					ht = false; // reset short count too
 #ifdef DEBUGDECODE
 					Serial.print(":RES:");
 #endif
 					ManchesterBits.reset();
 
 				} else {
-					pdec->mend = i;
-					if (isShort(pdec->message[i]) && i == maxMsgSize - 1) {
-						pdec->mend--;
-					}
+					pdec->mend = i - (ht ? 0 : 1); // keep short in buffer
+//					if (isShort(pdec->message[i]) && i == maxMsgSize - 1)) {
+//						pdec->mend--;
+//					}
 #ifdef DEBUGDECODE
 					Serial.print(":mpos:");
 					Serial.print(i);
@@ -1154,21 +1199,25 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 
 
-
-#			ifdef DEBUGDECODE
-			if (pdec->pattern[pdec->message[i]] < 0)
-				value = (value + 0x20); //lowwecase
-			Serial.print(value);
-			#endif
-
-			if (hasbit) {
-				ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
-				#ifdef DEBUGDECODE
-				Serial.print(ManchesterBits.getValue(ManchesterBits.valcount-1));
-				#endif;
-				hasbit = false;
+			if (mc_start_found) { // don't write if manchester processing was canceled
+#ifdef DEBUGDECODE
+				if (pdec->pattern[pdec->message[i]] < 0)
+					value = (value + 0x20); //lowwecase
+				Serial.print(value);
+#endif
+	
+				if (hasbit) {
+					ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
+#ifdef DEBUGDECODE
+					Serial.print(ManchesterBits.getValue(ManchesterBits.valcount-1));
+#endif;
+					hasbit = false;
+				} else {
+#ifdef DEBUGDECODE
+					Serial.print("_");
+#endif;
+				}
 			}
-
 
 
 		}
