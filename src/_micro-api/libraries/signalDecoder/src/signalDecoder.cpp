@@ -1038,7 +1038,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.println("");
 
 #endif
-	char  lastbit;
+//	char  lastbit;
 	bool ht = false;
 	bool hasbit = false;
 

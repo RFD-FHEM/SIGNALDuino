@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b28+recompiled"
+#define PROGVERS               "3.2.0-b30"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -534,6 +534,7 @@ void send_cmd()
 				cmdNo++;
 				command[cmdNo].type=raw;
 				//Serial.println("Adding raw");
+				extraDelay = false;
 
 			}
 		}
