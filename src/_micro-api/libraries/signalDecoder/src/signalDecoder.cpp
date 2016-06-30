@@ -97,7 +97,6 @@ inline void SignalDetectorClass::doDetect()
 			if (patternLen == maxNumPattern)
 			{
 				calcHisto();
-//				compress_pattern();
 
 				// search empty pattern
 				for (uint8_t p=0; p<patternLen; p++) {
@@ -1071,7 +1070,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	Serial.println("");
 
 #endif
-	char  lastbit;
+//	char  lastbit;
 	bool ht = false;
 	bool hasbit = false;
 

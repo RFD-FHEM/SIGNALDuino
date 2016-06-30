@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b28+recompiled"
+#define PROGVERS               "3.2.0-b30+recompiled"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -65,7 +65,7 @@ patternDecoder musterDec;
 #include <EEPROM.h>
 
 
-#define pulseMin  150
+#define pulseMin  90
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
@@ -268,6 +268,8 @@ void loop() {
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
+  noInterrupts();
+
   const unsigned long Time=micros();
   //const bool state = digitalRead(PIN_RECEIVE);
   const unsigned long  duration = Time - lastTime;
@@ -293,6 +295,7 @@ void handleInterrupt() {
     //++fifocnt;
   } // else => trash
 
+  interrupts();
 }
 
 void enableReceive() {
@@ -457,6 +460,13 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 
 	}
 
+  // generate non manchester conform signal to mark the end
+  stoptime = micros() + (isHigh(PIN_SEND) ? 5 : 4);
+  digitalLow(PIN_SEND);
+  while (stoptime > micros()) {
+    ;
+  }
+
 	// Serial.println("");
 }
 
@@ -534,6 +544,7 @@ void send_cmd()
 				cmdNo++;
 				command[cmdNo].type=raw;
 				//Serial.println("Adding raw");
+				extraDelay = false;
 
 			}
 		}
@@ -575,7 +586,7 @@ void send_cmd()
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
 			digitalLow(PIN_SEND);
 		}
-		if (extraDelay) delay(32);
+		if (extraDelay) delay(1);
 	}
 
 	enableReceive();	// enable the receiver
