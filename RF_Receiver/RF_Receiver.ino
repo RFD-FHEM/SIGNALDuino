@@ -460,12 +460,11 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 
 	}
 
-  // generate non manchester conform signal to mark the end
+  // generate none manchester conform signal to mark the end
   stoptime = micros() + (isHigh(PIN_SEND) ? 5 : 4);
   digitalLow(PIN_SEND);
-  while (stoptime > micros()) {
+  while (stoptime > micros())
     ;
-  }
 
 	// Serial.println("");
 }
@@ -544,8 +543,7 @@ void send_cmd()
 				cmdNo++;
 				command[cmdNo].type=raw;
 				//Serial.println("Adding raw");
-				extraDelay = false;
-
+        extraDelay = false;
 			}
 		}
 		else if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect

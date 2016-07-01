@@ -83,6 +83,7 @@ public:
 	bool m_truncated;     // Identify if message has been truncated
 	bool m_overflow;
 	void bufferMove(const uint8_t start);
+	bool bufferModified;
 
 	uint16_t tol;                           // calculated tolerance for signal
 	uint8_t bitcnt;
