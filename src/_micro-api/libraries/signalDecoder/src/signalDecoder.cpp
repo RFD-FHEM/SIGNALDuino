@@ -176,7 +176,7 @@ void SignalDetectorClass::compress_pattern()
 {
 	calcHisto();
 
-	for (uint8_t idx = 0; idx<patternLen; idx++)
+	for (uint8_t idx = 0; idx<patternLen-1; idx++)
 	{
 		if (histo[idx] == 0)
 			continue;
