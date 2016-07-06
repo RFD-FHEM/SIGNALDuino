@@ -1110,7 +1110,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					Serial.print(pdec->pattern[pdec->message[i]]);
 
 #endif
-					pdec->bufferMove(i);
+					pdec->bufferMove(pdec->mend);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
