@@ -1106,10 +1106,15 @@ const bool ManchesterpatternDecoder::doDecode() {
 					Serial.print(":mend:");
 					Serial.print(pdec->mend);
 					Serial.print(":found:");
+					Serial.print(":pidx:");
+					Serial.print(pdec->pattern[pdec->message[i]]);
+
 #endif
-					pdec->bufferMove(pdec->mend);
+					pdec->bufferMove(i);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-												//if (i+minbitlen > pdec->messageLen)
+					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
+			
+					//if (i+minbitlen > pdec->messageLen)
 					/*
 					if ( isShort(pdec->message[pdec->messageLen]) )
 					{
@@ -1240,7 +1245,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		p = ++ptmp;
 	}
 #if DEBUGDETECT >= 3
-	Serial.print("Sorted");
+	Serial.print("Sorted:");
 	for (uint8_t i = 0; i < p; i++)
 	{
 		Serial.print(sortedPattern[i]); Serial.print(",");
