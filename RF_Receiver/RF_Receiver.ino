@@ -65,7 +65,7 @@ patternDecoder musterDec;
 #include <EEPROM.h>
 
 
-#define pulseMin  90
+#define pulseMin 90
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
@@ -288,7 +288,7 @@ void handleInterrupt() {
 	//Serial.println(sDuration);
     FiFo.enqueue(sDuration);
 	#else
-	FiFo.addValue(&sDuration);
+	  FiFo.addValue(&sDuration);
 
 	#endif // CMP_FIFO
 
@@ -404,7 +404,7 @@ inline void send_mc_one(const int16_t clock)
 
 }
 
- void send_mc_zero(const int16_t clock)
+inline void send_mc_zero(const int16_t clock)
 {
 	digitalHigh(PIN_SEND);
 	unsigned long stoptime = micros() + clock;
@@ -461,7 +461,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	}
 
   // generate none manchester conform signal to mark the end
-  stoptime = micros() + (isHigh(PIN_SEND) ? 5 : 4);
+  stoptime = micros() +  clock * (isHigh(PIN_SEND) ? 5 : 4);
   digitalLow(PIN_SEND);
   while (stoptime > micros())
     ;

@@ -988,14 +988,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 				pulseCnt += (pulseIsLong ? 2 : 1);
 				// probe signal to match manchester
 				if (pulseIsLong) {
-#ifdef DEBUGDECODE
-								Serial.print(F("\nprobe signal to match manchester:"));
-								Serial.print(l);Serial.print(F("_"));
-								Serial.print(i);Serial.print(F("_"));
-								Serial.print(clock);Serial.print(F("_"));
-								Serial.print(pdec->pattern[pdec->message[l]]);Serial.print(F("_"));
-								Serial.print(pdec->pattern[pdec->message[l-1]]);Serial.println();
-#endif
 					// probe clock based preamble
 					if (l == i && i > 0) {
 						int pClock = abs(pdec->pattern[pdec->message[l-1]]);
@@ -1006,13 +998,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	
 							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.03) {
 #ifdef DEBUGDECODE
-								Serial.print(F("preamble:"));
-								Serial.print(l);Serial.print(F("_"));
-								Serial.print(i);Serial.print(F("_"));
-								Serial.print(clock);Serial.print(F("_"));
-								Serial.print(pdec->pattern[pdec->message[l]]);Serial.print(F("_"));
-								Serial.print(pdec->pattern[pdec->message[l-1]]);Serial.print(F("_"));
-								Serial.print(pClocks);Serial.print(F("C"));
+								Serial.print(F("preamble:"));Serial.print(pClocks);Serial.print(F("C"));
 #endif
 								pdec->mstart--;	// keep in buffer
 								preamble = true;
