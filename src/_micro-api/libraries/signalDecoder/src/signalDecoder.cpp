@@ -132,113 +132,6 @@ inline void SignalDetectorClass::doDetect()
 		Serial.print(", pattPos: "); Serial.print(pattern_pos);
 		Serial.print(", mLen: "); Serial.println(messageLen);
 #endif
-		return;
-
-		bool add_new_pattern = true;
-
-		if (0 <= fidx) {
-
-			//gefunden
-			if (messageLen > 0 && message[messageLen - 1] == fidx) {  // Der Fall darf eigentlich nicht vorkommen da hier Valid = 0 sein muss
-				add_new_pattern = true;
-				valid = false;
-			} else {
-				add_new_pattern = false;
-				//addData(fidx);
-				updPattern(fidx);
-			}
-		}
-		else {
-			// Prüfen ob wir noch Muster in den Puffer aufnehmen können oder ob wir Muster überschreiben würden
-			calcHisto();
-			if (patternLen == maxNumPattern && histo[pattern_pos] > 1)
-			{
-				valid = false;
-				add_new_pattern = true;
-			}
-		}
-
-		if (!valid) {
-			//Serial.println("not valid, processing");
-
-			//success = true;
-			processMessage();
-			// reset();  // GGF hier nicht ausführen.
-			pattern_pos = 0;
-			//doDetectwoSync(); //Sichert den aktuellen Puls nach dem Reset, da wir ihn ggf. noch benötigen
-		
-			//return;
-		}
-		/*else if (!valid) {
-			reset();
-			success = false;
-			pattern_pos = 0;
-		}*/
-		else if (valid && messageLen >= minMessageLen) {
-			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-		}
-		/*else {
-		if (messageLen>=minMessageLen){
-		// Annahme, wir haben eine Nachricht empfangen, jetzt kommt rauschen, welches nicht zum Muster passt
-		//printOut();
-		//processMessage();
-		//reset();pattern_pos=0;
-		}
-		*/
-		if (add_new_pattern)
-		{
-			// Löscht alle Einträge in dem Nachrichten Array die durch das hinzugügen eines neuen Pattern überschrieben werden
-			// Array wird sozusagen nach links geschoben
-			
-			for (uint8_t  i = messageLen - 1; (i >= 0); --i)
-			{
-				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
-				{
-					i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
-					bufferMove(i);
-					messageLen++;  //Move messagelen pointer one forward to avoid overwrite
-					break;
-				}
-			}
-			pattern[pattern_pos] = *first;						//Store pulse in pattern array
-			message[messageLen] = pattern_pos;
-#if DEBUGDETECT>3
-			Serial.print(F(", pattPos: ")); Serial.print(pattern_pos);
-#endif // DEBUGDETECT
-			//*(message+messageLen) = patternLen; 					//Index des letzten Elements in die Nachricht schreiben
-
-			messageLen++;
-			pattern_pos++;
-
-			//printOut();
-			if (pattern_pos == maxNumPattern)
-			{
-				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
-				patternLen = maxNumPattern;
-			}
-
-			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
-
-			/*
-			if (pattern_pos==maxNumPattern)
-			{
-			pattern_pos=0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
-			patternLen=maxNumPattern;
-			} else {
-
-			patternLen++;
-			}
-			*/
-			/*
-			DEBUG_BEGIN(2)
-			printOut();
-			DEBUG_END
-			*/
-		}
-#if DEBUGDETECT>3
-		Serial.println();
-#endif // DEBUGDETECT
-
 
 
 }
@@ -262,10 +155,16 @@ bool SignalDetectorClass::decode(const int * pulse)
 void SignalDetectorClass::compress_pattern()
 {
 	calcHisto();
-	for (uint8_t idx = 0; idx<patternLen; idx++)
+	for (uint8_t idx = 0; idx<patternLen-1; idx++)
 	{
+		if (histo[idx] == 0)
+			continue;
+
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
+			if (histo[idx2] == 0)
+				continue;
+
 			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
@@ -287,12 +186,8 @@ void SignalDetectorClass::compress_pattern()
 
 
 				int  sum = histo[idx] + histo[idx2];
-				if (sum == 0)
-					pattern[idx] = (long(pattern[idx]) * histo[idx] / sum) + (pattern[idx2] * histo[idx2] / sum);
-				else
-					pattern[idx] = (long(pattern[idx]) + pattern[idx2]) / 2;
-				//pattern[idx][0] = (pattern[idx][0]*float(histo[idx]/ sum))+(pattern[idx2][0]*float(histo[idx2]/ sum)); // Store the average of both pattern, may better to calculate the number of stored pattern in message
-				//pattern[idx][0] = (pattern[idx][0]+pattern[idx2][0])/2;
+				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (pattern[idx2] * histo[idx2])) / sum;
+				histo[idx] += histo[idx2];
 				pattern[idx2] = 0;
 
 #if DEBUGDETECT>2
@@ -437,7 +332,8 @@ void SignalDetectorClass::processMessage()
 				//Serial.print("Buffer overflow while processing signal");
 				//Serial.print(MSG_END);
 				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
-
+				
+				success = true;	// don't process other message types
 			}
 		}
 		if (success == false && (MUenabled || MCenabled)) {

@@ -583,7 +583,7 @@ void send_cmd()
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
 			digitalLow(PIN_SEND);
 		}
-		if (extraDelay) delay(32);
+		if (extraDelay) delay(1);
 	}
 
 	enableReceive();	// enable the receiver
