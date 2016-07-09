@@ -456,6 +456,13 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		//Serial.print(" ");
 
 	}
+	  // generate none manchester conform signal to mark the end
+	stoptime = micros() + clock * (isHigh(PIN_SEND) ? 5 : 4);
+	digitalLow(PIN_SEND);
+	while (stoptime > micros())
+		yield();
+	
+	
 
 	// Serial.println("");
 }
