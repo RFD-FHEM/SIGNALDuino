@@ -963,16 +963,26 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if (pulseIsLong) {
 					// probe clock based preamble
 					if (l == i && i > 0) {
+						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
+
 						int clock = (pdec->pattern[shorthigh] + abs(pdec->pattern[shortlow])) / 2;
 						int pClock = abs(pdec->pattern[pdec->message[l-1]]); 
 						int pClocks = round(pClock / (float)clock); 
 
-						if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.02) {
+
+
+						if (pClock < maxPulse && ((pdec->pattern[pdec->message[l - 1]] > 0) != (pdec->pattern[pdec->message[l]] > 0))) 
+						{
+							int pClocks = round(pClock / (float)clock);
+							
+							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.02) {
 #ifdef DEBUGDECODE
-							Serial.print(F("preamble:"));Serial.print(pClocks);Serial.print(F("C"));
+								Serial.print(F("preamble:")); Serial.print(pClocks); Serial.print(F("C"));
 #endif
-							preamble = true;
-							break;
+								pdec->mstart--;
+								preamble = true;
+								break;
+							}
 						}
 					}
 					
@@ -1125,7 +1135,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		//Serial.print(" S MC ");
 		i++;
 	}
-	pdec->mend = i;
+	pdec->mend = i - (ht ? 0 : 1); // keep short in buffer;
 
 #ifdef DEBUGDECODE
 	Serial.print(":mpos:");
@@ -1277,6 +1287,8 @@ const bool ManchesterpatternDecoder::isManchester()
 
 				equal_cnt -= pdec->histo[sortedPattern[x]];
 				neg_cnt++;
+				tstclock -= aktpulse;
+
 			}
 
 			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
@@ -1309,7 +1321,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 	mcDetected:
 
-	tstclock = tstclock / 3;
+	tstclock = tstclock / 6;
 #if DEBUGDETECT >= 1
 	Serial.print("  tstclock: "); Serial.print(tstclock);
 #endif
