@@ -39,7 +39,7 @@
 #endif
 #include <bitstore.h>
 
-#define maxNumPattern 12
+#define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 7
@@ -57,6 +57,8 @@
 //#define DEBUGDECODE 2
 
 enum status { searching, clockfound, syncfound, detecting };
+
+#define sign(a) ( ( (a) < 0 )  ?  -1   : ( (a) > 0 ) )
 
 class SignalDetectorClass
 {
