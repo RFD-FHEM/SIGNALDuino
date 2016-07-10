@@ -77,6 +77,7 @@ inline void SignalDetectorClass::doDetect()
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
 
+
 		if (!valid)
 		{
 			// Try output
@@ -109,7 +110,6 @@ inline void SignalDetectorClass::doDetect()
 					}
 				}
 			}
-			
 			fidx = pattern_pos;
 			addPattern();
 
@@ -118,13 +118,16 @@ inline void SignalDetectorClass::doDetect()
 				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
 				patternLen = maxNumPattern;
 				mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
+
 			}
 			if (pattern_pos > patternLen) patternLen = pattern_pos;
+
 		}
 		
 		// Add data to buffer
 		addData(fidx);
-		
+
+
 #if DEBUGDETECT>3
 		Serial.print("Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 		Serial.print(", TOL: "); Serial.print(tol); Serial.print(", Found: "); Serial.print(fidx);
@@ -132,7 +135,8 @@ inline void SignalDetectorClass::doDetect()
 		Serial.print(", pattPos: "); Serial.print(pattern_pos);
 		Serial.print(", mLen: "); Serial.println(messageLen);
 #endif
-		return;
+
+
 }
 
 bool SignalDetectorClass::decode(const int * pulse)
@@ -302,7 +306,7 @@ void SignalDetectorClass::processMessage()
 
 				printMsgRaw(mstart, mend, &preamble, &postamble);
 				success = true;
-				
+
 #ifdef mp_crc
 				const int8_t crco = printMsgRaw(mstart, mend, &preamble, &postamble);
 
@@ -596,7 +600,6 @@ int8_t SignalDetectorClass::findpatt(const int val)
 			return idx;
 		}
 	}
-
 	// sequence was not found in pattern
 	return -1;
 }
@@ -988,9 +991,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 	
 							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.035) {
 #ifdef DEBUGDECODE
-								Serial.print(F("preamble:"));Serial.print(pClocks);Serial.print(F("C"));
+								Serial.print(F("preamble:")); Serial.print(pClocks); Serial.print(F("C"));
 #endif
-								pdec->mstart--;	// keep in buffer
+								pdec->mstart--;
 								preamble = true;
 								break;
 							}
@@ -1096,11 +1099,15 @@ const bool ManchesterpatternDecoder::doDecode() {
 					Serial.print(":mend:");
 					Serial.print(pdec->mend);
 					Serial.print(":found:");
+					Serial.print(":pidx:");
+					Serial.print(pdec->pattern[pdec->message[i]]);
+
 #endif
 					pdec->bufferMove(pdec->mend);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-												//if (i+minbitlen > pdec->messageLen)
-//					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
+					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
+			
+					//if (i+minbitlen > pdec->messageLen)
 					/*
 					if ( isShort(pdec->message[pdec->messageLen]) )
 					{
@@ -1231,7 +1238,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		p = ++ptmp;
 	}
 #if DEBUGDETECT >= 3
-	Serial.print("Sorted");
+	Serial.print("Sorted:");
 	for (uint8_t i = 0; i < p; i++)
 	{
 		Serial.print(sortedPattern[i]); Serial.print(",");

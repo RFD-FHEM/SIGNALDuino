@@ -34,7 +34,7 @@
 #define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.2.0-b30+recompiled"
+#define PROGVERS               "3.2.0-b30"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -65,7 +65,7 @@ patternDecoder musterDec;
 #include <EEPROM.h>
 
 
-#define pulseMin 90
+#define pulseMin  90
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
@@ -288,7 +288,7 @@ void handleInterrupt() {
 	//Serial.println(sDuration);
     FiFo.enqueue(sDuration);
 	#else
-	  FiFo.addValue(&sDuration);
+	FiFo.addValue(&sDuration);
 
 	#endif // CMP_FIFO
 
@@ -384,7 +384,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	char c;
 	//digitalHigh(PIN_SEND);
 	//delay(1);
-  uint8_t bit;
+	uint8_t bit;
 
   unsigned long stoptime = micros();
 
@@ -491,7 +491,8 @@ void send_cmd()
 				cmdNo++;
 				command[cmdNo].type=raw;
 				//Serial.println("Adding raw");
-        extraDelay = false;
+				extraDelay = false;
+
 			}
 		}
 		else if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
