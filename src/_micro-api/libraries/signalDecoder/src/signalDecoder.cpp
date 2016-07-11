@@ -965,12 +965,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (l == i && i > 0) {
 						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
 
-						int clock = (pdec->pattern[shorthigh] + abs(pdec->pattern[shortlow])) / 2;
-						int pClock = abs(pdec->pattern[pdec->message[l-1]]); 
-						int pClocks = round(pClock / (float)clock); 
-
-
-
 						if (pClock < maxPulse && ((pdec->pattern[pdec->message[l - 1]] > 0) != (pdec->pattern[pdec->message[l]] > 0))) 
 						{
 							int pClocks = round(pClock / (float)clock);
