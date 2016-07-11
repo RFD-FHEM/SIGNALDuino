@@ -375,54 +375,6 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 //SM;R=2;C=400;D=AFAFAF;
 
 
-inline void send_mc_one(const int16_t clock)
-{
-	digitalLow(PIN_SEND);
-	unsigned long stoptime = micros() + clock;
-	//unsigned long t = micros();
-
-	//Serial.print("l");
-	//Serial.println(-clock);
-	while (stoptime > micros()) {
-		;// yield();
-
-	}
-	//Serial.println(-(micros() - t));
-
-	digitalHigh(PIN_SEND);
-	stoptime += clock;
-	//Serial.println(clock);
-
-	//Serial.print("h");
-	while (stoptime > micros()) {
-		;// yield();
-	}
-	//Serial.println((micros() - t));
-
-}
-
- void send_mc_zero(const int16_t clock)
-{
-	digitalHigh(PIN_SEND);
-	unsigned long stoptime = micros() + clock;
-	//unsigned long t = micros();
-	//Serial.print("h");
-
-	while (stoptime > micros()) {
-		;// yield();
-	}
-	//Serial.println(micros()-t);
-
-	digitalLow(PIN_SEND);
-	stoptime += clock;
-
-	//Serial.print("l");
-	while (stoptime > micros()) {
-		;// yield();
-	}
-	//Serial.println(-(micros() - t));
-
-}
 
 
 void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
@@ -433,37 +385,26 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	//delay(1);
 	uint8_t bit;
 
-  unsigned long stoptime;
-    
-	for (uint8_t i=startpos;i<=endpos;i++ )
-	{
+	unsigned long stoptime =micros();
+	for (uint8_t i = startpos; i <= endpos; i++) {
 		c = cmdstring.charAt(i);
-		//Serial.print(c);
+		b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
 
-		if(c >= '0' && c <= '9')
-			b= (byte)(c - '0');
-		else
-			b=(byte)(c-'A'+10);
-		
-		for (bit=0x8; bit>0; bit>>=1)
-		{
-			if (b & bit){
-				send_mc_one(clock);
-			} else {
-				send_mc_zero(clock);
+		for (bit = 0x8; bit>0; bit >>= 1) {
+			for (byte i = 0; i <= 1; i++) {
+				if ((i == 0 ? (b & bit) : !(b & bit)))
+					digitalLow(PIN_SEND);
+				else
+					digitalHigh(PIN_SEND);
+				
+					stoptime += clock;
+					while (stoptime > micros())
+						yield();
 			}
+			
 		}
-		//Serial.print(" ");
-
+		
 	}
-	  // generate none manchester conform signal to mark the end
-	stoptime = micros() + clock * (isHigh(PIN_SEND) ? 5 : 4);
-	digitalLow(PIN_SEND);
-	while (stoptime > micros())
-		yield();
-	
-	
-
 	// Serial.println("");
 }
 
