@@ -573,7 +573,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
-		if (val ^ pattern[idx] >= 0)
+		if ((val ^ pattern[idx]) >> 31)
 			continue;
 		if (inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
