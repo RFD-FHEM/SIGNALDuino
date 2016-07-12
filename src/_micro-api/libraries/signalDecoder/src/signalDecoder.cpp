@@ -570,10 +570,11 @@ int8_t SignalDetectorClass::findpatt(const int val)
 {
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
-	tol = abs(val)*0.1;
+	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
-
+		if (val ^ pattern[idx] >= 0)
+			continue;
 		if (inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 		{
@@ -969,7 +970,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 						{
 							int pClocks = round(pClock / (float)clock);
 							
-							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.02) {
+							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.035) {
 #ifdef DEBUGDECODE
 								Serial.print(F("preamble:")); Serial.print(pClocks); Serial.print(F("C"));
 #endif
