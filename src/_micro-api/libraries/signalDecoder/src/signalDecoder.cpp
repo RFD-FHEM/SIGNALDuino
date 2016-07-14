@@ -159,19 +159,13 @@ void SignalDetectorClass::compress_pattern()
 {
 	for (uint8_t idx=0; idx<patternLen-1; idx++)
 	{
-		if (histo[idx] == 0) {
-			// wipe empty pattern
-			pattern[idx] = 0;
+		if (histo[idx] == 0)
 			continue;
-		}
 
-		for (uint8_t idx2=idx+1; idx2<patternLen; idx2++)
+		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0) {
-				// wipe empty pattern
-				pattern[idx2] = 0;
+			if (histo[idx2] == 0)
 				continue;
-			}
 			
 			if (sign(pattern[idx]) != sign(pattern[idx2]))
 				continue;

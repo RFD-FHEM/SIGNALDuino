@@ -378,6 +378,8 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 //SM;R=2;C=400;D=AFAFAF;
 
 
+
+
 void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 {
 	int8_t b;
