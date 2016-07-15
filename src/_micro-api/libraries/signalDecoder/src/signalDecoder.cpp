@@ -162,9 +162,8 @@ void SignalDetectorClass::compress_pattern()
 
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0)
+			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 31)
 				continue;
-
 			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
@@ -182,13 +181,14 @@ void SignalDetectorClass::compress_pattern()
 				Serial.print(histo[idx2]); Serial.print("*"); Serial.print(pattern[idx2]);
 				Serial.print("->");
 				Serial.print(histo[idx]); Serial.print("*"); Serial.print(pattern[idx]);
+				
 #endif // DEBUGDETECT
 
 
 				int  sum = histo[idx] + histo[idx2];
 				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (pattern[idx2] * histo[idx2])) / sum;
 				histo[idx] += histo[idx2];
-				pattern[idx2] = 0;
+				pattern[idx2] = histo[idx2]= 0;
 
 #if DEBUGDETECT>2
 				Serial.print(" idx:"); Serial.print(pattern[idx]);
@@ -275,7 +275,7 @@ void SignalDetectorClass::processMessage()
 				preamble.concat(SERIAL_DELIMITER);  // Message Index
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
-					if (histo[idx] == 0) continue;
+					if (pattern[idx] == 0 || histo[idx] == 0) continue;
 					preamble.concat('P'); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 				}
 				preamble.concat("D=");
@@ -453,7 +453,7 @@ void SignalDetectorClass::processMessage()
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
-					if (histo[idx] == 0) continue;
+					if (pattern[idx] == 0 || histo[idx] == 0) continue;
 
 					preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 				}
@@ -539,7 +539,7 @@ void SignalDetectorClass::printOut()
 	Serial.print(" -> SyncFact: "); Serial.print(pattern[sync] / (float)pattern[clock]);
 	Serial.print(", Clock: "); Serial.print(pattern[clock]);
 	Serial.print(", Tol: "); Serial.print(tol);
-	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ");
+	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ("); Serial.print(pattern_pos); Serial.print(")");
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.print(", mStart: "); Serial.print(mstart);
 	Serial.print(", MCD: "); Serial.print(mcDetected,DEC);
@@ -575,7 +575,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	{
 		if ((val ^ pattern[idx]) >> 31)
 			continue;
-		if (inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+		if (pattern[idx] != 0 && inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 		{
 			return idx;
@@ -966,7 +966,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (l == i && i > 0) {
 						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
 
-						if (pClock < maxPulse && ((pdec->pattern[pdec->message[l - 1]] > 0) != (pdec->pattern[pdec->message[l]] > 0))) 
+						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>31)
 						{
 							int pClocks = round(pClock / (float)clock);
 							
