@@ -164,7 +164,7 @@ void SignalDetectorClass::compress_pattern()
 
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0)
+			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 31)
 				continue;
 			
 			if (sign(pattern[idx]) != sign(pattern[idx2]))
@@ -411,6 +411,7 @@ void SignalDetectorClass::processMessage()
 #ifdef DEBUGDECODE
 					Serial.println(" ");
 #endif
+
 					printMsgStr(&preamble, &mcbitmsg, &postamble);
 					mcDetected = false;
 					success = true;
@@ -585,7 +586,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; idx++)
 	{
-		if (sign(val) != sign(pattern[idx]))
+		if ((val ^ pattern[idx]) >> 31)
 			continue;
 		
 		if (pattern[idx] != 0 && inTol(val, pattern[idx], tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
@@ -977,12 +978,12 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if (pulseIsLong) {
 					// probe clock based preamble
 					if (l == i && i > 0) {
-						int pClock = abs(pdec->pattern[pdec->message[l-1]]);
+						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
 
-						// check if level is different
-						if (pClock < maxPulse && sign(pdec->pattern[pdec->message[l-1]]) != sign(pdec->pattern[pdec->message[l]])) {
-							int pClocks = round(pClock / (float)clock); 
-	
+						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>31)
+						{
+							int pClocks = round(pClock / (float)clock);
+							
 							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.035) {
 #ifdef DEBUGDECODE
 								Serial.print(F("preamble:")); Serial.print(pClocks); Serial.print(F("C"));
@@ -993,7 +994,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 							}
 						}
 					}
-
+					
 					ht=((pulseCnt & 0x1) == 0);
 #ifdef DEBUGDECODE
 					if (ht) {
