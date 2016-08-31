@@ -984,7 +984,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 						{
 							int pClocks = round(pClock / (float)clock);
 							
-							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.035) {
+							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.07) {
 #ifdef DEBUGDECODE
 								Serial.print(F("preamble:")); Serial.print(pClocks); Serial.print(F("C"));
 #endif
