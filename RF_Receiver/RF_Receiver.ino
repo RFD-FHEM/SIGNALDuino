@@ -268,6 +268,8 @@ void loop() {
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
+  noInterrupts();
+
   const unsigned long Time=micros();
   //const bool state = digitalRead(PIN_RECEIVE);
   const unsigned long  duration = Time - lastTime;
@@ -293,6 +295,7 @@ void handleInterrupt() {
     //++fifocnt;
   } // else => trash
 
+  interrupts();
 }
 
 void enableReceive() {
@@ -385,26 +388,34 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 	//delay(1);
 	uint8_t bit;
 
-	unsigned long stoptime =micros();
-	for (uint8_t i = startpos; i <= endpos; i++) {
-		c = cmdstring.charAt(i);
-		b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
+  unsigned long stoptime = micros();
 
-		for (bit = 0x8; bit>0; bit >>= 1) {
-			for (byte i = 0; i <= 1; i++) {
-				if ((i == 0 ? (b & bit) : !(b & bit)))
-					digitalLow(PIN_SEND);
-				else
-					digitalHigh(PIN_SEND);
-				
-					stoptime += clock;
-					while (stoptime > micros())
-						yield();
-			}
-			
-		}
-		
-	}
+  for (uint8_t i=startpos;i<=endpos;i++ ) {
+    c = cmdstring.charAt(i);
+
+    b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
+
+    for (bit=0x8; bit>0; bit>>=1) {
+      for (byte i=0; i<=1; i++) {
+        if ((i==0 ? (b & bit) : !(b & bit)))
+          digitalLow(PIN_SEND);
+        else
+          digitalHigh(PIN_SEND);
+         
+        stoptime += clock;
+        while (stoptime > micros())
+          ;
+      }
+    }
+  }
+
+  // 3 clocks are invalid for manchester and marks the end
+  stoptime += clock * (isHigh(PIN_SEND) ? 5 : 4);
+  if (isHigh(PIN_SEND))
+    digitalLow(PIN_SEND);
+  while (stoptime > micros())
+    ;
+
 	// Serial.println("");
 }
 

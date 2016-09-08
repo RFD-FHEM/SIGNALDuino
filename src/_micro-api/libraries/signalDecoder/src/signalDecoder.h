@@ -58,6 +58,8 @@
 
 enum status { searching, clockfound, syncfound, detecting };
 
+#define sign(a) ( ( (a) < 0 )  ?  -1   : ( (a) > 0 ) )
+
 class SignalDetectorClass
 {
 	friend class ManchesterpatternDecoder;
@@ -83,6 +85,7 @@ public:
 	bool m_truncated;     // Identify if message has been truncated
 	bool m_overflow;
 	void bufferMove(const uint8_t start);
+	bool bufferModified;
 
 	uint16_t tol;                           // calculated tolerance for signal
 	uint8_t bitcnt;

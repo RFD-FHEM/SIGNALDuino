@@ -40,7 +40,9 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 
 	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
 	memmove(message, message + start, len_single_entry*messageLen);
+	bufferModified = true;
 
+	calcHisto();
 }
 
 
@@ -48,11 +50,13 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 {
 	message[messageLen] = value;
 	messageLen++;
+	histo[value]++;
 }
 
 inline void SignalDetectorClass::addPattern()
 {
-	pattern[pattern_pos] = *first;						//Store pulse in pattern array
+	pattern[pattern_pos] = *first;	//Store pulse in pattern array
+	histo[pattern_pos] = 0;
 	pattern_pos++;
 }
 
@@ -95,7 +99,6 @@ inline void SignalDetectorClass::doDetect()
 			// Add pattern
 			if (patternLen == maxNumPattern)
 			{
-				calcHisto();
 				if (histo[patternLen] > 2) processMessage();
 				for (int16_t i = messageLen - 1; i > 0; --i)
 				{
@@ -154,8 +157,7 @@ bool SignalDetectorClass::decode(const int * pulse)
 
 void SignalDetectorClass::compress_pattern()
 {
-	calcHisto();
-	for (uint8_t idx = 0; idx<patternLen-1; idx++)
+	for (uint8_t idx=0; idx<patternLen-1; idx++)
 	{
 		if (histo[idx] == 0)
 			continue;
@@ -164,7 +166,11 @@ void SignalDetectorClass::compress_pattern()
 		{
 			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 31)
 				continue;
-			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
+			
+			if (sign(pattern[idx]) != sign(pattern[idx2]))
+				continue;
+			
+			const int16_t tol = int( (abs(pattern[idx2])*tolFact) );
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
 				// Change val -> ref_val in message array
@@ -177,22 +183,22 @@ void SignalDetectorClass::compress_pattern()
 				}
 
 #if DEBUGDETECT>2
-				Serial.print("compr: "); Serial.print(idx2); Serial.print("->"); Serial.print(idx); Serial.print(";");
-				Serial.print(histo[idx2]); Serial.print("*"); Serial.print(pattern[idx2]);
-				Serial.print("->");
-				Serial.print(histo[idx]); Serial.print("*"); Serial.print(pattern[idx]);
-				
+				String pointer = F("->"), star = F("*"), colon = F(";");
+				Serial.print(F("compr: ")); Serial.print(idx2); Serial.print(pointer); Serial.print(idx); Serial.print(colon);
+				Serial.print(histo[idx2]); Serial.print(star); Serial.print(pattern[idx2]);
+				Serial.print(pointer);
+				Serial.print(histo[idx]); Serial.print(star); Serial.print(pattern[idx]);
 #endif // DEBUGDETECT
 
 
 				int  sum = histo[idx] + histo[idx2];
 				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (pattern[idx2] * histo[idx2])) / sum;
 				histo[idx] += histo[idx2];
-				pattern[idx2] = histo[idx2]= 0;
+				pattern[idx2] = histo[idx2] = 0;
 
 #if DEBUGDETECT>2
 				Serial.print(" idx:"); Serial.print(pattern[idx]);
-				Serial.print(" idx2:"); Serial.print(pattern[idx2]);
+//				Serial.print(" idx2:"); Serial.print(pattern[idx2]);
 				Serial.println(";");
 #endif // DEBUGDETECT
 
@@ -212,7 +218,6 @@ void SignalDetectorClass::processMessage()
 		Serial.println("Message received:");
 #endif
 		compress_pattern();
-		calcHisto();
 		getClock();
 		if (state == clockfound) getSync();
 
@@ -220,6 +225,7 @@ void SignalDetectorClass::processMessage()
 		printOut();
 #endif
 
+		bufferModified = false; // clear flag for buffer modifications
 		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
 		{
 #if DEBUGDECODE >0
@@ -246,7 +252,8 @@ void SignalDetectorClass::processMessage()
 			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
 
-			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
+			// not required because MS doesn't access histo again
+			//calcHisto(mstart, mend);	// Recalc histogram due to shortened message
 
 
 #if DEBUGDECODE > 1
@@ -275,7 +282,8 @@ void SignalDetectorClass::processMessage()
 				preamble.concat(SERIAL_DELIMITER);  // Message Index
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
-					if (pattern[idx] == 0 || histo[idx] == 0) continue;
+					if (pattern[idx] == 0 || histo[idx] == 0)
+						continue;
 					preamble.concat('P'); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 				}
 				preamble.concat("D=");
@@ -312,8 +320,7 @@ void SignalDetectorClass::processMessage()
 					//processMessage(); // Todo: needs to be optimized
 				}
 #endif
-
-
+				bufferMove(mend);
 			}
 			else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
@@ -323,18 +330,19 @@ void SignalDetectorClass::processMessage()
 #endif
 				bufferMove(mstart);
 				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-			}
-			else {
-#ifdef DEBUGDECODE
-				Serial.println(" Buffer overflow, flushing message array");
-#endif
-				//Serial.print(MSG_START);
-				//Serial.print("Buffer overflow while processing signal");
-				//Serial.print(MSG_END);
-				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
-				
 				success = true;	// don't process other message types
 			}
+// MS parse error - try other protocolls and reset later
+//			else {
+//#ifdef DEBUGDECODE
+//				Serial.println(" Buffer overflow, flushing message array");
+//#endif
+//				//Serial.print(MSG_START);
+//				//Serial.print("Buffer overflow while processing signal");
+//				//Serial.print(MSG_END);
+//				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
+//				success = true;	// don't process other message types
+//			}
 		}
 		if (success == false && (MUenabled || MCenabled)) {
 
@@ -414,7 +422,8 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
-						if (histo[idx] == 0) continue;
+						if (pattern[idx] == 0 || histo[idx] == 0)
+							continue;
 
 						preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 					}
@@ -453,7 +462,8 @@ void SignalDetectorClass::processMessage()
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
-					if (pattern[idx] == 0 || histo[idx] == 0) continue;
+					if (pattern[idx] == 0 || histo[idx] == 0)
+						continue;
 
 					preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
 				}
@@ -485,7 +495,7 @@ void SignalDetectorClass::processMessage()
 #endif
 		}
 	}
-	if (!m_truncated)
+	if (!m_truncated && !bufferModified) 
 	{
 		reset();
 	}
@@ -509,13 +519,14 @@ void SignalDetectorClass::reset()
 	  histo[i] = pattern[i] = 0;
 	success = false;
 	tol = 150; //
-	tolFact = 0.2;
+	tolFact = 0.3;
 	mstart = 0;
 	m_truncated = false;
 	m_overflow = false;
 	mcDetected = false;
 	//Serial.println("reset");
 	mend = 0;
+	bufferModified = true;
 }
 
 const status SignalDetectorClass::getState()
@@ -534,12 +545,13 @@ const bool SignalDetectorClass::inTol(const int val, const int set, const int to
 
 void SignalDetectorClass::printOut()
 {
+#if DEBUGDETECT >= 1
 	Serial.println();
 	Serial.print("Sync: "); Serial.print(pattern[sync]);
 	Serial.print(" -> SyncFact: "); Serial.print(pattern[sync] / (float)pattern[clock]);
 	Serial.print(", Clock: "); Serial.print(pattern[clock]);
 	Serial.print(", Tol: "); Serial.print(tol);
-	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ("); Serial.print(pattern_pos); Serial.print(")");
+	Serial.print(", PattLen: "); Serial.print(patternLen); Serial.print(" ("); Serial.print(pattern_pos); Serial.print(")"); 
 	Serial.print(", Pulse: "); Serial.print(*first); Serial.print(", "); Serial.print(*last);
 	Serial.print(", mStart: "); Serial.print(mstart);
 	Serial.print(", MCD: "); Serial.print(mcDetected,DEC);
@@ -557,13 +569,14 @@ void SignalDetectorClass::printOut()
 		Serial.print(": "); Serial.print(histo[idx]);  Serial.print("*[");
 		if (pattern[idx] != 0)
 		{
-			Serial.print(",");
+//			Serial.print(",");
 			Serial.print(pattern[idx]);
 		}
 
 		Serial.print("]");
 	}
 	Serial.println();
+#endif
 }
 
 int8_t SignalDetectorClass::findpatt(const int val)
@@ -571,11 +584,12 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
 	tol = abs(val)*0.2;
-	for (uint8_t idx = 0; idx<patternLen; ++idx)
+	for (uint8_t idx = 0; idx<patternLen; idx++)
 	{
 		if ((val ^ pattern[idx]) >> 31)
 			continue;
-		if (pattern[idx] != 0 && inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
+		
+		if (pattern[idx] != 0 && inTol(val, pattern[idx], tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 		{
 			return idx;
@@ -1084,7 +1098,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					Serial.print(pdec->pattern[pdec->message[i]]);
 
 #endif
-					pdec->bufferMove(i);
+					pdec->bufferMove(pdec->mend);
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
@@ -1283,7 +1297,6 @@ const bool ManchesterpatternDecoder::isManchester()
 				equal_cnt -= pdec->histo[sortedPattern[x]];
 				neg_cnt++;
 				tstclock -= aktpulse;
-
 			}
 
 			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
