@@ -43,6 +43,16 @@
 #define FIFO_LENGTH			   50
 //#define DEBUG				   1
 
+#ifdef Ethernet
+#define MSG_PRINTER Client // Not Implemented at this time
+#else
+#define MSG_PRINTER Serial
+#endif
+
+#define MSG_PRINT(...) { MSG_PRINTER.print(__VA_ARGS__); }
+#define MSG_PRINTLN(...) { MSG_PRINTER.println(__VA_ARGS__); }
+
+
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
 #ifdef CMP_FIFO
@@ -168,14 +178,14 @@ void setup() {
 	Serial.begin(BAUDRATE);
 	#ifdef DEBUG
 	#ifdef CMP_FIFO
-	Serial.println("Using sFIFO");
+	MSG_PRINTLN("Using sFIFO");
 	#else
 
-	Serial.println(F("Startup:"));
-	Serial.print(F("# Bytes / Puffer: "));
-	Serial.println(sizeof(int)*FiFo.getBuffSize());
-	Serial.print(F("# Len Fifo: "));
-	Serial.println(FiFo.getBuffSize());
+	MSG_PRINTLN(F("Startup:"));
+	MSG_PRINT(F("# Bytes / Puffer: "));
+	MSG_PRINTLN(sizeof(int)*FiFo.getBuffSize());
+	MSG_PRINT(F("# Len Fifo: "));
+	MSG_PRINTLN(FiFo.getBuffSize());
 
 	#endif // CMP_FIFO
 	#endif
@@ -185,24 +195,23 @@ void setup() {
 	pinMode(PIN_LED,OUTPUT);
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
-	
 	if (EEPROM.read(addr_init) == 0xB)
 	{
 		#ifdef DEBUG
-		Serial.println("Reading values fom eeprom");
+		MSG_PRINTLN("Reading values fom eeprom");
 		#endif
 		getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
 	} else {
 		EEPROM.write(addr_init,0xB);
 		storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
 		#ifdef DEBUG
-		Serial.println("Init eeprom to defaults after flash");
+		MSG_PRINTLN("Init eeprom to defaults after flash");
 		#endif
 	}
 
-	/*Serial.print("MS:"); 	Serial.println(musterDec.MSenabled);
-	Serial.print("MU:"); 	Serial.println(musterDec.MUenabled);
-	Serial.print("MC:"); 	Serial.println(musterDec.MCenabled);*/
+	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
+	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
+	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
 
 
 	enableReceive();
@@ -215,7 +224,7 @@ void cronjob() {
 	 const unsigned long  duration = micros() - lastTime;
 	 if (duration > maxPulse) { //Auf Maximalwert pr�fen.
 		 //handleInterrupt();
-		 //Serial.println("PTout");
+		 //MSG_PRINTLN("PTout");
 		 int sDuration = maxPulse;
 		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			 sDuration = -sDuration;
@@ -233,7 +242,7 @@ void cronjob() {
 	/*
 	 if (FiFo.count() >19)
 	 {
-		 Serial.print("SF:"); Serial.println(FiFo.count());
+		 MSG_PRINT("SF:"); MSG_PRINTLN(FiFo.count());
 	 }
 	 */
 }
@@ -283,7 +292,7 @@ void handleInterrupt() {
       sDuration=-sDuration;
     }
     #ifdef CMP_FIFO
-	//Serial.println(sDuration);
+	//MSG_PRINTLN(sDuration);
     FiFo.enqueue(sDuration);
 	#else
 	FiFo.addValue(&sDuration);
@@ -354,9 +363,9 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 	uint16_t dur;
 	for (uint16_t i=startpos;i<=endpos;i++ )
 	{
-		//Serial.print(cmdstring.substring(i,i+1));
+		//MSG_PRINT(cmdstring.substring(i,i+1));
 		index = source->charAt(i) - '0';
-		//Serial.print(index);
+		//MSG_PRINT(index);
 		isLow=buckets[index] >> 15;
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
 
@@ -369,7 +378,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 	while (stoptime > micros()){
 		;
 	}
-	//Serial.println("");
+	//MSG_PRINTLN("");
 
 }
 //SM;R=2;C=400;D=AFAFAF;
@@ -405,7 +414,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		}
 		
 	}
-	// Serial.println("");
+	// MSG_PRINTLN("");
 }
 
 
@@ -460,7 +469,7 @@ void send_cmd()
 
 	while (split_cmdpart(&start_pos,&msg_part))
 	{
-		//Serial.println(msg_part);
+		//MSG_PRINTLN(msg_part);
 		if (msg_part.charAt(0) == 'S')
 		{
 			if (msg_part.charAt(1) == 'C')  // send combined informatio flag
@@ -474,14 +483,14 @@ void send_cmd()
 				//type=manchester;
 				cmdNo++;
 				command[cmdNo].type=manchester;
-				//Serial.println("Adding manchester");
+				//MSG_PRINTLN("Adding manchester");
 			}
 			else if (msg_part.charAt(1) == 'R') // send raw
 			{
 				//type=raw;
 				cmdNo++;
 				command[cmdNo].type=raw;
-				//Serial.println("Adding raw");
+				//MSG_PRINTLN("Adding raw");
 				extraDelay = false;
 
 			}
@@ -491,19 +500,19 @@ void send_cmd()
 			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
 			//buckets[counter]=  msg_part.substring(3).toInt();
 			command[cmdNo].buckets[counter]=msg_part.substring(3).toInt();
-		    //Serial.println("Adding bucket");
+		    //MSG_PRINTLN("Adding bucket");
 
 		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
 			repeats= msg_part.substring(2).toInt();
-		    //Serial.println("Adding repeats");
+		    //MSG_PRINTLN("Adding repeats");
 
 		} else if (msg_part.charAt(0) == 'D') {
 			command[cmdNo].datastart = start_pos - msg_part.length()+1;
 			command[cmdNo].dataend = start_pos-2;
-		    //Serial.print("locating data start:");
-		   // Serial.print(command[cmdNo].datastart);
-		    //Serial.print(" end:");
-			//Serial.println(command[cmdNo].dataend);
+		    //MSG_PRINT("locating data start:");
+		   // MSG_PRINT(command[cmdNo].datastart);
+		    //MSG_PRINT(" end:");
+			//MSG_PRINTLN(command[cmdNo].dataend);
 			//if (type==raw) send_raw(&msg_part,buckets);
 			//if (type==manchester) send_mc(&msg_part,sendclock);
 			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
@@ -512,7 +521,7 @@ void send_cmd()
 		{
 			//sendclock = msg_part.substring(2).toInt();
 			command[cmdNo].sendclock = msg_part.substring(2).toInt();
-		    //Serial.println("adding sendclock");
+		    //MSG_PRINTLN("adding sendclock");
 		}
 	}
 
@@ -528,7 +537,7 @@ void send_cmd()
 	}
 
 	enableReceive();	// enable the receiver
-    Serial.println(cmdstring); // echo
+    MSG_PRINTLN(cmdstring); // echo
 
 }
 
@@ -560,28 +569,28 @@ void HandleCommand()
 	getPing();
   }  // ?: Kommandos anzeigen
   else if (cmdstring.charAt(0) == cmd_help) {
-	Serial.print(cmd_help);	Serial.print(F(" Use one of "));
-	Serial.print(cmd_Version);Serial.print(cmd_space);
-	Serial.print(cmd_intertechno);Serial.print(cmd_space);
-	Serial.print(cmd_freeRam);Serial.print(cmd_space);
-	Serial.print(cmd_uptime);Serial.print(cmd_space);
-	Serial.print(cmd_changeReceiver);Serial.print(cmd_space);
-	Serial.print(cmd_changeFilter);Serial.print(cmd_space);
-	Serial.print(cmd_send);Serial.print(cmd_space);
-	Serial.print(cmd_ping);Serial.print(cmd_space);
-	Serial.print(cmd_config);Serial.print(cmd_space);
-	Serial.print(cmd_getConfig);Serial.print(cmd_space);  //decrepated
+	MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
+	MSG_PRINT(cmd_Version);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_intertechno);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_freeRam);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_uptime);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_changeReceiver);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_changeFilter);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_send);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_ping);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_config);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_getConfig);MSG_PRINT(cmd_space);  //decrepated
 
-	Serial.println("");
+	MSG_PRINTLN("");
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
-    Serial.println("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
+    MSG_PRINTLN("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
   }
   // R: FreeMemory
   else if (cmdstring.charAt(0) == cmd_freeRam) {
 
-    Serial.println(freeRam());
+    MSG_PRINTLN(freeRam());
   }
   // i: Intertechno
   else if (cmdstring.charAt(0) == cmd_intertechno) {
@@ -602,7 +611,7 @@ void HandleCommand()
   }
     // t: Uptime
   else if (cmdstring.charAt(0) == cmd_uptime) {
-		Serial.println(getUptime());
+		MSG_PRINTLN(getUptime());
   }
   // XQ disable receiver
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {
@@ -618,32 +627,32 @@ void HandleCommand()
      getConfig();
   }
   else {
-	  Serial.println(F("Unsupported command"));
+	  MSG_PRINTLN(F("Unsupported command"));
   }
 }
 
 
 void getConfig()
 {
-   Serial.print(F("MS="));
+   MSG_PRINT(F("MS="));
    //enDisPrint(musterDec.MSenabled);
-   Serial.print(musterDec.MSenabled,DEC);
-   Serial.print(F(";MU="));
+   MSG_PRINT(musterDec.MSenabled,DEC);
+   MSG_PRINT(F(";MU="));
    //enDisPrint(musterDec.MUenabled);
-   Serial.print(musterDec.MUenabled, DEC);
-   Serial.print(F(";MC="));
+   MSG_PRINT(musterDec.MUenabled, DEC);
+   MSG_PRINT(F(";MC="));
    //enDisPrint(musterDec.MCenabled);
-   Serial.println(musterDec.MCenabled, DEC);
+   MSG_PRINTLN(musterDec.MCenabled, DEC);
 }
 
 
 void enDisPrint(bool enDis)
 {
    if (enDis) {
-      Serial.print(F("enable"));
+      MSG_PRINT(F("enable"));
    }
    else {
-      Serial.print(F("disable"));
+      MSG_PRINT(F("disable"));
    }
 }
 
@@ -683,14 +692,14 @@ void IT_CMDs() {
 
   // Set Intertechno receive tolerance
   if (cmdstring.charAt(1) == 't') {
-    Serial.println(cmdstring);
+    MSG_PRINTLN(cmdstring);
   }
   // Set Intertechno Repetition
   else if (cmdstring.charAt(1) == 'r') {
     char msg[3];
     cmdstring.substring(2).toCharArray(msg,3);
     ITrepetition = atoi(msg);
-    Serial.println(cmdstring);
+    MSG_PRINTLN(cmdstring);
   }
   // Switch Intertechno Devices
   else if (cmdstring.charAt(1) == 's') {
@@ -701,11 +710,11 @@ void IT_CMDs() {
    	sendPT2262(msg);
     //digitalWrite(PIN_LED,LOW);
     digitalLow(PIN_SEND);
-    Serial.println(cmdstring);
+    MSG_PRINTLN(cmdstring);
   }
   else if (cmdstring.charAt(1) == 'c') {
 	ITbaseduration=cmdstring.substring(2).toInt(); // Updates Baseduration
-    Serial.println(cmdstring);
+    MSG_PRINTLN(cmdstring);
   }
   // Get Intertechno Parameters
   else if (cmdstring.charAt(1) == 'p') {
@@ -715,16 +724,16 @@ void IT_CMDs() {
     cPrint += String(ITrepetition);
     cPrint += " ";
     cPrint += String(ITbaseduration);
-    Serial.println(cPrint);
+    MSG_PRINTLN(cPrint);
   }
 
 }
 
 void serialEvent()
 {
-  while (Serial.available())
+  while (MSG_PRINTER.available())
   {
-    char inChar = (char)Serial.read();
+    char inChar = (char)MSG_PRINTER.read();
     switch(inChar)
     {
     case '\n':
@@ -745,40 +754,40 @@ int freeRam () {
 
  check_mem();
 
- Serial.print("\nheapptr=[0x"); Serial.print( (int) heapptr, HEX); Serial.print("] (growing upward, "); Serial.print( (int) heapptr, DEC); Serial.print(" decimal)");
+ MSG_PRINT("\nheapptr=[0x"); MSG_PRINT( (int) heapptr, HEX); MSG_PRINT("] (growing upward, "); MSG_PRINT( (int) heapptr, DEC); MSG_PRINT(" decimal)");
 
- Serial.print("\nstackptr=[0x"); Serial.print( (int) stackptr, HEX); Serial.print("] (growing downward, "); Serial.print( (int) stackptr, DEC); Serial.print(" decimal)");
+ MSG_PRINT("\nstackptr=[0x"); MSG_PRINT( (int) stackptr, HEX); MSG_PRINT("] (growing downward, "); MSG_PRINT( (int) stackptr, DEC); MSG_PRINT(" decimal)");
 
- Serial.print("\ndifference should be positive: diff=stackptr-heapptr, diff=[0x");
+ MSG_PRINT("\ndifference should be positive: diff=stackptr-heapptr, diff=[0x");
  diff=stackptr-heapptr;
- Serial.print( (int) diff, HEX); Serial.print("] (which is ["); Serial.print( (int) diff, DEC); Serial.print("] (bytes decimal)");
+ MSG_PRINT( (int) diff, HEX); MSG_PRINT("] (which is ["); MSG_PRINT( (int) diff, DEC); MSG_PRINT("] (bytes decimal)");
 
 
- Serial.print("\n\nLOOP END: get_free_memory() reports [");
- Serial.print( get_free_memory() );
- Serial.print("] (bytes) which must be > 0 for no heap/stack collision");
+ MSG_PRINT("\n\nLOOP END: get_free_memory() reports [");
+ MSG_PRINT( get_free_memory() );
+ MSG_PRINT("] (bytes) which must be > 0 for no heap/stack collision");
 
 
  // ---------------- Print memory profile -----------------
- Serial.print("\n\n__data_start=[0x"); Serial.print( (int) &__data_start, HEX ); Serial.print("] which is ["); Serial.print( (int) &__data_start, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n\n__data_start=[0x"); MSG_PRINT( (int) &__data_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__data_start, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__data_end=[0x"); Serial.print((int) &__data_end, HEX ); Serial.print("] which is ["); Serial.print( (int) &__data_end, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__data_end=[0x"); MSG_PRINT((int) &__data_end, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__data_end, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__bss_start=[0x"); Serial.print((int) & __bss_start, HEX ); Serial.print("] which is ["); Serial.print( (int) &__bss_start, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__bss_start=[0x"); MSG_PRINT((int) & __bss_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__bss_start, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__bss_end=[0x"); Serial.print( (int) &__bss_end, HEX ); Serial.print("] which is ["); Serial.print( (int) &__bss_end, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__bss_end=[0x"); MSG_PRINT( (int) &__bss_end, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__bss_end, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__heap_start=[0x"); Serial.print( (int) &__heap_start, HEX ); Serial.print("] which is ["); Serial.print( (int) &__heap_start, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__heap_start=[0x"); MSG_PRINT( (int) &__heap_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__heap_start, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__malloc_heap_start=[0x"); Serial.print( (int) __malloc_heap_start, HEX ); Serial.print("] which is ["); Serial.print( (int) __malloc_heap_start, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__malloc_heap_start=[0x"); MSG_PRINT( (int) __malloc_heap_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) __malloc_heap_start, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__malloc_margin=[0x"); Serial.print( (int) &__malloc_margin, HEX ); Serial.print("] which is ["); Serial.print( (int) &__malloc_margin, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__malloc_margin=[0x"); MSG_PRINT( (int) &__malloc_margin, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__malloc_margin, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\n__brkval=[0x"); Serial.print( (int) __brkval, HEX ); Serial.print("] which is ["); Serial.print( (int) __brkval, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\n__brkval=[0x"); MSG_PRINT( (int) __brkval, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) __brkval, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\nSP=[0x"); Serial.print( (int) SP, HEX ); Serial.print("] which is ["); Serial.print( (int) SP, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\nSP=[0x"); MSG_PRINT( (int) SP, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) SP, DEC); MSG_PRINT("] bytes decimal");
 
- Serial.print("\nRAMEND=[0x"); Serial.print( (int) RAMEND, HEX ); Serial.print("] which is ["); Serial.print( (int) RAMEND, DEC); Serial.print("] bytes decimal");
+ MSG_PRINT("\nRAMEND=[0x"); MSG_PRINT( (int) RAMEND, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) RAMEND, DEC); MSG_PRINT("] bytes decimal");
 
  // summaries:
  ramSize   = (int) RAMEND       - (int) &__data_start;
@@ -788,14 +797,14 @@ int freeRam () {
  stackSize = (int) RAMEND       - (int) SP;
  freeMem1  = (int) SP           - (int) __brkval;
  freeMem2  = ramSize - stackSize - heapSize - bssSize - dataSize;
- Serial.print("\n--- section size summaries ---");
- Serial.print("\nram   size=["); Serial.print( ramSize, DEC ); Serial.print("] bytes decimal");
- Serial.print("\n.data size=["); Serial.print( dataSize, DEC ); Serial.print("] bytes decimal");
- Serial.print("\n.bss  size=["); Serial.print( bssSize, DEC ); Serial.print("] bytes decimal");
- Serial.print("\nheap  size=["); Serial.print( heapSize, DEC ); Serial.print("] bytes decimal");
- Serial.print("\nstack size=["); Serial.print( stackSize, DEC ); Serial.print("] bytes decimal");
- Serial.print("\nfree size1=["); Serial.print( freeMem1, DEC ); Serial.print("] bytes decimal");
- Serial.print("\nfree size2=["); Serial.print( freeMem2, DEC ); Serial.print("] bytes decimal");
+ MSG_PRINT("\n--- section size summaries ---");
+ MSG_PRINT("\nram   size=["); MSG_PRINT( ramSize, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\n.data size=["); MSG_PRINT( dataSize, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\n.bss  size=["); MSG_PRINT( bssSize, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\nheap  size=["); MSG_PRINT( heapSize, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\nstack size=["); MSG_PRINT( stackSize, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\nfree size1=["); MSG_PRINT( freeMem1, DEC ); MSG_PRINT("] bytes decimal");
+ MSG_PRINT("\nfree size2=["); MSG_PRINT( freeMem2, DEC ); MSG_PRINT("] bytes decimal");
 #else
   extern int __heap_start, *__brkval;
   int v;
@@ -821,7 +830,7 @@ unsigned long getUptime()
 
 void getPing()
 {
-	Serial.println("OK");
+	MSG_PRINTLN("OK");
 	delay(1);
 }
 
