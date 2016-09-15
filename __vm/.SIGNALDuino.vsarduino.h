@@ -13,7 +13,7 @@
 #define __AVR_ATmega328p__
 #define __AVR_ATmega328P__
 #define F_CPU 16000000L
-#define ARDUINO 10607
+#define ARDUINO 106011
 #define ARDUINO_AVR_NANO
 #define ARDUINO_ARCH_AVR
 #define __cplusplus 201103L
@@ -50,14 +50,6 @@ extern "C" void __cxa_pure_virtual() {;}
 #define F(string_literal) ((const PROGMEM char *)(string_literal))
 #undef PSTR
 #define PSTR(string_literal) ((const PROGMEM char *)(string_literal))")
-#include <SIGNALDuino.ino>
-#include <RF_Receiver\RF_Receiver.ino>
-#include <src\_micro-api\libraries\SimpleFIFO\src\SimpleFIFO.cpp>
-#include <src\_micro-api\libraries\SimpleFIFO\src\SimpleFIFO.h>
-#include <src\_micro-api\libraries\TimerOne\src\TimerOne.cpp>
-#include <src\_micro-api\libraries\TimerOne\src\TimerOne.h>
-#include <src\_micro-api\libraries\bitstore\src\bitstore.cpp>
-#include <src\_micro-api\libraries\bitstore\src\bitstore.h>
-#include <src\_micro-api\libraries\signalDecoder\src\signalDecoder.cpp>
-#include <src\_micro-api\libraries\signalDecoder\src\signalDecoder.h>
+#include "SIGNALDuino.ino"
+#include "RF_Receiver\RF_Receiver.ino"
 #endif

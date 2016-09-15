@@ -984,7 +984,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					ht=((pulseCnt & 0x1) == 0);
 #ifdef DEBUGDECODE
 					if (ht) {
-						Serial.print(F("pulseShift:"));Serial.print(l);
+						Serial.print(F("pulseShift:")); Serial.print(l); Serial.print(";");
 					}
 #endif
 					break;
@@ -1184,7 +1184,8 @@ const bool ManchesterpatternDecoder::isManchester()
 {
 	// Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
 #if DEBUGDETECT >= 1
-	Serial.print("  --  chk MC -- ");
+	Serial.println("");
+	Serial.println("  --  chk MC -- ");
 #endif
 	if (pdec->patternLen < 4)	return false;
 
@@ -1200,10 +1201,10 @@ const bool ManchesterpatternDecoder::isManchester()
 
 	for (uint8_t i = 0; i < pdec->patternLen; i++)
 	{
-		#if DEBUGDETECT >= 1
-		Serial.print(p);
-		#endif		
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
+		#if DEBUGDETECT >= 1
+				Serial.print(p);
+		#endif		
 
 		uint8_t ptmp = p;
 
@@ -1213,10 +1214,10 @@ const bool ManchesterpatternDecoder::isManchester()
 			p--;
 		}
 #if DEBUGDETECT >= 1
-		Serial.print("="); Serial.print(i); Serial.print(" ");
+		Serial.print("="); Serial.print(i); Serial.print(",");
 #endif
 		sortedPattern[p] = i;
-		p = ++ptmp;
+		p = ptmp+1;
 	}
 #if DEBUGDETECT >= 3
 	Serial.print("Sorted:");
