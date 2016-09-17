@@ -43,15 +43,7 @@
 #define FIFO_LENGTH			   50
 //#define DEBUG				   1
 
-#ifdef Ethernet
-#define MSG_PRINTER Client // Not Implemented at this time
-#else
-#define MSG_PRINTER Serial
-#endif
-
-#define MSG_PRINT(...) { MSG_PRINTER.print(__VA_ARGS__); }
-#define MSG_PRINTLN(...) { MSG_PRINTER.println(__VA_ARGS__); }
-
+#include <output.h>
 
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.

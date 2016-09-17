@@ -37,6 +37,8 @@
 #else
 	#include "WProgram.h"
 #endif
+#include <output.h>
+
 #include <bitstore.h>
 
 #define maxNumPattern 8
