@@ -37,9 +37,11 @@
 #else
 	#include "WProgram.h"
 #endif
+#include <output.h>
+
 #include <bitstore.h>
 
-#define maxNumPattern 6
+#define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 7
@@ -52,11 +54,9 @@
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 
-
-
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 0
+//#define DEBUGDECODE 2
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -75,7 +75,7 @@ public:
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
-	int8_t histo[maxNumPattern];
+	uint8_t histo[maxNumPattern];
 	uint8_t message[maxMsgSize];
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
@@ -84,8 +84,8 @@ public:
 
 	bool m_truncated;     // Identify if message has been truncated
 	bool m_overflow;
+	void bufferMove(const uint8_t start);
 
-protected:
 	uint16_t tol;                           // calculated tolerance for signal
 	uint8_t bitcnt;
 	status state;                           // holds the status of the detector
@@ -95,11 +95,17 @@ protected:
 	float tolFact;                          //
 	int pattern[maxNumPattern];				// 1d array to store the pattern
 	uint8_t patternLen;                     // counter for length of pattern
+	uint8_t pattern_pos;
 	int8_t sync;                        // index to sync in pattern if it exists
 	String preamble;
 	String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	
+
+	void addData(const uint8_t value);
+	void addPattern();
+	inline void updPattern(const uint8_t ppos);
+
 	void doDetect();
 	void processMessage();
 	void compress_pattern();
@@ -116,8 +122,6 @@ protected:
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	
 
-
-
 };
 
 class ManchesterpatternDecoder
@@ -130,11 +134,14 @@ public:
 	void getMessageHexStr(String *message);
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
+	void getMessageLenStr(String* str);
+
 	const bool isManchester();
 	void reset();
-
-private:
-	BitStore<30> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+#ifndef UNITTEST
+//private:
+#endif
+	BitStore<50> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
 	SignalDetectorClass *pdec;
 	int8_t longlow;
 	int8_t longhigh;
