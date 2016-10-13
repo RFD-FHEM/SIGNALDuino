@@ -168,6 +168,9 @@ void getFunctions(bool *ms,bool *mu,bool *mc);
 
 void setup() {
 	Serial.begin(BAUDRATE);
+	while (!Serial) {
+		; // wait for serial port to connect. Needed for native USB
+	}
 	#ifdef DEBUG
 	#ifdef CMP_FIFO
 	MSG_PRINTLN("Using sFIFO");
