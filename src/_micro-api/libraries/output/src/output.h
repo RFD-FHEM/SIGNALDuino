@@ -10,7 +10,7 @@
 #endif
 
 #ifdef ETHERNET_PRINT
-#define MSG_PRINTER Client // Not Implemented at this time
+#define MSG_PRINTER Server // Not Implemented at this time
 #else
 #define MSG_PRINTER Serial
 #endif

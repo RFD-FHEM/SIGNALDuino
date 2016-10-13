@@ -301,7 +301,7 @@ void enableReceive() {
 }
 
 void disableReceive() {
-  detachInterrupt(0);
+  detachInterrupt(digitalPinToInterrupt(PIN_RECEIVE));
 }
 
 
