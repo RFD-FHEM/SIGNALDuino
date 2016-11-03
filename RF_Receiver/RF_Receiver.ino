@@ -242,9 +242,13 @@ void cronjob() {
 	 */
 }
 
+
 void loop() {
 	static int aktVal=0;
 	bool state;
+#ifdef __AVR_ATmega32U4__	
+	serialEvent();
+#endif
 	if (command_available) {
 		command_available=false;
 		HandleCommand();
