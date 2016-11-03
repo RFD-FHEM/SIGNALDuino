@@ -29,12 +29,10 @@
 *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
-#define CMP_FIFO 1
 //#define CMP_MEMDBG 1
-#define CMP_NEWSD;
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.0"
+#define PROGVERS               "3.3.1-dev"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -47,22 +45,11 @@
 
 #include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
-#ifdef CMP_FIFO
 #include <SimpleFIFO.h>
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
-#else
-#include <filtering.h> //for FiFo Buffer
-RingBuffer FiFo(FIFO_LENGTH, 0); // FiFo Puffer
-#endif
-#ifdef CMP_NEWSD
 #include <signalDecoder.h>
 SignalDetectorClass musterDec;
 
-#else
-#include <patternDecoder.h> 
-patternDecoder musterDec;
-
-#endif
 
 #include <EEPROM.h>
 
@@ -172,17 +159,8 @@ void setup() {
 		; // wait for serial port to connect. Needed for native USB
 	}
 	#ifdef DEBUG
-	#ifdef CMP_FIFO
 	MSG_PRINTLN("Using sFIFO");
-	#else
-
-	MSG_PRINTLN(F("Startup:"));
-	MSG_PRINT(F("# Bytes / Puffer: "));
-	MSG_PRINTLN(sizeof(int)*FiFo.getBuffSize());
-	MSG_PRINT(F("# Len Fifo: "));
-	MSG_PRINTLN(FiFo.getBuffSize());
-
-	#endif // CMP_FIFO
+	
 	#endif
 	//delay(2000);
 	pinMode(PIN_RECEIVE,INPUT);
@@ -255,21 +233,12 @@ void loop() {
 		if (!command_available) { cmdstring = ""; }
 		blinkLED=true;
 	}
-	#ifdef CMP_FIFO
-
-
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
-	#else
-	while (FiFo.getNewValue(&aktVal)) { //Puffer auslesen und an Dekoder uebergeben
-		state = musterDec.decode(&aktVal); //Logilink, PT2262
-		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-	}
-	#endif
  }
 
 
@@ -290,13 +259,9 @@ void handleInterrupt() {
     if (isHigh(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafuer gilt die gemessene Dauer.
       sDuration=-sDuration;
     }
-    #ifdef CMP_FIFO
 	//MSG_PRINTLN(sDuration);
     FiFo.enqueue(sDuration);
-	#else
-	FiFo.addValue(&sDuration);
 
-	#endif // CMP_FIFO
 
     //++fifocnt;
   } // else => trash
@@ -821,7 +786,7 @@ unsigned long getUptime()
 	unsigned long seconds = now / 1000;
 	if (now < last) {
 		times_rolled++;
-		seconds += ((long(4294967295) / 1000 )*times_rolled);
+		seconds += (( long(4294967295) / 1000 )*times_rolled);
 	}
 	last = now;
 	return seconds;
