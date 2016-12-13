@@ -32,7 +32,7 @@
 //#define CMP_MEMDBG 1
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.1-dev"
+#define PROGVERS               "3.3.1-devmc"
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
