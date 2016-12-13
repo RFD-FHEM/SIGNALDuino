@@ -34,7 +34,7 @@ class BitStore
         //unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
         unsigned char datastore[bufSize];
         void reset();
-        unsigned char getByte(const int8_t idx);
+        unsigned char getByte(const uint8_t idx);
         uint8_t bytecount;  // Number of stored bytes
         uint16_t valcount;  // Number of total values stored
 #ifndef UNITTEST
@@ -106,15 +106,17 @@ void BitStore<bufSize>::addValue(char value)
     //store[bytecount]=datastore[bytecount] | (value<<bcnt)
     datastore[bytecount]=datastore[bytecount] | (value<<bcnt);  // (valcount*valuelen%8)
 	/*
+	Serial.println("");
+
     Serial.print("Adding value:");   Serial.print(value,DEC);
     Serial.print(" at byte: ");   Serial.print(bytecount,DEC);
     Serial.print(" at pos: ");   Serial.print(bcnt,DEC);
     Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount],BIN);
     Serial.print("  (dec)");   Serial.print(datastore[bytecount],DEC);
-    Serial.println("");
+	Serial.print(" : ");
 	*/
     valcount++;
-    if ((bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhöhen wir den counter zum verschieben
+    if (int8_t(bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhöhen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {
@@ -146,7 +148,7 @@ unsigned char BitStore<bufSize>::getValue(const uint16_t pos)
 }
 
 template<uint8_t bufSize>
-unsigned char BitStore<bufSize>::getByte(const int8_t idx)
+unsigned char BitStore<bufSize>::getByte(const uint8_t idx)
 {
   if (idx >= buffsize) return -1; // Out of buffer range
   return (datastore[idx]);
