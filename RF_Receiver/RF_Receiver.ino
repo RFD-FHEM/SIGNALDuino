@@ -50,9 +50,8 @@ SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 #include <signalDecoder.h>
 SignalDetectorClass musterDec;
 
-
 #include <EEPROM.h>
-
+#include "cc1101.h"
 
 #define pulseMin  90
 volatile bool blinkLED = false;
@@ -61,23 +60,6 @@ volatile unsigned long lastTime = micros();
 
 
 
-#define portOfPin(P)\
-  (((P)>=0&&(P)<8)?&PORTD:(((P)>7&&(P)<14)?&PORTB:&PORTC))
-#define ddrOfPin(P)\
-  (((P)>=0&&(P)<8)?&DDRD:(((P)>7&&(P)<14)?&DDRB:&DDRC))
-#define pinOfPin(P)\
-  (((P)>=0&&(P)<8)?&PIND:(((P)>7&&(P)<14)?&PINB:&PINC))
-#define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
-#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
-
-#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
-#define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
-#define pinAsOutput(P) *(ddrOfPin(P))|=pinMask(P)
-#define digitalLow(P) *(portOfPin(P))&=~pinMask(P)
-#define digitalHigh(P) *(portOfPin(P))|=pinMask(P)
-#define isHigh(P)((*(pinOfPin(P))& pinMask(P))>0)
-#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
-#define digitalState(P)((uint8_t)isHigh(P))
 
 
 
@@ -152,7 +134,6 @@ void getFunctions(bool *ms,bool *mu,bool *mc);
 
 
 
-
 void setup() {
 	Serial.begin(BAUDRATE);
 	while (!Serial) {
@@ -188,6 +169,8 @@ void setup() {
 
 
 	enableReceive();
+
+	cc1101::init();  // Todo: Abfrage of cc1101 überhaupt verwendet wird
 	cmdstring.reserve(40);
 }
 
@@ -527,7 +510,8 @@ void HandleCommand()
   #define  cmd_ping 'P'
   #define  cmd_config 'C'
   #define  cmd_getConfig 'G' //decrepated
-
+  
+	
 
   if (cmdstring.charAt(0) == cmd_ping){
 	getPing();
@@ -544,7 +528,7 @@ void HandleCommand()
 	MSG_PRINT(cmd_ping);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_config);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_getConfig);MSG_PRINT(cmd_space);  //decrepated
-
+	cc1101::HandleCommand();
 	MSG_PRINTLN("");
   }
   // V: Version
@@ -590,6 +574,8 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_getConfig) {
      getConfig();
   }
+  else if (cc1101::HandleCommand())
+  {  } 
   else {
 	  MSG_PRINTLN(F("Unsupported command"));
   }
