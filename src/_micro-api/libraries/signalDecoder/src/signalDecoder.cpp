@@ -162,7 +162,7 @@ void SignalDetectorClass::compress_pattern()
 
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 31)
+			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
 				continue;
 			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
@@ -576,7 +576,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
-		if ((val ^ pattern[idx]) >> 31)
+		if ((val ^ pattern[idx]) >> 15)
 			continue;
 		if (pattern[idx] != 0 && inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
@@ -969,7 +969,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (l == i && i > 0) {
 						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
 
-						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>31)
+						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>15)
 						{
 							int pClocks = round(pClock / (float)clock);
 							
