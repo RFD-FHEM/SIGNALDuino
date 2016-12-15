@@ -11,28 +11,30 @@
 #include "output.h"
 
 
-#define csPin   10   // CSN  out
-#define mosiPin 11   // MOSI out
-#define misoPin 12   // MISO in
-#define sckPin  13   // SCLK
-#define gdo0Pin  3   // GDO0
-#define int_gdo0 0
 
-#define CC1101_SRES   0x30   // reset
-#define CC1101_SRX    0x34   // enable RX. perform calibration first
-#define CC1101_CONFIG 0x80 
-#define CC1101_STATUS 0xC0
 
-#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
-#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
-#define cc1101_Deselect() digitalHigh(csPin) 
-
+extern String cmdstring;
 
 
 namespace cc1101 {
-	extern String cmdstring;
 
+	
 	bool ccenabled = false;
+	
+	#define csPin   10   // CSN  out
+	#define mosiPin 11   // MOSI out
+	#define misoPin 12   // MISO in
+	#define sckPin  13   // SCLK
+	#define gdo0Pin  3   // GDO0
+	#define int_gdo0 0
+
+	#define CC1101_SRES   0x30   // reset
+	#define CC1101_SRX    0x34   // enable RX. perform calibration first
+	#define CC1101_CONFIG 0x80 
+	#define CC1101_STATUS 0xC0
+	#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
+	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
+	#define cc1101_Deselect() digitalHigh(csPin) 
 
 	static const uint8_t initVal[] PROGMEM = 
 	{
@@ -79,10 +81,6 @@ namespace cc1101 {
 		0x41, // 27 RCCTRL1
 		0x00, // 28 RCCTRL0
 	};
-
-	const bool  HandleCommand();
-	//byte hex2int(byte hex);
-
 	byte hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
 		if (hex >= '0' && hex <= '9') hex = hex - '0';
 		else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
@@ -90,29 +88,89 @@ namespace cc1101 {
 		return hex;
 	}
 
-	void printHex2(const byte hex);
-
-	void readCCreg(void);
-	void writeCCreg(void);
-	void init(void);
-
-	uint8_t sendSPI(const uint8_t val);
-	void cmdStrobe(const uint8_t cmd);
-	uint8_t readReg(const uint8_t regAddr, const uint8_t regType);
-	void writeReg(const uint8_t regAddr, const uint8_t val);
 
 
 
 
-
-
+	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
+		if (hex < 16) {
+			MSG_PRINT("0");
+		}
+		MSG_PRINT(hex, HEX);
 	}
 
-	const bool cc1101::HandleCommand()
+	uint8_t sendSPI(const uint8_t val) {					     // send byte via SPI
+		SPDR = val;                                      // transfer byte via SPI
+		while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
+		return SPDR;
+	}
+
+	void cmdStrobe(const uint8_t cmd) {                     // send command strobe to the CC1101 IC via SPI
+		cc1101_Select();                                // select CC1101
+		wait_Miso();                                    // wait until MISO goes low
+		sendSPI(cmd);                                   // send strobe command
+		cc1101_Deselect();                              // deselect CC1101
+	}
+
+	uint8_t readReg(const uint8_t regAddr, const uint8_t regType) {       // read CC1101 register via SPI
+		cc1101_Select();                                // select CC1101
+		wait_Miso();                                    // wait until MISO goes low
+		sendSPI(regAddr | regType);                     // send register address
+		uint8_t val = sendSPI(0x00);                    // read result
+		cc1101_Deselect();                              // deselect CC1101
+		return val;
+	}
+
+	void writeReg(const uint8_t regAddr, const uint8_t val) {     // write single register into the CC1101 IC via SPI
+		cc1101_Select();                                // select CC1101
+		wait_Miso();                                    // wait until MISO goes low
+		sendSPI(regAddr);                               // send register address
+		sendSPI(val);                                   // send value
+		cc1101_Deselect();                              // deselect CC1101
+	}
+
+	void writeCCreg(void) {  // write CC11001 register
+		uint8_t var;
+		uint8_t reg;
+		uint8_t hex;
+
+		if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3') {       // WS<reg>  Command Strobes
+			if (isHexadecimalDigit(cmdstring.charAt(3))) {
+				hex = (byte)cmdstring.charAt(3);
+				reg = hex2int(hex) + 0x30;
+				if (reg < 0x3e) {
+					cmdStrobe(reg);
+					MSG_PRINT(F("cmdStrobeReg "));
+					printHex2(reg);
+					MSG_PRINTLN("");
+				}
+			}
+		}
+		else {    // W<reg><var>
+			if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
+				hex = (byte)cmdstring.charAt(1);
+				reg = hex2int(hex) * 16;
+				hex = (byte)cmdstring.charAt(2);
+				reg = hex2int(hex) + reg;
+				if (reg > 1 && reg < 0x3e) {
+					hex = (byte)cmdstring.charAt(3);
+					var = hex2int(hex) * 16;
+					hex = (byte)cmdstring.charAt(4);
+					var = hex2int(hex) + var;
+					writeReg(reg - 2, var);
+					MSG_PRINT("W");
+					printHex2(reg);
+					printHex2(var);
+					MSG_PRINTLN("");
+				}
+			}
+		}
+	}
+	const bool HandleCommand()
 	{
-	#define  cmd_writeCC 'W'
-	#define  cmd_space ' '
-	#define  cmd_help '?'
+		#define  cmd_writeCC 'W'
+		#define  cmd_space ' '
+		#define  cmd_help '?'
 
 		if (cmdstring.charAt(0) == cmd_help) {
 			MSG_PRINT(cmd_writeCC); MSG_PRINT(cmd_space);
@@ -128,19 +186,12 @@ namespace cc1101 {
 
 
 
-	void cc1101::printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
-		if (hex < 16) {
-			MSG_PRINT("0");
-		}
-		MSG_PRINT(hex, HEX);
-	}
-
 
 
 
 	// CC1101 Routinen
 
-	void cc1101::readCCreg(void) {   // read CC11001 register
+	void readCCreg(void) {   // read CC11001 register
 		uint8_t var;
 		uint8_t reg;
 		uint8_t hex;
@@ -201,117 +252,55 @@ namespace cc1101 {
 				}
 			}
 		}
-}
+	}
 
 
-void cc1101::writeCCreg(void) {  // write CC11001 register
-	uint8_t var;
-	uint8_t reg;
-	uint8_t hex;
 
-	if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3') {       // WS<reg>  Command Strobes
-		if (isHexadecimalDigit(cmdstring.charAt(3))) {
-			hex = (byte)cmdstring.charAt(3);
-			reg = hex2int(hex) + 0x30;
-			if (reg < 0x3e) {
-				cmdStrobe(reg);
-				MSG_PRINT(F("cmdStrobeReg "));
-				printHex2(reg);
-				MSG_PRINTLN("");
-			}
+
+
+	void init(void) {                              // initialize CC1101
+
+		pinAsOutput(csPin);                               // set pins for SPI communication
+		pinAsOutput(mosiPin);
+		pinAsInput(misoPin);
+		pinAsOutput(sckPin);
+		pinAsInput(gdo0Pin);                              // config GDO0 as input
+
+		digitalHigh(csPin);                              // SPI init
+		digitalHigh(sckPin);
+		digitalLow(mosiPin);
+
+		SPCR = _BV(SPE) | _BV(MSTR);                            // SPI speed = CLK/4
+
+		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
+		delayMicroseconds(5);
+
+		cc1101_Select();
+		delayMicroseconds(10);
+
+		cc1101_Deselect();
+		delayMicroseconds(41);
+
+		// todo: testen ob sich der cc1101 meldet
+		ccenabled = true;
+
+		cmdStrobe(CC1101_SRES);                               // send reset
+		delay(10);
+
+		// define init settings
+
+
+		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write init value to cc11001
+			writeReg(i, pgm_read_byte(&initVal[i]));
 		}
+		delay(1);
+		cmdStrobe(CC1101_SRX);       // enable RX
 	}
-	else {    // W<reg><var>
-		if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
-			hex = (byte)cmdstring.charAt(1);
-			reg = hex2int(hex) * 16;
-			hex = (byte)cmdstring.charAt(2);
-			reg = hex2int(hex) + reg;
-			if (reg > 1 && reg < 0x3e) {
-				hex = (byte)cmdstring.charAt(3);
-				var = hex2int(hex) * 16;
-				hex = (byte)cmdstring.charAt(4);
-				var = hex2int(hex) + var;
-				writeReg(reg - 2, var);
-				MSG_PRINT("W");
-				printHex2(reg);
-				printHex2(var);
-				MSG_PRINTLN("");
-			}
-		}
-	}
-}
 
 
 
-void cc1101::init(void) {                              // initialize CC1101
-
-	pinAsOutput(csPin);                               // set pins for SPI communication
-	pinAsOutput(mosiPin);
-	pinAsInput(misoPin);
-	pinAsOutput(sckPin);
-	pinAsInput(gdo0Pin);                              // config GDO0 as input
-
-	digitalHigh(csPin);                              // SPI init
-	digitalHigh(sckPin);
-	digitalLow(mosiPin);
-
-	SPCR = _BV(SPE) | _BV(MSTR);                            // SPI speed = CLK/4
-
-	cc1101_Deselect();                                  // some deselect and selects to init the cc1101
-	delayMicroseconds(5);
-
-	cc1101_Select();
-	delayMicroseconds(10);
-
-	cc1101_Deselect();
-	delayMicroseconds(41);
-
-	// todo: testen ob sich der cc1101 meldet
-	ccenabled = true;
-
-	cmdStrobe(CC1101_SRES);                               // send reset
-	delay(10);
-
-	// define init settings
 
 
-	for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write init value to cc11001
-		writeReg(i, pgm_read_byte(&initVal[i]));
-	}
-	delay(1);
-	cmdStrobe(CC1101_SRX);       // enable RX
-}
-
-
-uint8_t cc1101::sendSPI(const uint8_t val) {					     // send byte via SPI
-	SPDR = val;                                      // transfer byte via SPI
-	while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
-	return SPDR;
-}
-
-void cc1101::cmdStrobe(const uint8_t cmd) {                     // send command strobe to the CC1101 IC via SPI
-	cc1101_Select();                                // select CC1101
-	wait_Miso();                                    // wait until MISO goes low
-	sendSPI(cmd);                                   // send strobe command
-	cc1101_Deselect();                              // deselect CC1101
-}
-
-uint8_t cc1101::readReg(const uint8_t regAddr, const uint8_t regType) {       // read CC1101 register via SPI
-	cc1101_Select();                                // select CC1101
-	wait_Miso();                                    // wait until MISO goes low
-	sendSPI(regAddr | regType);                     // send register address
-	uint8_t val = sendSPI(0x00);                    // read result
-	cc1101_Deselect();                              // deselect CC1101
-	return val;
-}
-
-void cc1101::writeReg(const uint8_t regAddr, const uint8_t val) {     // write single register into the CC1101 IC via SPI
-	cc1101_Select();                                // select CC1101
-	wait_Miso();                                    // wait until MISO goes low
-	sendSPI(regAddr);                               // send register address
-	sendSPI(val);                                   // send value
-	cc1101_Deselect();                              // deselect CC1101
 }
 
 #endif
