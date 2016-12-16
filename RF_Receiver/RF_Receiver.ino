@@ -735,12 +735,12 @@ void IT_CMDs() {
   // Switch Intertechno Devices
   else if (cmdstring.charAt(1) == 's') {
     //digitalWrite(PIN_LED,HIGH);
-    digitalHigh(PIN_SEND);
+    digitalHigh(sendPin);
     char msg[40];
     cmdstring.substring(2).toCharArray(msg,40);
    	sendPT2262(msg);
     //digitalWrite(PIN_LED,LOW);
-    digitalLow(PIN_SEND);
+    digitalLow(sendPin);
     MSG_PRINTLN(cmdstring);
   }
   else if (cmdstring.charAt(1) == 'c') {
