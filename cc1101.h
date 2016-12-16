@@ -8,9 +8,8 @@
 #else
 	#include "WProgram.h"
 #endif
+#include <EEPROM.h>
 #include "output.h"
-
-
 
 
 extern String cmdstring;
@@ -18,23 +17,39 @@ extern String cmdstring;
 
 namespace cc1101 {
 
-	
-	bool ccenabled = false;
-	
 	#define csPin   10   // CSN  out
 	#define mosiPin 11   // MOSI out
 	#define misoPin 12   // MISO in
-	#define sckPin  13   // SCLK
-	#define gdo0Pin  3   // GDO0
-	#define int_gdo0 0
+	#define sckPin  13   // SCLK out
+	#define gdo0Pin 3    // TX   out
+	#define ccLED   9    // Message-LED
+	
+	#define CC1101_CONFIG      0x80 
+	#define CC1101_STATUS      0xC0
+	#define CC1100_WRITE_BURST 0x40
+	
+	// Status registers
+	#define CC1100_RSSI   0x34   // Received signal strength indication
+	#define CC1100_MARCSTATE 0x35 // Control state machine state
+	
+	// Strobe commands
+	#define CC1101_SRES     0x30  // reset
+	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
+	#define CC1100_SCAL     0x33  // Calibrate frequency synthesizer and turn it off
+	#define CC1101_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
+	#define CC1100_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
+	#define CC1100_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
+	#define CC1100_SAFC     0x37 // Perform AFC adjustment of the frequency synthesizer
+	
+	#define wait_Miso()       while(digitalRead(misoPin))      // wait until SPI MISO line goes low
+	#define cc1101_Select()   digitalWrite(csPin,LOW)          // select (SPI) CC1101
+	#define cc1101_Deselect() digitalWrite(csPin,HIGH) 
+	
+	#define EE_CC1100_CFG        2
+	#define EE_CC1100_CFG_SIZE   0x29
+	#define EE_CC1100_PA         (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2B
+	#define EE_CC1100_PA_SIZE    8
 
-	#define CC1101_SRES   0x30   // reset
-	#define CC1101_SRX    0x34   // enable RX. perform calibration first
-	#define CC1101_CONFIG 0x80 
-	#define CC1101_STATUS 0xC0
-	#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
-	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
-	#define cc1101_Deselect() digitalHigh(csPin) 
 
 	static const uint8_t initVal[] PROGMEM = 
 	{
@@ -62,7 +77,7 @@ namespace cc1101 {
 		0xb9, // 14 MDMCFG0   F8     ChannelSpace: 350kHz
 		0x00, // 15 DEVIATN   47     
 		0x07, // 16 MCSM2     07     
-		0x00, // 17 MCSM1     30     
+		0x00, // 17 MCSM1     30     Bit 3:2  RXOFF_MODE:  Select what should happen when a packet has been received: 0 = IDLE  3 =  Stay in RX ####
 		0x18, // 18 MCSM0     04     Calibration: RX/TX->IDLE
 		0x14, // 19 FOCCFG    36     
 		0x6C, // 1A BSCFG
@@ -81,6 +96,7 @@ namespace cc1101 {
 		0x41, // 27 RCCTRL1
 		0x00, // 28 RCCTRL0
 	};
+  
 	byte hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
 		if (hex >= '0' && hex <= '9') hex = hex - '0';
 		else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
@@ -88,16 +104,13 @@ namespace cc1101 {
 		return hex;
 	}
 
-
-
-
-
 	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
 		if (hex < 16) {
 			MSG_PRINT("0");
 		}
 		MSG_PRINT(hex, HEX);
 	}
+
 
 	uint8_t sendSPI(const uint8_t val) {					     // send byte via SPI
 		SPDR = val;                                      // transfer byte via SPI
@@ -129,148 +142,106 @@ namespace cc1101 {
 		cc1101_Deselect();                              // deselect CC1101
 	}
 
-	void writeCCreg(void) {  // write CC11001 register
-		uint8_t var;
-		uint8_t reg;
-		uint8_t hex;
 
-		if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3') {       // WS<reg>  Command Strobes
-			if (isHexadecimalDigit(cmdstring.charAt(3))) {
-				hex = (byte)cmdstring.charAt(3);
-				reg = hex2int(hex) + 0x30;
-				if (reg < 0x3e) {
-					cmdStrobe(reg);
-					MSG_PRINT(F("cmdStrobeReg "));
-					printHex2(reg);
-					MSG_PRINTLN("");
-				}
-			}
+  void readCCreg(uint8_t reg) {   // read CC11001 register
+    uint8_t var;
+    uint8_t hex;
+    uint8_t n;
+
+       if (cmdstring.charAt(3) == 'n' && isHexadecimalDigit(cmdstring.charAt(4))) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
+           hex = (uint8_t)cmdstring.charAt(4);
+           n = hex2int(hex);
+           if (reg < 0x2F) {
+              MSG_PRINT("C");
+              printHex2(reg);
+              MSG_PRINT("n");
+              n += 2;
+              printHex2(n);
+              MSG_PRINT("=");
+              for (uint8_t i = 0; i < n; i++) {
+                 var = readReg(reg + i, CC1101_CONFIG);
+                 printHex2(var);
+              }
+              MSG_PRINTLN("");
+           }
+       }
+       else {
+       if (reg < 0x40) {
+          if (reg < 0x2F) {
+             var = readReg(reg, CC1101_CONFIG);
+          }
+          else {
+             var = readReg(reg, CC1101_STATUS);
+          }
+          MSG_PRINT("C");
+          printHex2(reg);
+          MSG_PRINT(" = ");
+          printHex2(var);
+          MSG_PRINTLN("");
+       }
+       else if (reg == 0x99) {                   // alle register
+         for (uint8_t i = 0; i < 0x2f; i++) {
+           if (i == 0 || i == 0x10 || i == 0x20) {
+             if (i > 0) {
+               MSG_PRINT(" ");
+             }
+             MSG_PRINT(F("ccreg "));
+             printHex2(i);
+             MSG_PRINT(F(": "));
+           }
+           var = readReg(i, CC1101_CONFIG);
+           printHex2(var);
+           MSG_PRINT(" ");
+         }
+         MSG_PRINTLN("");
+       }
+     }
+  }
+
+  void commandStrobes(void) {
+    uint8_t hex;
+    uint8_t reg;
+  
+    if (isHexadecimalDigit(cmdstring.charAt(3))) {
+        hex = (uint8_t)cmdstring.charAt(3);
+        reg = hex2int(hex) + 0x30;
+        if (reg < 0x3e) {
+             cmdStrobe(reg);
+             MSG_PRINT(F("cmdStrobeReg "));
+             printHex2(reg);
+             MSG_PRINTLN("");
+         }
+     }
+  }
+
+
+  void writeCCreg(uint8_t reg, uint8_t var) {    // write CC11001 register
+
+    if (reg > 1 && reg < 0x3e) {
+           writeReg(reg-2, var);
+           MSG_PRINT("W");
+           printHex2(reg);
+           printHex2(var);
+           MSG_PRINTLN("");
+    }
+  }
+
+
+
+	void ccFactoryReset() {
+		/*  for (uint8_t i = 0; i<sizeof(initVal); i++) {
+		EEPROM.write(EE_CC1100_CFG+i, pgm_read_byte(&initVal[i]));
 		}
-		else {    // W<reg><var>
-			if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
-				hex = (byte)cmdstring.charAt(1);
-				reg = hex2int(hex) * 16;
-				hex = (byte)cmdstring.charAt(2);
-				reg = hex2int(hex) + reg;
-				if (reg > 1 && reg < 0x3e) {
-					hex = (byte)cmdstring.charAt(3);
-					var = hex2int(hex) * 16;
-					hex = (byte)cmdstring.charAt(4);
-					var = hex2int(hex) + var;
-					writeReg(reg - 2, var);
-					MSG_PRINT("W");
-					printHex2(reg);
-					printHex2(var);
-					MSG_PRINTLN("");
-				}
-			}
-		}
-	}
-	const bool HandleCommand()
-	{
-		#define  cmd_writeCC 'W'
-		#define  cmd_space ' '
-		#define  cmd_help '?'
-
-		if (cmdstring.charAt(0) == cmd_help) {
-			MSG_PRINT(cmd_writeCC); MSG_PRINT(cmd_space);
-		}
-		else if (cmdstring.charAt(0) == cmd_writeCC) {                          // write CC11001 register
-																				// writeEeprom();  
-			if (ccenabled) {
-				writeCCreg();
-			}
-			return true;
-		}
-	}
-
-
-
-
-
-
-	// CC1101 Routinen
-
-	void readCCreg(void) {   // read CC11001 register
-		uint8_t var;
-		uint8_t reg;
-		uint8_t hex;
-		uint8_t n;
-
-		if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2))) {
-			hex = (byte)cmdstring.charAt(1);
-			reg = hex2int(hex) * 16;
-			hex = (byte)cmdstring.charAt(2);
-			reg = hex2int(hex) + reg;
-			if (cmdstring.charAt(3) == 'n' && isHexadecimalDigit(cmdstring.charAt(4))) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
-				hex = (byte)cmdstring.charAt(4);
-				n = hex2int(hex);
-				if (reg < 0x2F) {
-					MSG_PRINT("C");
-					printHex2(reg);
-					MSG_PRINT("n");
-					n += 2;
-					printHex2(n);
-					MSG_PRINT("=");
-					for (byte i = 0; i < n; i++) {
-						var = readReg(reg + i, CC1101_CONFIG);
-						printHex2(var);
-					}
-					MSG_PRINTLN("");
-				}
-			}
-			else {
-				if (reg < 0x40) {
-					if (reg < 0x2F) {
-						var = readReg(reg, CC1101_CONFIG);
-					}
-					else {
-						var = readReg(reg, CC1101_STATUS);
-					}
-					MSG_PRINT("C");
-					printHex2(reg);
-					MSG_PRINT(" = ");
-					printHex2(var);
-					MSG_PRINTLN("");
-				}
-				else if (reg == 0x99) {                   // alle register
-														  //MSG_PRINTLN("read all CC11001 reg");
-					for (byte i = 0; i < 0x2f; i++) {
-						if (i == 0 || i == 0x10 || i == 0x20) {
-							if (i > 0) {
-								MSG_PRINT(" ");
-							}
-							MSG_PRINT(F("ccreg "));
-							printHex2(i);
-							MSG_PRINT(": ");
-						}
-						var = readReg(i, CC1101_CONFIG);
-						printHex2(var);
-						MSG_PRINT(" ");
-					}
-					MSG_PRINTLN("");
-				}
-			}
-		}
+		MSG_PRINTLN("ccFactoryReset done"); */   
 	}
 
 
+	bool checkCC1101() {
+		return true;
+	}
 
 
-
-	void init(void) {                              // initialize CC1101
-
-		pinAsOutput(csPin);                               // set pins for SPI communication
-		pinAsOutput(mosiPin);
-		pinAsInput(misoPin);
-		pinAsOutput(sckPin);
-		pinAsInput(gdo0Pin);                              // config GDO0 as input
-
-		digitalHigh(csPin);                              // SPI init
-		digitalHigh(sckPin);
-		digitalLow(mosiPin);
-
-		SPCR = _BV(SPE) | _BV(MSTR);                            // SPI speed = CLK/4
+	void CCinit(void) {                              // initialize CC1101
 
 		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
 		delayMicroseconds(5);
@@ -281,27 +252,18 @@ namespace cc1101 {
 		cc1101_Deselect();
 		delayMicroseconds(41);
 
-		// todo: testen ob sich der cc1101 meldet
-		ccenabled = true;
-
 		cmdStrobe(CC1101_SRES);                               // send reset
 		delay(10);
 
-		// define init settings
-
-
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write init value to cc11001
 			writeReg(i, pgm_read_byte(&initVal[i]));
+      //writeReg(i, EEPROM.read(EE_CC1100_CFG+i);
 		}
 		delay(1);
 		cmdStrobe(CC1101_SRX);       // enable RX
 	}
 
 
-
-
-
 }
 
 #endif
-
