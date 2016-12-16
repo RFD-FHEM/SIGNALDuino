@@ -280,11 +280,11 @@ uint8_t ITrepetition = 6;
 int ITbaseduration = 300;
 
 void PT2262_transmit(uint8_t nHighPulses, uint8_t nLowPulses) {
-  //digitalWrite(PIN_SEND, HIGH);
-  digitalHigh(PIN_SEND);
+  //digitalWrite(sendPin, HIGH);
+  digitalHigh(sendPin);
   delayMicroseconds(ITbaseduration * nHighPulses);
-  //digitalWrite(PIN_SEND, LOW);
-  digitalLow(PIN_SEND);
+  //digitalWrite(sendPin, LOW);
+  digitalLow(sendPin);
   delayMicroseconds(ITbaseduration * nLowPulses);
 }
 
@@ -333,7 +333,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 		while (stoptime > micros()){
 			;
 		}
-		isLow ? digitalLow(PIN_SEND): digitalHigh(PIN_SEND);
+		isLow ? digitalLow(sendPin): digitalHigh(sendPin);
 		stoptime+=dur;
 	}
 	while (stoptime > micros()){
@@ -351,7 +351,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 {
 	int8_t b;
 	char c;
-	//digitalHigh(PIN_SEND);
+	//digitalHigh(sendPin);
 	//delay(1);
 	uint8_t bit;
 
@@ -363,9 +363,9 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		for (bit = 0x8; bit>0; bit >>= 1) {
 			for (byte i = 0; i <= 1; i++) {
 				if ((i == 0 ? (b & bit) : !(b & bit)))
-					digitalLow(PIN_SEND);
+					digitalLow(sendPin);
 				else
-					digitalHigh(PIN_SEND);
+					digitalHigh(sendPin);
 				
 					stoptime += clock;
 					while (stoptime > micros())
@@ -476,8 +476,8 @@ void send_cmd()
 			//MSG_PRINTLN(command[cmdNo].dataend);
 			//if (type==raw) send_raw(&msg_part,buckets);
 			//if (type==manchester) send_mc(&msg_part,sendclock);
-			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
-			//digitalLow(PIN_SEND);
+			//digitalWrite(sendPin, LOW); // turn off transmitter
+			//digitalLow(sendPin);
 		} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
 		{
 			//sendclock = msg_part.substring(2).toInt();
@@ -492,7 +492,7 @@ void send_cmd()
 		{
 			if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
-			digitalLow(PIN_SEND);
+			digitalLow(sendPin);
 		}
 		if (extraDelay) delay(1);
 	}
