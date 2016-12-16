@@ -146,7 +146,6 @@ void setup() {
 	#ifdef DEBUG
 	MSG_PRINTLN("Using sFIFO");
 	#endif
-	initEEPROM();
 	//delay(2000);
 	ledPin = ccLED;
 	sendPin = gdo0Pin;
@@ -164,6 +163,7 @@ void setup() {
 	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
 
 	hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
+	initEEPROM();
 	if (hasCC1101) {
 		cc1101::CCinit();           // CC1101 init
 		pinMode(sendPin,OUTPUT);
