@@ -33,6 +33,8 @@
 
 #define PROGNAME               "RF_RECEIVER"
 #define PROGVERS               "3.3.1-dev"
+#define VERSION_1               0x33
+#define VERSION_2               0x1d
 
 #define PIN_RECEIVE            2
 #define PIN_LED                13 // Message-LED
@@ -57,7 +59,9 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
-
+bool    hasCC1101 = false;
+uint8_t ledPin;
+uint8_t sendPin;
 
 
 
@@ -109,8 +113,8 @@ int16_t freeMem2=0;  // available ram calculation #2
 
 
 // EEProm Addresscommands
-#define addr_init 0
-#define addr_features 1
+#define EE_MAGIC_OFFSET      0
+#define addr_features        0xff
 
 
 
@@ -141,27 +145,37 @@ void setup() {
 	}
 	#ifdef DEBUG
 	MSG_PRINTLN("Using sFIFO");
-	
 	#endif
+	initEEPROM();
 	//delay(2000);
+	ledPin = ccLED;
+	sendPin = gdo0Pin;
 	pinMode(PIN_RECEIVE,INPUT);
-	pinMode(PIN_SEND,OUTPUT);
-	pinMode(PIN_LED,OUTPUT);
+	pinMode(sendPin,INPUT);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input    
+	pinMode(ledPin,OUTPUT);
+	// CC1101
+	pinMode(csPin, OUTPUT);                    // set pins for SPI communication
+	pinMode(mosiPin, OUTPUT);
+	pinMode(misoPin, INPUT);
+	pinMode(sckPin, OUTPUT);
+	digitalWrite(csPin, HIGH);                 // SPI init
+	digitalWrite(sckPin, HIGH);
+	digitalWrite(mosiPin, LOW);
+	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
+
+	hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
+	if (hasCC1101) {
+		cc1101::CCinit();           // CC1101 init
+		pinMode(sendPin,OUTPUT);
+	} else {                           // einfacher (RXB) Empfänger 
+		ledPin = PIN_LED;
+		sendPin = PIN_SEND;
+		pinMode(sendPin,OUTPUT);
+		pinMode(ledPin,OUTPUT);
+	}
+	
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
-	if (EEPROM.read(addr_init) == 0xB)
-	{
-		#ifdef DEBUG
-		MSG_PRINTLN("Reading values fom eeprom");
-		#endif
-		getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
-	} else {
-		EEPROM.write(addr_init,0xB);
-		storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
-		#ifdef DEBUG
-		MSG_PRINTLN("Init eeprom to defaults after flash");
-		#endif
-	}
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -193,7 +207,7 @@ void cronjob() {
 		lastTime = micros();
 
 	 }*/
-	 digitalWrite(PIN_LED, blinkLED);
+	 digitalWrite(ledPin, blinkLED);
 	 blinkLED = false;
 	/*
 	 if (FiFo.count() >19)
@@ -500,7 +514,7 @@ void HandleCommand()
 
   #define  cmd_Version 'V'
   #define  cmd_freeRam 'R'
-  #define  cmd_intertechno 'i'
+  #define  cmd_intertechno 'i'  //decrepated
   #define  cmd_uptime 't'
   #define  cmd_changeReceiver 'X'
   #define  cmd_space ' '
@@ -508,9 +522,12 @@ void HandleCommand()
   #define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
-  #define  cmd_config 'C'
+  #define  cmd_config 'C'    // CG get config, set config, C<reg> get CC1101 register
   #define  cmd_getConfig 'G' //decrepated
-  
+  #define  cmd_write 'W'     // write EEPROM und write CC1101 register
+  #define  cmd_read  'r'     // read EEPROM
+  #define  cmd_sendPower 'x'  // Sendeleistung
+  #define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
 	
 
   if (cmdstring.charAt(0) == cmd_ping){
@@ -528,7 +545,12 @@ void HandleCommand()
 	MSG_PRINT(cmd_ping);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_config);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_getConfig);MSG_PRINT(cmd_space);  //decrepated
-	cc1101::HandleCommand();
+	MSG_PRINT(cmd_read);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_write);MSG_PRINT(cmd_space);
+	if (hasCC1101) {
+		MSG_PRINT(cmd_sendPower);MSG_PRINT(cmd_space);
+		MSG_PRINT(cmd_ccFactoryReset);MSG_PRINT(cmd_space);
+	}
 	MSG_PRINTLN("");
   }
   // V: Version
@@ -568,19 +590,78 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
   }
   else if (cmdstring.charAt(0) == cmd_config) {
-    configCMD();
+    if (cmdstring.charAt(1) == 'G') {
+      getConfig();
+    }
+    else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {
+      configCMD();
+    } else {
+      if (hasCC1101) {
+        if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2))) {
+           reg = cmdstringPos2int(1);
+           cc1101::readCCreg(reg);
+        }
+      } else {
+         MSG_PRINTLN(F("Unsupported command"));
+      }
+    }
   }
   // get config
   else if (cmdstring.charAt(0) == cmd_getConfig) {
      getConfig();
   }
-  else if (cc1101::HandleCommand())
-  {  } 
+  else if (cmdstring.charAt(0) == cmd_write) {            // write EEPROM und CC11001 register
+    if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3')  {       // WS<reg>  Command Strobes
+      if (hasCC1101) {
+        cc1101::commandStrobes();
+      } 
+    } else {
+      if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
+         reg = cmdstringPos2int(1);
+         val = cmdstringPos2int(3);
+         EEPROM.write(reg, val);  
+         if (hasCC1101) {
+           cc1101::writeCCreg(reg, val);
+         }
+      }
+    }
+  }
+  // R<adr>  read EEPROM
+  else if (cmdstring.charAt(0) == cmd_read && isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2))) {             // R<adr>  read EEPROM
+     reg = cmdstringPos2int(1);
+     MSG_PRINT(F("EEPROM "));
+     printHex2(reg);
+     if (cmdstring.charAt(3) == 'n') {
+         MSG_PRINT(F(" :"));
+         for (uint8_t i = 0; i < 16; i++) {
+             MSG_PRINT(" ");
+             printHex2(EEPROM.read(reg + i));
+         }
+     } else {
+        MSG_PRINT(F(" = "));
+        printHex2(EEPROM.read(reg));
+     }
+     MSG_PRINTLN("");
+  }
+  else if (cmdstring.charAt(0) == cmd_ccFactoryReset && hasCC1101) { 
+     cc1101::ccFactoryReset();
+  }
   else {
 	  MSG_PRINTLN(F("Unsupported command"));
   }
 }
 
+
+uint8_t cmdstringPos2int(uint8_t pos) {
+  uint8_t val;
+  uint8_t hex;
+  
+       hex = (uint8_t)cmdstring.charAt(pos);
+       val = cc1101::hex2int(hex) * 16;
+       hex = (uint8_t)cmdstring.charAt(pos+1);
+       val = cc1101::hex2int(hex) + val;
+       return val;
+}
 
 void getConfig()
 {
@@ -796,7 +877,12 @@ void changeReciver() {
 }
 
 
-
+  void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
+    if (hex < 16) {
+      MSG_PRINT("0");
+    }
+    MSG_PRINT(hex, HEX);
+  }
 
 
 
@@ -819,6 +905,24 @@ void getFunctions(bool *ms,bool *mu,bool *mc)
     *ms=bool (dat &(1<<0));
     *mu=bool (dat &(1<<1));
     *mc=bool (dat &(1<<2));
+}
 
+void initEEPROM(void) {
 
+  if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
+    #ifdef DEBUG
+    MSG_PRINTLN("Reading values fom eeprom");
+    #endif
+    getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
+  } else {
+    storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
+    #ifdef DEBUG
+    MSG_PRINTLN("Init eeprom to defaults after flash");
+    #endif
+    EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
+    EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
+    if (hasCC1101) {
+       cc1101::ccFactoryReset();
+    }
+  }
 }
