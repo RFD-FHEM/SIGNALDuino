@@ -229,10 +229,10 @@ namespace cc1101 {
 
 
 	void ccFactoryReset() {
-		/*  for (uint8_t i = 0; i<sizeof(initVal); i++) {
-		EEPROM.write(EE_CC1100_CFG+i, pgm_read_byte(&initVal[i]));
+		for (uint8_t i = 0; i<sizeof(initVal); i++) {
+        		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
 		}
-		MSG_PRINTLN("ccFactoryReset done"); */   
+		MSG_PRINTLN("ccFactoryReset done");  
 	}
 
 
@@ -255,10 +255,14 @@ namespace cc1101 {
 		cmdStrobe(CC1101_SRES);                               // send reset
 		delay(10);
 
-		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write init value to cc11001
-			writeReg(i, pgm_read_byte(&initVal[i]));
-      //writeReg(i, EEPROM.read(EE_CC1100_CFG+i);
+		cc1101_Select();
+		sendSPI(CC1100_WRITE_BURST);
+		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
+			//writeReg(i, pgm_read_byte(&initVal[i]));
+			sendSPI(EEPROM.read(EE_CC1100_CFG + i));
 		}
+		cc1101_Deselect();
+		
 		delay(1);
 		cmdStrobe(CC1101_SRX);       // enable RX
 	}
