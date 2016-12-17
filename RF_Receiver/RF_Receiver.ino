@@ -30,27 +30,42 @@
 
 */
 //#define CMP_MEMDBG 1
+#define ARDUINO_IDE
+
+#define HASCC1101
 
 #define PROGNAME               "RF_RECEIVER"
 #define PROGVERS               "3.3.1-dev"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
+#ifdef HASCC1101
+  #define PIN_LED               9
+  #define PIN_SEND              3   // gdo0Pin TX out
+#else
+  #define PIN_LED               13    // Message-LED
+  #define PIN_SEND              11
+#endif
 #define PIN_RECEIVE            2
-#define PIN_LED                13 // Message-LED
-#define PIN_SEND               11
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
 //#define DEBUG				   1
 
+#ifdef ARDUINO_IDE
+#include "output.h"
+#include "bitstore.h"
+#include "signalDecoder.h"
+#else
 #include <output.h>
-
-#include <TimerOne.h>  // Timer for LED Blinking
 #include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
+#include <signalDecoder.h>
+#endif
+#include <TimerOne.h>  // Timer for LED Blinking
+
 #include <SimpleFIFO.h>
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
-#include <signalDecoder.h>
 SignalDetectorClass musterDec;
+
 
 #include <EEPROM.h>
 #include "cc1101.h"
@@ -60,14 +75,6 @@ volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool    hasCC1101 = false;
-uint8_t ledPin;
-uint8_t sendPin;
-
-
-
-
-
-
 
 #ifdef CMP_MEMDBG
 
@@ -112,10 +119,9 @@ int16_t freeMem2=0;  // available ram calculation #2
 #endif
 
 
-// EEProm Addresscommands
+// EEProm Address
 #define EE_MAGIC_OFFSET      0
 #define addr_features        0xff
-
 
 
 void handleInterrupt();
@@ -135,7 +141,7 @@ void getPing();
 void configCMD();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
 void getFunctions(bool *ms,bool *mu,bool *mc);
-
+void initEEPROM(void);
 
 
 void setup() {
@@ -147,12 +153,11 @@ void setup() {
 	MSG_PRINTLN("Using sFIFO");
 	#endif
 	//delay(2000);
-	ledPin = ccLED;
-	sendPin = gdo0Pin;
-	pinMode(PIN_RECEIVE,INPUT);
-	pinMode(sendPin,INPUT);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input    
-	pinMode(ledPin,OUTPUT);
+	pinMode(PIN_RECEIVE,INPUT);    
+	pinMode(PIN_LED,OUTPUT);
 	// CC1101
+	#ifdef HASCC1101
+	pinMode(PIN_SEND,INPUT);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
 	pinMode(csPin, OUTPUT);                    // set pins for SPI communication
 	pinMode(mosiPin, OUTPUT);
 	pinMode(misoPin, INPUT);
@@ -161,21 +166,19 @@ void setup() {
 	digitalWrite(sckPin, HIGH);
 	digitalWrite(mosiPin, LOW);
 	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-
-	hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
+	#endif
+  
+	//hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
 	initEEPROM();
-	if (hasCC1101) {
-		cc1101::CCinit();           // CC1101 init
-		pinMode(sendPin,OUTPUT);
-	} else {                           // einfacher (RXB) Empfänger 
-		ledPin = PIN_LED;
-		sendPin = PIN_SEND;
-		pinMode(sendPin,OUTPUT);
-		pinMode(ledPin,OUTPUT);
-	}
-	
+	#ifdef HASCC1101
+		hasCC1101 = true;
+		cc1101::CCinit();                  // CC1101 init
+	#endif
+	pinMode(PIN_SEND,OUTPUT);
+  
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
+
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -183,8 +186,6 @@ void setup() {
 
 
 	enableReceive();
-
-	cc1101::init();  // Todo: Abfrage of cc1101 überhaupt verwendet wird
 	cmdstring.reserve(40);
 }
 
@@ -207,7 +208,7 @@ void cronjob() {
 		lastTime = micros();
 
 	 }*/
-	 digitalWrite(ledPin, blinkLED);
+	 digitalWrite(PIN_LED, blinkLED);
 	 blinkLED = false;
 	/*
 	 if (FiFo.count() >19)
@@ -280,11 +281,11 @@ uint8_t ITrepetition = 6;
 int ITbaseduration = 300;
 
 void PT2262_transmit(uint8_t nHighPulses, uint8_t nLowPulses) {
-  //digitalWrite(sendPin, HIGH);
-  digitalHigh(sendPin);
+  //digitalWrite(PIN_SEND, HIGH);
+  digitalHigh(PIN_SEND);
   delayMicroseconds(ITbaseduration * nHighPulses);
-  //digitalWrite(sendPin, LOW);
-  digitalLow(sendPin);
+  //digitalWrite(PIN_SEND, LOW);
+  digitalLow(PIN_SEND);
   delayMicroseconds(ITbaseduration * nLowPulses);
 }
 
@@ -333,7 +334,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 		while (stoptime > micros()){
 			;
 		}
-		isLow ? digitalLow(sendPin): digitalHigh(sendPin);
+		isLow ? digitalLow(PIN_SEND): digitalHigh(PIN_SEND);
 		stoptime+=dur;
 	}
 	while (stoptime > micros()){
@@ -351,7 +352,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 {
 	int8_t b;
 	char c;
-	//digitalHigh(sendPin);
+	//digitalHigh(PIN_SEND);
 	//delay(1);
 	uint8_t bit;
 
@@ -363,9 +364,9 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 		for (bit = 0x8; bit>0; bit >>= 1) {
 			for (byte i = 0; i <= 1; i++) {
 				if ((i == 0 ? (b & bit) : !(b & bit)))
-					digitalLow(sendPin);
+					digitalLow(PIN_SEND);
 				else
-					digitalHigh(sendPin);
+					digitalHigh(PIN_SEND);
 				
 					stoptime += clock;
 					while (stoptime > micros())
@@ -476,8 +477,8 @@ void send_cmd()
 			//MSG_PRINTLN(command[cmdNo].dataend);
 			//if (type==raw) send_raw(&msg_part,buckets);
 			//if (type==manchester) send_mc(&msg_part,sendclock);
-			//digitalWrite(sendPin, LOW); // turn off transmitter
-			//digitalLow(sendPin);
+			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
+			//digitalLow(PIN_SEND);
 		} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
 		{
 			//sendclock = msg_part.substring(2).toInt();
@@ -492,7 +493,7 @@ void send_cmd()
 		{
 			if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
 			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
-			digitalLow(sendPin);
+			digitalLow(PIN_SEND);
 		}
 		if (extraDelay) delay(1);
 	}
@@ -511,10 +512,12 @@ void IT_CMDs();
 
 void HandleCommand()
 {
-
+  uint8_t reg;
+  uint8_t val;
+  
   #define  cmd_Version 'V'
   #define  cmd_freeRam 'R'
-  #define  cmd_intertechno 'i'  //decrepated
+  #define  cmd_intertechno 'i' //decrepated
   #define  cmd_uptime 't'
   #define  cmd_changeReceiver 'X'
   #define  cmd_space ' '
@@ -522,13 +525,13 @@ void HandleCommand()
   #define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
-  #define  cmd_config 'C'    // CG get config, set config, C<reg> get CC1101 register
-  #define  cmd_getConfig 'G' //decrepated
-  #define  cmd_write 'W'     // write EEPROM und write CC1101 register
-  #define  cmd_read  'r'     // read EEPROM
+  #define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
+  #define  cmd_getConfig 'G'  //decrepated
+  #define  cmd_write 'W'      // write EEPROM und write CC1101 register
+  #define  cmd_read  'r'      // read EEPROM
   #define  cmd_sendPower 'x'  // Sendeleistung
   #define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
-	
+
 
   if (cmdstring.charAt(0) == cmd_ping){
 	getPing();
@@ -536,7 +539,7 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_help) {
 	MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
 	MSG_PRINT(cmd_Version);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_intertechno);MSG_PRINT(cmd_space);
+	MSG_PRINT(cmd_intertechno);MSG_PRINT(cmd_space);  //decrepated
 	MSG_PRINT(cmd_freeRam);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_uptime);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_changeReceiver);MSG_PRINT(cmd_space);
@@ -555,11 +558,14 @@ void HandleCommand()
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
-    MSG_PRINTLN("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
+    if (hasCC1101) {
+       MSG_PRINTLN("V " PROGVERS " SIGNALduino cc1101 - compiled at " __DATE__ " " __TIME__);
+    } else {
+       MSG_PRINTLN("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
+    }
   }
   // R: FreeMemory
   else if (cmdstring.charAt(0) == cmd_freeRam) {
-
     MSG_PRINTLN(freeRam());
   }
   // i: Intertechno
@@ -585,7 +591,7 @@ void HandleCommand()
   }
   // XQ disable receiver
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {
-    changeReciver();
+    changeReceiver();
   }
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
   }
@@ -595,35 +601,31 @@ void HandleCommand()
     }
     else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {
       configCMD();
-    } else {
-      if (hasCC1101) {
-        if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2))) {
-           reg = cmdstringPos2int(1);
-           cc1101::readCCreg(reg);
-        }
-      } else {
-         MSG_PRINTLN(F("Unsupported command"));
-      }
+    }
+    else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
+      reg = cmdstringPos2int(1);
+      cc1101::readCCreg(reg);
+    }
+    else {
+      MSG_PRINTLN(F("Unsupported command"));
     }
   }
-  // get config
+  // get config, decrepated
   else if (cmdstring.charAt(0) == cmd_getConfig) {
      getConfig();
   }
   else if (cmdstring.charAt(0) == cmd_write) {            // write EEPROM und CC11001 register
-    if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3')  {       // WS<reg>  Command Strobes
-      if (hasCC1101) {
+    if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3' && hasCC1101)  {       // WS<reg>  Command Strobes
         cc1101::commandStrobes();
-      } 
-    } else {
-      if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
+    } else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
          reg = cmdstringPos2int(1);
          val = cmdstringPos2int(3);
          EEPROM.write(reg, val);  
          if (hasCC1101) {
            cc1101::writeCCreg(reg, val);
          }
-      }
+    } else {
+         MSG_PRINTLN(F("Unsupported command"));
     }
   }
   // R<adr>  read EEPROM
@@ -663,6 +665,7 @@ uint8_t cmdstringPos2int(uint8_t pos) {
        return val;
 }
 
+
 void getConfig()
 {
    MSG_PRINT(F("MS="));
@@ -690,11 +693,6 @@ void enDisPrint(bool enDis)
 
 void configCMD()
 {
-  if (cmdstring.charAt(1) == 'G') {  // Get, no change to configuration
-	getConfig();
-	return;
-  }
-
   bool *bptr;
 
   if (cmdstring.charAt(2) == 'S') {  	  //MS
@@ -735,12 +733,12 @@ void IT_CMDs() {
   // Switch Intertechno Devices
   else if (cmdstring.charAt(1) == 's') {
     //digitalWrite(PIN_LED,HIGH);
-    digitalHigh(sendPin);
+    digitalHigh(PIN_SEND);
     char msg[40];
     cmdstring.substring(2).toCharArray(msg,40);
    	sendPT2262(msg);
     //digitalWrite(PIN_LED,LOW);
-    digitalLow(sendPin);
+    digitalLow(PIN_SEND);
     MSG_PRINTLN(cmdstring);
   }
   else if (cmdstring.charAt(1) == 'c') {
@@ -865,7 +863,7 @@ void getPing()
 	delay(1);
 }
 
-void changeReciver() {
+void changeReceiver() {
   if (cmdstring.charAt(1) == 'Q')
   {
   	disableReceive();
@@ -875,7 +873,6 @@ void changeReciver() {
   	enableReceive();
   }
 }
-
 
   void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
     if (hex < 16) {
@@ -887,8 +884,6 @@ void changeReciver() {
 
 
 //================================= EEProm commands ======================================
-
-
 
 void storeFunctions(const int8_t ms, int8_t mu, int8_t mc)
 {
@@ -905,6 +900,7 @@ void getFunctions(bool *ms,bool *mu,bool *mc)
     *ms=bool (dat &(1<<0));
     *mu=bool (dat &(1<<1));
     *mc=bool (dat &(1<<2));
+
 }
 
 void initEEPROM(void) {
@@ -926,3 +922,6 @@ void initEEPROM(void) {
     }
   }
 }
+
+
+
