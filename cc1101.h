@@ -4,12 +4,12 @@
 #define _CC1101_h
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "arduino.h"
+	#include "Arduino.h"
 #else
 	#include "WProgram.h"
 #endif
 #include <EEPROM.h>
-#include "output.h"
+#include <output.h>
 
 
 extern String cmdstring;
@@ -21,8 +21,6 @@ namespace cc1101 {
 	#define mosiPin 11   // MOSI out
 	#define misoPin 12   // MISO in
 	#define sckPin  13   // SCLK out
-	#define gdo0Pin 3    // TX   out
-	#define ccLED   9    // Message-LED
 	
 	#define CC1101_CONFIG      0x80 
 	#define CC1101_STATUS      0xC0
@@ -42,8 +40,8 @@ namespace cc1101 {
 	#define CC1100_SAFC     0x37 // Perform AFC adjustment of the frequency synthesizer
 	
 	#define wait_Miso()       while(digitalRead(misoPin))      // wait until SPI MISO line goes low
-	#define cc1101_Select()   digitalWrite(csPin,LOW)          // select (SPI) CC1101
-	#define cc1101_Deselect() digitalWrite(csPin,HIGH) 
+	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
+	#define cc1101_Deselect() digitalHigh(csPin) 
 	
 	#define EE_CC1100_CFG        2
 	#define EE_CC1100_CFG_SIZE   0x29
