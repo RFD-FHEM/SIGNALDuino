@@ -39,7 +39,7 @@ namespace cc1101 {
 	#define CC1100_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
 	#define CC1100_SAFC     0x37 // Perform AFC adjustment of the frequency synthesizer
 	
-	#define wait_Miso()       while(digitalRead(misoPin))      // wait until SPI MISO line goes low
+	#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
 	

@@ -49,7 +49,7 @@
 #define PIN_RECEIVE            2
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
-//#define DEBUG				   1
+#define DEBUG				   1
 
 #ifdef ARDUINO_IDE
 #include "output.h"
@@ -153,29 +153,37 @@ void setup() {
 	MSG_PRINTLN("Using sFIFO");
 	#endif
 	//delay(2000);
-	pinMode(PIN_RECEIVE,INPUT);    
-	pinMode(PIN_LED,OUTPUT);
+	pinAsInput(PIN_RECEIVE);
+	pinAsOutput(PIN_LED);
 	// CC1101
 	#ifdef HASCC1101
-	pinMode(PIN_SEND,INPUT);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-	pinMode(csPin, OUTPUT);                    // set pins for SPI communication
-	pinMode(mosiPin, OUTPUT);
-	pinMode(misoPin, INPUT);
-	pinMode(sckPin, OUTPUT);
-	digitalWrite(csPin, HIGH);                 // SPI init
-	digitalWrite(sckPin, HIGH);
-	digitalWrite(mosiPin, LOW);
 	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
+	pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+	pinAsOutput(csPin);                    // set pins for SPI communication
+	pinAsOutput(mosiPin);
+	pinAsInput(misoPin);
+	pinAsOutput(sckPin);
+	digitalHigh(csPin);                 // SPI init
+	digitalHigh(sckPin);
+	digitalLow(mosiPin);
 	#endif
   
 	//hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
 	initEEPROM();
 	#ifdef HASCC1101
 		hasCC1101 = true;
-		cc1101::CCinit();                  // CC1101 init
+		#ifdef DEBUG
+		MSG_PRINTLN("CCInit");
+		#endif
+
+		//cc1101::CCinit();                  // CC1101 init
 	#endif
-	pinMode(PIN_SEND,OUTPUT);
-  
+	pinAsOutput(PIN_SEND);
+	#ifdef DEBUG
+	MSG_PRINTLN("Starting timerjob");
+	#endif
+	delay(50);
+
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
 
@@ -187,6 +195,9 @@ void setup() {
 
 	enableReceive();
 	cmdstring.reserve(40);
+	#ifdef DEBUG
+	MSG_PRINTLN("receiver enabled");
+	#endif
 }
 
 void cronjob() {
@@ -237,6 +248,7 @@ void loop() {
 		state = musterDec.decode(&aktVal); 
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
+
  }
 
 
