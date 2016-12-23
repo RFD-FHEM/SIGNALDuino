@@ -156,13 +156,26 @@ void setup() {
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
-	#ifdef HASCC1101
-	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-	pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-	pinAsOutput(csPin);                    // set pins for SPI communication
+
+#ifdef HASCC1101
+	pinAsOutput(sckPin);
 	pinAsOutput(mosiPin);
 	pinAsInput(misoPin);
-	pinAsOutput(sckPin);
+	pinAsOutput(csPin);                    // set pins for SPI communication
+	
+	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
+	/*
+	SPCR = ((1 << SPE) |               		// SPI Enable
+		(0 << SPIE) |              		// SPI Interupt Enable
+		(0 << DORD) |              		// Data Order (0:MSB first / 1:LSB first)
+		(1 << MSTR) |              		// Master/Slave select
+		(0 << SPR1) | (0 << SPR0) |   		// SPI Clock Rate
+		(0 << CPOL) |             		// Clock Polarity (0:SCK low / 1:SCK hi when idle)
+		(0 << CPHA));             		// Clock Phase (0:leading / 1:trailing edge sampling)
+
+	SPSR = (1 << SPI2X);             		// Double Clock Rate
+	*/
+	pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
 	digitalHigh(csPin);                 // SPI init
 	digitalHigh(sckPin);
 	digitalLow(mosiPin);
