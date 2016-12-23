@@ -74,7 +74,7 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
-volatile uint8_t rssi;
+volatile int16_t rssi;
 bool    hasCC1101 = false;
 
 #ifdef CMP_MEMDBG
@@ -196,8 +196,10 @@ void cronjob() {
 		 FiFo.enqueue(sDuration);
 		
 		#ifdef HASCC1101
-		 rssi = cc1101::getRSSI();
+		 //rssi = cc1101::getRSSI();
+		 //DBG_PRINTLN(rssi);
 		#endif
+
 		 lastTime = micros();
 	
 
@@ -231,6 +233,9 @@ void loop() {
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+		#ifdef HASCC1101
+		rssi = cc1101::getRSSI();
+		#endif
 	}
 
  }

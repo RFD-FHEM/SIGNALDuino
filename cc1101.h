@@ -29,7 +29,6 @@ namespace cc1101 {
 	// Status registers
 	#define CC1100_RSSI   0x34   // Received signal strength indication
 	#define CC1100_MARCSTATE 0x35 // Control state machine state
-	
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset
 	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
@@ -48,6 +47,7 @@ namespace cc1101 {
 	#define EE_CC1100_PA         (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2B
 	#define EE_CC1100_PA_SIZE    8
 
+	uint8_t rssi_offset = 79;		// Todo: Je nach Frequenz und Datenrate anpassen
 
 	static const uint8_t initVal[] PROGMEM = 
 	{
@@ -304,9 +304,13 @@ namespace cc1101 {
 		digitalLow(mosiPin);
 	}
 
-	uint8_t getRSSI()
+	int16_t getRSSI()
 	{
-
+		uint8_t rssi_dec = readReg(CC1100_RSSI, 0xC0);
+		int16_t rssi_dBm;
+		if (rssi_dec >= 128)  rssi_dBm = (int16_t)((int16_t)(rssi_dec - 256) / 2) - rssi_offset;
+		else  rssi_dBm = (rssi_dec / 2) - rssi_offset;
+		return rssi_dBm;
 	}
 }
 
