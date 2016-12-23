@@ -235,10 +235,23 @@ namespace cc1101 {
 
 
 	bool checkCC1101() {
+
+		uint8_t partnum = readReg(0xF0,0x80);  // Partnum
+		uint8_t version = readReg(0xF1,0x80);  // Version
+		DBG_PRINT("CCVersion=");	DBG_PRINTLN(version);
+		DBG_PRINT("CCPartnum=");	DBG_PRINTLN(partnum);
+
+		//checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
+		if (version == 0x00 || version == 0xFF)
+		{
+			DBG_PRINTLN(F("no CC11xx found!"));
+			DBG_PRINTLN();
+			return false;  // Todo: power down SPI etc
+		}
 		return true;
 	}
 
-
+		
 	void CCinit(void) {                              // initialize CC1101
 
 		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
@@ -266,6 +279,35 @@ namespace cc1101 {
 	}
 
 
+	inline void setup()
+	{
+		pinAsOutput(sckPin);
+		pinAsOutput(mosiPin);
+		pinAsInput(misoPin);
+		pinAsOutput(csPin);                    // set pins for SPI communication
+
+		SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
+		/*
+		SPCR = ((1 << SPE) |               		// SPI Enable
+		(0 << SPIE) |              		// SPI Interupt Enable
+		(0 << DORD) |              		// Data Order (0:MSB first / 1:LSB first)
+		(1 << MSTR) |              		// Master/Slave select
+		(0 << SPR1) | (0 << SPR0) |   		// SPI Clock Rate
+		(0 << CPOL) |             		// Clock Polarity (0:SCK low / 1:SCK hi when idle)
+		(0 << CPHA));             		// Clock Phase (0:leading / 1:trailing edge sampling)
+
+		SPSR = (1 << SPI2X);             		// Double Clock Rate
+		*/
+		pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+		digitalHigh(csPin);                 // SPI init
+		digitalHigh(sckPin);
+		digitalLow(mosiPin);
+	}
+
+	uint8_t getRSSI()
+	{
+
+	}
 }
 
 #endif

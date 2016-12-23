@@ -74,6 +74,7 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
+volatile uint8_t rssi;
 bool    hasCC1101 = false;
 
 #ifdef CMP_MEMDBG
@@ -149,52 +150,24 @@ void setup() {
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
-	#ifdef DEBUG
-	MSG_PRINTLN("Using sFIFO");
-	#endif
+	DBG_PRINTLN("Using sFIFO");
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
-
-#ifdef HASCC1101
-	pinAsOutput(sckPin);
-	pinAsOutput(mosiPin);
-	pinAsInput(misoPin);
-	pinAsOutput(csPin);                    // set pins for SPI communication
 	
-	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-	/*
-	SPCR = ((1 << SPE) |               		// SPI Enable
-		(0 << SPIE) |              		// SPI Interupt Enable
-		(0 << DORD) |              		// Data Order (0:MSB first / 1:LSB first)
-		(1 << MSTR) |              		// Master/Slave select
-		(0 << SPR1) | (0 << SPR0) |   		// SPI Clock Rate
-		(0 << CPOL) |             		// Clock Polarity (0:SCK low / 1:SCK hi when idle)
-		(0 << CPHA));             		// Clock Phase (0:leading / 1:trailing edge sampling)
-
-	SPSR = (1 << SPI2X);             		// Double Clock Rate
-	*/
-	pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-	digitalHigh(csPin);                 // SPI init
-	digitalHigh(sckPin);
-	digitalLow(mosiPin);
-	#endif
-  
-	//hasCC1101 = cc1101::checkCC1101();   // ## todo testen ob ein cc1101 angeschlossen ist
-	initEEPROM();
 	#ifdef HASCC1101
-		hasCC1101 = true;
-		#ifdef DEBUG
-		MSG_PRINTLN("CCInit");
-		#endif
-
-		//cc1101::CCinit();                  // CC1101 init
+		cc1101::setup();
+	#endif
+  	initEEPROM();
+	
+	#ifdef HASCC1101
+		DBG_PRINTLN("CCInit");
+		cc1101::CCinit();                  // CC1101 init
+		hasCC1101 = cc1101::checkCC1101();
 	#endif
 	pinAsOutput(PIN_SEND);
-	#ifdef DEBUG
-	MSG_PRINTLN("Starting timerjob");
-	#endif
+	DBG_PRINTLN("Starting timerjob");
 	delay(50);
 
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
@@ -208,38 +181,36 @@ void setup() {
 
 	enableReceive();
 	cmdstring.reserve(40);
-	#ifdef DEBUG
-	MSG_PRINTLN("receiver enabled");
-	#endif
+	DBG_PRINTLN("receiver enabled");
 }
 
 void cronjob() {
 
-	/*
 	 const unsigned long  duration = micros() - lastTime;
+	 
 	 if (duration > maxPulse) { //Auf Maximalwert pr�fen.
-		 //handleInterrupt();
-		 //MSG_PRINTLN("PTout");
 		 int sDuration = maxPulse;
 		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			 sDuration = -sDuration;
 		 }
-		#ifdef CMP_FIFO
 		 FiFo.enqueue(sDuration);
-		#else
-		 FiFo.addValue(&sDuration);
-		#endif // CMP_FIFO
-		lastTime = micros();
+		
+		#ifdef HASCC1101
+		 rssi = cc1101::getRSSI();
+		#endif
+		 lastTime = micros();
+	
 
-	 }*/
+	 }
 	 digitalWrite(PIN_LED, blinkLED);
 	 blinkLED = false;
 	/*
 	 if (FiFo.count() >19)
 	 {
-		 MSG_PRINT("SF:"); MSG_PRINTLN(FiFo.count());
+		 DBG_PRINT("SF:"); DBG_PRINTLN(FiFo.count());
 	 }
 	 */
+
 }
 
 
