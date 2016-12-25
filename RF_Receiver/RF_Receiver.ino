@@ -74,7 +74,7 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
-volatile int16_t rssi;
+uint8_t rssi;
 bool    hasCC1101 = false;
 
 #ifdef CMP_MEMDBG
@@ -233,12 +233,10 @@ void loop() {
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-		#ifdef HASCC1101
-		rssi = cc1101::getRSSI();
-		#endif
 	}
 
  }
+
 
 
 

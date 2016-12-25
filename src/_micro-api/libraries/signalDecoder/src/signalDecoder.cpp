@@ -31,6 +31,16 @@
 */
 #include "signalDecoder.h"
 
+// Dirty Hack has to be moved to RF_Receiver.ini and declared as callback
+
+uint8_t RSSI_callback()
+{
+#ifdef HASCC1101
+	return cc1101::getRSSI();
+#else
+	return -1;
+#endif
+}
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
@@ -83,6 +93,7 @@ inline void SignalDetectorClass::doDetect()
 			
 		}	else if (messageLen == minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+			rssiValue=RSSI_callback();		// Todo: Müsste als richige callback Funktion eingerichtet werden
 		}
 
 		int8_t fidx = findpatt(*first);
@@ -92,6 +103,7 @@ inline void SignalDetectorClass::doDetect()
 			updPattern(fidx);
 		}
 		else { 			
+
 			// Add pattern
 			if (patternLen == maxNumPattern)
 			{
@@ -283,6 +295,8 @@ void SignalDetectorClass::processMessage()
 				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
 				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+				postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+
 				if (m_overflow) {
 					postamble.concat("O");
 					postamble.concat(SERIAL_DELIMITER);
@@ -386,7 +400,7 @@ void SignalDetectorClass::processMessage()
 					mcdecoder.getMessageClockStr(&postamble);
 					mcdecoder.getMessageLenStr(&postamble);
 
-
+					postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					postamble.concat(MSG_END);
 					postamble.concat('\n');
 
@@ -462,6 +476,8 @@ void SignalDetectorClass::processMessage()
 				//String postamble;
 				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+				postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+
 				if (m_overflow) {
 					postamble.concat("O");
 					postamble.concat(SERIAL_DELIMITER);

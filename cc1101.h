@@ -226,10 +226,37 @@ namespace cc1101 {
 
 
 
+  void CCinit(void) {                              // initialize CC1101
+
+	  cc1101_Deselect();                                  // some deselect and selects to init the cc1101
+	  delayMicroseconds(5);
+
+	  cc1101_Select();
+	  delayMicroseconds(10);
+
+	  cc1101_Deselect();
+	  delayMicroseconds(41);
+
+	  cmdStrobe(CC1101_SRES);                               // send reset
+	  delay(10);
+
+	  cc1101_Select();
+	  sendSPI(CC1100_WRITE_BURST);
+	  for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
+																 //writeReg(i, pgm_read_byte(&initVal[i]));
+		  sendSPI(EEPROM.read(EE_CC1100_CFG + i));
+	  }
+	  cc1101_Deselect();
+
+	  delay(1);
+	  cmdStrobe(CC1101_SRX);       // enable RX
+  }
+
 	void ccFactoryReset() {
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {
         		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
 		}
+		CCinit();
 		MSG_PRINTLN("ccFactoryReset done");  
 	}
 
@@ -251,32 +278,6 @@ namespace cc1101 {
 		return true;
 	}
 
-		
-	void CCinit(void) {                              // initialize CC1101
-
-		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
-		delayMicroseconds(5);
-
-		cc1101_Select();
-		delayMicroseconds(10);
-
-		cc1101_Deselect();
-		delayMicroseconds(41);
-
-		cmdStrobe(CC1101_SRES);                               // send reset
-		delay(10);
-
-		cc1101_Select();
-		sendSPI(CC1100_WRITE_BURST);
-		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
-			//writeReg(i, pgm_read_byte(&initVal[i]));
-			sendSPI(EEPROM.read(EE_CC1100_CFG + i));
-		}
-		cc1101_Deselect();
-		
-		delay(1);
-		cmdStrobe(CC1101_SRX);       // enable RX
-	}
 
 
 	inline void setup()
@@ -304,13 +305,14 @@ namespace cc1101 {
 		digitalLow(mosiPin);
 	}
 
-	int16_t getRSSI()
+	uint8_t getRSSI()
 	{
-		uint8_t rssi_dec = readReg(CC1100_RSSI, 0xC0);
+		return readReg(CC1100_RSSI, CC1101_STATUS);// Prüfen ob Umwandung von uint to int den richtigen Wert zurück gibt
+		/*
 		int16_t rssi_dBm;
 		if (rssi_dec >= 128)  rssi_dBm = (int16_t)((int16_t)(rssi_dec - 256) / 2) - rssi_offset;
 		else  rssi_dBm = (rssi_dec / 2) - rssi_offset;
-		return rssi_dBm;
+		return rssi_dBm;*/
 	}
 }
 

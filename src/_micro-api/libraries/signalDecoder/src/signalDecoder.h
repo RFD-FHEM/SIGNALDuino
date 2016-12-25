@@ -79,7 +79,7 @@ public:
 	uint8_t message[maxMsgSize];
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
-	uint8_t mend; // Holds end point for message if detected
+	uint8_t mend;   // Holds end point for message if detected
 	bool success;                           // True if a valid coding was found
 
 	bool m_truncated;     // Identify if message has been truncated
@@ -100,7 +100,7 @@ public:
 	String preamble;
 	String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
-	
+	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 
 	void addData(const uint8_t value);
 	void addPattern();
