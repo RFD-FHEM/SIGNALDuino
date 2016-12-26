@@ -150,12 +150,8 @@ void initEEPROM(void);
 void changeReceiver();
 uint8_t cmdstringPos2int(uint8_t pos);
 void printHex2(const byte hex);
+uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
 
-#ifdef HASCC1101
-fastdelegate::FastDelegate0<uint8_t> rssiCallback(NULL);
-#else
-fastdelegate::FastDelegate0<uint8_t> rssiCallback(&cc1101::getRSSI);
-#endif
 
 void setup() {
 	Serial.begin(BAUDRATE);
@@ -169,17 +165,17 @@ void setup() {
 	// CC1101
 	
 	#ifdef HASCC1101
-		cc1101::setup();
+	cc1101::setup();
 	#endif
   	initEEPROM();
 	
 	#ifdef HASCC1101
-		DBG_PRINTLN("CCInit");	
-		cc1101::CCinit();					 // CC1101 init
-		hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
+	DBG_PRINTLN("CCInit");	
+	cc1101::CCinit();					 // CC1101 init
+	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	#endif
 	if (hasCC1101)		musterDec.setRSSICallback(&cc1101::getRSSI); // Provide the RSSI Callback
-	else musterDec.setRSSICallback(NULL);							 // Provide the RSSI Callback
+	else musterDec.setRSSICallback(&rssiCallback);							 // Provide the RSSI Callback
 
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN("Starting timerjob");
