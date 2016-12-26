@@ -1,11 +1,15 @@
-# SIGNALDuino uC v3.3-0 (development version)
+# SIGNALDuino uC v3.3-0 (development version) with cc1101 support
+
+### Getting started
+
 
 System to receive digital signals and provide them to other systems pro demodulatiob. Currently tested with 433 MHZ, but not limited to that frequency or media.
 
 ### Getting started
 
 
-Just clone the repo and open the project file with code:blocks. (currently this works only for windows)
+Just clone the repo and open the project file with visualstudio. (only available for windows)
+You can also open it with the Arduino IDE. 
 Compile it and have fun.
 If you are using the Arduino IDE, you have to copy all the libs into your sketch folder.
 
@@ -14,6 +18,7 @@ If you are using the Arduino IDE, you have to copy all the libs into your sketch
 If you want to use the SIGNALDuino with FHEM, you can use it directly from FHEM. No neet to compile any sourcode.
 You find more Information here:
 http://www.fhemwiki.de/wiki/SIGNALDuino
+
 
 
 ### Tested microcontrollers
