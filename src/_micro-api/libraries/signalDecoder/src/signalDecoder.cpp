@@ -295,7 +295,7 @@ void SignalDetectorClass::processMessage()
 				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
 				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
-				postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
 					postamble.concat("O");
@@ -400,7 +400,7 @@ void SignalDetectorClass::processMessage()
 					mcdecoder.getMessageClockStr(&postamble);
 					mcdecoder.getMessageLenStr(&postamble);
 
-					postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					postamble.concat(MSG_END);
 					postamble.concat('\n');
 
@@ -476,7 +476,7 @@ void SignalDetectorClass::processMessage()
 				//String postamble;
 				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-				postamble.concat("SL="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
 					postamble.concat("O");
