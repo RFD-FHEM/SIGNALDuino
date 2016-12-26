@@ -37,9 +37,9 @@
 #else
 	#include "WProgram.h"
 #endif
-#include <output.h>
-
-#include <bitstore.h>
+#include "output.h"
+#include "bitstore.h"
+#include "FastDelegate.h"
 
 #define maxNumPattern 8
 #define maxMsgSize 254
@@ -60,6 +60,8 @@
 
 enum status { searching, clockfound, syncfound, detecting };
 
+
+
 class SignalDetectorClass
 {
 	friend class ManchesterpatternDecoder;
@@ -70,7 +72,11 @@ public:
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
+	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
+	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
 
+
+	//private:
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
 	bool MCenabled;
@@ -101,6 +107,7 @@ public:
 	String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
+	FuncRetuint8t _rssiCallback;			// Holds the pointer to a callback Function
 
 	void addData(const uint8_t value);
 	void addPattern();

@@ -31,16 +31,6 @@
 */
 #include "signalDecoder.h"
 
-// Dirty Hack has to be moved to RF_Receiver.ini and declared as callback
-
-uint8_t RSSI_callback()
-{
-#ifdef HASCC1101
-	return cc1101::getRSSI();
-#else
-	return -1;
-#endif
-}
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
@@ -93,7 +83,7 @@ inline void SignalDetectorClass::doDetect()
 			
 		}	else if (messageLen == minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-			rssiValue=RSSI_callback();		// Todo: Müsste als richige callback Funktion eingerichtet werden
+			rssiValue= _rssiCallback();
 		}
 
 		int8_t fidx = findpatt(*first);

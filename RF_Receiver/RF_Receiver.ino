@@ -45,13 +45,17 @@
 #else
   #define PIN_LED               13    // Message-LED
   #define PIN_SEND              11
+
 #endif
 #define PIN_RECEIVE            2
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
 #define DEBUG				   1
 
+
+
 #ifdef ARDUINO_IDE
+#include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
@@ -143,7 +147,15 @@ void configCMD();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
 void getFunctions(bool *ms,bool *mu,bool *mc);
 void initEEPROM(void);
+void changeReceiver();
+uint8_t cmdstringPos2int(uint8_t pos);
+void printHex2(const byte hex);
 
+#ifdef HASCC1101
+fastdelegate::FastDelegate0<uint8_t> rssiCallback(NULL);
+#else
+fastdelegate::FastDelegate0<uint8_t> rssiCallback(&cc1101::getRSSI);
+#endif
 
 void setup() {
 	Serial.begin(BAUDRATE);
@@ -162,10 +174,13 @@ void setup() {
   	initEEPROM();
 	
 	#ifdef HASCC1101
-		DBG_PRINTLN("CCInit");
-		cc1101::CCinit();                  // CC1101 init
-		hasCC1101 = cc1101::checkCC1101();
+		DBG_PRINTLN("CCInit");	
+		cc1101::CCinit();					 // CC1101 init
+		hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	#endif
+	if (hasCC1101)		musterDec.setRSSICallback(&cc1101::getRSSI); // Provide the RSSI Callback
+	else musterDec.setRSSICallback(NULL);							 // Provide the RSSI Callback
+
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN("Starting timerjob");
 	delay(50);
