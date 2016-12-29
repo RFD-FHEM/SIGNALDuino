@@ -28,7 +28,12 @@
 #endif
 
 #ifdef ETHERNET_PRINT
-#define MSG_PRINTER Server // Not Implemented at this time
+#include <wificlient.h>
+
+extern WiFiClient serverClient;
+
+
+#define MSG_PRINTER serverClient // Not Implemented at this time
 #else
 #define MSG_PRINTER Serial
 #endif

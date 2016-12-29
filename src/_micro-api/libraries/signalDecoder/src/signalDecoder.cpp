@@ -343,7 +343,7 @@ void SignalDetectorClass::processMessage()
 		if (success == false && (MUenabled || MCenabled)) {
 
 #if DEBUGDECODE >0
-			DBG_PRINT(" MU/MC check: ");
+			DBG_PRINT(" check:");
 
 			//printOut();
 #endif	
@@ -358,6 +358,8 @@ void SignalDetectorClass::processMessage()
 			preamble.concat(MSG_START);
 			if (MCenabled)
 			{
+				//DBG_PRINT(" mc: ");
+
 				static ManchesterpatternDecoder mcdecoder(this);			// Init Manchester Decoder class
 
 				if (mcDetected == false)
@@ -440,6 +442,7 @@ void SignalDetectorClass::processMessage()
 
 				}
 				else if (mcDetected == true && m_truncated == true) {
+
 					success = true;   // Prevents MU Processing
 				}
 
@@ -480,8 +483,6 @@ void SignalDetectorClass::processMessage()
 				success = true;
 			}
 
-
-
 		}
 		
 		if (success == false) 
@@ -495,6 +496,7 @@ void SignalDetectorClass::processMessage()
 	{
 		reset();
 	}
+
 	//MSG_PRINTLN("process finished");
 }
 
@@ -522,6 +524,7 @@ void SignalDetectorClass::reset()
 	mcDetected = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
+	//DBG_PRINT(':sdres:');
 }
 
 const status SignalDetectorClass::getState()
@@ -579,7 +582,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
-		if ((val ^ pattern[idx]) >> 31)
+		if ((val ^ pattern[idx]) >> 15)
 			continue;
 		if (pattern[idx] != 0 && inTol(val, pattern[idx],tol))  // Skip this iteration, if seq[x] <> pattern[idx][x]
 									   //if (!inTol(seq[x],pattern[idx][x-1]))  // Skip this iteration, if seq[x] <> pattern[idx][x]
@@ -932,7 +935,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	pdec->m_truncated = false;
 //	bool mc_start_found = false;
 //	bool mc_sync = false;
-	pdec->mstart = 0;
+	pdec->mstart = 0; // Todo: prüfen ob start aus isManchester übernommen werden kann
 #ifdef DEBUGDECODE
 	DBG_PRINT("mlen:");
 	DBG_PRINT(pdec->messageLen);
@@ -972,7 +975,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (l == i && i > 0) {
 						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
 
-						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>31)
+						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>15)
 						{
 							int pClocks = round(pClock / (float)clock);
 							
@@ -1079,14 +1082,14 @@ const bool ManchesterpatternDecoder::doDecode() {
 //						pdec->mend--;
 //					}
 #ifdef DEBUGDECODE
-					DBG_PRINT(":mpos:");
+					DBG_PRINT(":mpos=");
 					DBG_PRINT(i);
-					DBG_PRINT(":mstart:");
+					DBG_PRINT(":mstart=");
 					DBG_PRINT(pdec->mstart);
 					DBG_PRINT(":mend:");
 					DBG_PRINT(pdec->mend);
 					DBG_PRINT(":found:");
-					DBG_PRINT(":pidx:");
+					DBG_PRINT(":pidx=");
 					DBG_PRINT(pdec->pattern[pdec->message[i]]);
 
 #endif
@@ -1139,20 +1142,20 @@ const bool ManchesterpatternDecoder::doDecode() {
 	pdec->mend = i - (ht ? 0 : 1); // keep short in buffer;
 
 #ifdef DEBUGDECODE
-	DBG_PRINT(":mpos:");
+	DBG_PRINT(":mpos=");
 	DBG_PRINT(i);
-	DBG_PRINT(":mstart:");
+	DBG_PRINT(":mstart=");
 	DBG_PRINT(pdec->mstart);
-	DBG_PRINT(":mend:");
+	DBG_PRINT(":mend=");
 	DBG_PRINT(pdec->mend);
-	DBG_PRINT(":vcnt:");
+	DBG_PRINT(":vcnt=");
 	DBG_PRINT(ManchesterBits.valcount-1);
 	DBG_PRINT(":bfin:");
 #endif
 
 
 	// Check if last entry in our message array belongs to our manchester signal
-	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 1 && ManchesterBits.valcount > minbitlen / 2)
+	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 0 && ManchesterBits.valcount > minbitlen / 2)
 	{
 #ifdef DEBUGDECODE
 		DBG_PRINT(":bmove:");
@@ -1172,6 +1175,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 #ifdef DEBUGDECODE
 		DBG_PRINT(":bflush:");
+
 #endif
 		return false;
 	}
@@ -1192,6 +1196,8 @@ const bool ManchesterpatternDecoder::isManchester()
 #if DEBUGDETECT >= 1
 	DBG_PRINTLN("");
 	DBG_PRINTLN("  --  chk MC -- ");
+	DBG_PRINT("mstart:");
+	DBG_PRINTLN(pdec->mstart);
 #endif
 	if (pdec->patternLen < 4)	return false;
 
@@ -1239,7 +1245,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	{
 		if (pdec->pattern[sortedPattern[i]] <=0) continue;
 #if DEBUGDETECT >= 2
-		DBG_PRINT("CL="); DBG_PRINT(sortedPattern[i]); DBG_PRINT(":");
+		DBG_PRINT("CLK="); DBG_PRINT(sortedPattern[i]); DBG_PRINT(":");
 #endif
 		longlow = -1;
 		longhigh = -1;
@@ -1254,7 +1260,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		for (uint8_t x = 0; x < p; x++)
 		{
 #if DEBUGDETECT >= 1
-			DBG_PRINT(sortedPattern[x]); DBG_PRINT("^=");
+			DBG_PRINT(sortedPattern[x]); DBG_PRINT("^=(");
 #endif
 
 			const int aktpulse = pdec->pattern[sortedPattern[x]];
@@ -1268,7 +1274,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 			#if DEBUGDETECT >= 3
 			DBG_PRINT("PS="); DBG_PRINT(pshort); DBG_PRINT(";");
-			DBG_PRINT("PL="); DBG_PRINT(plong); DBG_PRINT(";");
+			DBG_PRINT("PL="); DBG_PRINT(plong); DBG_PRINT(";)");
 			#endif
 
 
@@ -1277,7 +1283,7 @@ const bool ManchesterpatternDecoder::isManchester()
 				if (pshort) shorthigh = sortedPattern[x];
 				else if (plong) longhigh = sortedPattern[x];
 				else continue;
-				equal_cnt += pdec->histo[sortedPattern[x]];
+				//equal_cnt += pdec->histo[sortedPattern[x]]; 
 
 				pos_cnt++;
 				tstclock += aktpulse;
@@ -1287,62 +1293,98 @@ const bool ManchesterpatternDecoder::isManchester()
 				else if (plong) longlow = sortedPattern[x];
 				else continue;
 
-				equal_cnt -= pdec->histo[sortedPattern[x]];
+				//equal_cnt -= pdec->histo[sortedPattern[x]];
 				neg_cnt++;
 				tstclock -= aktpulse;
 
 			}
+		
+			//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
 
 			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
 			{
+#if DEBUGDETECT >= 1
+				DBG_PRINT("vfy ");
+#endif
 
-				#if DEBUGDETECT >= 1
-				DBG_PRINT("equalcnt: "); DBG_PRINT(equal_cnt); DBG_PRINT(" ");
-				#endif
+				int z = 0;
+				while (z < pdec->messageLen)
+				{
 
-				if (abs(equal_cnt) > round(pdec->messageLen*0.04))  break;
-				#if DEBUGDETECT >= 1
-				DBG_PRINT("  MC equalcnt matched");
-				#endif
-				if (neg_cnt != pos_cnt) break;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
-				#if DEBUGDETECT >= 1
-					DBG_PRINT("  MC neg and pos pattern cnt is equal");
-				#endif
+					if ( (isLong(pdec->message[z] == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
+					{  
+#if DEBUGDETECT >= 1
+						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[i]); DBG_PRINT(";")
 
-				if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
+						DBG_PRINT("Long"); DBG_PRINT(isLong(pdec->message[i])); DBG_PRINT(";");
+						DBG_PRINT("Short"); DBG_PRINT(isShort(pdec->message[i])); DBG_PRINTLN(";");
 
-				goto mcDetected;
+#endif
+						if ((z - pdec->mstart) > minbitlen)  // Todo: Hier wird auf minbitlen geprüft. Die Differenz zwischen mstart und mend sind aber Pulse und keine bits
+						{
+							pdec->mend = z;
+
+							pdec->calcHisto(pdec->mstart, pdec->mend);
+							equal_cnt = pdec->histo[shorthigh] + pdec->histo[longhigh] - pdec->histo[shortlow] - pdec->histo[longlow];
+
+#if DEBUGDETECT >= 1
+							DBG_PRINT("equalcnt: pos "); DBG_PRINT(pdec->mstart); DBG_PRINT(" to ") DBG_PRINT(pdec->mend); DBG_PRINT("count=");  DBG_PRINT(equal_cnt); DBG_PRINT(" ");
+#endif
+							mc_start_found = false;
+							if (abs(equal_cnt) > round(pdec->messageLen*0.04))  break; //Next loop
+#if DEBUGDETECT >= 1
+							DBG_PRINT(" MC equalcnt matched");
+#endif
+							if (neg_cnt != pos_cnt) break;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
+#if DEBUGDETECT >= 1
+							DBG_PRINT("  MC neg and pos pattern cnt is equal");
+#endif
+
+							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
+
+							tstclock = tstclock / 6;
+#if DEBUGDETECT >= 1
+							MSG_PRINT("  tstclock: "); DBG_PRINT(tstclock);
+#endif
+							clock = tstclock;
+
+#if DEBUGDETECT >= 1
+							DBG_PRINT(" MC LL:"); DBG_PRINT(longlow);
+							DBG_PRINT(", MC LH:"); DBG_PRINT(longhigh);
+
+							DBG_PRINT(", MC SL:"); DBG_PRINT(shortlow);
+							DBG_PRINT(", MC SH:"); DBG_PRINT(shorthigh);
+							DBG_PRINTLN("");
+#endif
+							// TOdo: Bei FFFF passt diese Prüfung nicht.
+
+#if DEBUGDETECT >= 1
+							DBG_PRINTLN("  -- MC found -- ");
+#endif
+
+							return true;;
+
+						}
+						else {
+							mc_start_found = false;
+							mc_sync = false;
+						}
+					} else {
+						if (mc_start_found == false)
+						{
+							pdec->mstart = z;
+							mc_start_found = true;
+						}
+					}
+					z++;
+				}
 			}
-
-
 		}
-		//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
 
 	}
 	return false;
 
-	mcDetected:
 
-	tstclock = tstclock / 6;
-#if DEBUGDETECT >= 1
-	MSG_PRINT("  tstclock: "); DBG_PRINT(tstclock);
-#endif
-	clock = tstclock;
 
-#if DEBUGDETECT >= 1
-	DBG_PRINT(" MC LL:"); DBG_PRINT(longlow);
-	DBG_PRINT(", MC LH:"); DBG_PRINT(longhigh);
-
-	DBG_PRINT(", MC SL:"); DBG_PRINT(shortlow);
-	DBG_PRINT(", MC SH:"); DBG_PRINT(shorthigh);
-	DBG_PRINTLN("");
-#endif
-	// TOdo: Bei FFFF passt diese Prüfung nicht.
-
-#if DEBUGDETECT >= 1
-	DBG_PRINTLN("  -- MC found -- ");
-#endif
-
-	return true;
 }
 
