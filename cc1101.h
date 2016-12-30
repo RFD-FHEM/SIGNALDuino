@@ -307,7 +307,7 @@ namespace cc1101 {
 
 	uint8_t getRSSI()
 	{
-		return readReg(CC1100_RSSI, CC1101_STATUS);// Prüfen ob Umwandung von uint to int den richtigen Wert zurück gibt
+		return readReg(CC1100_RSSI, CC1101_STATUS);// Pruefen ob Umwandung von uint to int den richtigen Wert zurueck gibt
 		/*
 		int16_t rssi_dBm;
 		if (rssi_dec >= 128)  rssi_dBm = (int16_t)((int16_t)(rssi_dec - 256) / 2) - rssi_offset;
