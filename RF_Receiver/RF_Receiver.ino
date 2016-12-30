@@ -66,7 +66,7 @@
 #endif
 #include <TimerOne.h>  // Timer for LED Blinking
 
-#include <SimpleFIFO.h>
+#include "SimpleFIFO.h"
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
 
