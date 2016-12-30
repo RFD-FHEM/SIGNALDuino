@@ -598,6 +598,13 @@ void HandleCommand()
      }
      MSG_PRINTLN("");
   }
+  else if (cmdstring.charAt(0) == cmd_patable && isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
+     val = cmdstringPos2int(1);
+     cc1101::writeCCpatable(val);
+     MSG_PRINT(F("Write "));
+     printHex2(val);
+     MSG_PRINTLN(F(" to PATABLE done"));
+  }
   else if (cmdstring.charAt(0) == cmd_ccFactoryReset && hasCC1101) { 
      cc1101::ccFactoryReset();
      cc1101::CCinit();
