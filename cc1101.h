@@ -9,7 +9,7 @@
 	#include "WProgram.h"
 #endif
 #include <EEPROM.h>
-#include <output.h>
+#include "output.h"
 
 
 extern String cmdstring;
@@ -256,7 +256,6 @@ namespace cc1101 {
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {
         		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
 		}
-		CCinit();
 		MSG_PRINTLN("ccFactoryReset done");  
 	}
 
