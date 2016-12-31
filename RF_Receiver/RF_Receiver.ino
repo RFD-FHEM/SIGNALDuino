@@ -30,16 +30,15 @@
 
 */
 //#define CMP_MEMDBG 1
-#define ARDUINO_IDE
 
-#define HASCC1101
+#define CMP_CC1101
 
 #define PROGNAME               "RF_RECEIVER"
 #define PROGVERS               "3.3.1-dev"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-#ifdef HASCC1101
+#ifdef CMP_CC1101
   #define PIN_LED               9
   #define PIN_SEND              3   // gdo0Pin TX out
 #else
@@ -50,20 +49,14 @@
 #define PIN_RECEIVE            2
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
-#define DEBUG				   1
+//#define DEBUG				   1
 
 
 
-#ifdef ARDUINO_IDE
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
-#else
-#include <output.h>
-#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
-#include <signalDecoder.h>
-#endif
 #include <TimerOne.h>  // Timer for LED Blinking
 
 #include <SimpleFIFO.h>
@@ -78,8 +71,7 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
-uint8_t rssi;
-bool    hasCC1101 = false;
+bool hasCC1101 = false;
 
 #ifdef CMP_MEMDBG
 
@@ -164,18 +156,19 @@ void setup() {
 	pinAsOutput(PIN_LED);
 	// CC1101
 	
-	#ifdef HASCC1101
+	#ifdef CMP_CC1101
 	cc1101::setup();
 	#endif
   	initEEPROM();
 	
-	#ifdef HASCC1101
+	#ifdef CMP_CC1101
 	DBG_PRINTLN("CCInit");	
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
-	#endif
+	
 	if (hasCC1101)		musterDec.setRSSICallback(&cc1101::getRSSI); // Provide the RSSI Callback
-	else musterDec.setRSSICallback(&rssiCallback);							 // Provide the RSSI Callback
+	else 
+	#endif musterDec.setRSSICallback(&rssiCallback);							 // Provide the RSSI Callback
 
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN("Starting timerjob");
@@ -205,11 +198,6 @@ void cronjob() {
 			 sDuration = -sDuration;
 		 }
 		 FiFo.enqueue(sDuration);
-		
-		#ifdef HASCC1101
-		 //rssi = cc1101::getRSSI();
-		 //DBG_PRINTLN(rssi);
-		#endif
 
 		 lastTime = micros();
 	
@@ -278,10 +266,18 @@ void handleInterrupt() {
 
 void enableReceive() {
    attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
+   
+   #ifdef CMP_CC1101
+   if (hasCC1101) cc1101::setReceiveMode();
+   #endif
 }
 
 void disableReceive() {
   detachInterrupt(digitalPinToInterrupt(PIN_RECEIVE));
+ 
+  #ifdef CMP_CC1101
+  if (hasCC1101) cc1101::setIdleMode();
+  #endif
 }
 
 
@@ -496,6 +492,10 @@ void send_cmd()
 		    //MSG_PRINTLN("adding sendclock");
 		}
 	}
+
+	#ifdef CMP_CC1101
+	if (hasCC1101) cc1101::setTransmitMode();	
+	#endif
 
 	for (uint8_t i=0;i<repeats;i++)
 	{

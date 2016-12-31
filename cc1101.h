@@ -27,7 +27,7 @@ namespace cc1101 {
 	#define CC1100_WRITE_BURST 0x40
 	
 	// Status registers
-	#define CC1100_RSSI   0x34   // Received signal strength indication
+	#define CC1100_RSSI      0x34 // Received signal strength indication
 	#define CC1100_MARCSTATE 0x35 // Control state machine state
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset
@@ -36,7 +36,7 @@ namespace cc1101 {
 	#define CC1101_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
 	#define CC1100_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
 	#define CC1100_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
-	#define CC1100_SAFC     0x37 // Perform AFC adjustment of the frequency synthesizer
+	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
 	
 	#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
@@ -47,7 +47,6 @@ namespace cc1101 {
 	#define EE_CC1100_PA         (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2B
 	#define EE_CC1100_PA_SIZE    8
 
-	uint8_t rssi_offset = 79;		// Todo: Je nach Frequenz und Datenrate anpassen
 
 	static const uint8_t initVal[] PROGMEM = 
 	{
@@ -100,13 +99,19 @@ namespace cc1101 {
 		else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
 		else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
 		return hex;
+		// printf ("%d\n",$hex) ??
 	}
 
 	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
 		if (hex < 16) {
 			MSG_PRINT("0");
 		}
+		// char hexstr[2] = {0};
+		//sprintf(hexstr, "%02X", hex);
+
 		MSG_PRINT(hex, HEX);
+
+
 	}
 
 
@@ -141,7 +146,7 @@ namespace cc1101 {
 	}
 
 
-  void readCCreg(uint8_t reg) {   // read CC11001 register
+  void readCCreg(const uint8_t reg) {   // read CC11001 register
     uint8_t var;
     uint8_t hex;
     uint8_t n;
@@ -308,11 +313,24 @@ namespace cc1101 {
 	uint8_t getRSSI()
 	{
 		return readReg(CC1100_RSSI, CC1101_STATUS);// Prüfen ob Umwandung von uint to int den richtigen Wert zurück gibt
-		/*
-		int16_t rssi_dBm;
-		if (rssi_dec >= 128)  rssi_dBm = (int16_t)((int16_t)(rssi_dec - 256) / 2) - rssi_offset;
-		else  rssi_dBm = (rssi_dec / 2) - rssi_offset;
-		return rssi_dBm;*/
+	}
+	
+	inline void setIdleMode()
+	{
+		cmdStrobe(CC1100_SIDLE);                             // Idle mode
+		delay(1);
+	}
+
+	void setReceiveMode()
+	{
+		setIdleMode();
+		cmdStrobe(CC1101_SRX);                               // RX enable
+	}
+
+	void setTransmitMode()
+	{
+		setIdleMode();
+		cmdStrobe(CC1100_STX);								// TX enable
 	}
 }
 
