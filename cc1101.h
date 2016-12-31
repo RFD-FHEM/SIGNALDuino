@@ -177,7 +177,6 @@ namespace cc1101 {
 
 
   void readCCreg(const uint8_t reg) {   // read CC11001 register
-  vod readCCreg(uint8_t reg) {   // read CC11001 register
     uint8_t var;
     uint8_t hex;
     uint8_t n;
