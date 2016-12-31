@@ -9,7 +9,7 @@
 	#include "WProgram.h"
 #endif
 #include <EEPROM.h>
-#include <output.h>
+#include "output.h"
 
 
 extern String cmdstring;
@@ -22,9 +22,15 @@ namespace cc1101 {
 	#define misoPin 12   // MISO in
 	#define sckPin  13   // SCLK out
 	
-	#define CC1101_CONFIG      0x80 
+	#define CC1101_CONFIG      0x80
 	#define CC1101_STATUS      0xC0
 	#define CC1100_WRITE_BURST 0x40
+	#define CC1100_READ_BURST  0xC0
+	
+	#define CC1100_FREQ2       0x0D  // Frequency control word, high byte
+	#define CC1100_FREQ1       0x0E  // Frequency control word, middle byte
+	#define CC1100_FREQ0       0x0F  // Frequency control word, low byte
+	#define CC1100_PATABLE     0x3E  // 8 byte memory
 	
 	// Status registers
 	#define CC1100_RSSI      0x34 // Received signal strength indication
@@ -44,8 +50,10 @@ namespace cc1101 {
 	
 	#define EE_CC1100_CFG        2
 	#define EE_CC1100_CFG_SIZE   0x29
-	#define EE_CC1100_PA         (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2B
+	#define EE_CC1100_PA         0x30  //  (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2B
 	#define EE_CC1100_PA_SIZE    8
+	
+	#define PATABLE_DEFAULT      0x84   // 5 dB default value for factory reset
 
 
 	static const uint8_t initVal[] PROGMEM = 
@@ -144,9 +152,32 @@ namespace cc1101 {
 		sendSPI(val);                                   // send value
 		cc1101_Deselect();                              // deselect CC1101
 	}
+	
+	uint8_t PatableArray[7];
+
+	void readPatable(void) {
+		cc1101_Select();                                // select CC1101
+		wait_Miso();                                    // wait until MISO goes low
+		sendSPI(CC1100_PATABLE | CC1100_READ_BURST);    // send register address
+		for (uint8_t i = 0; i < 8; i++) {
+			PatableArray[i] = sendSPI(0x00);              // read result
+		}
+		cc1101_Deselect();
+	}
+
+	void writePatable(void) {
+		cc1101_Select();                                // select CC1101
+		wait_Miso();                                    // wait until MISO goes low
+		sendSPI(CC1100_PATABLE | CC1100_WRITE_BURST);   // send register address
+		for (uint8_t i = 0; i < 8; i++) {
+			sendSPI(PatableArray[i]);                     // send value
+		}
+			cc1101_Deselect();
+	}
 
 
   void readCCreg(const uint8_t reg) {   // read CC11001 register
+  vod readCCreg(uint8_t reg) {   // read CC11001 register
     uint8_t var;
     uint8_t hex;
     uint8_t n;
@@ -169,7 +200,7 @@ namespace cc1101 {
            }
        }
        else {
-       if (reg < 0x40) {
+       if (reg < 0x3E) {
           if (reg < 0x2F) {
              var = readReg(reg, CC1101_CONFIG);
           }
@@ -180,6 +211,15 @@ namespace cc1101 {
           printHex2(reg);
           MSG_PRINT(" = ");
           printHex2(var);
+          MSG_PRINTLN("");
+       }
+       else if (reg == 0x3E) {                   // patable
+          MSG_PRINT(F("C3E = "));
+          readPatable();
+          for (uint8_t i = 0; i < 8; i++) {
+             printHex2(PatableArray[i]);
+             MSG_PRINT(" ");
+          }
           MSG_PRINTLN("");
        }
        else if (reg == 0x99) {                   // alle register
@@ -220,7 +260,7 @@ namespace cc1101 {
 
   void writeCCreg(uint8_t reg, uint8_t var) {    // write CC11001 register
 
-    if (reg > 1 && reg < 0x3e) {
+    if (reg > 1 && reg < 0x40) {
            writeReg(reg-2, var);
            MSG_PRINT("W");
            printHex2(reg);
@@ -229,6 +269,19 @@ namespace cc1101 {
     }
   }
 
+
+void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa ramping)
+	for (uint8_t i = 0; i < 8; i++) {
+		if (i == 1) {
+			PatableArray[i] = var;
+			EEPROM.write(EE_CC1100_PA + i, var);
+		} else {
+			PatableArray[i] = 0;
+			EEPROM.write(EE_CC1100_PA + i, 0);
+		}
+	}
+	writePatable();
+}
 
 
   void CCinit(void) {                              // initialize CC1101
@@ -248,11 +301,17 @@ namespace cc1101 {
 	  cc1101_Select();
 	  sendSPI(CC1100_WRITE_BURST);
 	  for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
-																 //writeReg(i, pgm_read_byte(&initVal[i]));
+		//writeReg(i, pgm_read_byte(&initVal[i]));
 		  sendSPI(EEPROM.read(EE_CC1100_CFG + i));
 	  }
 	  cc1101_Deselect();
+	delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
 
+	for (uint8_t i = 0; i < 8; i++) {
+		PatableArray[i] = EEPROM.read(EE_CC1100_PA + i);
+	}
+	writePatable();                                 // write PatableArray to patable reg
+	
 	  delay(1);
 	  cmdStrobe(CC1101_SRX);       // enable RX
   }
@@ -261,7 +320,13 @@ namespace cc1101 {
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {
         		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
 		}
-		CCinit();
+		for (uint8_t i = 0; i < 8; i++) {
+			if (i == 1) {
+				EEPROM.write(EE_CC1100_PA + i, PATABLE_DEFAULT);
+			} else {
+				EEPROM.write(EE_CC1100_PA + i, 0);
+			}
+		}
 		MSG_PRINTLN("ccFactoryReset done");  
 	}
 
@@ -312,7 +377,7 @@ namespace cc1101 {
 
 	uint8_t getRSSI()
 	{
-		return readReg(CC1100_RSSI, CC1101_STATUS);// Prüfen ob Umwandung von uint to int den richtigen Wert zurück gibt
+		return readReg(CC1100_RSSI, CC1101_STATUS);// Pruefen ob Umwandung von uint to int den richtigen Wert zurueck gibt
 	}
 	
 	inline void setIdleMode()

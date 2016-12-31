@@ -116,7 +116,7 @@ void BitStore<bufSize>::addValue(char value)
 	Serial.print(" : ");
 	*/
     valcount++;
-    if (int8_t(bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhöhen wir den counter zum verschieben
+    if (int8_t(bcnt-valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhoehen wir den counter zum verschieben
     {
         bcnt=bcnt-valuelen; //+valuelen
     } else {

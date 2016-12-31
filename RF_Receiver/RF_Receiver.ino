@@ -59,7 +59,7 @@
 #include "signalDecoder.h"
 #include <TimerOne.h>  // Timer for LED Blinking
 
-#include <SimpleFIFO.h>
+#include "SimpleFIFO.h"
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
 
@@ -282,46 +282,6 @@ void disableReceive() {
 
 
 
-//============================== IT_Send =========================================
-uint8_t ITrepetition = 6;
-int ITbaseduration = 300;
-
-void PT2262_transmit(uint8_t nHighPulses, uint8_t nLowPulses) {
-  //digitalWrite(PIN_SEND, HIGH);
-  digitalHigh(PIN_SEND);
-  delayMicroseconds(ITbaseduration * nHighPulses);
-  //digitalWrite(PIN_SEND, LOW);
-  digitalLow(PIN_SEND);
-  delayMicroseconds(ITbaseduration * nLowPulses);
-}
-
-void sendPT2262(char* triStateMessage) {
-  disableReceive();
-  for (int i = 0; i < ITrepetition; i++) {
-    unsigned int pos = 0;
-    PT2262_transmit(1,31);
-    while (triStateMessage[pos] != '\0') {
-      switch(triStateMessage[pos]) {
-      case '0':
-        PT2262_transmit(1,3);
-        PT2262_transmit(1,3);
-        break;
-      case 'F':
-        PT2262_transmit(1,3);
-        PT2262_transmit(3,1);
-        break;
-      case '1':
-        PT2262_transmit(3,1);
-        PT2262_transmit(3,1);
-        break;
-      }
-      pos++;
-    }
-  }
-  enableReceive();
-}
-
-
 //================================= RAW Send ======================================
 void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *buckets, String *source=&cmdstring)
 {
@@ -527,7 +487,6 @@ void HandleCommand()
   
   #define  cmd_Version 'V'
   #define  cmd_freeRam 'R'
-  #define  cmd_intertechno 'i' //decrepated
   #define  cmd_uptime 't'
   #define  cmd_changeReceiver 'X'
   #define  cmd_space ' '
@@ -536,10 +495,9 @@ void HandleCommand()
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
   #define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
-  #define  cmd_getConfig 'G'  //decrepated
   #define  cmd_write 'W'      // write EEPROM und write CC1101 register
   #define  cmd_read  'r'      // read EEPROM
-  #define  cmd_sendPower 'x'  // Sendeleistung
+  #define  cmd_patable 'x' 
   #define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
 
 
@@ -549,7 +507,6 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_help) {
 	MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
 	MSG_PRINT(cmd_Version);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_intertechno);MSG_PRINT(cmd_space);  //decrepated
 	MSG_PRINT(cmd_freeRam);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_uptime);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_changeReceiver);MSG_PRINT(cmd_space);
@@ -557,11 +514,10 @@ void HandleCommand()
 	MSG_PRINT(cmd_send);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_ping);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_config);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_getConfig);MSG_PRINT(cmd_space);  //decrepated
 	MSG_PRINT(cmd_read);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_write);MSG_PRINT(cmd_space);
 	if (hasCC1101) {
-		MSG_PRINT(cmd_sendPower);MSG_PRINT(cmd_space);
+		MSG_PRINT(cmd_patable);MSG_PRINT(cmd_space);
 		MSG_PRINT(cmd_ccFactoryReset);MSG_PRINT(cmd_space);
 	}
 	MSG_PRINTLN("");
@@ -577,15 +533,6 @@ void HandleCommand()
   // R: FreeMemory
   else if (cmdstring.charAt(0) == cmd_freeRam) {
     MSG_PRINTLN(freeRam());
-  }
-  // i: Intertechno
-  else if (cmdstring.charAt(0) == cmd_intertechno) {
-	if (musterDec.getState() != searching)
-	{
-		command_available=true;
-	} else {
-		IT_CMDs();
-	}
   }
   else if (cmdstring.charAt(0) == cmd_send) {
   	if (musterDec.getState() != searching )
@@ -620,10 +567,6 @@ void HandleCommand()
       MSG_PRINTLN(F("Unsupported command"));
     }
   }
-  // get config, decrepated
-  else if (cmdstring.charAt(0) == cmd_getConfig) {
-     getConfig();
-  }
   else if (cmdstring.charAt(0) == cmd_write) {            // write EEPROM und CC11001 register
     if (cmdstring.charAt(1) == 'S' && cmdstring.charAt(2) == '3' && hasCC1101)  {       // WS<reg>  Command Strobes
         cc1101::commandStrobes();
@@ -655,8 +598,16 @@ void HandleCommand()
      }
      MSG_PRINTLN("");
   }
+  else if (cmdstring.charAt(0) == cmd_patable && isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
+     val = cmdstringPos2int(1);
+     cc1101::writeCCpatable(val);
+     MSG_PRINT(F("Write "));
+     printHex2(val);
+     MSG_PRINTLN(F(" to PATABLE done"));
+  }
   else if (cmdstring.charAt(0) == cmd_ccFactoryReset && hasCC1101) { 
      cc1101::ccFactoryReset();
+     cc1101::CCinit();
   }
   else {
 	  MSG_PRINTLN(F("Unsupported command"));
@@ -726,47 +677,6 @@ void configCMD()
   storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled);
 }
 
-
-void IT_CMDs() {
-
-  // Set Intertechno receive tolerance
-  if (cmdstring.charAt(1) == 't') {
-    MSG_PRINTLN(cmdstring);
-  }
-  // Set Intertechno Repetition
-  else if (cmdstring.charAt(1) == 'r') {
-    char msg[3];
-    cmdstring.substring(2).toCharArray(msg,3);
-    ITrepetition = atoi(msg);
-    MSG_PRINTLN(cmdstring);
-  }
-  // Switch Intertechno Devices
-  else if (cmdstring.charAt(1) == 's') {
-    //digitalWrite(PIN_LED,HIGH);
-    digitalHigh(PIN_SEND);
-    char msg[40];
-    cmdstring.substring(2).toCharArray(msg,40);
-   	sendPT2262(msg);
-    //digitalWrite(PIN_LED,LOW);
-    digitalLow(PIN_SEND);
-    MSG_PRINTLN(cmdstring);
-  }
-  else if (cmdstring.charAt(1) == 'c') {
-	ITbaseduration=cmdstring.substring(2).toInt(); // Updates Baseduration
-    MSG_PRINTLN(cmdstring);
-  }
-  // Get Intertechno Parameters
-  else if (cmdstring.charAt(1) == 'p') {
-    String cPrint;
-    cPrint.reserve(20);
-    cPrint = "ITParams: ";
-    cPrint += String(ITrepetition);
-    cPrint += " ";
-    cPrint += String(ITbaseduration);
-    MSG_PRINTLN(cPrint);
-  }
-
-}
 
 void serialEvent()
 {

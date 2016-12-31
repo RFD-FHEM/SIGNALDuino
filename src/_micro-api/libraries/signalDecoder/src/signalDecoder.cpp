@@ -38,7 +38,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 
 	if (start > messageLen-1) return;
 
-	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
 	memmove(message, message + start, len_single_entry*messageLen);
 
 }
@@ -101,9 +101,9 @@ inline void SignalDetectorClass::doDetect()
 				if (histo[patternLen] > 2) processMessage();
 				for (int16_t i = messageLen - 1; i > 0; --i)
 				{
-					if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich überschrieben wird
+					if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 					{
-						i++; // i um eins erhöhen, damit zukünftigen Berechnungen darauf aufbauen können
+						i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 						bufferMove(i);
 						break;
 					}
@@ -114,7 +114,7 @@ inline void SignalDetectorClass::doDetect()
 
 			if (pattern_pos == maxNumPattern)
 			{
-				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir überschreiben alte pattern
+				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir ueberschreiben alte pattern
 				patternLen = maxNumPattern;
 				mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
 
@@ -222,7 +222,7 @@ void SignalDetectorClass::processMessage()
 		printOut();
 #endif
 
-		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhältnis prüfen
+		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
 		{
 #if DEBUGDECODE >0
 			MSG_PRINT(" MS check: ");
@@ -232,7 +232,7 @@ void SignalDetectorClass::processMessage()
 
 			// Setup of some protocol identifiers, should be retrieved via fhem in future
 
-			mend = mstart + 2;   // GGf. kann man die Mindestlänge von x Signalen vorspringen
+			mend = mstart + 2;   // GGf. kann man die Mindestlaenge von x Signalen vorspringen
 			bool m_endfound = false;
 
 			//uint8_t repeat;
@@ -284,7 +284,7 @@ void SignalDetectorClass::processMessage()
 
 				postamble.concat(SERIAL_DELIMITER);
 				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
-				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPuöse
+				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPulse
 				postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
@@ -369,7 +369,7 @@ void SignalDetectorClass::processMessage()
 				}
 #if DEBUGDETECT>3
 				MSG_PRINT("vcnt: "); MSG_PRINT(mcdecoder.ManchesterBits.valcount);
-#endif;
+#endif
 
 				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 				{
@@ -396,7 +396,7 @@ void SignalDetectorClass::processMessage()
 					postamble.concat(MSG_END);
 					postamble.concat('\n');
 
-					//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlänge nach dem Löschen
+					//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
 					//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
 					//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
 
@@ -577,7 +577,7 @@ void SignalDetectorClass::printOut()
 
 int8_t SignalDetectorClass::findpatt(const int val)
 {
-	//seq[0] = Länge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
+	//seq[0] = Laenge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
 	tol = abs(val)*0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
@@ -617,7 +617,7 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 
 bool SignalDetectorClass::getClock()
 {
-	// Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	// Durchsuchen aller Musterpulse und prueft ob darin eine clock vorhanden ist
 #if DEBUGDETECT > 3
 	MSG_PRINTLN("  --  Searching Clock in signal -- ");
 #endif
@@ -625,7 +625,7 @@ bool SignalDetectorClass::getClock()
 
 	clock = -1; // Workaround for sync detection bug.
 
-	for (uint8_t i = 0; i<patternLen; ++i) 		  // Schleife für Clock
+	for (uint8_t i = 0; i<patternLen; ++i) 		  // Schleife fuer Clock
 	{
 		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
 		if (tstclock == -1 && (pattern[i] >= 0) && (histo[i] > messageLen*0.17))
@@ -640,7 +640,7 @@ bool SignalDetectorClass::getClock()
 	}
 
 
-	// Check Anzahl der Clockpulse von der Nachrichtenlänge
+	// Check Anzahl der Clockpulse von der Nachrichtenlaenge
 	//if ((tstclock == 3276) || (maxcnt < (messageLen /7*2))) return false;
 	if (tstclock == -1) return false;
 
@@ -654,7 +654,7 @@ bool SignalDetectorClass::getClock()
 
 bool SignalDetectorClass::getSync()
 {
-	// Durchsuchen aller Musterpulse und prüft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander übertragen wurde
+	// Durchsuchen aller Musterpulse und prueft ob darin ein Sync Faktor enthalten ist. AnschlieÃŸend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander uebertragen wurde
 	//
 #if DEBUGDETECT > 3
 	DBG_PRINTLN("  --  Searching Sync  -- ");
@@ -663,9 +663,9 @@ bool SignalDetectorClass::getSync()
 	if (state == clockfound)		// we need a clock to find this type of sync
 	{
 		// clock wurde bereits durch getclock bestimmt.
-		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife für langen Syncpuls
+		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
 		{
-			//if (pattern[p] > 0 || (abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact))  continue;  // Werte >0 oder länger maxfact sind keine Sync Pulse
+			//if (pattern[p] > 0 || (abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact))  continue;  // Werte >0 oder laenger maxfact sind keine Sync Pulse
 			//if (pattern[p] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
 			//if (!validSequence(&pattern[clock],&pattern[p])) continue;
 			/*
@@ -688,15 +688,15 @@ bool SignalDetectorClass::getSync()
 				)
 			{
 				//if ((syncMinFact* (pattern[clock]) <= -1*pattern[p])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
-				// Prüfe ob Sync und Clock valide sein können
+				// Pruefe ob Sync und Clock valide sein koennen
 				//	if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
 
-				// Prüfen ob der gefundene Sync auch als message [clock, p] vorkommt
+				// Pruefen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
 
-				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 
-				while (c < messageLen - 1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlänge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				while (c < messageLen - 1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 				{
 					if (message[c + 1] == p && message[c] == clock) break;
 					c++;
@@ -935,7 +935,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	pdec->m_truncated = false;
 //	bool mc_start_found = false;
 //	bool mc_sync = false;
-	pdec->mstart = 0; // Todo: prüfen ob start aus isManchester übernommen werden kann
+	pdec->mstart = 0; // Todo: pruefen ob start aus isManchester uebernommen werden kann
 #ifdef DEBUGDECODE
 	DBG_PRINT("mlen:");
 	DBG_PRINT(pdec->messageLen);
@@ -1017,7 +1017,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 			if (i < pdec->messageLen) {
 				lastbit = (char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15); // 1, wenn Pegel Low war, 0 bei einem High Pegel.
-				//lastbit = ~lastbit;  //TODO: Prüfen ob negiert korrekt ist.
+				//lastbit = ~lastbit;  //TODO: Pruefen ob negiert korrekt ist.
 
 				uint8_t z = i - pdec->mstart;
 				if ((z < 1) or ((z % 2) == 0))
@@ -1125,12 +1125,12 @@ const bool ManchesterpatternDecoder::doDecode() {
 					ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
 #ifdef DEBUGDECODE
 					DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
-#endif;
+#endif
 					hasbit = false;
 				} else {
 #ifdef DEBUGDECODE
 					DBG_PRINT("_");
-#endif;
+#endif
 				}
 			}
 
@@ -1192,7 +1192,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 const bool ManchesterpatternDecoder::isManchester()
 {
-	// Durchsuchen aller Musterpulse und prüft ob darin eine clock vorhanden ist
+	// Durchsuchen aller Musterpulse und prueft ob darin eine clock vorhanden ist
 #if DEBUGDETECT >= 1
 	DBG_PRINTLN("");
 	DBG_PRINTLN("  --  chk MC -- ");
@@ -1299,7 +1299,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 			}
 		
-			//TODO: equal_cnt sollte nur über die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
+			//TODO: equal_cnt sollte nur ueber die validen Pulse errechnet werden Signale nur aus 3 Pulsen sind auch valide (FFFF)...
 
 			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
 			{
@@ -1320,7 +1320,7 @@ const bool ManchesterpatternDecoder::isManchester()
 						DBG_PRINT("Short"); DBG_PRINT(isShort(pdec->message[i])); DBG_PRINTLN(";");
 
 #endif
-						if ((z - pdec->mstart) > minbitlen)  // Todo: Hier wird auf minbitlen geprüft. Die Differenz zwischen mstart und mend sind aber Pulse und keine bits
+						if ((z - pdec->mstart) > minbitlen)  // Todo: Hier wird auf minbitlen geprueft. Die Differenz zwischen mstart und mend sind aber Pulse und keine bits
 						{
 							pdec->mend = z;
 
@@ -1356,7 +1356,7 @@ const bool ManchesterpatternDecoder::isManchester()
 							DBG_PRINT(", MC SH:"); DBG_PRINT(shorthigh);
 							DBG_PRINTLN("");
 #endif
-							// TOdo: Bei FFFF passt diese Prüfung nicht.
+							// TOdo: Bei FFFF passt diese Pruefung nicht.
 
 #if DEBUGDETECT >= 1
 							DBG_PRINTLN("  -- MC found -- ");
