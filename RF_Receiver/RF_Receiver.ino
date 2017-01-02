@@ -49,7 +49,7 @@
 #define PIN_RECEIVE            2
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
-//#define DEBUG				   1
+#define DEBUG				   1
 
 
 
@@ -166,9 +166,11 @@ void setup() {
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	
-	if (hasCC1101)		musterDec.setRSSICallback(&cc1101::getRSSI); // Provide the RSSI Callback
+	if (hasCC1101)		
+		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
 	else 
-	#endif musterDec.setRSSICallback(&rssiCallback);							 // Provide the RSSI Callback
+		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
+	#endif 
 
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN("Starting timerjob");

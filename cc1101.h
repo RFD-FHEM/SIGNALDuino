@@ -129,11 +129,12 @@ namespace cc1101 {
 		return SPDR;
 	}
 
-	void cmdStrobe(const uint8_t cmd) {                     // send command strobe to the CC1101 IC via SPI
+	uint8_t cmdStrobe(const uint8_t cmd) {                  // send command strobe to the CC1101 IC via SPI
 		cc1101_Select();                                // select CC1101
 		wait_Miso();                                    // wait until MISO goes low
-		sendSPI(cmd);                                   // send strobe command
+		uint8_t ret = sendSPI(cmd);                     // send strobe command
 		cc1101_Deselect();                              // deselect CC1101
+		return ret;					// Chip Status Byte
 	}
 
 	uint8_t readReg(const uint8_t regAddr, const uint8_t regType) {       // read CC1101 register via SPI
@@ -243,14 +244,24 @@ namespace cc1101 {
   void commandStrobes(void) {
     uint8_t hex;
     uint8_t reg;
+    uint8_t val;
+    uint8_t val1;
   
     if (isHexadecimalDigit(cmdstring.charAt(3))) {
         hex = (uint8_t)cmdstring.charAt(3);
         reg = hex2int(hex) + 0x30;
         if (reg < 0x3e) {
-             cmdStrobe(reg);
+             val = cmdStrobe(reg);
+             delay(1);
+             val1 = cmdStrobe(0x3D);        //  No operation. May be used to get access to the chip status byte.
              MSG_PRINT(F("cmdStrobeReg "));
              printHex2(reg);
+             MSG_PRINT(F(" chipStatus "));
+             val = val >> 4;
+             MSG_PRINT(val, HEX);
+             MSG_PRINT(F(" delay1 "));
+             val = val1 >> 4;
+             MSG_PRINT(val, HEX);
              MSG_PRINTLN("");
          }
      }
