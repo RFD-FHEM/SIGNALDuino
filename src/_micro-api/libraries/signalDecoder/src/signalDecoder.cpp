@@ -319,7 +319,7 @@ void SignalDetectorClass::processMessage()
 
 
 			}
-			else if (m_endfound == false && mstart > 1 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
+			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
 				//MSG_PRINT("copy");
 #ifdef DEBUGDECODE
@@ -327,6 +327,14 @@ void SignalDetectorClass::processMessage()
 #endif
 				bufferMove(mstart);
 				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+			} 
+			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
+#ifdef DEBUGDECODE
+				DBG_PRINT(" move msg ");;
+#endif
+				bufferMove(mend);
+				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+				success = true;	// don't process other message types
 			}
 			else {
 #ifdef DEBUGDECODE
@@ -543,10 +551,13 @@ const bool SignalDetectorClass::inTol(const int val, const int set, const int to
 
 void SignalDetectorClass::printOut()
 {
-	DBG_PRINTLN();
-	DBG_PRINT("Sync: "); DBG_PRINT(pattern[sync]);
-	DBG_PRINT(" -> SyncFact: "); DBG_PRINT(pattern[sync] / (float)pattern[clock]);
-	DBG_PRINT(", Clock: "); DBG_PRINT(pattern[clock]);
+	DBG_PRINTLN("");
+	if (sync > -1) {
+		DBG_PRINT("Sync: ");DBG_PRINT(pattern[sync]);
+		DBG_PRINT(" -> SyncFact: "); DBG_PRINT(pattern[sync] / (float)pattern[clock]);
+		DBG_PRINT(",");
+	}
+	DBG_PRINT(" Clock: "); DBG_PRINT(pattern[clock]);
 	DBG_PRINT(", Tol: "); DBG_PRINT(tol);
 	DBG_PRINT(", PattLen: "); DBG_PRINT(patternLen); DBG_PRINT(" ("); DBG_PRINT(pattern_pos); DBG_PRINT(")");
 	DBG_PRINT(", Pulse: "); DBG_PRINT(*first); DBG_PRINT(", "); DBG_PRINT(*last);
@@ -683,7 +694,9 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < 8) && (histo[p] > 1)
+				(histo[p] < messageLen*0.08) && (histo[p] > 1)
+				//(histo[p] < 8) && (histo[p] > 1)
+
 				//(syncMinFact*pattern[clock] <= syncabs)
 				)
 			{
