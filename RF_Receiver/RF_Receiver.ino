@@ -392,6 +392,10 @@ void send_cmd()
 
 	s_sendcmd command[5];
 
+	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
+	uint8_t ccReg[4];
+	uint8_t val;
+
 	disableReceive();
 
 	uint8_t cmdNo=255;
@@ -452,6 +456,25 @@ void send_cmd()
 			//sendclock = msg_part.substring(2).toInt();
 			command[cmdNo].sendclock = msg_part.substring(2).toInt();
 		    //MSG_PRINTLN("adding sendclock");
+		} else if(msg_part.charAt(0) == 'F' && msg_part.charAt(1) == '=')
+		{
+			ccParamAnz = msg_part.length() / 2 - 1;
+			
+			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
+				uint8_t hex;
+				MSG_PRINT("write new ccreg  ");
+				for (uint8_t i=0;i<ccParamAnz;i++)
+				{
+					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
+					hex = (uint8_t)msg_part.charAt(2 + i*2);
+					val = cc1101::hex2int(hex) * 16;
+					hex = (uint8_t)msg_part.charAt(3 + i*2);
+					val = cc1101::hex2int(hex) + val;
+					//cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
+					printHex2(val);
+				}
+				MSG_PRINTLN("");
+			}
 		}
 	}
 
@@ -468,6 +491,17 @@ void send_cmd()
 			digitalLow(PIN_SEND);
 		}
 		if (extraDelay) delay(1);
+	}
+
+	if (ccParamAnz > 0) {
+		MSG_PRINT("ccreg write back ");
+		for (uint8_t i=0;i<ccParamAnz;i++)
+		{
+			val = ccReg[i];
+			printHex2(val);
+			//cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
+		}
+		MSG_PRINTLN("");
 	}
 
 	enableReceive();	// enable the receiver
