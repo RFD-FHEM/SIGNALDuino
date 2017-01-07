@@ -39,11 +39,12 @@ namespace cc1101 {
 	#define CC1101_SRES     0x30  // reset
 	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
 	#define CC1100_SCAL     0x33  // Calibrate frequency synthesizer and turn it off
-	#define CC1101_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
+	#define CC1100_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
 	#define CC1100_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
 	#define CC1100_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
 	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
-	
+	#define CC1100_SFTX     0x3B  // Flush the TX FIFO buffer.
+
 	#define wait_Miso()       while(isHigh(misoPin))      // wait until SPI MISO line goes low
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
@@ -55,6 +56,24 @@ namespace cc1101 {
 	
 	#define PATABLE_DEFAULT      0x84   // 5 dB default value for factory reset
 
+	//------------------------------------------------------------------------------
+	// Chip Status Byte
+	//------------------------------------------------------------------------------
+
+	// Bit fields in the chip status byte
+	#define CC1100_STATUS_CHIP_RDYn_BM             0x80
+	#define CC1100_STATUS_STATE_BM                 0x70
+	#define CC1100_STATUS_FIFO_BYTES_AVAILABLE_BM  0x0F
+
+		// Chip states
+	#define CC1100_STATE_IDLE                      0x00
+	#define CC1100_STATE_RX                        0x10
+	#define CC1100_STATE_TX                        0x20
+	#define CC1100_STATE_FSTXON                    0x30
+	#define CC1100_STATE_CALIBRATE                 0x40
+	#define CC1100_STATE_SETTLING                  0x50
+	#define CC1100_STATE_RX_OVERFLOW               0x60
+	#define CC1100_STATE_TX_UNDERFLOW              0x70
 
 	static const uint8_t initVal[] PROGMEM = 
 	{
@@ -294,37 +313,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 }
 
 
-  void CCinit(void) {                              // initialize CC1101
-
-	  cc1101_Deselect();                                  // some deselect and selects to init the cc1101
-	  delayMicroseconds(5);
-
-	  cc1101_Select();
-	  delayMicroseconds(10);
-
-	  cc1101_Deselect();
-	  delayMicroseconds(41);
-
-	  cmdStrobe(CC1101_SRES);                               // send reset
-	  delay(10);
-
-	  cc1101_Select();
-	  sendSPI(CC1100_WRITE_BURST);
-	  for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
-		//writeReg(i, pgm_read_byte(&initVal[i]));
-		  sendSPI(EEPROM.read(EE_CC1100_CFG + i));
-	  }
-	  cc1101_Deselect();
-	delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
-
-	for (uint8_t i = 0; i < 8; i++) {
-		PatableArray[i] = EEPROM.read(EE_CC1100_PA + i);
-	}
-	writePatable();                                 // write PatableArray to patable reg
-	
-	  delay(1);
-	  cmdStrobe(CC1101_SRX);       // enable RX
-  }
+  
 
 	void ccFactoryReset() {
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {
@@ -399,13 +388,54 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 	void setReceiveMode()
 	{
 		setIdleMode();
-		cmdStrobe(CC1101_SRX);                               // RX enable
+		uint8_t maxloop = 0xff;
+
+		while (maxloop-- &&	(cmdStrobe(CC1100_SRX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_RX) // RX enable
+			delay(1);
+		if (maxloop == 0 )		DBG_PRINTLN("CC1101: Setting RX failed");
+
 	}
 
 	void setTransmitMode()
 	{
+		cmdStrobe(CC1100_SFTX);
 		setIdleMode();
-		cmdStrobe(CC1100_STX);								// TX enable
+		uint8_t maxloop = 0xff;
+		while (maxloop-- && (cmdStrobe(CC1100_STX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_TX)  // TX enable
+			delay(1);
+		if (maxloop == 0) DBG_PRINTLN("CC1101: Setting TX failed");
+	}
+
+	void CCinit(void) {                              // initialize CC1101
+
+		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
+		delayMicroseconds(5);
+
+		cc1101_Select();
+		delayMicroseconds(10);
+
+		cc1101_Deselect();
+		delayMicroseconds(41);
+
+		cmdStrobe(CC1101_SRES);                               // send reset
+		delay(10);
+
+		cc1101_Select();
+		sendSPI(CC1100_WRITE_BURST);
+		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
+																   //writeReg(i, pgm_read_byte(&initVal[i]));
+			sendSPI(EEPROM.read(EE_CC1100_CFG + i));
+		}
+		cc1101_Deselect();
+		delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
+
+		for (uint8_t i = 0; i < 8; i++) {
+			PatableArray[i] = EEPROM.read(EE_CC1100_PA + i);
+		}
+		writePatable();                                 // write PatableArray to patable reg
+
+		delay(1);
+		setReceiveMode();
 	}
 }
 

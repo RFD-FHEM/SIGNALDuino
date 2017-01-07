@@ -47,7 +47,7 @@
 
 #endif
 #define PIN_RECEIVE            2
-#define BAUDRATE               57600
+#define BAUDRATE               115200
 #define FIFO_LENGTH			   50
 #define DEBUG				   1
 
@@ -592,7 +592,7 @@ void HandleCommand()
     if (cmdstring.charAt(1) == 'G') {
       getConfig();
     }
-    else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {
+    else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {  //Todo:  E und D sind auch hexadezimal, werden hier aber abgefangen
       configCMD();
     }
     else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
