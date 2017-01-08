@@ -173,7 +173,7 @@ namespace cc1101 {
 		cc1101_Deselect();                              // deselect CC1101
 	}
 	
-	uint8_t PatableArray[7];
+	uint8_t PatableArray[8];
 
 	void readPatable(void) {
 		cc1101_Select();                                // select CC1101
@@ -398,7 +398,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 
 	void setTransmitMode()
 	{
-		cmdStrobe(CC1100_SFTX);
+		cmdStrobe(CC1100_SFTX);   // wird dies benoetigt? Wir verwenden kein FIFO
 		setIdleMode();
 		uint8_t maxloop = 0xff;
 		while (maxloop-- && (cmdStrobe(CC1100_STX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_TX)  // TX enable
