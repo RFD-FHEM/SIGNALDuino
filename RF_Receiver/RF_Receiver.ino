@@ -47,7 +47,7 @@
 
 #endif
 #define PIN_RECEIVE            2
-#define BAUDRATE               115200
+#define BAUDRATE               57600
 #define FIFO_LENGTH			   50
 #define DEBUG				   1
 
@@ -470,7 +470,7 @@ void send_cmd()
 					val = cc1101::hex2int(hex) * 16;
 					hex = (uint8_t)msg_part.charAt(3 + i*2);
 					val = cc1101::hex2int(hex) + val;
-					//cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
+					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
 					printHex2(val);
 				}
 				MSG_PRINTLN("");
@@ -499,7 +499,7 @@ void send_cmd()
 		{
 			val = ccReg[i];
 			printHex2(val);
-			//cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
+			cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
 		}
 		MSG_PRINTLN("");
 	}
