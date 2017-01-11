@@ -172,17 +172,25 @@ namespace cc1101 {
 		sendSPI(val);                                   // send value
 		cc1101_Deselect();                              // deselect CC1101
 	}
-	
-	uint8_t PatableArray[8];
 
 	void readPatable(void) {
+		uint8_t PatableArray[8];
+		// das PatableArray wird zum zwischenspeichern der PATABLE verwendet,
+		// da ich mir nicht sicher bin ob es timing maessig passt, wenn es nach jedem sendSPI(0x00) eine kurze Pause beim msgprint gibt.
+		
 		cc1101_Select();                                // select CC1101
 		wait_Miso();                                    // wait until MISO goes low
 		sendSPI(CC1100_PATABLE | CC1100_READ_BURST);    // send register address
 		for (uint8_t i = 0; i < 8; i++) {
-			PatableArray[i] = sendSPI(0x00);              // read result
+			PatableArray[i] = sendSPI(0x00);        // read result
 		}
 		cc1101_Deselect();
+
+		for (uint8_t i = 0; i < 8; i++) {
+			printHex2(PatableArray[i]);
+			MSG_PRINT(" ");
+		}
+		MSG_PRINTLN("");
 	}
 
 	void writePatable(void) {
@@ -190,7 +198,7 @@ namespace cc1101 {
 		wait_Miso();                                    // wait until MISO goes low
 		sendSPI(CC1100_PATABLE | CC1100_WRITE_BURST);   // send register address
 		for (uint8_t i = 0; i < 8; i++) {
-			sendSPI(PatableArray[i]);                     // send value
+			sendSPI(EEPROM.read(EE_CC1100_PA+i));                     // send value
 		}
 			cc1101_Deselect();
 	}
@@ -235,11 +243,6 @@ namespace cc1101 {
        else if (reg == 0x3E) {                   // patable
           MSG_PRINT(F("C3E = "));
           readPatable();
-          for (uint8_t i = 0; i < 8; i++) {
-             printHex2(PatableArray[i]);
-             MSG_PRINT(" ");
-          }
-          MSG_PRINTLN("");
        }
        else if (reg == 0x99) {                   // alle register
          for (uint8_t i = 0; i < 0x2f; i++) {
@@ -302,10 +305,8 @@ namespace cc1101 {
 void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa ramping)
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
-			PatableArray[i] = var;
 			EEPROM.write(EE_CC1100_PA + i, var);
 		} else {
-			PatableArray[i] = 0;
 			EEPROM.write(EE_CC1100_PA + i, 0);
 		}
 	}
@@ -423,15 +424,11 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		cc1101_Select();
 		sendSPI(CC1100_WRITE_BURST);
 		for (uint8_t i = 0; i<sizeof(initVal); i++) {              // write EEPROM value to cc11001
-																   //writeReg(i, pgm_read_byte(&initVal[i]));
 			sendSPI(EEPROM.read(EE_CC1100_CFG + i));
 		}
 		cc1101_Deselect();
 		delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
 
-		for (uint8_t i = 0; i < 8; i++) {
-			PatableArray[i] = EEPROM.read(EE_CC1100_PA + i);
-		}
 		writePatable();                                 // write PatableArray to patable reg
 
 		delay(1);
