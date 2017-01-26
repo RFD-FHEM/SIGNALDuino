@@ -868,14 +868,15 @@ void initEEPROM(void) {
     getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
   } else {
     storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
+    //hier fehlt evtl ein getFunctions()
     #ifdef DEBUG
     MSG_PRINTLN("Init eeprom to defaults after flash");
     #endif
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
-    if (hasCC1101) {
+    // if (hasCC1101) {                // der ccFactoryReset muss auch durchgefuehrt werden, wenn der cc1101 nicht erkannt wurde
        cc1101::ccFactoryReset();
-    }
+    //}
   }
 }
 
