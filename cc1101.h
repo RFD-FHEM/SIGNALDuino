@@ -15,13 +15,20 @@
 extern String cmdstring;
 
 
-namespace cc1101 {
 
+namespace cc1101 {
+	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	#define csPin   SS	   // CSN  out
+	#define mosiPin MOSI   // MOSI out
+	#define misoPin MISO   // MISO in
+	#define sckPin  SCK    // SCLK out	
+	#else
 	#define csPin   10   // CSN  out
 	#define mosiPin 11   // MOSI out
 	#define misoPin 12   // MISO in
-	#define sckPin  13   // SCLK out
-	
+	#define sckPin  13   // SCLK out	
+	#endif
+
 	#define CC1101_CONFIG      0x80
 	#define CC1101_STATUS      0xC0
 	#define CC1100_WRITE_BURST 0x40

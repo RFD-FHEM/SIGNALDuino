@@ -83,7 +83,8 @@ public:
 	bool MCenabled;
 	bool MSenabled;
 	uint8_t histo[maxNumPattern];
-	uint8_t message[maxMsgSize];
+	//uint8_t message[maxMsgSize];
+	BitStore<127> message;
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
 	uint8_t mend;   // Holds end point for message if detected

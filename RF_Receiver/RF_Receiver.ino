@@ -39,14 +39,24 @@
 #define VERSION_2               0x1d
 
 #ifdef CMP_CC1101
+  #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+  #define PIN_LED               5
+  #define PIN_SEND              9   // gdo0Pin TX out
+  #else 
   #define PIN_LED               9
   #define PIN_SEND              3   // gdo0Pin TX out
+  #endif
+
 #else
   #define PIN_LED               13    // Message-LED
   #define PIN_SEND              11
 
 #endif
-#define PIN_RECEIVE            2
+#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	#define PIN_RECEIVE            7
+#else
+	#define PIN_RECEIVE            2
+#endif
 #define BAUDRATE               57600
 #define FIFO_LENGTH			   50
 #define DEBUG				   1

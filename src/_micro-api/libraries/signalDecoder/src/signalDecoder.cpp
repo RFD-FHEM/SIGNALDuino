@@ -34,7 +34,8 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	static uint8_t len_single_entry = sizeof(*message);
+	//Todo: Buffermove auf neuen message typ umbauen
+	static uint8_t len_single_entry = message.
 
 	if (start > messageLen-1) return;
 
