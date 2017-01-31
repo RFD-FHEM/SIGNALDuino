@@ -53,9 +53,12 @@
 
 #endif
 #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-	#define PIN_RECEIVE            7
+	#define PIN_RECEIVE				   7
+
+	#define digitalPinToInterrupt(arg) 6   // Define digitalPinToInterrupt function
+
 #else
-	#define PIN_RECEIVE            2
+	#define PIN_RECEIVE                2
 #endif
 
 #define BAUDRATE               57600
@@ -278,8 +281,8 @@ void handleInterrupt() {
 }
 
 void enableReceive() {
-   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
-   
+   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE), handleInterrupt, CHANGE);
+
    #ifdef CMP_CC1101
    if (hasCC1101) cc1101::setReceiveMode();
    #endif
