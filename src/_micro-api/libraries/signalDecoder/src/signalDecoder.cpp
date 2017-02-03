@@ -34,20 +34,14 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	//Todo: Buffermove auf neuen message typ umbauen
-	static uint8_t len_single_entry = message.
-
 	if (start > messageLen-1) return;
-
-	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
-	memmove(message, message + start, len_single_entry*messageLen);
-
+	message.moveLeft(start);
 }
 
 
 inline void SignalDetectorClass::addData(const uint8_t value)
 {
-	message[messageLen] = value;
+	message += value;
 	messageLen++;
 }
 
@@ -175,7 +169,7 @@ void SignalDetectorClass::compress_pattern()
 				{
 					if (message[i] == idx2)
 					{
-						message[i] = idx;
+						message.changeValue(i, idx);
 					}
 				}
 

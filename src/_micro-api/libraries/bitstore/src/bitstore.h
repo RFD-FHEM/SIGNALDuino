@@ -30,6 +30,9 @@ class BitStore
         //~BitStore();
         void addValue(byte value);
         byte getValue(const uint16_t pos);
+		bool moveLeft(const uint16_t begin);
+		bool changeValue(const uint16_t pos, byte value);
+
         const uint16_t getSize();
         //unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
         unsigned char datastore[bufSize];
@@ -42,7 +45,11 @@ class BitStore
 			byte ret= getValue(pos);
 			return ret;
 		}
-	
+		BitStore &operator+=(const byte value) {
+			addValue(value);
+			return *this;
+		}
+
 	
 
 #ifndef UNITTEST
@@ -101,11 +108,10 @@ BitStore<bufSize>::BitStore(uint8_t bitlength):buffsize(bufSize)
 }
 */
 template<uint8_t bufSize>
-
 void BitStore<bufSize>::addValue(byte value)
 {
     if (bytecount >=buffsize ) return; // Out of Buffer
-	if (bcnt==7 &&valcount > 0)
+	if (bcnt==7 && valcount > 0)
 	{ 
 		bytecount++;
 		datastore[bytecount] = 0;
@@ -133,8 +139,24 @@ void BitStore<bufSize>::addValue(byte value)
     }
 
 	//Serial.println("");
-
 }
+
+
+template<uint8_t bufSize>
+bool BitStore<bufSize>::changeValue(const uint16_t pos, byte value)
+{
+	int16_t bytepos = pos*valuelen / 8;
+	if ((bytepos) >= buffsize) return false; // Out of Buffer
+										  // Serial.print("Pos:");   Serial.print(pos, DEC);
+	   								      // 01 11 11 00    10
+	value = value << (7-(pos*valuelen % 8));									// shift bits in value to new positon
+	datastore[bytepos] = datastore[bytepos] & ~(bmask >> (pos*valuelen % 8));  // Clear bits to be changed 
+	datastore[bytepos] = datastore[bytepos] |  value;						    // Apply new bits
+		
+	return true;
+}
+
+
 template<uint8_t bufSize>
 const uint16_t BitStore<bufSize>::getSize()
 {
@@ -142,29 +164,35 @@ const uint16_t BitStore<bufSize>::getSize()
 }
 
 template<uint8_t bufSize>
-byte BitStore<bufSize>::memmove(const uint16_t begin, const uint16_t end)
+bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
-	void ShiftLeftByOne(int * arr, int len)
-	{
-		int i;
-		for (i = 0; i < len - 1; ++i)
+	// begin fängt bei 0 an
+	// valuelen=4
+	// 8 / valuelen = 2                        |  
+	// begin=3 (4. Wert)       1100 1011  1001 0110  1101 0100 [2] (6 Werte=
+
+
+	uint8_t startbyte = begin*valuelen / 8;
+
+	if (begin % (8 / valuelen) != 0) {
+		uint8_t shift_left = (begin % (8 / valuelen))*valuelen;
+		uint8_t shift_right = 8- shift_left;
+		
+		valcount = valcount - (shift_left / valuelen);
+		bcnt = 7;
+		uint8_t i = startbyte;
+		uint8_t z = 0;
+		for (; i < bytecount - 1; ++i,++z)
 		{
-			arr[i] = (arr[i] << 1) | ((arr[i + 1] >> 31) & 1);
+			datastore[z] = (datastore[i] << shift_left) | (datastore[i + 1] >> shift_right);;
 		}
-		arr[len - 1] = arr[len - 1] << 1;
+		datastore[z] = datastore[i -1] << shift_left;
+		bytecount = bytecount - startbyte;
+	} else {
+		bytecount = bytecount - startbyte;
+		memmove(*datastore, *datastore+bytecount, sizeof(datastore[bytecount]) * bytecount);
 	}
-
-	// Alle Bits in einer Schleife nach links schieben
-	for (int i=end;i>0;i--)
-	{
-		datastore[i - 1] = datastore[i];
-
-	}
-
-
-	//memmove(datastore, datastore + (begin/valcount), 1*messageLen);
-
-	//datastore[]
+	valcount = valcount - (8 / valuelen*startbyte);
 }
 
 template<uint8_t bufSize>
@@ -183,7 +211,7 @@ byte BitStore<bufSize>::getValue(const uint16_t pos)
    ret= datastore[bytepos]&mask;         // Combine the mask with our store to extract the bit
    //Serial.print(" return:");   Serial.print(ret, BIN);
 
-   byte scnt = (pos+1) * valuelen % 8;
+ //  byte scnt = (pos+1) * valuelen % 8;
    //Serial.print(" shift:");   Serial.print(scnt, DEC);
 
    //ret=ret>>(7-(pos*valuelen%8));             // Align the the bits to the right edge

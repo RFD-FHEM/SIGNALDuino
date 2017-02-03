@@ -68,7 +68,7 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1) { buffer[0] = buffer[1] = 0; reset(); };
+	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { buffer[0] = buffer[1] = 0; reset(); };
 
 	void reset();
 	bool decode(const int* pulse);
@@ -84,7 +84,8 @@ public:
 	bool MSenabled;
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
-	BitStore<127> message;
+	BitStore<maxMsgSize/2> message;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
 	uint8_t mend;   // Holds end point for message if detected
