@@ -151,6 +151,7 @@ namespace cc1101 {
 		cc1101_Select();                                // select CC1101
 		wait_Miso();                                    // wait until MISO goes low
 		uint8_t ret = sendSPI(cmd);                     // send strobe command
+		wait_Miso();                                    // wait until MISO goes low
 		cc1101_Deselect();                              // deselect CC1101
 		return ret;					// Chip Status Byte
 	}
@@ -409,13 +410,13 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 	void CCinit(void) {                              // initialize CC1101
 
 		cc1101_Deselect();                                  // some deselect and selects to init the cc1101
-		delayMicroseconds(5);
+		delayMicroseconds(30);
 
 		cc1101_Select();
-		delayMicroseconds(10);
+		delayMicroseconds(30);
 
 		cc1101_Deselect();
-		delayMicroseconds(41);
+		delayMicroseconds(45);
 
 		cmdStrobe(CC1101_SRES);                               // send reset
 		delay(10);

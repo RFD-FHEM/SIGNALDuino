@@ -80,7 +80,7 @@ inline void SignalDetectorClass::doDetect()
 			
 			m_overflow = (messageLen == maxMsgSize) ? true : false;
 			processMessage();
-			
+			if (!success) reset();
 		}	else if (messageLen == minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
 			rssiValue= _rssiCallback();
@@ -532,7 +532,7 @@ void SignalDetectorClass::reset()
 	mcDetected = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
-	//DBG_PRINT(':sdres:');
+	DBG_PRINT(":sdres:");
 }
 
 const status SignalDetectorClass::getState()
@@ -563,6 +563,7 @@ void SignalDetectorClass::printOut()
 	DBG_PRINT(", Pulse: "); DBG_PRINT(*first); DBG_PRINT(", "); DBG_PRINT(*last);
 	DBG_PRINT(", mStart: "); DBG_PRINT(mstart);
 	DBG_PRINT(", MCD: "); DBG_PRINT(mcDetected,DEC);
+	DBG_PRINT(", mtrunc: "); DBG_PRINT(m_truncated, DEC);
 
 
 	DBG_PRINTLN(); DBG_PRINT("Signal: ");
@@ -633,6 +634,7 @@ bool SignalDetectorClass::getClock()
 	MSG_PRINTLN("  --  Searching Clock in signal -- ");
 #endif
 	int tstclock = -1;
+	state = searching;
 
 	clock = -1; // Workaround for sync detection bug.
 

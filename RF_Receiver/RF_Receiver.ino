@@ -830,7 +830,7 @@ unsigned long getUptime()
 void getPing()
 {
 	MSG_PRINTLN("OK");
-	delay(1);
+	delayMicroseconds(500);
 }
 
 void changeReceiver() {
@@ -879,7 +879,6 @@ void initEEPROM(void) {
     #ifdef DEBUG
     MSG_PRINTLN("Reading values fom eeprom");
     #endif
-    getFunctions(&musterDec.MSenabled,&musterDec.MUenabled,&musterDec.MCenabled);
   } else {
     storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
     //hier fehlt evtl ein getFunctions()
@@ -892,6 +891,8 @@ void initEEPROM(void) {
        cc1101::ccFactoryReset();
     //}
   }
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled);
+
 }
 
 
