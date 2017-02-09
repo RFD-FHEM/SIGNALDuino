@@ -40,25 +40,20 @@
 
 #ifdef CMP_CC1101
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-		#define PIN_LED               5
+		#define PIN_LED               13
 		#define PIN_SEND              9   // gdo0Pin TX out
-	#else 
+		#define PIN_RECEIVE				   7
+		#define digitalPinToInterrupt(p) ((p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : NOT_AN_INTERRUPT)))))
+    #else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out
+	    #define PIN_RECEIVE           2
 	#endif
 
 #else
   #define PIN_LED               13    // Message-LED
   #define PIN_SEND              11
-
-#endif
-#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-	#define PIN_RECEIVE				   7
-
-	#define digitalPinToInterrupt(arg) 6   // Define digitalPinToInterrupt function
-
-#else
-	#define PIN_RECEIVE                2
+  #define PIN_RECEIVE            2
 #endif
 
 #define BAUDRATE               57600
@@ -574,11 +569,17 @@ void HandleCommand()
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
-    if (hasCC1101) {
-       MSG_PRINTLN("V " PROGVERS " SIGNALduino cc1101 - compiled at " __DATE__ " " __TIME__);
-    } else {
-       MSG_PRINTLN("V " PROGVERS " SIGNALduino - compiled at " __DATE__ " " __TIME__);
-    }
+	  MSG_PRINT("V " PROGVERS " SIGNALduino ");
+	  if (hasCC1101) {
+		MSG_PRINT(F("cc1101 "));
+	    #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	    MSG_PRINT("(");
+	    MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
+	    MSG_PRINT(F("Mhz )"));
+	    #endif
+      }
+	MSG_PRINTLN("- compiled at " __DATE__ " " __TIME__)
+
   }
   // R: FreeMemory
   else if (cmdstring.charAt(0) == cmd_freeRam) {

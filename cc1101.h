@@ -16,11 +16,17 @@ extern String cmdstring;
 
 
 namespace cc1101 {
-	#define csPin   SS	   // CSN  out
+	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	#define SS					  8  
+	#define PIN_MARK433			  4  // LOW -> 433Mhz | HIGH -> 868Mhz
+	#endif
+
+	#define csPin	SS	   // CSN  out
 	#define mosiPin MOSI   // MOSI out
 	#define misoPin MISO   // MISO in
 	#define sckPin  SCK    // SCLK out	
 
+	
 	#define CC1101_CONFIG      0x80
 	#define CC1101_STATUS      0xC0
 	#define CC1100_WRITE_BURST 0x40
@@ -73,7 +79,10 @@ namespace cc1101 {
 	#define CC1100_STATE_SETTLING                  0x50
 	#define CC1100_STATE_RX_OVERFLOW               0x60
 	#define CC1100_STATE_TX_UNDERFLOW              0x70
-
+	
+	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat geändert wird
+	#endif
 	static const uint8_t initVal[] PROGMEM = 
 	{
 		// IDX NAME     RESET   COMMENT
@@ -356,6 +365,12 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		pinAsOutput(mosiPin);
 		pinAsInput(misoPin);
 		pinAsOutput(csPin);                    // set pins for SPI communication
+		
+		#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+		pinAsInputPullUp(PIN_MARK433);
+		#endif
+		//// Änderungsbeginn  ---> 
+
 
 		SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
 		/*
