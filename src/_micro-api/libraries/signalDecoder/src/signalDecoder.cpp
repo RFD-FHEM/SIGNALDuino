@@ -265,31 +265,32 @@ void SignalDetectorClass::processMessage()
 				postamble = "";
 
 				/*				Output raw message Data				*/
-				preamble.concat(MSG_START);
-				//preamble.concat('\n');
-				preamble.concat("MS");   // Message Index
-										 //preamble.concat(int(pattern[sync][0]/(float)pattern[clock][0]));
-				preamble.concat(SERIAL_DELIMITER);  // Message Index
+				MSG_PRINT(MSG_START); 				MSG_PRINT("MS"); MSG_PRINT(SERIAL_DELIMITER);
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
 					if (pattern[idx] == 0 || histo[idx] == 0) continue;
-					preamble.concat('P'); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+					MSG_PRINT('P'); MSG_PRINT(idx); MSG_PRINT('='); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);
 				}
-				preamble.concat("D=");
+				MSG_PRINT('D=');
 
-				postamble.concat(SERIAL_DELIMITER);
-				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse
-				postamble.concat("SP="); postamble.concat(sync); postamble.concat(SERIAL_DELIMITER);     // SyncPulse
-				postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				for (uint8_t i = mstart; i <= mend; ++i)
+				{
+					MSG_PRINT(message[i]);
+				}
+				MSG_PRINT(SERIAL_DELIMITER);
+				MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);     // ClockPulse
+				MSG_PRINT("SP="); MSG_PRINT(sync);      MSG_PRINT(SERIAL_DELIMITER);     // SyncPulse
+				MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
-					postamble.concat("O");
-					postamble.concat(SERIAL_DELIMITER);
+					MSG_PRINT("O");
+					MSG_PRINT(SERIAL_DELIMITER);
 				}
-				postamble.concat(MSG_END);
-				postamble.concat('\n');
+				MSG_PRINTLN(MSG_END);
+				//postamble.concat('\n');
+				//MSG_PRINT(postamble);
 
-				printMsgRaw(mstart, mend, &preamble, &postamble);
+				//printMsgRaw(mstart, mend, &preamble, &postamble);
 				success = true;
 
 #ifdef mp_crc
@@ -355,10 +356,7 @@ void SignalDetectorClass::processMessage()
 			preamble = "";
 			postamble = "";
 
-
-			//String preamble;
-
-			preamble.concat(MSG_START);
+			MSG_PRINT(MSG_START);
 			if (MCenabled)
 			{
 				//DBG_PRINT(" mc: ");
@@ -381,15 +379,14 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 
 					String mcbitmsg;
-					//MSG_PRINTLN("MC");
+					MSG_PRINT("MC");
+					MSG_PRINT(SERIAL_DELIMITER);
+
+					mcdecoder.getMessagePulseStr(&preamble);
+					MSG_PRINT(preamble);
+
 					mcbitmsg = "D=";
 					mcdecoder.getMessageHexStr(&mcbitmsg);
-					//MSG_PRINTLN("f");
-
-
-					preamble.concat("MC");
-					preamble.concat(SERIAL_DELIMITER);
-					mcdecoder.getMessagePulseStr(&preamble);
 
 					postamble.concat(SERIAL_DELIMITER);
 					mcdecoder.getMessageClockStr(&postamble);
@@ -397,23 +394,15 @@ void SignalDetectorClass::processMessage()
 
 					postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					postamble.concat(MSG_END);
-					postamble.concat('\n');
+					//postamble.concat('\n');
+					MSG_PRINTLN(postamble);
 
-					//messageLen=messageLen-mend; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
-					//memmove(message,message+mend,sizeof(*message)*(messageLen+1));
-					//m_truncated=true;  // Flag that we truncated the message array and want to receiver some more data
 
-					//preamble = String(MSG_START)+String("MC")+String(SERIAL_DELIMITER)+preamble;
-					//printMsgRaw(0,messageLen,&preamble,&postamble);
-
-					//preamble.concat("MC"); ; preamble.concat(SERIAL_DELIMITER);  // Message Index
-
-					// Output Manchester Bits
 #ifdef DEBUGDECODE
 					DBG_PRINTLN(" ");
 #endif
 
-					printMsgStr(&preamble, &mcbitmsg, &postamble);
+//					printMsgStr(&preamble, &mcbitmsg, &postamble);
 					mcDetected = false;
 					success = true;
 
@@ -458,30 +447,33 @@ void SignalDetectorClass::processMessage()
 
 				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
-				preamble.concat("MU");
-				preamble.concat(SERIAL_DELIMITER);
+				MSG_PRINT("MU");
+				MSG_PRINT(SERIAL_DELIMITER);
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
 					if (pattern[idx] == 0 || histo[idx] == 0) continue;
 
-					preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
+					MSG_PRINT("P"); MSG_PRINT(idx); MSG_PRINT("="); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);  // Patternidx=Value
 				}
-				preamble.concat("D=");
-
+				MSG_PRINT("D=");
+				for (uint8_t i = 0; i < messageLen; ++i)
+				{
+					MSG_PRINT(message[i]);
+				}
 				//String postamble;
-				postamble.concat(SERIAL_DELIMITER);
-				postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-				postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				MSG_PRINT(SERIAL_DELIMITER);
+				MSG_PRINT("CP="); MSG_PRINT(clock); MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+				MSG_PRINT("R="); MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
-					postamble.concat("O");
-					postamble.concat(SERIAL_DELIMITER);
+					MSG_PRINT("O");
+					MSG_PRINT(SERIAL_DELIMITER);
 				}
-				postamble.concat(MSG_END);
-				postamble.concat('\n');
+				MSG_PRINTLN(MSG_END);
+				//postamble.concat('\n');
 
-				printMsgRaw(0, messageLen - 1, &preamble, &postamble);
+				//printMsgRaw(0, messageLen - 1, &preamble, &postamble);
 				m_truncated = false;
 				success = true;
 			}
