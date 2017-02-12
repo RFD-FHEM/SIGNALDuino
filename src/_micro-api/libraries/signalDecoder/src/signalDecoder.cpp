@@ -1275,7 +1275,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		for (uint8_t x = 0; x < p; x++)
 		{
 #if DEBUGDETECT >= 1
-			DBG_PRINT(sortedPattern[x]); DBG_PRINT("^=(");
+			DBG_PRINT(sortedPattern[x]); 
 #endif
 
 			const int aktpulse = pdec->pattern[sortedPattern[x]];
@@ -1288,10 +1288,12 @@ const bool ManchesterpatternDecoder::isManchester()
 				plong = true;
 
 			#if DEBUGDETECT >= 3
-			DBG_PRINT("PS="); DBG_PRINT(pshort); DBG_PRINT(";");
+			DBG_PRINT("^=(PS="); DBG_PRINT(pshort); DBG_PRINT(";");
 			DBG_PRINT("PL="); DBG_PRINT(plong); DBG_PRINT(";)");
 			#endif
-
+			#if DEBUGDETECT >= 1
+			DBG_PRINT(",");
+			#endif
 
 			if (aktpulse > 0)
 			{
