@@ -2,8 +2,7 @@
 *   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
-*   2015  S.Butzek
-*	2016  S.Butzek
+*   2015-2017  S.Butzek
 
 *   This library contains different classes to perform detecting of digital signals
 *   typical for home automation. The focus for the moment is on different sensors

@@ -2,8 +2,7 @@
 *   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
-*   2015  S.Butzek
-*	2016  S.Butzek
+*   2015-2017  S.Butzek
 
 *   This library contains classes to perform decoding of digital signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -42,6 +41,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 inline void SignalDetectorClass::addData(const uint8_t value)
 {
 	message += value;
+	//message.addValue(value);
 	messageLen++;
 }
 
@@ -59,72 +59,76 @@ inline void SignalDetectorClass::updPattern( const uint8_t ppos)
 
 inline void SignalDetectorClass::doDetect()
 {
-		 
-		bool valid=true;
-		valid = (messageLen==0 || (*first ^ *last) < 0); // true if a and b have opposite signs
-		valid &=  (messageLen == maxMsgSize) ? false : true;
-		valid &= (*first > -maxPulse);
+
+	//printOut();
+
+	bool valid = true;
+	valid = (messageLen == 0 || last == NULL || (*first ^ *last) < 0); // true if a and b have opposite signs
+	valid &= (messageLen == maxMsgSize) ? false : true;
+	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
 
 
-		if (!valid)
+	if (!valid)
+	{
+		// Try output
+
+		m_overflow = (messageLen == maxMsgSize) ? true : false;
+		processMessage();
+
+	}
+	else if (messageLen == minMessageLen) {
+		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+		rssiValue = _rssiCallback();
+	}
+
+	int8_t fidx = findpatt(*first);
+	if (fidx >= 0) {
+		// Upd pattern
+
+		updPattern(fidx);
+	}
+	else {
+
+		// Add pattern
+		if (patternLen == maxNumPattern)
 		{
-			// Try output
-			
-			m_overflow = (messageLen == maxMsgSize) ? true : false;
-			processMessage();
-			
-		}	else if (messageLen == minMessageLen) {
-			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-			rssiValue= _rssiCallback();
-		}
-
-		int8_t fidx = findpatt(*first);
-		if (fidx >= 0) {
-			// Upd pattern
-
-			updPattern(fidx);
-		}
-		else { 			
-
-			// Add pattern
-			if (patternLen == maxNumPattern)
+			calcHisto();
+			if (histo[patternLen] > 2) processMessage();
+			for (int16_t i = messageLen - 1; i > 0; --i)
 			{
-				calcHisto();
-				if (histo[patternLen] > 2) processMessage();
-				for (int16_t i = messageLen - 1; i > 0; --i)
+				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 				{
-					if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
-					{
-						i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
-						bufferMove(i);
-						break;
-					}
+					i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
+					bufferMove(i);
+					break;
 				}
 			}
-			fidx = pattern_pos;
-			addPattern();
+		}
+		fidx = pattern_pos;
+		addPattern();
 
-			if (pattern_pos == maxNumPattern)
-			{
-				pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir ueberschreiben alte pattern
-				patternLen = maxNumPattern;
-				mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
-
-			}
-			if (pattern_pos > patternLen) patternLen = pattern_pos;
+		if (pattern_pos == maxNumPattern)
+		{
+			pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir ueberschreiben alte pattern
+			patternLen = maxNumPattern;
+			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
 
 		}
-		
-		// Add data to buffer
-		addData(fidx);
+		if (pattern_pos > patternLen) patternLen = pattern_pos;
+
+	}
+
+	// Add data to buffer
+	addData(fidx);
 
 
 #if DEBUGDETECT>3
-		DBG_PRINT("Pulse: "); DBG_PRINT(*first); DBG_PRINT(", "); DBG_PRINT(*last);
-		DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", Found: "); DBG_PRINT(fidx);
+		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
+		DBG_PRINT(", "); DBG_PRINT(*last);
+		DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
 		DBG_PRINT(", Vld: "); DBG_PRINT(valid);
 		DBG_PRINT(", pattPos: "); DBG_PRINT(pattern_pos);
 		DBG_PRINT(", mLen: "); DBG_PRINTLN(messageLen);
@@ -136,10 +140,6 @@ inline void SignalDetectorClass::doDetect()
 bool SignalDetectorClass::decode(const int * pulse)
 {
 	success = false;
-
-	//int temp;
-	//*first = *last;
-	//*last = *pulse;
 	if (messageLen > 0)
 		last = &pattern[message[messageLen - 1]];
 	*first = *pulse;
@@ -452,8 +452,7 @@ void SignalDetectorClass::processMessage()
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
-					if (pattern[idx] == 0 || histo[idx] == 0) continue;
-
+					if (pattern[idx] == 0 || histo[idx] == 0) continue; 
 					MSG_PRINT("P"); MSG_PRINT(idx); MSG_PRINT("="); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);  // Patternidx=Value
 				}
 				MSG_PRINT("D=");
@@ -463,8 +462,8 @@ void SignalDetectorClass::processMessage()
 				}
 				//String postamble;
 				MSG_PRINT(SERIAL_DELIMITER);
-				MSG_PRINT("CP="); MSG_PRINT(clock); MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-				MSG_PRINT("R="); MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+				MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 
 				if (m_overflow) {
 					MSG_PRINT("O");
@@ -505,6 +504,7 @@ void SignalDetectorClass::reset()
 	messageLen = 0;
 	patternLen = 0;
 	pattern_pos = 0;
+	message.reset();
 	bitcnt = 0;
 	state = searching;
 	clock = sync = -1;
@@ -519,7 +519,8 @@ void SignalDetectorClass::reset()
 	mcDetected = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
-	//DBG_PRINT(':sdres:');
+	DBG_PRINT(":sdres:");
+	//last = NULL;
 }
 
 const status SignalDetectorClass::getState()
@@ -555,7 +556,9 @@ void SignalDetectorClass::printOut()
 	DBG_PRINTLN(); DBG_PRINT("Signal: ");
 	uint8_t idx;
 	for (idx = 0; idx<messageLen; ++idx) {
-		DBG_PRINT(*(message + idx));
+		DBG_PRINT((int8_t)message[idx],DEC);
+		//DBG_PRINT(message.getValue(idx));
+
 	}
 	DBG_PRINT(". "); DBG_PRINT(" ["); DBG_PRINT(messageLen); DBG_PRINTLN("]");
 	DBG_PRINT("Pattern: ");
@@ -564,7 +567,7 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT(": "); DBG_PRINT(histo[idx]);  DBG_PRINT("*[");
 		if (pattern[idx] != 0)
 		{
-			DBG_PRINT(",");
+			//DBG_PRINT(",");
 			DBG_PRINT(pattern[idx]);
 		}
 
@@ -1124,7 +1127,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if (hasbit) {
 					ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
 #ifdef DEBUGDECODE
-					DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
+					DBG_PRINT(*ManchesterBits.getValue(ManchesterBits.valcount-1));
 #endif
 					hasbit = false;
 				} else {
