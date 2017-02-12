@@ -17,6 +17,7 @@
 #define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
 #define digitalState(P)((uint8_t)isHigh(P))
 
+//#define DEBUG
 
 #ifndef _OUTPUT_h
 #define _OUTPUT_h
