@@ -1314,7 +1314,7 @@ const bool ManchesterpatternDecoder::isManchester()
 				while (z < pdec->messageLen)
 				{
 
-					if ( (isLong(pdec->message[z] == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
+					if ( ((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
 					{  
 #if DEBUGDETECT >= 1
 						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[i]); DBG_PRINT(";")
