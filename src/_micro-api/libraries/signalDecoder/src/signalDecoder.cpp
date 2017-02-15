@@ -33,8 +33,12 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	if (start > messageLen-1) return;
+	if (start > messageLen-1 || start==0) return;
+	
 	message.moveLeft(start);
+	messageLen = messageLen - start;
+	
+
 }
 
 
@@ -1097,6 +1101,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 #endif
 					pdec->bufferMove(i);
+
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
@@ -1127,7 +1132,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if (hasbit) {
 					ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
 #ifdef DEBUGDECODE
-					DBG_PRINT(*ManchesterBits.getValue(ManchesterBits.valcount-1));
+					DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
 #endif
 					hasbit = false;
 				} else {
