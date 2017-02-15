@@ -29,7 +29,7 @@ public:
 	BitStore(uint8_t bitlength);
 	//~BitStore();
 	void addValue(byte value);
-	int8_t *getValue(const uint16_t pos);
+	int8_t getValue(const uint16_t pos);
 	bool moveLeft(const uint16_t begin);
 	bool changeValue(const uint16_t pos, byte value);
 
@@ -41,10 +41,11 @@ public:
 	uint8_t bytecount;  // Number of stored bytes
 	uint16_t valcount;  // Number of total values stored
 
-	int8_t &operator[](const uint16_t pos) {
-		return _rval = getValue(pos);
+	int8_t operator[](const uint16_t pos) {
+		getValue(pos);
+		return _rval;
 	}
-	BitStore &operator+=(const byte value) {
+	BitStore &operator+=(const int8_t value) {
 		addValue(value);
 		return *this;
 	}
@@ -60,7 +61,7 @@ private:
 	uint8_t bmask;
 	uint8_t bcnt;
 	const uint8_t buffsize;
-	int8_t _rval;
+	byte _rval;
 };
 
 
@@ -122,14 +123,14 @@ void BitStore<bufSize>::addValue(byte value)
 	value <<= (bcnt + 1 - valuelen);
 
 	datastore[bytecount] = datastore[bytecount] | value;  // (valcount*valuelen%8)
-	/*
-	Serial.print(" at byte: ");   Serial.print(bytecount, DEC);
-	Serial.print(" at bitpos: ");   Serial.print(bcnt, DEC);
-	Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
-	Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
-	Serial.print(" : ");
-	Serial.print("  (valuelen)");   Serial.print(valuelen, DEC);
-	*/
+														  /*
+														  Serial.print(" at byte: ");   Serial.print(bytecount, DEC);
+														  Serial.print(" at bitpos: ");   Serial.print(bcnt, DEC);
+														  Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
+														  Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
+														  Serial.print(" : ");
+														  Serial.print("  (valuelen)");   Serial.print(valuelen, DEC);
+														  */
 	valcount++;
 	if (int8_t(bcnt - valuelen) >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhoehen wir den counter zum verschieben
 	{
@@ -160,16 +161,16 @@ bool BitStore<bufSize>::changeValue(const uint16_t pos, byte value)
 											 // 01 11 11 00    10
 
 	value <<= (8 - (pos*valuelen % 8) - valuelen);									// shift bits in value to new positon
-	//Serial.print(" new_value(bin)");   Serial.print(value, BIN);
+																					//Serial.print(" new_value(bin)");   Serial.print(value, BIN);
 
 	datastore[bytepos] = datastore[bytepos] & ~(bmask >> (pos*valuelen % 8));  // Clear bits to be changed 
 	datastore[bytepos] = datastore[bytepos] | value;						    // Apply new bits
 
-	/*
-	Serial.print(" -> ");
-	Serial.print("  datastore to (bin)");   Serial.print(datastore[bytepos], BIN);
-	Serial.print(" (valuelen)");   Serial.println(valuelen, DEC);
-	*/
+																				/*
+																				Serial.print(" -> ");
+																				Serial.print("  datastore to (bin)");   Serial.print(datastore[bytepos], BIN);
+																				Serial.print(" (valuelen)");   Serial.println(valuelen, DEC);
+																				*/
 
 	return true;
 }
@@ -185,7 +186,7 @@ template<uint8_t bufSize>
 bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
 	uint8_t startbyte = begin*valuelen / 8;
-	
+
 	//Serial.print("moveleft startbyte:"); Serial.print(startbyte, DEC); Serial.print("@valpos");  Serial.print(begin, DEC);
 
 
@@ -229,24 +230,27 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 }
 
 template<uint8_t bufSize>
-int8_t *BitStore<bufSize>::getValue(const uint16_t pos)
+int8_t BitStore<bufSize>::getValue(const uint16_t pos)
 {
 	int16_t bytepos = pos*valuelen / 8;
 	if ((bytepos) >= buffsize) return -1; // Out of Buffer
-	//Serial.print("getValue Pos:");   Serial.print(pos, DEC);
+	Serial.print("getValue Pos:");   Serial.print(pos, DEC);
 
 	uint8_t mask; // Local modified bitmask
 				  //ret= (datastore[pos*valuelen/8]>>(pos*valuelen%8))&bmask;
 	mask = bmask >> (pos*valuelen % 8);            //Mask the position we want to retrieve
-	//Serial.print(" Bitmask:");   Serial.print(mask, BIN);
+	Serial.print(" Bitmask:");   Serial.print(mask, BIN);
 
 	_rval = datastore[bytepos] & mask;         // Combine the mask with our store to extract the bit
 
-	byte scnt = (pos + 1) * valuelen % 8;
-	//Serial.print(" shift:");   Serial.print(scnt, DEC);
+	byte scnt = 8 - (valuelen*(pos) % 8) - valuelen;// ((pos + 1)*valuelen % 8);         //      pos*valuelen    0*1/1*1/2*1/../7*1    7/6/5/0    8-1  8-2  8-3 8-8   
+													//byte scnt = ((pos+1)*valuelen % 8);								  //                       0*4/1*4              
+	Serial.print(" datastore[bytepos]: ("); Serial.print(_rval, DEC); Serial.print(") ");  Serial.println(_rval, BIN);
+	Serial.print(" shift:");   Serial.print(scnt, DEC);
 
-	_rval = _rval >> (pos + 1)*valuelen % 8;
-	//Serial.print(" return:");   Serial.println(_rval, BIN);
+	//_rval = _rval >> abs(8 - (pos + 1)*valuelen) % 8;//(pos + 1)*valuelen % 8;
+	_rval = _rval >> scnt;
+	Serial.print(" return: ("); Serial.print(_rval, DEC); Serial.print(") ");  Serial.println(_rval, BIN);
 
 	return _rval;
 }

@@ -36,7 +36,7 @@
 #else
 	#include "WProgram.h"
 #endif
-//#define DEBUG 1
+#define DEBUG 1
 
 #include "output.h"
 #include "bitstore.h"
