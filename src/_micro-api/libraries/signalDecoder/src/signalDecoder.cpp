@@ -613,11 +613,22 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	}
 
 	if (endpos == 0) endpos = messageLen;
-
-	for (uint8_t i = startpos; i<endpos; ++i)
+	/*for (uint8_t i = startpos; i < endpos; i++) 
+		histo[message.getValue(i)]++;
+	*/
+	uint16_t bstartpos = startpos *4/8;
+	uint16_t bendpos = endpos*4 / 8;
+	unsigned char bval;
+	for (uint8_t i = bstartpos; i<bendpos; ++i)
 	{
-		histo[message[i]]++;
+		bval = message.getByte(i);
+		histo[bval >> 4]++;
+		histo[bval & B00001111]++;
 	}
+	if (endpos % 2==1)
+		histo[bval & B00001111]--;
+
+	
 }
 
 bool SignalDetectorClass::getClock()

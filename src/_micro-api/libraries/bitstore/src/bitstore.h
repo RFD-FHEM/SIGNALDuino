@@ -262,7 +262,7 @@ template<uint8_t bufSize>
 unsigned char BitStore<bufSize>::getByte(const uint8_t idx)
 {
 	if (idx >= buffsize) return -1; // Out of buffer range
-	return (datastore[idx]);
+	return datastore[idx];
 }
 
 template<uint8_t bufSize>
