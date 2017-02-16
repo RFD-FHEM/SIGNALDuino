@@ -381,7 +381,7 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDECODE > 1
 					MSG_PRINT(" MC found: ");
 #endif // DEBUGDECODE
-
+					// Todo: Ausgabe direkt auf MSG_PRINT ohne string umstellen
 					String mcbitmsg;
 					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -391,6 +391,7 @@ void SignalDetectorClass::processMessage()
 
 					mcbitmsg = "D=";
 					mcdecoder.getMessageHexStr(&mcbitmsg);
+					MSG_PRINT(mcbitmsg);
 
 					postamble.concat(SERIAL_DELIMITER);
 					mcdecoder.getMessageClockStr(&postamble);
