@@ -382,29 +382,17 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDECODE > 1
 					MSG_PRINT(" MC found: ");
 #endif // DEBUGDECODE
-					// Todo: Ausgabe direkt auf MSG_PRINT ohne string umstellen
-					String mcbitmsg;
-					//MSG_PRINT(MSG_START);  
 					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
-
-					mcdecoder.getMessagePulseStr(&preamble);
-					MSG_PRINT(preamble);
-
-					mcbitmsg = "D=";
-					mcdecoder.getMessageHexStr(&mcbitmsg);
-					MSG_PRINT(mcbitmsg);
-
-					postamble.concat(SERIAL_DELIMITER);
-					mcdecoder.getMessageClockStr(&postamble);
-					mcdecoder.getMessageLenStr(&postamble);
-
-					postamble.concat("R="); postamble.concat(rssiValue); postamble.concat(SERIAL_DELIMITER);     // Signal Level (RSSI)
-					postamble.concat(MSG_END);
-					//postamble.concat('\n');
-					MSG_PRINTLN(postamble);
-
-
+					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("SL="); MSG_PRINT(pattern[mcdecoder.shortlow]); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("SH="); MSG_PRINT(pattern[mcdecoder.shorthigh]); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("D=");  mcdecoder.printMessageHexStr();
+					MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("C="); MSG_PRINT(mcdecoder.clock); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 #ifdef DEBUGDECODE
 					DBG_PRINTLN(" ");
 #endif
@@ -896,6 +884,31 @@ void ManchesterpatternDecoder::getMessageHexStr(String *message)
 
 }
 
+/** @brief (Converts decoded manchester bits in a provided string as hex)
+*
+* ()
+*/
+void ManchesterpatternDecoder::printMessageHexStr()
+{
+	char hexStr[] = "00"; // Not really needed
+
+	uint8_t idx;
+	// Bytes are stored from left to right in our buffer. We reverse them for better readability
+	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
+		sprintf(hexStr, "%02X", getMCByte(idx));
+		MSG_PRINT(hexStr);
+	}
+
+	sprintf(hexStr, "%01X", getMCByte(idx) >> 4 & 0xf);
+	MSG_PRINT(hexStr);
+	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
+	{
+		sprintf(hexStr, "%01X", getMCByte(idx) & 0xF);
+		MSG_PRINT(hexStr);
+	}
+}
+
+
 /** @brief (one liner)
 *
 * (documentation goes here)
@@ -910,6 +923,18 @@ void ManchesterpatternDecoder::getMessagePulseStr(String* str)
 	str->concat("LH="); str->concat(pdec->pattern[longhigh]); str->concat(SERIAL_DELIMITER);
 	str->concat("SL="); str->concat(pdec->pattern[shortlow]); str->concat(SERIAL_DELIMITER);
 	str->concat("SH="); str->concat(pdec->pattern[shorthigh]); str->concat(SERIAL_DELIMITER);
+}
+
+/** @brief (one liner)
+*
+* (documentation goes here)
+*/
+void ManchesterpatternDecoder::printMessagePulseStr()
+{
+	MSG_PRINT("LL="); MSG_PRINT(pdec->pattern[longlow]); MSG_PRINT(SERIAL_DELIMITER);
+	MSG_PRINT("LH="); MSG_PRINT(pdec->pattern[longhigh]); MSG_PRINT(SERIAL_DELIMITER);
+	MSG_PRINT("SL="); MSG_PRINT(pdec->pattern[shortlow]); MSG_PRINT(SERIAL_DELIMITER);
+	MSG_PRINT("SH="); MSG_PRINT(pdec->pattern[shorthigh]); MSG_PRINT(SERIAL_DELIMITER);
 }
 
 /** @brief (one liner)
