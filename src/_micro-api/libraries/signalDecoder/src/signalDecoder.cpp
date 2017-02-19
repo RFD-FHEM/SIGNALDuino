@@ -383,7 +383,7 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 					// Todo: Ausgabe direkt auf MSG_PRINT ohne string umstellen
 					String mcbitmsg;
-					MSG_PRINT("MC");
+					MSG_PRINT(MSG_START);  MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					mcdecoder.getMessagePulseStr(&preamble);
@@ -452,7 +452,7 @@ void SignalDetectorClass::processMessage()
 
 				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
-				MSG_PRINT("MU");
+				MSG_PRINT(MSG_START); MSG_PRINT("MU");
 				MSG_PRINT(SERIAL_DELIMITER);
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -524,7 +524,7 @@ void SignalDetectorClass::reset()
 	mcDetected = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
-	DBG_PRINT(":sdres:");
+	//DBG_PRINT(":sdres:");
 	//last = NULL;
 }
 
@@ -1192,6 +1192,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 	{
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
+		pdec->message.reset();
 		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 #ifdef DEBUGDECODE
 		DBG_PRINT(":bflush:");

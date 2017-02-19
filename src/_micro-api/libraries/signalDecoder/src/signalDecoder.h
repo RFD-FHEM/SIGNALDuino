@@ -36,7 +36,7 @@
 #else
 	#include "WProgram.h"
 #endif
-//#define DEBUG 1
+#define DEBUG 1
 
 #include "output.h"
 #include "bitstore.h"
@@ -54,7 +54,7 @@
 #define SERIAL_DELIMITER ';'
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
-//#define DEBUGDETECT 4
+//#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 3
 
