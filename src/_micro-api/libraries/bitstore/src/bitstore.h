@@ -110,7 +110,7 @@ BitStore<bufSize>::~BitStore()
 template<uint8_t bufSize>
 void BitStore<bufSize>::addValue(byte value)
 {
-	if (bytecount >= buffsize) Serial.println('OOB');
+	if (bytecount >= buffsize) Serial.println("OOB");
 	if (bytecount >= buffsize) return; // Out of Buffer
 	if (bcnt == 7 && valcount > 0)
 	{
@@ -186,6 +186,7 @@ template<uint8_t bufSize>
 bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
 	if (begin == 0) return false;
+	//if (begin > buffsize) return false;
 
 	uint8_t startbyte = begin*valuelen / 8;
 
