@@ -269,7 +269,8 @@ void SignalDetectorClass::processMessage()
 				postamble = "";
 
 				/*				Output raw message Data				*/
-				MSG_PRINT(MSG_START); 				MSG_PRINT("MS"); MSG_PRINT(SERIAL_DELIMITER);
+				MSG_PRINT(MSG_START); 				
+				MSG_PRINT("MS"); MSG_PRINT(SERIAL_DELIMITER);
 				for (uint8_t idx = 0; idx < patternLen; idx++)
 				{
 					if (pattern[idx] == 0 || histo[idx] == 0) continue;
@@ -383,7 +384,8 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 					// Todo: Ausgabe direkt auf MSG_PRINT ohne string umstellen
 					String mcbitmsg;
-					MSG_PRINT(MSG_START);  MSG_PRINT("MC");
+					//MSG_PRINT(MSG_START);  
+					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					mcdecoder.getMessagePulseStr(&preamble);
@@ -452,7 +454,8 @@ void SignalDetectorClass::processMessage()
 
 				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
-				MSG_PRINT(MSG_START); MSG_PRINT("MU");
+				//MSG_PRINT(MSG_START);
+				MSG_PRINT("MU");
 				MSG_PRINT(SERIAL_DELIMITER);
 
 				for (uint8_t idx = 0; idx < patternLen; idx++)
