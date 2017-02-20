@@ -56,7 +56,7 @@
 #define MSG_END char(0x3)			// this is a non printable Char
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 3
+#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -144,6 +144,9 @@ public:
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
 	void getMessageLenStr(String* str);
+
+	void printMessageHexStr();
+	void printMessagePulseStr();
 
 	const bool isManchester();
 	void reset();

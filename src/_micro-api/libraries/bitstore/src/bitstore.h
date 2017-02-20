@@ -186,7 +186,7 @@ template<uint8_t bufSize>
 bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
 	if (begin == 0) return false;
-	//if (begin > buffsize) return false;
+	if (begin > valcount) return false;
 
 	uint8_t startbyte = begin*valuelen / 8;
 

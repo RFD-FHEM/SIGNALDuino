@@ -33,12 +33,24 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	if (start > messageLen-1 || start==0) return;
-	
-	message.moveLeft(start);
-	messageLen = messageLen - start;
-	
+	//m_truncated = false;
 
+	if (start > messageLen - 1 || start == 0) {
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
+	}
+	if (message.moveLeft(start))
+	{
+		//m_truncated = true;
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);
+
+		if (start > messageLen) {
+		}
+		messageLen = messageLen - start;
+		
+	} else {
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(":"); 	DBG_PRINT(start);
+		printOut();
+	}
 }
 
 
@@ -107,6 +119,7 @@ inline void SignalDetectorClass::doDetect()
 				{
 					i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 					bufferMove(i);
+					
 					break;
 				}
 			}
@@ -361,7 +374,6 @@ void SignalDetectorClass::processMessage()
 			preamble = "";
 			postamble = "";
 
-			MSG_PRINT(MSG_START);
 			if (MCenabled)
 			{
 				//DBG_PRINT(" mc: ");
@@ -382,6 +394,33 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDECODE > 1
 					MSG_PRINT(" MC found: ");
 #endif // DEBUGDECODE
+
+#if DEBUGDECODE == 1
+					MSG_PRINT(MSG_START);
+					MSG_PRINT("MC");
+					MSG_PRINT(SERIAL_DELIMITER);
+
+					for (uint8_t idx = 0; idx < patternLen; idx++)
+					{
+						if (histo[idx] == 0) continue;
+						MSG_PRINT('P'); MSG_PRINT(idx); MSG_PRINT('='); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);
+					}
+					MSG_PRINT("D=");
+
+
+					mend = min(mend, messageLen); // Workaround if mend=255
+					for (uint8_t i = mstart; i <= mend; ++i)
+					{
+						MSG_PRINT(message[i]);
+					}
+					MSG_PRINT(SERIAL_DELIMITER);
+
+					if (m_overflow) {
+						MSG_PRINT("O");
+						MSG_PRINT(SERIAL_DELIMITER);
+					}
+					MSG_PRINTLN(MSG_END);
+#endif
 					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
@@ -394,38 +433,14 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 #ifdef DEBUGDECODE
-					DBG_PRINTLN(" ");
+					DBG_PRINTLN("");
 #endif
 
 //					printMsgStr(&preamble, &mcbitmsg, &postamble);
 					mcDetected = false;
 					success = true;
 
-#if DEBUGDECODE == 1
-					preamble = "MC";
-					preamble.concat(SERIAL_DELIMITER);
 
-					for (uint8_t idx = 0; idx < patternLen; idx++)
-					{
-						if (histo[idx] == 0) continue;
-
-						preamble.concat("P"); preamble.concat(idx); preamble.concat("="); preamble.concat(pattern[idx]); preamble.concat(SERIAL_DELIMITER);  // Patternidx=Value
-					}
-					preamble.concat("D=");
-
-					//String postamble;
-					postamble = String(SERIAL_DELIMITER);
-					postamble.concat("CP="); postamble.concat(clock); postamble.concat(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-					if (m_overflow) {
-						postamble.concat("O");
-						postamble.concat(SERIAL_DELIMITER);
-					}
-
-					postamble.concat(MSG_END);
-					postamble.concat('\n');
-
-					printMsgRaw(0, messageLen, &preamble, &postamble);
-#endif
 
 				}
 				else if (mcDetected == true && m_truncated == true) {
@@ -442,7 +457,7 @@ void SignalDetectorClass::processMessage()
 
 				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
 
-				//MSG_PRINT(MSG_START);
+				MSG_PRINT(MSG_START);
 				MSG_PRINT("MU");
 				MSG_PRINT(SERIAL_DELIMITER);
 
@@ -482,7 +497,7 @@ void SignalDetectorClass::processMessage()
 #endif
 		}
 	}
-	if (!m_truncated)
+	if (!m_truncated)  // Todo: Eventuell auf vollen Puffer prüfen
 	{
 		reset();
 	}
@@ -1135,13 +1150,17 @@ const bool ManchesterpatternDecoder::doDecode() {
 					DBG_PRINT(pdec->mstart);
 					DBG_PRINT(":mend:");
 					DBG_PRINT(pdec->mend);
+					DBG_PRINT(":mlen:");
+					DBG_PRINT(pdec->messageLen);
 					DBG_PRINT(":found:");
 					DBG_PRINT(":pidx=");
-					DBG_PRINT(pdec->pattern[pdec->message[i]]);
+					DBG_PRINT(pdec->message[i]);
+					//DBG_PRINT(pdec->pattern[pdec->message[i]]);
 
 #endif
+					
 					pdec->bufferMove(i);
-
+					// Todo: Prüfen ob wir den puffer wirklich gekürzt haben oder ob wir in einer overflow Variante sind
 					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
