@@ -34,18 +34,38 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	static uint8_t len_single_entry = sizeof(*message);
+	DBG_PRINT(" ");
+	if (start > messageLen - 1 || start == 0) {
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start);
+	}
+	else if (messageLen<=maxMsgSize)
+	{
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);
 
-	if (start > messageLen-1) return;
+		static uint8_t len_single_entry = sizeof(*message);
+		messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
+		memmove(message, message + start, len_single_entry*messageLen);
+	}
+	else {
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
+		printOut();
+	}
 
-	messageLen = messageLen - start; // Berechnung der neuen Nachrichtenlaenge nach dem Loeschen
-	memmove(message, message + start, len_single_entry*messageLen);
+	
+
+
 
 }
 
 
 inline void SignalDetectorClass::addData(const uint8_t value)
 {
+	if (messageLen >= 254)
+	{
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
+	}
+
+
 	message[messageLen] = value;
 	messageLen++;
 }
@@ -532,7 +552,7 @@ void SignalDetectorClass::reset()
 	mcDetected = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
-	DBG_PRINT(":sdres:");
+	//DBG_PRINT(":sdres:");
 }
 
 const status SignalDetectorClass::getState()

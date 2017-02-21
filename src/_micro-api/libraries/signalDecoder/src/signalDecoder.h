@@ -37,7 +37,7 @@
 #else
 	#include "WProgram.h"
 #endif
-//#define DEBUG 1
+#define DEBUG 1
 
 #include "output.h"
 #include "bitstore.h"
@@ -57,7 +57,7 @@
 #define MSG_END char(0x3)			// this is a non printable Char
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 3
+#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting };
 
