@@ -28,7 +28,7 @@ public:
 	/** Default constructor */
 	BitStore(uint8_t bitlength);
 	//~BitStore();
-	void addValue(byte value);
+	bool addValue(byte value);
 	int8_t getValue(const uint16_t pos);
 	bool moveLeft(const uint16_t begin);
 	bool changeValue(const uint16_t pos, byte value);
@@ -108,10 +108,10 @@ BitStore<bufSize>::~BitStore()
 }
 */
 template<uint8_t bufSize>
-void BitStore<bufSize>::addValue(byte value)
+bool BitStore<bufSize>::addValue(byte value)
 {
 	if (bytecount >= buffsize) Serial.println("OOB");
-	if (bytecount >= buffsize) return; // Out of Buffer
+	if (bytecount >= buffsize) return false; // Out of Buffer
 	if (bcnt == 7 && valcount > 0)
 	{
 		bytecount++;
@@ -139,7 +139,7 @@ void BitStore<bufSize>::addValue(byte value)
 	else {
 		bcnt = 7;
 	}
-
+	return true;
 	//Serial.println("");
 }
 

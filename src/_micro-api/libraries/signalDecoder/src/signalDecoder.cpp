@@ -34,21 +34,19 @@
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
-
+	DBG_PRINTLN("");
 	if (start > messageLen - 1 || start == 0) {
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start);
 	}
-	if (message.moveLeft(start))
+	else if (message.moveLeft(start))
 	{
 		m_truncated = true;
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);
 
-		if (start > messageLen) {
-		}
 		messageLen = messageLen - start;
 		
 	} else {
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(":"); 	DBG_PRINT(start);
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
 		printOut();
 	}
 }
@@ -56,13 +54,15 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 
 inline void SignalDetectorClass::addData(const uint8_t value)
 {
-	message += value;
-	//message.addValue(value);
+	//message += value;
 	if (message.valcount >= 254)
 	{
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
+		DBG_PRINTLN(""); 	DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
 	}
-	messageLen++;
+	if (message.addValue(value))
+	{
+		messageLen++;
+	}
 }
 
 inline void SignalDetectorClass::addPattern()
