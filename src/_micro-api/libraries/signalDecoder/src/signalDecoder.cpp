@@ -33,14 +33,14 @@
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
-	//m_truncated = false;
+	m_truncated = false;
 
 	if (start > messageLen - 1 || start == 0) {
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
 	}
 	if (message.moveLeft(start))
 	{
-		//m_truncated = true;
+		m_truncated = true;
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);
 
 		if (start > messageLen) {
@@ -58,6 +58,10 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 {
 	message += value;
 	//message.addValue(value);
+	if (message.valcount >= 254)
+	{
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
+	}
 	messageLen++;
 }
 
@@ -340,14 +344,14 @@ void SignalDetectorClass::processMessage()
 				DBG_PRINT(" move msg ");;
 #endif
 				bufferMove(mstart);
-				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 			} 
 			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
 #ifdef DEBUGDECODE
 				DBG_PRINT(" move msg ");;
 #endif
 				bufferMove(mend);
-				m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 				success = true;	// don't process other message types
 			}
 			else {
@@ -1161,7 +1165,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					
 					pdec->bufferMove(i);
 					// Todo: Prüfen ob wir den puffer wirklich gekürzt haben oder ob wir in einer overflow Variante sind
-					pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+					//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
 					//if (i+minbitlen > pdec->messageLen)
@@ -1229,7 +1233,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 
 		pdec->bufferMove(pdec->mstart);
-		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+		//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 		
 		pdec->mcDetected = true;
 		return false;
@@ -1240,7 +1244,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 		pdec->mcDetected = true;
 		pdec->messageLen = 0;
 		pdec->message.reset();
-		pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
+		//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 #ifdef DEBUGDECODE
 		DBG_PRINT(":bflush:");
 
