@@ -113,9 +113,10 @@ bool BitStore<bufSize>::addValue(byte value)
 {
 	if (bcnt == 7 && valcount > 0)
 	{
-		if (bytecount >= buffsize - 1) Serial.println("OOB");
-		if (bytecount >= buffsize - 1) return false; // Out of Buffer
-
+		if (bytecount >= buffsize - 1) {
+			//Serial.println("OOB");
+			return false; // Out of Buffer
+		}
 		bytecount++;
 		datastore[bytecount] = 0;
 	}
