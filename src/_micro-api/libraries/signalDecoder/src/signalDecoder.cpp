@@ -285,8 +285,8 @@ void SignalDetectorClass::processMessage()
 #endif
 
 
-				preamble = "";
-				postamble = "";
+				//preamble = "";
+				//postamble = "";
 
 				/*				Output raw message Data				*/
 				MSG_PRINT(MSG_START); 				
@@ -317,7 +317,7 @@ void SignalDetectorClass::processMessage()
 
 				//printMsgRaw(mstart, mend, &preamble, &postamble);
 				success = true;
-
+				m_truncated = false;
 #ifdef mp_crc
 				const int8_t crco = printMsgRaw(mstart, mend, &preamble, &postamble);
 
@@ -378,8 +378,8 @@ void SignalDetectorClass::processMessage()
 #endif	
 // Message has a clock puls, but no sync. Try to decode this
 
-			preamble = "";
-			postamble = "";
+			//preamble = "";
+			//postamble = "";
 
 			if (MCenabled)
 			{
@@ -390,7 +390,7 @@ void SignalDetectorClass::processMessage()
 				if (mcDetected == false)
 				{
 					mcdecoder.reset();
-					mcdecoder.setMinBitLen(17);							// Todo: allow modification via command
+					mcdecoder.setMinBitLen(mcMinBitLen);								
 				}
 #if DEBUGDETECT>3
 				MSG_PRINT("vcnt: "); MSG_PRINT(mcdecoder.ManchesterBits.valcount);
@@ -523,7 +523,7 @@ void SignalDetectorClass::reset()
 	patternLen = 0;
 	pattern_pos = 0;
 	message.reset();
-	bitcnt = 0;
+//	bitcnt = 0;
 	state = searching;
 	clock = sync = -1;
 	for (uint8_t i = 0; i<maxNumPattern; ++i)

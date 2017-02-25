@@ -67,7 +67,7 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { buffer[0] = buffer[1] = 0; reset(); };
+	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { buffer[0] = 0; reset(); mcMinBitLen = 17; };
 
 	void reset();
 	bool decode(const int* pulse);
@@ -85,29 +85,29 @@ public:
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
 
-	uint8_t messageLen;
-	uint8_t mstart; // Holds starting point for message
-	uint8_t mend;   // Holds end point for message if detected
-	bool success;                           // True if a valid coding was found
-
-	bool m_truncated;     // Identify if message has been truncated
+	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
+	uint8_t mstart;						  // Holds starting point for message
+	uint8_t mend;						  // Holds end point for message if detected
+	bool success;                         // True if a valid coding was found
+	bool m_truncated;					// Identify if message has been truncated
 	bool m_overflow;
 	void bufferMove(const uint8_t start);
 
 	uint16_t tol;                           // calculated tolerance for signal
-	uint8_t bitcnt;
+	//uint8_t bitcnt;
 	status state;                           // holds the status of the detector
-	int buffer[2];                          // Internal buffer to store two pules length
+	int buffer[1];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
 	int* last;                              // Pointer to last buffer entry
 	float tolFact;                          //
 	int pattern[maxNumPattern];				// 1d array to store the pattern
 	uint8_t patternLen;                     // counter for length of pattern
 	uint8_t pattern_pos;
-	int8_t sync;                        // index to sync in pattern if it exists
-	String preamble;
-	String postamble;
+	int8_t sync;							// index to sync in pattern if it exists
+	//String preamble;
+	//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
+	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback;			// Holds the pointer to a callback Function
 
