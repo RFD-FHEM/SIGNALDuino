@@ -36,18 +36,18 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 	m_truncated = false;
 	DBG_PRINTLN("");
 	if (start > messageLen - 1 || start == 0) {
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start);
+		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start); DBG_PRINT(" "); DBG_PRINT(messageLen);
 	}
 	else if (message.moveLeft(start))
 	{
-		m_truncated = true;
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);
-
+		m_truncated = true; 
+		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);  DBG_PRINT(" "); DBG_PRINT(messageLen);
+		//DBG_PRINT(" "); DBG_PRINT(message.bytecount);
 		messageLen = messageLen - start;
 		
 	} else {
-		DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
-		printOut();
+		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
+		//printOut();
 	}
 }
 
@@ -55,10 +55,10 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 inline void SignalDetectorClass::addData(const uint8_t value)
 {
 	//message += value;
-	if (message.valcount >= 254)
+	/*if (message.valcount >= 254)
 	{
 		DBG_PRINTLN(""); 	DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
-	}
+	}*/
 	if (message.addValue(value))
 	{
 		messageLen++;
@@ -82,15 +82,13 @@ inline void SignalDetectorClass::doDetect()
 
 	//printOut();
 
-	bool valid = true;
+	bool valid;
 	valid = (messageLen == 0 || last == NULL || (*first ^ *last) < 0); // true if a and b have opposite signs
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
-
-
 	if (!valid)
 	{
 		// Try output
@@ -128,6 +126,7 @@ inline void SignalDetectorClass::doDetect()
 				}
 			}
 		}
+
 		fidx = pattern_pos;
 		addPattern();
 
@@ -146,13 +145,16 @@ inline void SignalDetectorClass::doDetect()
 	addData(fidx);
 
 
-#if DEBUGDETECT>3
+#if DEBUGDETCT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
 		DBG_PRINT(", "); DBG_PRINT(*last);
 		DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
 		DBG_PRINT(", Vld: "); DBG_PRINT(valid);
 		DBG_PRINT(", pattPos: "); DBG_PRINT(pattern_pos);
-		DBG_PRINT(", mLen: "); DBG_PRINTLN(messageLen);
+		DBG_PRINT(", mLen: "); DBG_PRINT(messageLen);
+		DBG_PRINT(", BC:");	DBG_PRINT(message.bytecount); 
+		DBG_PRINT(", vcnt:");	DBG_PRINT(message.valcount);
+		DBG_PRINTLN(" ");
 #endif
 
 
@@ -229,6 +231,7 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("Message received:");
 #endif
+
 		compress_pattern();
 		calcHisto();
 		getClock();
@@ -1162,9 +1165,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 					//DBG_PRINT(pdec->pattern[pdec->message[i]]);
 
 #endif
-					
-					pdec->bufferMove(i);
-					// Todo: Prüfen ob wir den puffer wirklich gekürzt haben oder ob wir in einer overflow Variante sind
+					//pdec->printOut();
+					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
 					//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			

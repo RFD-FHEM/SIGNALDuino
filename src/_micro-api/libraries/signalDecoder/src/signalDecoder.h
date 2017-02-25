@@ -54,9 +54,9 @@
 #define SERIAL_DELIMITER ';'
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
-//#define DEBUGDETECT 3
+//#define DEBUGDETECT 255
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 1
+//#define DEBUGDECODE 255
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -83,7 +83,7 @@ public:
 	bool MSenabled;
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
-	BitStore<maxMsgSize/2> message;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
+	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
 
 	uint8_t messageLen;
 	uint8_t mstart; // Holds starting point for message
