@@ -48,6 +48,7 @@ extern WiFiClient serverClient;
 
 #define MSG_PRINT(...) { MSG_PRINTER.print(__VA_ARGS__); }
 #define MSG_PRINTLN(...) { MSG_PRINTER.println(__VA_ARGS__); }
+#define MSG_WRITE(...) { MSG_PRINTER.print(__VA_ARGS__); }
 
 #ifdef DEBUG
 	#define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
