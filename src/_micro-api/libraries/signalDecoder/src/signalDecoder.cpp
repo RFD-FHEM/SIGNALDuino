@@ -531,35 +531,83 @@ void SignalDetectorClass::processMessage()
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
 
-				//preamble = String(MSG_START)+String("MU")+String(SERIAL_DELIMITER)+preamble;
+				if (MredEnabled) {
+					int patternInt;
+					uint8_t patternLow;
+					uint8_t patternIdx;
+					
+					MSG_PRINT(MSG_START);  MSG_PRINT("Mu");  MSG_PRINT(SERIAL_DELIMITER);
+					for (uint8_t idx = 0; idx < patternLen; idx++)
+					{
+						if (pattern[idx] == 0 || histo[idx] == 0) continue;
+						patternIdx = idx;
+						patternInt = pattern[idx];
 
-				MSG_PRINT(MSG_START);
-				MSG_PRINT("MU");
-				MSG_PRINT(SERIAL_DELIMITER);
+						if (patternInt < 0) {
+							patternIdx = idx | B10100000;    // Bit5 = 1 (Vorzeichen negativ)
+							patternInt = -patternInt;
+						}
+						else {
+							patternIdx = idx | B10000000;    // Bit5 = 0 (Vorzeichen positiv)
+						}
+						
+						patternLow = lowByte(patternInt);
+						if (bitRead(patternLow,7) == 0) {
+							bitSet(patternLow,7);
+						}
+						else {
+							bitSet(patternIdx, 4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
+						}
+						Serial.write(patternIdx);
+						Serial.write(patternLow);
+						Serial.write(highByte(patternInt) | B10000000);
+						MSG_PRINT(SERIAL_DELIMITER);
+					}
 
-				for (uint8_t idx = 0; idx < patternLen; idx++)
-				{
-					if (pattern[idx] == 0 || histo[idx] == 0) continue; 
-					MSG_PRINT("P"); MSG_PRINT(idx); MSG_PRINT("="); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);  // Patternidx=Value
-				}
-				MSG_PRINT("D=");
-				for (uint8_t i = 0; i < messageLen; ++i)
-				{
-					MSG_PRINT(message[i]);
-				}
-				//String postamble;
-				MSG_PRINT(SERIAL_DELIMITER);
-				MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-				MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					uint8_t n;
 
-				if (m_overflow) {
-					MSG_PRINT("O");
+					if ((messageLen & 1) == 1) {   // ungerade
+						MSG_PRINT("D");
+					}
+					else {
+						MSG_PRINT("d");
+					}
+
+					for (uint8_t i = 0; i <= messageLen; i=i+2) {					
+						n = message.getByte(i/2);
+						Serial.write(n);
+						//MSG_WRITE(n);
+					}
+
 					MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("C");  MSG_PRINT(clock, HEX);  MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);				
 				}
-				MSG_PRINTLN(MSG_END);
-				//postamble.concat('\n');
+				else {
+				
+					MSG_PRINT(MSG_START); MSG_PRINT("MU");  MSG_PRINT(SERIAL_DELIMITER);
 
-				//printMsgRaw(0, messageLen - 1, &preamble, &postamble);
+					for (uint8_t idx = 0; idx < patternLen; idx++)
+					{
+						if (pattern[idx] == 0 || histo[idx] == 0) continue; 
+						MSG_PRINT("P"); MSG_PRINT(idx); MSG_PRINT("="); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);  // Patternidx=Value
+					}
+					MSG_PRINT("D=");
+					for (uint8_t i = 0; i < messageLen; ++i)
+					{
+						MSG_PRINT(message[i]);
+					}
+					//String postamble;
+					MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
+					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				}
+				
+				if (m_overflow) {
+					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
+				}
+				MSG_PRINT(MSG_END);  MSG_PRINT('\n');
+				
 				m_truncated = false;
 				success = true;
 			}
