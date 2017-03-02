@@ -81,6 +81,9 @@ public:
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
+	bool MredEnabled;                          // 1 = compress printMsgRaw
+	uint8_t MsMoveCount;
+	
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
