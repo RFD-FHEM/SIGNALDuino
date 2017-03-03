@@ -66,4 +66,5 @@ typedef void *__builtin_va_list;
 #undef PSTR
 #define PSTR(string_literal) ((const PROGMEM char *)(string_literal))
 #include "SIGNALDuino.ino"
+#include "RF_Receiver\RF_Receiver.ino"
 #endif

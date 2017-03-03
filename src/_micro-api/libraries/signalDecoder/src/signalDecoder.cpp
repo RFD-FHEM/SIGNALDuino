@@ -319,9 +319,9 @@ void SignalDetectorClass::processMessage()
 						else {
 							bitSet(patternIdx, 4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						Serial.write(patternIdx);
-						Serial.write(patternLow);
-						Serial.write(highByte(patternInt) | B10000000);
+						MSG_WRITE(patternIdx);
+						MSG_WRITE(patternLow);
+						MSG_WRITE(highByte(patternInt) | B10000000);
 						MSG_PRINT(SERIAL_DELIMITER);
 					}
 
@@ -336,14 +336,12 @@ void SignalDetectorClass::processMessage()
 					if ((mstart & 1) == 1) {  // ungerade
 						mstart--;
 						n = (message.getByte(mstart/2) & 15) | 128;    // high nibble = 8 als Kennzeichen für ungeraden mstart
-						Serial.write(n);
-						//MSG_WRITE(n);
+						MSG_WRITE(n);
  						mstart += 2;
 					}
 					for (uint8_t i = mstart; i <= mend; i=i+2) {					
 						n = message.getByte(i/2);
-						Serial.write(n);
-						//MSG_WRITE(n);
+						MSG_WRITE(n);
 					}
 
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -558,9 +556,9 @@ void SignalDetectorClass::processMessage()
 						else {
 							bitSet(patternIdx, 4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						Serial.write(patternIdx);
-						Serial.write(patternLow);
-						Serial.write(highByte(patternInt) | B10000000);
+						MSG_WRITE(patternIdx);
+						MSG_WRITE(patternLow);
+						MSG_WRITE(highByte(patternInt) | B10000000);
 						MSG_PRINT(SERIAL_DELIMITER);
 					}
 
@@ -575,8 +573,7 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t i = 0; i <= messageLen; i=i+2) {					
 						n = message.getByte(i/2);
-						Serial.write(n);
-						//MSG_WRITE(n);
+						MSG_WRITE(n);
 					}
 
 					MSG_PRINT(SERIAL_DELIMITER);
