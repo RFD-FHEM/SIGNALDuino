@@ -171,9 +171,6 @@ void setup() {
 	cc1101::setup();
 	#endif
   	initEEPROM();
-	musterDec.MsMoveCount = 0;
-	musterDec.MredEnabled = 1;      // 1 = compress printmsg
-	
 	#ifdef CMP_CC1101
 	DBG_PRINTLN("CCInit");	
 	cc1101::CCinit();					 // CC1101 init

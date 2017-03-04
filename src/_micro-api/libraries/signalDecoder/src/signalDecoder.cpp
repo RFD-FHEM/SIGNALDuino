@@ -34,7 +34,7 @@
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
-	DBG_PRINTLN("");
+	//DBG_PRINTLN("");
 	if (start > messageLen - 1 || start == 0) {
 		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start); DBG_PRINT(" "); DBG_PRINT(messageLen);
 	}
@@ -335,12 +335,12 @@ void SignalDetectorClass::processMessage()
 					}
 					if ((mstart & 1) == 1) {  // ungerade
 						mstart--;
-						n = (message.getByte(mstart/2) & 15) | 128;    // high nibble = 8 als Kennzeichen für ungeraden mstart
+						(message.getByte(mstart/2,&n) & 15) | 128;    // high nibble = 8 als Kennzeichen für ungeraden mstart
 						MSG_WRITE(n);
  						mstart += 2;
 					}
 					for (uint8_t i = mstart; i <= mend; i=i+2) {					
-						n = message.getByte(i/2);
+						message.getByte(i/2,&n);
 						MSG_WRITE(n);
 					}
 
@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 					}
 
 					for (uint8_t i = 0; i <= messageLen; i=i+2) {					
-						n = message.getByte(i/2);
+						message.getByte(i/2,&n);
 						MSG_WRITE(n);
 					}
 
@@ -749,7 +749,7 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	unsigned char bval;
 	for (uint8_t i = bstartpos; i<bendpos; ++i)
 	{
-		bval = message.getByte(i);
+		message.getByte(i,&bval);
 		histo[bval >> 4]++;
 		histo[bval & B00001111]++;
 	}
@@ -1100,7 +1100,9 @@ void ManchesterpatternDecoder::getMessageLenStr(String* str)
 
 unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 
-	return ManchesterBits.getByte(idx);
+	unsigned char c;
+	ManchesterBits.getByte(idx,&c);
+	return  c;
 }
 
 

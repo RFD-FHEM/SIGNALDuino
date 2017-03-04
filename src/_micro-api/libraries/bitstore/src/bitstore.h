@@ -37,8 +37,8 @@ public:
 	//unsigned char *datastore;  // Reserve 40 Bytes for our store. Should be edited to aa dynamic way
 	unsigned char datastore[bufSize];
 	void reset();
-	unsigned char getByte(const uint8_t idx);
-	uint8_t bytecount;  // Number of stored bytes
+	bool getByte(const uint8_t idx, void *retvalue);
+		uint8_t bytecount;  // Number of stored bytes
 	uint16_t valcount;  // Number of total values stored
 
 	int8_t operator[](const uint16_t pos) {
@@ -282,10 +282,11 @@ int8_t BitStore<bufSize>::getValue(const uint16_t pos)
 }
 
 template<uint8_t bufSize>
-unsigned char BitStore<bufSize>::getByte(const uint8_t idx)
+bool BitStore<bufSize>::getByte(const uint8_t idx,void *retvalue)
 {
-	if (idx >= buffsize ) return -1; // Out of buffer range
-	return datastore[idx];
+	if (idx >= buffsize ) return false; // Out of buffer range
+	retvalue =datastore[idx];
+	return true;
 }
 
 template<uint8_t bufSize>

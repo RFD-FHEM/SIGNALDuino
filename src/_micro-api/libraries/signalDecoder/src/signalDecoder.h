@@ -67,7 +67,11 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { buffer[0] = 0; reset(); mcMinBitLen = 17; };
+	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
+																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
+																		 MsMoveCount = 0; 
+																		 MredEnabled = 1;      // 1 = compress printmsg 
+																	   };
 
 	void reset();
 	bool decode(const int* pulse);
@@ -81,7 +85,7 @@ public:
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
-	bool MredEnabled;                          // 1 = compress printMsgRaw
+	bool MredEnabled;                       // 1 = compress printMsgRaw
 	uint8_t MsMoveCount;
 	
 	uint8_t histo[maxNumPattern];
