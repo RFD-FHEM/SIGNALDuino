@@ -63,6 +63,9 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 	{
 		messageLen++;
 	}
+	else {
+		MSG_PRINTLN(F("addData overflow!!!"));
+	}
 }
 
 inline void SignalDetectorClass::addPattern()
@@ -92,7 +95,6 @@ inline void SignalDetectorClass::doDetect()
 	if (!valid) {
 		if (mcDetected == true || messageLen >= minMessageLen) {
 			// Try output
-			m_overflow = (messageLen == maxMsgSize) ? true : false;
 			processMessage();
 		} else {
 			MsMoveCount = 3;
@@ -230,6 +232,7 @@ void SignalDetectorClass::processMessage()
 
 	if (mcDetected == true || messageLen >= minMessageLen) {
 		success = false;
+		m_overflow = (messageLen == maxMsgSize) ? true : false;
 
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("Message received:");
@@ -281,7 +284,7 @@ void SignalDetectorClass::processMessage()
 			DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
 			DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
 #endif // DEBUGDECODE
-			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize)))//(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize))) //(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
 			{
 #ifdef DEBUGDECODE
 				MSG_PRINTLN("Filter Match: ");;
@@ -370,6 +373,7 @@ void SignalDetectorClass::processMessage()
 				if (m_overflow) {
 					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
 				}
+				m_truncated = false;
 				
 				if ((messageLen - mend) >= minMessageLen && MsMoveCount > 0) {
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
@@ -377,14 +381,13 @@ void SignalDetectorClass::processMessage()
 					bufferMove(mend+1);
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
 					mstart = 0;
-					MSG_PRINT("m"); MSG_PRINT(MsMoveCount) MSG_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
 				}
 				
 				MSG_PRINT(MSG_END);
 				MSG_PRINT("\n");
 				
 				success = true;
-				m_truncated = false;
 #ifdef mp_crc
 				const int8_t crco = printMsgRaw(mstart, mend, &preamble, &postamble);
 
@@ -414,13 +417,15 @@ void SignalDetectorClass::processMessage()
 				DBG_PRINT(" move msg ");;
 #endif
 				bufferMove(mstart);
+				mstart = 0;
 				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 			} 
 			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
 #ifdef DEBUGDECODE
 				DBG_PRINT(" move msg ");;
 #endif
-				bufferMove(mend);
+				bufferMove(mend+1);
+				mstart = 0;
 				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 				success = true;	// don't process other message types
 			}
@@ -506,6 +511,8 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT("C="); MSG_PRINT(mcdecoder.clock); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					MSG_PRINT(MSG_END);
+					MSG_PRINT("\n");
 #ifdef DEBUGDECODE
 					DBG_PRINTLN("");
 #endif
@@ -571,7 +578,7 @@ void SignalDetectorClass::processMessage()
 						MSG_PRINT("d");
 					}
 
-					for (uint8_t i = 0; i <= messageLen; i=i+2) {					
+					for (uint8_t i = 0; i < messageLen; i=i+2) {					
 						message.getByte(i/2,&n);
 						MSG_WRITE(n);
 					}
@@ -603,7 +610,7 @@ void SignalDetectorClass::processMessage()
 				if (m_overflow) {
 					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
 				}
-				MSG_PRINT(MSG_END);  MSG_PRINT('\n');
+				MSG_PRINT(MSG_END);  MSG_PRINT("\n");
 				
 				m_truncated = false;
 				success = true;
