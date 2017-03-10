@@ -36,10 +36,13 @@ namespace cc1101 {
 	#define CC1100_FREQ1       0x0E  // Frequency control word, middle byte
 	#define CC1100_FREQ0       0x0F  // Frequency control word, low byte
 	#define CC1100_PATABLE     0x3E  // 8 byte memory
-	
+	#define CC1100_IOCFG2      0x00  // GDO2 output configuration
+	#define CC1100_PKTCTRL0    0x08  // Packet config register
+
 	// Status registers
 	#define CC1100_RSSI      0x34 // Received signal strength indication
 	#define CC1100_MARCSTATE 0x35 // Control state machine state
+
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset
 	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
@@ -80,12 +83,13 @@ namespace cc1101 {
 	#define CC1100_STATE_RX_OVERFLOW               0x60
 	#define CC1100_STATE_TX_UNDERFLOW              0x70
 	
+
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat geändert wird
 	#endif
 	static const uint8_t initVal[] PROGMEM = 
 	{
-		// IDX NAME     RESET   COMMENT
+		      // IDX NAME     RESET   COMMENT
 		0x0D, // 00 IOCFG2    29     GDO2 as serial output
 		0x2E, // 01 IOCFG1           Tri-State
 		0x2D, // 02 IOCFG0    3F     GDO0 for input
@@ -150,7 +154,7 @@ namespace cc1101 {
 	}
 
 
-	uint8_t sendSPI(const uint8_t val) {					     // send byte via SPI
+	uint8_t sendSPI(const uint8_t val) {				 // send byte via SPI
 		SPDR = val;                                      // transfer byte via SPI
 		while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
 		return SPDR;
@@ -449,6 +453,19 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		delay(1);
 		setReceiveMode();
 	}
+
+	bool regCheck()
+	{
+		
+		/*DBG_PRINT("CC1100_PKTCTRL0="); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));
+		DBG_PRINT(" vs initVal PKTCTRL0="); DBG_PRINTLN(initVal[CC1100_PKTCTRL0]);
+
+		DBG_PRINT("C1100_IOCFG2="); DBG_PRINT(readReg(CC1100_IOCFG2, CC1101_CONFIG));
+		DBG_PRINT(" vs initVal IOCFG2="); DBG_PRINTLN(initVal[CC1100_IOCFG2]);
+		*/
+		return (readReg(CC1100_PKTCTRL0, CC1101_CONFIG) == initVal[CC1100_PKTCTRL0]) && (readReg(CC1100_IOCFG2, CC1101_CONFIG) == initVal[CC1100_IOCFG2]);
+	}
+
 }
 
 #endif

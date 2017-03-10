@@ -159,7 +159,6 @@ void setup() {
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
-	DBG_PRINTLN("Using sFIFO");
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
@@ -171,13 +170,15 @@ void setup() {
   	initEEPROM();
 	
 	#ifdef CMP_CC1101
-	DBG_PRINTLN("CCInit");	
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	
-	if (hasCC1101)		
+	if (hasCC1101)
+	{
+		DBG_PRINTLN("CC1101 found");
 		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	else 
+	} 
+	else
 		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
 	#endif 
 
@@ -192,11 +193,15 @@ void setup() {
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
 	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
-
-
-	enableReceive();
 	cmdstring.reserve(40);
-	DBG_PRINTLN("receiver enabled");
+
+	if (!hasCC1101 || cc1101::regCheck()) {
+		enableReceive();
+		DBG_PRINTLN(F("receiver enabled"));
+	}
+	else {
+		DBG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
+	}
 }
 
 void cronjob() {
