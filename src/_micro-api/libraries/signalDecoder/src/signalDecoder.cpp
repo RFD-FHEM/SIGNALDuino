@@ -93,12 +93,10 @@ inline void SignalDetectorClass::doDetect()
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 		//if (messageLen == 0) valid = true;
 	if (!valid) {
-		if (mcDetected == true || messageLen >= minMessageLen) {
-			// Try output
-			processMessage();
-		} else {
+		// Try output
+		processMessage();
+		if (messageLen < minMessageLen) {
 			MsMoveCount = 3;
-			reset();
 		}
 		
 	}
