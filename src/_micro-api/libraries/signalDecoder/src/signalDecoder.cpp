@@ -148,7 +148,7 @@ inline void SignalDetectorClass::doDetect()
 	addData(fidx);
 
 
-#if DEBUGDETCT > 3
+#if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
 		DBG_PRINT(", "); DBG_PRINT(*last);
 		DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
@@ -746,7 +746,7 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	*/
 	uint16_t bstartpos = startpos *4/8;
 	uint16_t bendpos = endpos*4 / 8;
-	unsigned char bval;
+	uint8_t bval;
 	for (uint8_t i = bstartpos; i<bendpos; ++i)
 	{
 		message.getByte(i,&bval);
@@ -952,10 +952,8 @@ void ManchesterpatternDecoder::reset()
 	mc_sync = false;
 
 	clock = 0;
-	minbitlen = 20; // Set defaults
+	//minbitlen = 20; // Set defaults
 	ManchesterBits.reset();
-
-
 }
 /** @brief (Sets internal minbitlen to new value)
 *
@@ -1504,10 +1502,10 @@ const bool ManchesterpatternDecoder::isManchester()
 					if ( ((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
 					{  
 #if DEBUGDETECT >= 1
-						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[i]); DBG_PRINT(";")
+						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[z]); DBG_PRINT(";")
 
-						DBG_PRINT("Long"); DBG_PRINT(isLong(pdec->message[i])); DBG_PRINT(";");
-						DBG_PRINT("Short"); DBG_PRINT(isShort(pdec->message[i])); DBG_PRINTLN(";");
+						DBG_PRINT("Long"); DBG_PRINT(isLong(pdec->message[z])); DBG_PRINT(";");
+						DBG_PRINT("Short"); DBG_PRINT(isShort(pdec->message[z])); DBG_PRINTLN(";");
 
 #endif
 						if ((z - pdec->mstart) > minbitlen)  // Todo: Hier wird auf minbitlen geprueft. Die Differenz zwischen mstart und mend sind aber Pulse und keine bits
@@ -1551,9 +1549,7 @@ const bool ManchesterpatternDecoder::isManchester()
 #if DEBUGDETECT >= 1
 							DBG_PRINTLN("  -- MC found -- ");
 #endif
-
-							return true;;
-
+							return true;
 						}
 						else {
 							mc_start_found = false;
