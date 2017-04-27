@@ -1,5 +1,5 @@
 /*
-*   RF_RECEIVER v3.2 for Arduino
+*   RF_RECEIVER v3.3 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
 *
 *   The Sketch can also encode and send data via a transmitter,
@@ -61,7 +61,7 @@
 #define DEBUG				   1
 
 
-
+#include <avr/wdt.h>
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
@@ -155,21 +155,44 @@ uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be re
 
 
 void setup() {
+
 	Serial.begin(BAUDRATE);
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
+	if (MCUSR & (1 << WDRF)) {
+		DBG_PRINTLN("Watchdog caused a reset");
+	}
+	/*
+	if (MCUSR & (1 << BORF)) {
+		DBG_PRINTLN("brownout caused a reset");
+	}
+	if (MCUSR & (1 << EXTRF)) {
+		DBG_PRINTLN("external reset occured");
+	}
+	if (MCUSR & (1 << PORF)) {
+		DBG_PRINTLN("power on reset occured");
+	}
+	*/
+	wdt_reset();
+
+	wdt_enable(WDTO_2S);  	// Enable Watchdog
+
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
 	
+	wdt_reset();
+
 	#ifdef CMP_CC1101
 	cc1101::setup();
 	#endif
   	initEEPROM();
 	
 	#ifdef CMP_CC1101
+	DBG_PRINT(F("CCInit "));
+
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	
@@ -177,9 +200,9 @@ void setup() {
 	{
 		DBG_PRINTLN("CC1101 found");
 		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	} 
-	else
+	} else {
 		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
+	}
 	#endif 
 
 	pinAsOutput(PIN_SEND);
@@ -243,6 +266,7 @@ void loop() {
 		if (!command_available) { cmdstring = ""; }
 		blinkLED=true;
 	}
+	wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
 		aktVal=FiFo.dequeue();
@@ -882,15 +906,11 @@ void getFunctions(bool *ms,bool *mu,bool *mc)
 void initEEPROM(void) {
 
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
-    #ifdef DEBUG
-    MSG_PRINTLN("Reading values fom eeprom");
-    #endif
+    DBG_PRINTLN("Reading values fom eeprom");
   } else {
     storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
     //hier fehlt evtl ein getFunctions()
-    #ifdef DEBUG
-    MSG_PRINTLN("Init eeprom to defaults after flash");
-    #endif
+    DBG_PRINTLN("Init eeprom to defaults after flash");
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
     // if (hasCC1101) {                // der ccFactoryReset muss auch durchgefuehrt werden, wenn der cc1101 nicht erkannt wurde
