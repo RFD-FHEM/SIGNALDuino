@@ -6,7 +6,7 @@
 *   while only PT2262 type-signals for Intertechno devices are implemented in the sketch,
 *   there is an option to send almost any data over a send raw interface
 *   2014-2015  N.Butzek, S.Butzek
-*   2016 S.Butzek
+*   2016-2017 S.Butzek
 
 *   This software focuses on remote sensors like weather sensors (temperature,
 *   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
@@ -49,6 +49,8 @@
 		#define PIN_SEND              3   // gdo0Pin TX out
 	    #define PIN_RECEIVE           2
 	#endif
+
+  #endif
 
 #else
   #define PIN_LED               13    // Message-LED
@@ -145,6 +147,7 @@ void getConfig();
 void enDisPrint(bool enDis);
 void getPing();
 void configCMD();
+void configSET();
 void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
 void getFunctions(bool *ms,bool *mu,bool *mc);
 void initEEPROM(void);
@@ -189,7 +192,6 @@ void setup() {
 	cc1101::setup();
 	#endif
   	initEEPROM();
-	
 	#ifdef CMP_CC1101
 	DBG_PRINT(F("CCInit "));
 
@@ -633,16 +635,19 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_changeFilter) {
   }
   else if (cmdstring.charAt(0) == cmd_config) {
-    if (cmdstring.charAt(1) == 'G') {
-      getConfig();
-    }
-    else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {  //Todo:  E und D sind auch hexadezimal, werden hier aber abgefangen
-      configCMD();
-    }
-    else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
-      reg = cmdstringPos2int(1);
-      cc1101::readCCreg(reg);
-    }
+	  if (cmdstring.charAt(1) == 'G') {
+		  getConfig();
+	  }
+	  else if (cmdstring.charAt(1) == 'E' || cmdstring.charAt(1) == 'D') {  //Todo:  E und D sind auch hexadezimal, werden hier aber abgefangen
+		  configCMD();
+	  }
+	  else if (cmdstring.charAt(1) == 'S') {
+		  configSET();
+	  }
+      else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
+		reg = cmdstringPos2int(1);
+		cc1101::readCCreg(reg);
+      }
     else {
       MSG_PRINTLN(F("Unsupported command"));
     }
@@ -707,7 +712,7 @@ uint8_t cmdstringPos2int(uint8_t pos) {
 }
 
 
-void getConfig()
+inline void getConfig()
 {
    MSG_PRINT(F("MS="));
    //enDisPrint(musterDec.MSenabled);
@@ -721,7 +726,7 @@ void getConfig()
 }
 
 
-void enDisPrint(bool enDis)
+inline void enDisPrint(bool enDis)
 {
    if (enDis) {
       MSG_PRINT(F("enable"));
@@ -732,7 +737,7 @@ void enDisPrint(bool enDis)
 }
 
 
-void configCMD()
+inline void configCMD()
 {
   bool *bptr;
 
@@ -757,12 +762,21 @@ void configCMD()
   storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled);
 }
 
+inline void configSET()
+{ 
+	//MSG_PRINT(cmdstring.substring(2, 8));
+	if (cmdstring.substring(2,8) == "mcmbl=")    // mc min bit len
+	{	
+		musterDec.mcMinBitLen = cmdstring.substring(8).toInt(); 
+		MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
+	}
+}
 
 void serialEvent()
 {
   while (MSG_PRINTER.available())
   {
-    char inChar = (char)MSG_PRINTER.read();
+    char inChar = (char)MSG_PRINTER.read(); 
     switch(inChar)
     {
     case '\n':
@@ -842,7 +856,7 @@ int freeRam () {
 
  }
 
-unsigned long getUptime()
+inline unsigned long getUptime()
 {
 	unsigned long now = millis();
 	static uint16_t times_rolled = 0;
@@ -857,13 +871,13 @@ unsigned long getUptime()
 	return seconds;
 }
 
-void getPing()
+inline void getPing()
 {
 	MSG_PRINTLN("OK");
 	delayMicroseconds(500);
 }
 
-void changeReceiver() {
+inline void changeReceiver() {
   if (cmdstring.charAt(1) == 'Q')
   {
   	disableReceive();
