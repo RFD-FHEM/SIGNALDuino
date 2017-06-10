@@ -66,7 +66,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		messageLen++;
 	}
 	else {
-		MSG_PRINTLN(F("addData overflow!!!"));
+		MSG_PRINTLN(F("addData overflow!!"));
 	}
 }
 
