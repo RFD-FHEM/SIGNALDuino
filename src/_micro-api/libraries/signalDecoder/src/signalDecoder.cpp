@@ -500,6 +500,7 @@ void SignalDetectorClass::processMessage()
 					}
 					MSG_PRINTLN(MSG_END);
 #endif
+					MSG_PRINT(MSG_START);
 					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
@@ -513,6 +514,7 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					MSG_PRINT(MSG_END);
 					MSG_PRINT("\n");
+
 #ifdef DEBUGDECODE
 					DBG_PRINTLN("");
 #endif
