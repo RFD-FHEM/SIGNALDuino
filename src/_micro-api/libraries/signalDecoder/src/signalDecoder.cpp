@@ -1145,11 +1145,27 @@ const bool ManchesterpatternDecoder::doDecode() {
 	while (i < pdec->messageLen)
 	{
 		// Start vom MC Signal suchen
-		if (mc_start_found == false && (isLong(pdec->message[i]) || isShort(pdec->message[i])))
+		if (mc_sync == false && (isLong(pdec->message[i])))
+		{
+			mc_sync = true;
+			pdec->mstart = i;  // Save sync position for later
+			//if (i > 2) i=i-2;
+			while (i>1)
+			{
+				
+				if (!isShort(pdec->message[i-1]) || !isShort(pdec->message[i -2])) 
+				{ 
+					break;
+				}
+				i = i - 2;
+			}
+		}
+
+		if (mc_sync && mc_start_found == false && (isLong(pdec->message[i]) || isShort(pdec->message[i])))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
-			mc_sync = true;
+			//mc_sync = true;
 
 			// lookup for first long
 			int pulseCnt = 0; 
@@ -1229,16 +1245,16 @@ const bool ManchesterpatternDecoder::doDecode() {
 		if (mc_sync && mc_start_found)
 		{
 			#ifdef DEBUGDECODE
-			char value;
+			char value=NULL;
 			#endif
-			if (isShort(pdec->message[i])) //Todo: Check for second short
+			if (isShort(pdec->message[i]) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
 			{
-				hasbit = ht;
-				ht = !ht;
+				ht = true;
+			    hasbit = true;
+				i++;
 				#ifdef DEBUGDECODE
 				value = 'S';
 				#endif
-				
 			}
 			else if (isLong(pdec->message[i])) {
 				hasbit = true;
@@ -1293,7 +1309,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 					//pdec->printOut();
 					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
 					//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-					mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
+					if (i+1 ==pdec->messageLen && !isShort(pdec->message[pdec->messageLen]))
+						mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 			
 					//if (i+minbitlen > pdec->messageLen)
 					/*
