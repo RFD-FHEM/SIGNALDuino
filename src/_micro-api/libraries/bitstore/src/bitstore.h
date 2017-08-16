@@ -38,7 +38,7 @@ public:
 	unsigned char datastore[bufSize];
 	void reset();
 	bool getByte(const uint8_t idx, uint8_t *retvalue);
-		uint8_t bytecount;  // Number of stored bytes
+	uint8_t bytecount;  // Number of stored bytes
 	uint16_t valcount;  // Number of total values stored
 
 	int8_t operator[](const uint16_t pos) {

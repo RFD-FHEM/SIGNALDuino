@@ -54,9 +54,9 @@
 #define SERIAL_DELIMITER ';'
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
-#define DEBUGDETECT 3
+//#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 2
+//#define DEBUGDECODE 2
 
 enum status { searching, clockfound, syncfound, detecting };
 

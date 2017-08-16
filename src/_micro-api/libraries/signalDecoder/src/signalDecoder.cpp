@@ -522,8 +522,7 @@ void SignalDetectorClass::processMessage()
 //					printMsgStr(&preamble, &mcbitmsg, &postamble);
 					mcDetected = false;
 					success = true;
-
-
+					
 
 				}
 				else if (mcDetected == true && m_truncated == true) {
@@ -1141,12 +1140,15 @@ const bool ManchesterpatternDecoder::doDecode() {
 //	char  lastbit;
 	bool ht = false;
 	bool hasbit = false;
+	uint8_t bit = 0;
 
 	while (i < pdec->messageLen)
 	{
 		// Start vom MC Signal suchen
 		if (mc_sync == false && (isLong(pdec->message[i])))
 		{
+			if (i>0) // Todo: Prüfen ob das 1. Bit damit korrekt ermittelt wird
+				bit = pdec->message[i] == longhigh ? 1 : 0;
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 			//if (i > 2) i=i-2;
@@ -1157,6 +1159,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				{ 
 					break;
 				}
+
 				i = i - 2;
 			}
 		}
@@ -1170,6 +1173,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 			// lookup for first long
 			int pulseCnt = 0; 
 			bool preamble = false;
+
+			if (i > 0)
+				ManchesterBits.addValue(pdec->pattern[pdec->message[i]] > 0 ? 1 : 0);
+
+			// Todo: Prüfen ob noch notwendig
 			for (uint8_t l=i; l<pdec->messageLen; l++) {
 				bool pulseIsLong = isLong(pdec->message[l]);
 				
@@ -1249,14 +1257,16 @@ const bool ManchesterpatternDecoder::doDecode() {
 			#endif
 			if (isShort(pdec->message[i]) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
 			{
+				
+				i++;
 				ht = true;
 			    hasbit = true;
-				i++;
 				#ifdef DEBUGDECODE
 				value = 'S';
 				#endif
 			}
 			else if (isLong(pdec->message[i])) {
+				bit = bit ^ (1);
 				hasbit = true;
 				ht = true;
 				#ifdef DEBUGDECODE
@@ -1307,20 +1317,38 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 #endif
 					//pdec->printOut();
+					if (i == maxMsgSize-1 && i == pdec->messageLen && isShort(pdec->message[i]))
+					{
+						pdec->mcDetected = true;
+					}
+		
 					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
 					//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-					if (i+1 ==pdec->messageLen && !isShort(pdec->message[pdec->messageLen]))
-						mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
-			
-					//if (i+minbitlen > pdec->messageLen)
-					/*
-					if ( isShort(pdec->message[pdec->messageLen]) )
-					{
+#ifdef DEBUGDECODE
+					DBG_PRINT(":mpos=");
+					DBG_PRINT(i);
+					DBG_PRINT(":mstart=");
+					DBG_PRINT(pdec->mstart);
+					DBG_PRINT(":mend:");
+					DBG_PRINT(pdec->mend);
+					DBG_PRINT(":mlen:");
+					DBG_PRINT(pdec->messageLen);
+					DBG_PRINT(":found:");
+					DBG_PRINT(":pidx=");
+					DBG_PRINT(pdec->message[i]);
+					DBG_PRINT(":minblen=");
+					DBG_PRINT(ManchesterBits.valcount>=minbitlen);
 
-						pdec->mcDetected = true;
-						return false;
-					}
+					
+					//DBG_PRINT(pdec->pattern[pdec->message[i]]);
+
+#endif
+					/*
+					if (i+1 ==pdec->messageLen && !isShort(pdec->message[pdec->messageLen-1]))
+						mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
 					*/
+							
+				
 					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 #ifdef DEBUGDECODE
@@ -1337,7 +1365,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 	
 				if (hasbit) {
-					ManchesterBits.addValue((pdec->pattern[pdec->message[i]] > 0 ? 1 : 0));
+					ManchesterBits.addValue(bit);
 #ifdef DEBUGDECODE
 					DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
 #endif
