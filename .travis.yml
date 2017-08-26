@@ -21,8 +21,8 @@ install:
   - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
   - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
   - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
+  - ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
   - mkdir $PWD/release
-
   #- arduino --install-boards arduino:avr:uno
   #- arduino --install-boards arduino:avr:nano
   - arduino --board arduino:avr:nano --save-prefs
