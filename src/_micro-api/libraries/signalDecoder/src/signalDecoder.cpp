@@ -66,7 +66,12 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		messageLen++;
 	}
 	else {
-		MSG_PRINTLN(F("addData overflow!!"));
+		MSG_PRINT("val="); MSG_PRINT(value);
+		MSG_PRINT(" msglen="); MSG_PRINT(messageLen);
+		MSG_PRINT(" bytecnt="); MSG_PRINT(message.bytecount); 
+		MSG_PRINT(" valcnt="); MSG_PRINT(message.valcount);
+		MSG_PRINT(" mTrunc="); MSG_PRINT(m_truncated);
+		MSG_PRINTLN(F(" addData overflow!!"));
 	}
 }
 
