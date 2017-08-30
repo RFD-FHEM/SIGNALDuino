@@ -31,14 +31,15 @@
 */
 //#define CMP_MEMDBG 1
 
-#define CMP_CC1101
+//#define CMP_CC1101
 
+#define PROGVERS               "3.3.1-dev"
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.1-devmc"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
 #ifdef CMP_CC1101
+
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 		#define PIN_LED               13
 		#define PIN_SEND              9   // gdo0Pin TX out
