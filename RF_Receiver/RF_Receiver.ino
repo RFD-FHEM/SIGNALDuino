@@ -49,8 +49,11 @@
 		#define PIN_SEND              3   // gdo0Pin TX out
 	    #define PIN_RECEIVE           2
 	#endif
-
-  #endif
+#else
+	#define PIN_RECEIVE            2
+	#define PIN_LED                13 // Message-LED
+	#define PIN_SEND               11
+#endif
 
 
 #define BAUDRATE               57600
