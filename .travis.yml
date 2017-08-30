@@ -45,4 +45,4 @@ deploy:
     repo: RFD-FHEM/SIGNALESP
     tags: true
     condition: "$TRAVIS_TAG =~ ^release.*$"
-    branch: dev-cc1101
+    branch: dev-r33_cc1101
