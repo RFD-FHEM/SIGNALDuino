@@ -32,6 +32,7 @@
 //#define CMP_MEMDBG 1
 
 //#define CMP_CC1101
+//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 
 #define PROGVERS               "3.3.1-dev"
 #define PROGNAME               "RF_RECEIVER"
