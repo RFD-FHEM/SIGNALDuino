@@ -741,13 +741,16 @@ inline void configCMD()
   bool *bptr;
 
   if (cmdstring.charAt(2) == 'S') {  	  //MS
-	bptr=&musterDec.MSenabled;;
+	bptr=&musterDec.MSenabled;
   }
   else if (cmdstring.charAt(2) == 'U') {  //MU
-	bptr=&musterDec.MUenabled;;
+	bptr=&musterDec.MUenabled;
   }
   else if (cmdstring.charAt(2) == 'C') {  //MC
-	bptr=&musterDec.MCenabled;;
+	bptr=&musterDec.MCenabled;
+  }
+  else if (cmdstring.charAt(2) == 'R') {  //Mreduce
+	  bptr = &musterDec.MredEnabled;
   }
 
   if (cmdstring.charAt(1) == 'E') {   // Enable
@@ -758,7 +761,7 @@ inline void configCMD()
   } else {
 	return;
   }
-  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled);
+  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
 }
 
 inline void configSET()
@@ -898,21 +901,25 @@ inline void changeReceiver() {
 
 //================================= EEProm commands ======================================
 
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc)
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red)
 {
 	mu=mu<<1;
 	mc=mc<<2;
-	int8_t dat =  ms | mu | mc;
-    EEPROM.write(addr_features,dat);
+	red = red << 3;
+
+	int8_t dat = ms | mu | mc | red;
+	EEPROM.write(addr_features,dat);
 }
 
-void getFunctions(bool *ms,bool *mu,bool *mc)
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red)
 {
     int8_t dat = EEPROM.read(addr_features);
 
     *ms=bool (dat &(1<<0));
     *mu=bool (dat &(1<<1));
     *mc=bool (dat &(1<<2));
+	*red = bool(dat &(1 << 3));
+
 
 }
 
@@ -921,7 +928,7 @@ void initEEPROM(void) {
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
     DBG_PRINTLN("Reading values fom eeprom");
   } else {
-    storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
+    storeFunctions(1, 1, 1,1);    // Init EEPROM with all flags enabled
     //hier fehlt evtl ein getFunctions()
     DBG_PRINTLN("Init eeprom to defaults after flash");
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
@@ -930,7 +937,7 @@ void initEEPROM(void) {
        cc1101::ccFactoryReset();
     //}
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled,&musterDec.MredEnabled);
 
 }
 

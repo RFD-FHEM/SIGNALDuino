@@ -116,7 +116,7 @@ public:
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
-	FuncRetuint8t _rssiCallback;			// Holds the pointer to a callback Function
+	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function
 
 	void addData(const uint8_t value);
 	void addPattern();
