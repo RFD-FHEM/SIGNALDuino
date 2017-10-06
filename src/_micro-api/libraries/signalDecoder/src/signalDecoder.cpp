@@ -36,7 +36,8 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 	m_truncated = false;
 	//DBG_PRINTLN("");
 	if (start > messageLen - 1 || start == 0) {
-		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start); DBG_PRINT(" "); DBG_PRINT(messageLen);
+		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start); DBG_PRINT(" "); DBG_PRINTLN(messageLen);
+		reset();
 	}
 	else if (message.moveLeft(start))
 	{
