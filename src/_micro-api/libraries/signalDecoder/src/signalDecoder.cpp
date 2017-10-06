@@ -356,7 +356,10 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("C");  MSG_PRINT(clock, HEX);  MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("S");  MSG_PRINT(sync, HEX);  MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);				}
+					#ifdef CMP_CC1101
+					  MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);
+					#endif				
+			        }
 				else {
 					MSG_PRINT(MSG_START); MSG_PRINT("MS");  MSG_PRINT(SERIAL_DELIMITER);		
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -373,7 +376,9 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);     // ClockPulse
 					MSG_PRINT("SP="); MSG_PRINT(sync);      MSG_PRINT(SERIAL_DELIMITER);     // SyncPulse
-					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
+					#ifdef CMP_CC1101
+					  MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					#endif					
 				}
 				
 				if (m_overflow) {
@@ -517,7 +522,9 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("C="); MSG_PRINT(mcdecoder.clock); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					#ifdef CMP_CC1101
+					  MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					#endif
 					MSG_PRINT(MSG_END);
 					MSG_PRINT("\n");
 
@@ -592,7 +599,9 @@ void SignalDetectorClass::processMessage()
 
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("C");  MSG_PRINT(clock, HEX);  MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);				
+					#ifdef CMP_CC1101
+					  MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);
+					#endif				
 				}
 				else {
 				
@@ -611,7 +620,9 @@ void SignalDetectorClass::processMessage()
 					//String postamble;
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-					MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+					#ifdef CMP_CC1101
+					  MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+				        #endif
 				}
 				
 				if (m_overflow) {

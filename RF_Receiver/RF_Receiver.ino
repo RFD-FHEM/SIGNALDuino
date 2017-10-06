@@ -31,7 +31,7 @@
 */
 //#define CMP_MEMDBG 1
 
-//#define CMP_CC1101
+#define CMP_CC1101
 
 #define PROGVERS               "3.3.1-dev"
 #define PROGNAME               "RF_RECEIVER"
@@ -714,25 +714,13 @@ uint8_t cmdstringPos2int(uint8_t pos) {
 inline void getConfig()
 {
    MSG_PRINT(F("MS="));
-   //enDisPrint(musterDec.MSenabled);
    MSG_PRINT(musterDec.MSenabled,DEC);
    MSG_PRINT(F(";MU="));
-   //enDisPrint(musterDec.MUenabled);
    MSG_PRINT(musterDec.MUenabled, DEC);
    MSG_PRINT(F(";MC="));
-   //enDisPrint(musterDec.MCenabled);
-   MSG_PRINTLN(musterDec.MCenabled, DEC);
-}
-
-
-inline void enDisPrint(bool enDis)
-{
-   if (enDis) {
-      MSG_PRINT(F("enable"));
-   }
-   else {
-      MSG_PRINT(F("disable"));
-   }
+   MSG_PRINT(musterDec.MCenabled, DEC);
+   MSG_PRINT(F(";Mred="));
+   MSG_PRINTLN(musterDec.MredEnabled, DEC);
 }
 
 
@@ -930,12 +918,12 @@ void initEEPROM(void) {
   } else {
     storeFunctions(1, 1, 1,1);    // Init EEPROM with all flags enabled
     //hier fehlt evtl ein getFunctions()
-    DBG_PRINTLN("Init eeprom to defaults after flash");
+    MSG_PRINTLN(F("Init eeprom to defaults after flash"));
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
-    // if (hasCC1101) {                // der ccFactoryReset muss auch durchgefuehrt werden, wenn der cc1101 nicht erkannt wurde
+    #ifdef CMP_CC1101
        cc1101::ccFactoryReset();
-    //}
+    #endif
   }
   getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled,&musterDec.MredEnabled);
 
