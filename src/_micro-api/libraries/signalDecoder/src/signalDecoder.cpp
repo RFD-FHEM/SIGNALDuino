@@ -86,6 +86,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
 		MSG_PRINT(F(" state=")); MSG_PRINT(state);
 		MSG_PRINTLN(F(" addData overflow!!"));
+		printOut();
 	}
 }
 
