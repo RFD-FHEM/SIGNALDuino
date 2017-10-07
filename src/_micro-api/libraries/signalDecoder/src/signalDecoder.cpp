@@ -653,9 +653,37 @@ void SignalDetectorClass::processMessage()
 		
 		if (success == false) 
 		{
+			if (m_truncated)
+			{
+// no clock, not mc but truncated buffer, so we are now here
+
+				int dp = 2000;  // marked as max value, but outside buffer range
+				for (uint8_t i = 0; i < patternLen; i++)
+				{
+					if (pattern[i] > 0)
+					{
+						if (min(pattern[i], dp) < dp)
+						{
+							dp = i;
+						}
+					}
+				}
+				for (uint8_t i = 0; i < messageLen && dp<2000; i++)
+				{
+					if (message[i] == dp) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
+					{
+						i--; // i verringern, damit ein zusätzlicher Wert erhalten bleibt
+						bufferMove(i);
+						break;
+					}
+				}
+			}
+			else {
+
 #if DEBUGDETECT >= 1
-			DBG_PRINTLN("nothing to to");
-#endif
+				DBG_PRINTLN("nothing to to");
+#endif		
+			}
 		}
 	}
 	if (!m_truncated)  // Todo: Eventuell auf vollen Puffer prüfen
@@ -712,12 +740,22 @@ const bool SignalDetectorClass::inTol(const int val, const int set, const int to
 void SignalDetectorClass::printOut()
 {
 	DBG_PRINTLN("");
+
+	DBG_PRINT("Sync: ");
 	if (sync > -1) {
-		DBG_PRINT("Sync: ");DBG_PRINT(pattern[sync]);
-		DBG_PRINT(" -> SyncFact: "); DBG_PRINT(pattern[sync] / (float)pattern[clock]);
-		DBG_PRINT(",");
+		if (sync > -1) {
+			DBG_PRINT(pattern[sync]);
+			DBG_PRINT(" -> SyncFact: "); DBG_PRINT(pattern[sync] / (float)pattern[clock]);
+			DBG_PRINT(",");
+		} else 
+			DBG_PRINT("NULL");
+		
 	}
-	DBG_PRINT(" Clock: "); DBG_PRINT(pattern[clock]);
+	DBG_PRINT(" Clock: "); 
+	if (clock > -1) {
+		DBG_PRINT(pattern[clock]);
+	} else
+		DBG_PRINT("NULL");
 	DBG_PRINT(", Tol: "); DBG_PRINT(tol);
 	DBG_PRINT(", PattLen: "); DBG_PRINT(patternLen); DBG_PRINT(" ("); DBG_PRINT(pattern_pos); DBG_PRINT(")");
 	DBG_PRINT(", Pulse: "); DBG_PRINT(*first); DBG_PRINT(", "); DBG_PRINT(*last);
