@@ -34,10 +34,20 @@
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
-	//DBG_PRINTLN("");
-	if (start > messageLen - 1 || start == 0) {
-		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" start oor "); 	DBG_PRINT(start); DBG_PRINT(" "); DBG_PRINTLN(messageLen);
+
+	if (start > messageLen - 1) {
+		if (patternLen != maxNumPattern) {
+			MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+			MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+			MSG_PRINT(F(" start=")); MSG_PRINT(start);
+			MSG_PRINT(F(" patternLen")); MSG_PRINT(patternLen);
+			MSG_PRINTLN(F(" bufferMove overflow!!"));
+		}
 		reset();
+	}
+	else if (start == 0)
+	{
+	
 	}
 	else if (message.moveLeft(start))
 	{
@@ -67,11 +77,14 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		messageLen++;
 	}
 	else {
-		MSG_PRINT("val="); MSG_PRINT(value);
-		MSG_PRINT(" msglen="); MSG_PRINT(messageLen);
-		MSG_PRINT(" bytecnt="); MSG_PRINT(message.bytecount); 
-		MSG_PRINT(" valcnt="); MSG_PRINT(message.valcount);
-		MSG_PRINT(" mTrunc="); MSG_PRINT(m_truncated);
+		MSG_PRINT(F("val=")); MSG_PRINT(value);
+		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
+		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount); 
+		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+		MSG_PRINT(F(" state=")); MSG_PRINT(state);
 		MSG_PRINTLN(F(" addData overflow!!"));
 	}
 }
@@ -443,7 +456,7 @@ void SignalDetectorClass::processMessage()
 			}
 			else {
 #ifdef DEBUGDECODE
-				MSG_PRINTLN(" Buffer overflow, flushing message array");
+				MSG_PRINTLN(F(" Buffer overflow, flushing message array"));
 #endif
 				//MSG_PRINT(MSG_START);
 				//MSG_PRINT("Buffer overflow while processing signal");
