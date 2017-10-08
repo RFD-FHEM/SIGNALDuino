@@ -105,7 +105,7 @@ public:
 	uint16_t tol;                           // calculated tolerance for signal
 	//uint8_t bitcnt;
 	status state;                           // holds the status of the detector
-	int buffer[1];                          // Internal buffer to store two pules length
+	int buffer[2];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
 	int* last;                              // Pointer to last buffer entry
 	float tolFact;                          //
