@@ -121,6 +121,13 @@ inline void SignalDetectorClass::doDetect()
 			MsMoveCount = 3;
 		}
 		
+		if (messageLen == maxMsgSize )
+		{
+			DBG_PRINT(millis());
+			DBG_PRINTLN(F(" mb f a t proc ")); // message buffer full after try proccessMessage
+			printOut();
+		}
+		
 	}
 	else if (messageLen == minMessageLen) {
 		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
@@ -140,8 +147,20 @@ inline void SignalDetectorClass::doDetect()
 		if (patternLen == maxNumPattern)
 		{
 			calcHisto();
-			if (histo[patternLen] > 2) processMessage();
-			for (int16_t i = messageLen - 1; i > 0; --i)
+			if (histo[pattern_pos] > 2)
+			{
+				processMessage();
+				calcHisto();
+
+				if (!success && messageLen > 250)
+				{
+					DBG_PRINT(millis());
+					DBG_PRINTLN(F(" pb f a proc"));  // pattern buffer full after proccessMessage
+					printOut();
+
+				}
+			}
+			for (uint8_t i = messageLen - 1; i >= 0 && histo[pattern_pos] > 0; --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 				{
@@ -150,7 +169,14 @@ inline void SignalDetectorClass::doDetect()
 					
 					break;
 				}
+				if (i == 1 && messageLen > 250)
+				{
+					DBG_PRINT(millis());
+
+					DBG_PRINTLN(F(" mb nm b proc "));  // message buffer not moved before  proccessMessage
+				}
 			}
+			
 		}
 
 		fidx = pattern_pos;
