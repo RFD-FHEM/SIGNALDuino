@@ -126,6 +126,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
 		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount); 
 		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" patLen=")); MSG_PRINT(patternLen);
 		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
 		MSG_PRINT(F(" state=")); MSG_PRINT(state);
 
@@ -209,8 +210,15 @@ inline void SignalDetectorClass::doDetect()
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 				{
 					i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
-					bufferMove(i);
-					
+					if (message.moveLeft(i)) {
+						if (messageLen > 250) {
+							MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+							MSG_PRINT(F(" i=")); MSG_PRINT(i);
+							MSG_PRINT(F(" state=")); MSG_PRINT(state);
+							MSG_PRINTLN(F(" patLen==MaxPatLen moveLeft"));
+						}
+						messageLen = messageLen - i;
+					}
 					break;
 				}
 				if (i == 1 && messageLen > 250)
@@ -339,6 +347,12 @@ void SignalDetectorClass::processMessage()
 	if (mcDetected == true || messageLen >= minMessageLen) {
 		success = false;
 		m_overflow = (messageLen == maxMsgSize) ? true : false;
+		if (messageLen >= maxMsgSize && state == searching){
+			MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+			MSG_PRINT(F(" patLen=")); MSG_PRINT(patternLen);
+			MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+			MSG_PRINTLN(F(" m_overflow & state=searching!!"));
+		}
 
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("Message received:");
@@ -738,10 +752,11 @@ void SignalDetectorClass::processMessage()
 		
 		if (success == false) 
 		{
-			if (m_truncated)
+			/*if (m_truncated)
 			{
 				// no clock, not mc but truncated buffer, so we are now here
 
+				MSG_PRINTLN(F("m_truncated no clock!!!"));
 				int dp = 2000;  // marked as max value, but outside buffer range
 				for (uint8_t i = 0; i < patternLen; i++)
 				{
@@ -768,7 +783,7 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDETECT >= 1
 				DBG_PRINTLN("nothing to to");
 #endif		
-			}
+			} */
 		}
 	}
 	if (!m_truncated)  // Todo: Eventuell auf vollen Puffer prüfen
