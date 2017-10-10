@@ -138,7 +138,8 @@ public:
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
-	
+	bool checkMBuffer();
+
 
 };
 

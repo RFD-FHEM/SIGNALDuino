@@ -30,6 +30,19 @@
 */
 #include "signalDecoder.h"
 
+//Helper function to check buffer for bad data
+bool SignalDetectorClass::checkMBuffer()
+{
+	for (uint8_t i = 0; i < messageLen-1; i++)
+	{
+		
+		if ( (message[i] ^ message[i+1]) < 0) 
+		{
+			return false;
+		}
+	}
+	return true;
+}
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
@@ -60,6 +73,20 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
 		//printOut();
 	}
+	if (!checkMBuffer())
+	{
+		MSG_PRINTLN(F("after buffermove ->"));
+
+		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
+		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
+		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINTLN(F(" wrong Data in Buffer"));
+		printOut();
+	}
 
 
 }
@@ -72,6 +99,22 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 	{
 		DBG_PRINTLN(""); 	DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
 	}*/
+	if (!checkMBuffer())
+	{
+		MSG_PRINTLN(F("addData ->"));
+
+		MSG_PRINT(F("val=")); MSG_PRINT(value);
+		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
+		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
+		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINTLN(F(" wrong Data in Buffer"));
+		printOut();
+	}
+
 	if (message.addValue(value))
 	{
 		messageLen++;
@@ -85,6 +128,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
 		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
 		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+
 		MSG_PRINTLN(F(" addData overflow!!"));
 		printOut();
 	}
@@ -271,6 +315,21 @@ void SignalDetectorClass::compress_pattern()
 			}
 		}
 	}
+	if (!checkMBuffer())
+	{
+		MSG_PRINTLN(F("after compress_pattern ->"));
+
+		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
+		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
+		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINTLN(F(" wrong Data in Buffer"));
+		printOut();
+	}
+
 }
 
 void SignalDetectorClass::processMessage()
@@ -681,20 +740,20 @@ void SignalDetectorClass::processMessage()
 		{
 			if (m_truncated)
 			{
-// no clock, not mc but truncated buffer, so we are now here
+				// no clock, not mc but truncated buffer, so we are now here
 
 				int dp = 2000;  // marked as max value, but outside buffer range
 				for (uint8_t i = 0; i < patternLen; i++)
 				{
 					if (pattern[i] > 0)
 					{
-						if (min(pattern[i], dp) < dp)
+						if (min(pattern[i], dp) < dp)  				// Todo wenn der Puffer nur aus negativen Werten besteh, dann müssen wir auch etwas machen
 						{
 							dp = i;
 						}
 					}
 				}
-				for (uint8_t i = 0; i < messageLen && dp<2000; i++)
+				for (uint8_t i = 0; i < messageLen && dp <2000; i++)
 				{
 					if (message[i] == dp) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 					{
