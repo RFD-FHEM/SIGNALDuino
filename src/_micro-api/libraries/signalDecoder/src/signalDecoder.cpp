@@ -36,7 +36,7 @@ bool SignalDetectorClass::checkMBuffer()
 	for (uint8_t i = 0; i < messageLen-1; i++)
 	{
 		
-		if ( (message[i] ^ message[i+1]) < 0) 
+		if ( (pattern[message[i]] ^ pattern[message[i+1]]) > 0) 
 		{
 			return false;
 		}
@@ -68,7 +68,10 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);  DBG_PRINT(" "); DBG_PRINT(messageLen);
 		//DBG_PRINT(" "); DBG_PRINT(message.bytecount);
 		messageLen = messageLen - start;
-		
+		if (messageLen > 0)
+			last = &pattern[message[messageLen - 1]]; //Eventuell wird last auf einen nicht mehr vorhandenen Wert gesetzt, da der Puffer komplett gelöscht wurde
+		else
+			last = NULL;
 	} else {
 		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
 		//printOut();
@@ -92,13 +95,15 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 }
 
 
-inline void SignalDetectorClass::addData(const uint8_t value)
+inline void SignalDetectorClass::addData(const int8_t value)
 {
 	//message += value;
 	/*if (message.valcount >= 254)
 	{
 		DBG_PRINTLN(""); 	DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
 	}*/
+
+
 	if (!checkMBuffer())
 	{
 		MSG_PRINTLN(F("addData ->"));
@@ -111,6 +116,8 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
 		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
 		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINT(F(" success=")); MSG_PRINT(success);
+
 		MSG_PRINTLN(F(" wrong Data in Buffer"));
 		printOut();
 	}
@@ -118,6 +125,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 	if (message.addValue(value))
 	{
 		messageLen++;
+		m_truncated = false; // Clear truncated flag
 	}
 	else {
 		MSG_PRINT(F("val=")); MSG_PRINT(value);
@@ -128,6 +136,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
 		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
 		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINT(F(" success=")); MSG_PRINT(success);
 
 		MSG_PRINTLN(F(" addData overflow!!"));
 		printOut();
@@ -156,11 +165,24 @@ inline void SignalDetectorClass::doDetect()
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
 
+	if (!checkMBuffer())
+	{
+		MSG_PRINTLN(F("doDetect ->"));
+		MSG_PRINTLN(F(" wrong Data in Buffer"));
+		printOut();
+	}
+
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
-		//if (messageLen == 0) valid = true;
+//      if (messageLen == 0) valid = true;
 	if (!valid) {
 		// Try output
 		processMessage();
+
+		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
+		if (success == false || (messageLen > 0 && (*first ^ *last) > 0)) {
+			reset();
+			valid = true;
+		}
 		if (messageLen < minMessageLen) {
 			MsMoveCount = 3;
 		}
@@ -179,10 +201,17 @@ inline void SignalDetectorClass::doDetect()
 			rssiValue = _rssiCallback();
 	}
 
+	// Duplicate check only for debugging 
+	if (messageLen > 0 && last != NULL && (*first ^ *last) >= 0)
+	{
+		MSG_PRINTLN(F("avd a chk"));  // after valid check
+		MSG_PRINT(F("valid=")); MSG_PRINT(valid);
+
+	}
+
 	int8_t fidx = findpatt(*first);
 	if (fidx >= 0) {
 		// Upd pattern
-
 		updPattern(fidx);
 	}
 	else {
@@ -210,7 +239,7 @@ inline void SignalDetectorClass::doDetect()
 				{
 					i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 					bufferMove(i);
-					
+
 					break;
 				}
 				if (i == 1 && messageLen > 250)
@@ -220,7 +249,7 @@ inline void SignalDetectorClass::doDetect()
 					DBG_PRINTLN(F(" mb nm b proc "));  // message buffer not moved before  proccessMessage
 				}
 			}
-			
+
 		}
 
 		fidx = pattern_pos;
@@ -239,12 +268,26 @@ inline void SignalDetectorClass::doDetect()
 
 	// Add data to buffer
 	addData(fidx);
+	if (!checkMBuffer())
+	{
+		MSG_PRINTLN(F("after addData wrong"));
+		MSG_PRINT(F("val=")); MSG_PRINT(fidx);
+		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
+		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
+		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
+		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
+		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
+		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
+		MSG_PRINT(F(" state=")); MSG_PRINT(state);
+		MSG_PRINT(F(" success=")); MSG_PRINT(success);
 
+		printOut();
+	}
 
 #if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
 		DBG_PRINT(", "); DBG_PRINT(*last);
-		DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
+	    DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
 		DBG_PRINT(", Vld: "); DBG_PRINT(valid);
 		DBG_PRINT(", pattPos: "); DBG_PRINT(pattern_pos);
 		DBG_PRINT(", mLen: "); DBG_PRINT(messageLen);
@@ -261,6 +304,9 @@ bool SignalDetectorClass::decode(const int * pulse)
 	success = false;
 	if (messageLen > 0)
 		last = &pattern[message[messageLen - 1]];
+	else
+		last = NULL;
+
 	*first = *pulse;
 	
 	doDetect();
