@@ -73,7 +73,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		else
 			last = NULL;
 	} else {
-		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" unsup "); 	DBG_PRINT(start);
+		DBG_PRINT(__FUNCTION__); DBG_PRINT(" move error "); 	DBG_PRINT(start);
 		//printOut();
 	}
 	if (!checkMBuffer())
@@ -239,13 +239,11 @@ inline void SignalDetectorClass::doDetect()
 				{
 					i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 					bufferMove(i);
-
 					break;
 				}
 				if (i == 1 && messageLen > 250)
 				{
 					DBG_PRINT(millis());
-
 					DBG_PRINTLN(F(" mb nm b proc "));  // message buffer not moved before  proccessMessage
 				}
 			}
