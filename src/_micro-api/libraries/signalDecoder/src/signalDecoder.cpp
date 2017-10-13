@@ -67,7 +67,8 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		m_truncated = true; 
 		//DBG_PRINT(__FUNCTION__); DBG_PRINT(" -> "); 	DBG_PRINT(start);  DBG_PRINT(" "); DBG_PRINT(messageLen);
 		//DBG_PRINT(" "); DBG_PRINT(message.bytecount);
-		messageLen = messageLen - start;
+		//messageLen = messageLen - start;
+		messageLen = message.valcount;
 		if (messageLen > 0)
 			last = &pattern[message[messageLen - 1]]; //Eventuell wird last auf einen nicht mehr vorhandenen Wert gesetzt, da der Puffer komplett gelöscht wurde
 		else
