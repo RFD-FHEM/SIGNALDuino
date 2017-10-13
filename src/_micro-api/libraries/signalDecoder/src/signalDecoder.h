@@ -120,7 +120,7 @@ public:
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function
 
-	void addData(const uint8_t value);
+	void addData(const int8_t value);
 	void addPattern();
 	inline void updPattern(const uint8_t ppos);
 
