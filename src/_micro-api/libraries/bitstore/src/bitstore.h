@@ -39,7 +39,7 @@ public:
 	void reset();
 	bool getByte(const uint8_t idx, uint8_t *retvalue);
 	uint8_t bytecount;  // Number of stored bytes
-	uint16_t valcount;  // Number of total values stored
+	int16_t valcount;  // Number of total values stored
 
 	int8_t operator[](const uint16_t pos) {
 		getValue(pos);
@@ -212,6 +212,10 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 	if (begin == 0 || begin > valcount - 1) return false;
 
 	uint8_t startbyte = begin*valuelen / 8;
+	byte crcval = this->getValue(begin);
+	
+	uint8_t offset = 0;
+
 	/*
 	Serial.print("moveleft startbyte:"); Serial.print(startbyte, DEC); Serial.print("@valpos");  Serial.print(begin, DEC);
 	Serial.print(" bytecount:"); Serial.print(bytecount, DEC);
@@ -255,7 +259,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		//bcnt = 7-shift_left;
 
 		//bcnt = bcnt - valuelen;  // Todo: Klären ob dies benötigt wird
-
+		offset = 1;
 	}
 	else {
 		/*
@@ -272,14 +276,28 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		Serial.print(" after: bc=");  Serial.print(bytecount, DEC);
 		Serial.print(" vc="); Serial.print(valcount, DEC);
 		*/
-	}
 
+
+	}
+	if (crcval != this->getValue(0+offset)) {
+		Serial.print(" after moveLeft ");   Serial.print(crcval, DEC); Serial.print(" <> ");  Serial.print(this->getValue(0 + offset), DEC);
+		Serial.print(" at valcont: ");   Serial.print(valcount - 1, DEC);
+		Serial.print(" at byte: ");   Serial.print(bytecount, DEC);
+		Serial.print(" at bitpos: ");   Serial.print(bcnt, DEC);
+		Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
+		Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
+		Serial.print(" : ");
+		Serial.print("  (valuelen)");   Serial.print(valuelen, DEC);
+
+	}
 	/*
 	Serial.print(" bcnt: ");		 Serial.print(bcnt, DEC);
 	Serial.print(" valcount: ");     Serial.print(valcount, DEC);
 	Serial.print(" bytecount: ");    Serial.print(bytecount, DEC);
 	Serial.println(" ");
 	*/
+
+
 	return true;
 
 }
