@@ -21,6 +21,7 @@
 
 #include "Arduino.h"
 
+
 template<uint8_t bufSize>
 class BitStore
 {
@@ -45,7 +46,7 @@ public:
 		getValue(pos);
 		return _rval;
 	}
-	BitStore &operator+=(const int8_t value) {
+	BitStore &operator+=(const byte value) {
 		addValue(value);
 		return *this;
 	}
@@ -90,7 +91,7 @@ BitStore<bufSize>::BitStore(uint8_t bitlength) :buffsize(bufSize)
 	bmask = 0;
 	//buffsize = bufsize;
 	//datastore= (unsigned char*) calloc(bufsize,sizeof(char)); // Speicher allokieren und 0 zuweisen
-	bytecount = bufSize;
+	//bytecount = bufSize;
 	reset();
 	for (uint8_t x = 7; x>(7 - valuelen); x--)
 	{
@@ -124,6 +125,10 @@ bool BitStore<bufSize>::addValue(byte value)
 		bytecount++;
 		datastore[bytecount] = 0;
 	}
+
+	Serial.print(" av c: ");   Serial.print(valcount, DEC);
+	Serial.print(" av b: ");   Serial.println(bytecount, DEC);
+
 	//Serial.print("Adding value:");   Serial.print(value, DEC);
 	//Serial.print(" (");   Serial.print(value, BIN); Serial.print(") ");
 	//store[bytecount]=datastore[bytecount] | (value<<bcnt)
@@ -139,6 +144,7 @@ bool BitStore<bufSize>::addValue(byte value)
 														  Serial.print("  (valuelen)");   Serial.print(valuelen, DEC);
 														  */
 	valcount++;
+
 	if (int8_t(bcnt) - valuelen >= 0)  // Soalnge nicht 8 Bit gepeichert wurden, erhoehen wir den counter zum verschieben
 	{
 		bcnt = bcnt - valuelen; //+valuelen
@@ -209,42 +215,44 @@ const uint16_t BitStore<bufSize>::getSize()
 template<uint8_t bufSize>
 bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
-	if (begin == 0 || begin > valcount - 1) return false;
+	if (begin == 0 || begin > valcount) return false;
 
 	uint8_t startbyte = begin*valuelen / 8;
 	byte crcval = this->getValue(begin);
 	
 	uint8_t offset = 0;
 
-	/*
+	
 	Serial.print("moveleft startbyte:"); Serial.print(startbyte, DEC); Serial.print("@valpos");  Serial.print(begin, DEC);
 	Serial.print(" bytecount:"); Serial.print(bytecount, DEC);
+	Serial.print(" valcount:"); Serial.print(valcount, DEC);
+
 	Serial.print(" vlen:"); Serial.print(valuelen, DEC);
-	*/
-	if (begin == valcount - 1)
+	
+	if (begin >= valcount )
 	{
 		reset();
 	}
 	else if (begin % (8 / valuelen) != 0) {
 		uint8_t shift_left = (begin % (8 / valuelen))*valuelen;
 		uint8_t shift_right = 8 - shift_left;
-		//Serial.print(" sleft ");   Serial.print(shift_left, DEC);  Serial.print(" sright"); Serial.print(shift_right, DEC);
+		Serial.print(" sleft ");   Serial.print(shift_left, DEC);  Serial.print(" sright"); Serial.print(shift_right, DEC);
 
 		valcount = valcount - (shift_left / valuelen);
 		uint8_t i = startbyte;
 		uint8_t z = 0;
 		for (; i < bytecount; ++i, ++z)
 		{
-			/*
+			
 			Serial.println("");
 			Serial.print("@[");  Serial.print(i, DEC); Serial.print("]");
 			Serial.print("->[");  Serial.print(z, DEC); Serial.print("] ");
 
 			Serial.print("z="); Serial.print(datastore[z], BIN);
-			Serial.print(" ileft="); Serial.print(datastore[i] << shift_left, BIN);
-			Serial.print(" iright="); Serial.print(datastore[i + 1] >> shift_right, BIN);
-			*/
-			datastore[z] = (datastore[i] << shift_left) | (datastore[i + 1] >> shift_right);;
+			Serial.print(" ileft="); Serial.print(char(datastore[i] << shift_left), BIN);
+			Serial.print(" iright="); Serial.print(char(datastore[i + 1] >> shift_right), BIN);
+			
+			datastore[z] = char(datastore[i] << shift_left) | char(datastore[i + 1] >> shift_right);;
 
 		}
 		datastore[z] = datastore[i] << shift_left;
@@ -259,7 +267,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		//bcnt = 7-shift_left;
 
 		//bcnt = bcnt - valuelen;  // Todo: Klären ob dies benötigt wird
-		offset = 1;
+		//offset = 1;
 	}
 	else {
 		/*
@@ -279,15 +287,14 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 
 
 	}
-	if (crcval != this->getValue(0+offset)) {
-		Serial.print(" after moveLeft ");   Serial.print(crcval, DEC); Serial.print(" <> ");  Serial.print(this->getValue(0 + offset), DEC);
-		Serial.print(" at valcont: ");   Serial.print(valcount - 1, DEC);
-		Serial.print(" at byte: ");   Serial.print(bytecount, DEC);
-		Serial.print(" at bitpos: ");   Serial.print(bcnt, DEC);
-		Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
-		Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
-		Serial.print(" : ");
-		Serial.print("  (valuelen)");   Serial.print(valuelen, DEC);
+	Serial.print(" after moveLeft "); Serial.print(" vc: ");   Serial.print(valcount, DEC);
+	Serial.print(" bytec: ");   Serial.print(bytecount, DEC);
+	Serial.print(" bitpos: ");   Serial.print(bcnt, DEC);
+	Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
+	Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
+
+	if (crcval != this->getValue(offset)) {
+		Serial.print(crcval, DEC); Serial.print(" <> ");  Serial.print(this->getValue(0 + offset), DEC);
 
 	}
 	/*
