@@ -22,6 +22,7 @@
 #include "Arduino.h"
 
 
+
 template<uint8_t bufSize>
 class BitStore
 {
@@ -113,6 +114,7 @@ template<uint8_t bufSize>
 bool BitStore<bufSize>::addValue(byte value)
 {
 	byte crcval = value;
+
 
 	if (bcnt == 7 && valcount > 0)
 	{
@@ -215,7 +217,7 @@ const uint16_t BitStore<bufSize>::getSize()
 template<uint8_t bufSize>
 bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 {
-	if (begin == 0 || begin > valcount) return false;
+	if (begin == 0 || begin >= valcount) return false;
 
 	uint8_t startbyte = begin*valuelen / 8;
 	byte crcval = this->getValue(begin);
@@ -258,10 +260,9 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		datastore[z] = datastore[i] << shift_left;
 
 		valcount = valcount - (8 / valuelen*startbyte);
-		if ((valcount*valuelen) % 8 == 0)
-			bcnt = 7;
-		else
-			bcnt = 7 - shift_left;
+		uint8_t val_bcnt = (valcount*valuelen) % 8;
+		if (val_bcnt > 0)
+			bcnt = 7 - val_bcnt;
 
 		bytecount = (valcount - 1)*valuelen / 8;
 		//bcnt = 7-shift_left;
@@ -287,6 +288,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 
 
 	}
+
 	Serial.print(" after moveLeft "); Serial.print(" vc: ");   Serial.print(valcount, DEC);
 	Serial.print(" bytec: ");   Serial.print(bytecount, DEC);
 	Serial.print(" bitpos: ");   Serial.print(bcnt, DEC);
