@@ -325,7 +325,9 @@ void SignalDetectorClass::compress_pattern()
 		{
 			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
 				continue;
-			const int16_t tol = int((abs(pattern[idx2])*tolFact) + (abs(pattern[idx2])*tolFact) / 2);
+			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
+
+
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
 				// Change val -> ref_val in message array
@@ -962,9 +964,11 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 		histo[bval >> 4]++;
 		histo[bval & B00001111]++;
 	}
-	if (endpos % 2==1)
-		histo[bval & B00001111]--;
-
+	if (endpos % 2 == 1)
+	{
+		message.getByte(bendpos, &bval);
+		histo[bval >> 4]++;
+	}
 	
 }
 
