@@ -1,5 +1,5 @@
 /*
-*   RF_RECEIVER v3.3 for Arduino
+*   RF_RECEIVER v3.32 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
 *
 *   The Sketch can also encode and send data via a transmitter,
@@ -33,7 +33,7 @@
 
 #define CMP_CC1101     // bitte auch das "#define CMP_CC1101" in der SignalDecoder.h beachten 
 
-#define PROGVERS               "3.3.1-dev"
+#define PROGVERS               "3.3.2-dev"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
