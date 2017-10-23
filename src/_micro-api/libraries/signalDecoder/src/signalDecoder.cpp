@@ -326,6 +326,9 @@ void SignalDetectorClass::compress_pattern()
 			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
 				continue;
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
+#if DEBUGDETECT>2
+			DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(";");
+#endif // DEBUGDETECT
 
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
@@ -844,7 +847,7 @@ void SignalDetectorClass::reset()
 	  histo[i] = pattern[i] = 0;
 	success = false;
 	tol = 150; //
-	tolFact = 0.2;
+	tolFact = 0.25;
 	mstart = 0;
 	m_truncated = false;
 	m_overflow = false;
@@ -1521,7 +1524,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 #endif
 					//pdec->printOut();
-					if (i == maxMsgSize-1 && i == pdec->messageLen && isShort(pdec->message[i]))
+					if (i == maxMsgSize-1 && i == pdec->messageLen-1 && isShort(pdec->message[i]))
 					{
 						pdec->mcDetected = true;
 					}
