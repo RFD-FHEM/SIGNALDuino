@@ -57,8 +57,8 @@
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 //#define DEBUGDETECT 1
-#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 1
+//#define DEBUGDETECT 255  // Very verbose output
+//#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting };
 
