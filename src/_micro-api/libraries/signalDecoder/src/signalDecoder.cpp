@@ -49,13 +49,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 	m_truncated = false;
 
 	if (start > messageLen - 1) {
-		if (patternLen != maxNumPattern) {
-			MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
-			MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
-			MSG_PRINT(F(" start=")); MSG_PRINT(start);
-			MSG_PRINT(F(" patternLen")); MSG_PRINT(patternLen);
-			MSG_PRINTLN(F(" bufferMove overflow!!"));
-		}
+
 		reset();
 	}
 	else if (start == 0)
@@ -77,20 +71,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" move error "); 	DBG_PRINT(start);
 		//printOut();
 	}
-	if (!checkMBuffer())
-	{
-		MSG_PRINTLN(F("after buffermove ->"));
 
-		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
-		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
-		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
-		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
-		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
-		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
-		MSG_PRINT(F(" state=")); MSG_PRINT(state);
-		MSG_PRINTLN(F(" wrong Data in Buffer"));
-		printOut();
-	}
 
 
 }
@@ -105,23 +86,6 @@ inline void SignalDetectorClass::addData(const int8_t value)
 	}*/
 
 
-	if (!checkMBuffer())
-	{
-		MSG_PRINTLN(F("addData ->"));
-
-		MSG_PRINT(F("val=")); MSG_PRINT(value);
-		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
-		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
-		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
-		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
-		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
-		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
-		MSG_PRINT(F(" state=")); MSG_PRINT(state);
-		MSG_PRINT(F(" success=")); MSG_PRINT(success);
-
-		MSG_PRINTLN(F(" wrong Data in Buffer"));
-		printOut();
-	}
 
 	if (message.addValue(value))
 	{
@@ -166,12 +130,7 @@ inline void SignalDetectorClass::doDetect()
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
 
-	if (!checkMBuffer())
-	{
-		MSG_PRINTLN(F("doDetect ->"));
-		MSG_PRINTLN(F(" wrong Data in Buffer"));
-		printOut();
-	}
+
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 //      if (messageLen == 0) valid = true;
@@ -180,7 +139,7 @@ inline void SignalDetectorClass::doDetect()
 		processMessage();
 
 		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
-		if (success == false || (messageLen > 0 && (*first ^ *last) > 0)) {
+		if (success == false || (messageLen > 0 && last != NULL  && (*first ^ *last) > 0)) {
 			reset();
 			valid = true;
 		}
@@ -202,13 +161,7 @@ inline void SignalDetectorClass::doDetect()
 			rssiValue = _rssiCallback();
 	}
 
-	// Duplicate check only for debugging 
-	if (messageLen > 0 && last != NULL && (*first ^ *last) >= 0)
-	{
-		MSG_PRINTLN(F("avd a chk"));  // after valid check
-		MSG_PRINT(F("valid=")); MSG_PRINT(valid);
 
-	}
 
 	int8_t fidx = findpatt(*first);
 	if (fidx >= 0) {
@@ -226,13 +179,7 @@ inline void SignalDetectorClass::doDetect()
 				processMessage();
 				calcHisto();
 
-				if (!success && messageLen > 250)
-				{
-					DBG_PRINT(millis());
-					DBG_PRINTLN(F(" pb f a proc"));  // pattern buffer full after proccessMessage
-					printOut();
 
-				}
 			}
 			for (uint8_t i = messageLen - 1; i >= 0 && histo[pattern_pos] > 0; --i)
 			{
@@ -242,11 +189,7 @@ inline void SignalDetectorClass::doDetect()
 					bufferMove(i);
 					break;
 				}
-				if (i == 1 && messageLen > 250)
-				{
-					DBG_PRINT(millis());
-					DBG_PRINTLN(F(" mb nm b proc "));  // message buffer not moved before  proccessMessage
-				}
+	
 			}
 
 		}
@@ -267,21 +210,6 @@ inline void SignalDetectorClass::doDetect()
 
 	// Add data to buffer
 	addData(fidx);
-	if (!checkMBuffer())
-	{
-		MSG_PRINTLN(F("after addData wrong"));
-		MSG_PRINT(F("val=")); MSG_PRINT(fidx);
-		MSG_PRINT(F(" mstart=")); MSG_PRINT(mstart);
-		MSG_PRINT(F(" mend=")); MSG_PRINT(mend);
-		MSG_PRINT(F(" msglen=")); MSG_PRINT(messageLen);
-		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount);
-		MSG_PRINT(F(" valcnt=")); MSG_PRINT(message.valcount);
-		MSG_PRINT(F(" mTrunc=")); MSG_PRINT(m_truncated);
-		MSG_PRINT(F(" state=")); MSG_PRINT(state);
-		MSG_PRINT(F(" success=")); MSG_PRINT(success);
-
-		printOut();
-	}
 
 #if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
