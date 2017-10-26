@@ -142,7 +142,7 @@ inline void SignalDetectorClass::doDetect()
 
 		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
 		if (success == false || (messageLen > 0 && last != NULL  && (*first ^ *last) > 0)) {
-			MSG_PRINT(" nv reset");
+			//MSG_PRINT(" nv reset");
 
 			reset();
 			valid = true;
