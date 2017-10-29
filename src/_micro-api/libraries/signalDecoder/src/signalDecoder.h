@@ -56,9 +56,13 @@
 #define SERIAL_DELIMITER ';'
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
+
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
+//#define MCDEBUGDECODE 1
+//#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
+//#define DEBUGDoDETECT 3
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -88,18 +92,29 @@ public:
 	bool MCenabled;
 	bool MSenabled;
 	bool MredEnabled;                       // 1 = compress printMsgRaw
+	bool MdebEnabled;                       // 1 = print message debug info  enabled
+	uint8_t MsMoveCountmax;
 	uint8_t MsMoveCount;
+	uint16_t MuSplitThresh;
+	bool printMsgSuccess;
 	
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
 
+	uint8_t bMoveFlag;
+	uint8_t valueLast = 99;
+	int firstLast;
+	int lastPulse;
+	int mfirst;
+	int mlast;
 	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
 	uint8_t mstart;						  // Holds starting point for message
 	uint8_t mend;						  // Holds end point for message if detected
 	bool success;                         // True if a valid coding was found
 	bool m_truncated;					// Identify if message has been truncated
 	bool m_overflow;
+	bool endMsg;
 	void bufferMove(const uint8_t start);
 
 	uint16_t tol;                           // calculated tolerance for signal
@@ -107,7 +122,7 @@ public:
 	status state;                           // holds the status of the detector
 	int buffer[2];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
-	int* last;                              // Pointer to last buffer entry
+	int* last;                              // Pointer to last buffer entry 
 	float tolFact;                          //
 	int pattern[maxNumPattern];				// 1d array to store the pattern
 	uint8_t patternLen;                     // counter for length of pattern
@@ -120,13 +135,13 @@ public:
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function
 
-	void addData(const int8_t value);
+	void addData(const uint8_t value);
 	void addPattern();
 	inline void updPattern(const uint8_t ppos);
 
 	void doDetect();
-	void processMessage();
-	void compress_pattern();
+	void processMessage(const bool p_valid);
+	bool compress_pattern();
 	void calcHisto(const uint8_t startpos = 0, uint8_t endpos = 0);
 	bool getClock(); // Searches a clock in a given signal
 	bool getSync();	 // Searches clock and sync in given Signal
@@ -139,7 +154,6 @@ public:
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	bool checkMBuffer();
-
 
 };
 
