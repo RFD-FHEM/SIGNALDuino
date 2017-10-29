@@ -6,7 +6,7 @@
 *   while only PT2262 type-signals for Intertechno devices are implemented in the sketch,
 *   there is an option to send almost any data over a send raw interface
 *   2014-2015  N.Butzek, S.Butzek
-*   2016-2017 S.Butzek
+*   2016 S.Butzek
 
 *   This software focuses on remote sensors like weather sensors (temperature,
 *   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
@@ -33,10 +33,10 @@
 
 #define CMP_CC1101     // bitte auch das "#define CMP_CC1101" in der SignalDecoder.h beachten 
 
-#define PROGVERS               "3.3.2-dev"
 #define PROGNAME               "RF_RECEIVER"
+#define PROGVERS               "3.3.2-dev"
 #define VERSION_1               0x33
-#define VERSION_2               0x1d
+#define VERSION_2               0x2d
 
 #ifdef CMP_CC1101
 
@@ -58,11 +58,14 @@
 
 
 #define BAUDRATE               57600
-#define FIFO_LENGTH			   50
-#define DEBUG				   1
+#define FIFO_LENGTH            100      // 50
 
+//#define WATCHDOG		1 
+#define DEBUG                  1
 
-#include <avr/wdt.h>
+#ifdef WATCHDOG
+	#include <avr/wdt.h>
+#endif
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
@@ -78,10 +81,15 @@ SignalDetectorClass musterDec;
 #include "cc1101.h"
 
 #define pulseMin  90
+#define MsMoveCountmaxDef 3
+#define MdebFifoLimitDef 60
+#define mcMinBitLenDef   17
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
+bool LEDenabled = true;
+uint8_t MdebFifoLimit = 60;
 
 #ifdef CMP_MEMDBG
 
@@ -128,6 +136,10 @@ int16_t freeMem2=0;  // available ram calculation #2
 
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
+#define addr_MdebFifoLimit   0xf0
+#define addr_mcmbl            0xf1
+#define addr_MsMoveCountmax  0xf2
+#define addr_MuSplitThresh   0xf3
 #define addr_features        0xff
 
 
@@ -143,12 +155,10 @@ void HandleCommand();
 bool command_available=false;
 unsigned long getUptime();
 void getConfig();
-void enDisPrint(bool enDis);
 void getPing();
 void configCMD();
-void configSET();
-void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
-void getFunctions(bool *ms,bool *mu,bool *mc);
+void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1, int8_t red=1, int8_t deb=0, int8_t led=1);
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led);
 void initEEPROM(void);
 void changeReceiver();
 uint8_t cmdstringPos2int(uint8_t pos);
@@ -157,13 +167,17 @@ uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be re
 
 
 void setup() {
-
+	uint8_t ccVersion;
 	Serial.begin(BAUDRATE);
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
+	if (musterDec.MdebEnabled) {
+		DBG_PRINTLN(F("Using sFIFO"));
+	}
+#ifdef WATCHDOG
 	if (MCUSR & (1 << WDRF)) {
-		DBG_PRINTLN("Watchdog caused a reset");
+		DBG_PRINTLN(F("Watchdog caused a reset"));
 	}
 	/*
 	if (MCUSR & (1 << BORF)) {
@@ -179,35 +193,50 @@ void setup() {
 	wdt_reset();
 
 	wdt_enable(WDTO_2S);  	// Enable Watchdog
-
+#endif
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
-	
+#ifdef WATCHDOG
 	wdt_reset();
-
-	#ifdef CMP_CC1101
+#endif
+#ifdef CMP_CC1101
 	cc1101::setup();
-	#endif
+#endif
   	initEEPROM();
-	#ifdef CMP_CC1101
-	DBG_PRINT(F("CCInit "));
-
-	cc1101::CCinit();					 // CC1101 init
-	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
+        //musterDec.MsMoveCount = 0;
+	
+#ifdef CMP_CC1101
+	MSG_PRINT(F("CCInit "));	
+	cc1101::CCinit();				// CC1101 init
+	ccVersion = cc1101::getCCVersion();
+	if (ccVersion == 0x00 || ccVersion == 0xFF)	// checks if valid Chip ID is found. Usualy 0x03 or 0x14.
+	{
+		MSG_PRINT(F("no CC11xx found!"));
+		hasCC1101 = false;
+	}
+	else {
+		MSG_PRINT(F("ok."));
+		hasCC1101 = true;
+	}
+	MSG_PRINT(F(" ccVer="));
+	MSG_PRINT(ccVersion);
+	MSG_PRINT(F(" ccPartnum="));
+	MSG_PRINTLN(cc1101::getCCPartnum());
 	
 	if (hasCC1101)
 	{
-		DBG_PRINTLN("CC1101 found");
 		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	} else {
+	} 
+	else
 		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
-	}
-	#endif 
+#endif 
 
 	pinAsOutput(PIN_SEND);
-	DBG_PRINTLN("Starting timerjob");
+	if (musterDec.MdebEnabled) {
+		MSG_PRINTLN(F("Starting timerjob"));
+	}
 	delay(50);
 
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
@@ -219,12 +248,14 @@ void setup() {
 	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
 	cmdstring.reserve(40);
 
-	if (!hasCC1101 || cc1101::regCheck()) {
+        if (!hasCC1101 || cc1101::regCheck()) {
 		enableReceive();
-		DBG_PRINTLN(F("receiver enabled"));
+		if (musterDec.MdebEnabled) {
+			MSG_PRINTLN(F("receiver enabled"));
+		}
 	}
 	else {
-		DBG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
+		MSG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
 	}
 }
 
@@ -232,7 +263,7 @@ void cronjob() {
 
 	 const unsigned long  duration = micros() - lastTime;
 	 
-	 if (duration > maxPulse) { //Auf Maximalwert pr�fen.
+	 if (duration > maxPulse) { //Auf Maximalwert pruefen.
 		 int sDuration = maxPulse;
 		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			 sDuration = -sDuration;
@@ -258,6 +289,8 @@ void cronjob() {
 void loop() {
 	static int aktVal=0;
 	bool state;
+	uint8_t fifoCount;
+	
 #ifdef __AVR_ATmega32U4__	
 	serialEvent();
 #endif
@@ -267,12 +300,25 @@ void loop() {
 		if (!command_available) { cmdstring = ""; }
 		blinkLED=true;
 	}
+#ifdef WATCHDOG
 	wdt_reset();
+#endif
+	musterDec.printMsgSuccess = false;
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
 		aktVal=FiFo.dequeue();
-		state = musterDec.decode(&aktVal); 
-		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+		state = musterDec.decode(&aktVal);
+		if (musterDec.MdebEnabled && musterDec.printMsgSuccess) {
+			fifoCount = FiFo.count();
+			if (fifoCount > MdebFifoLimit) {
+				MSG_PRINT(F("MD="));
+				MSG_PRINTLN(fifoCount, DEC);
+			}
+		}
+		if (musterDec.printMsgSuccess && LEDenabled) {
+			blinkLED=true; //LED blinken, wenn Meldung dekodiert
+		}
+		musterDec.printMsgSuccess = false;
 	}
 
  }
@@ -306,8 +352,8 @@ void handleInterrupt() {
 }
 
 void enableReceive() {
-   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE), handleInterrupt, CHANGE);
-
+   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE),handleInterrupt,CHANGE);
+   
    #ifdef CMP_CC1101
    if (hasCC1101) cc1101::setReceiveMode();
    #endif
@@ -501,7 +547,7 @@ void send_cmd()
 			
 			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 				uint8_t hex;
-				MSG_PRINT("write new ccreg  ");
+				//MSG_PRINT("write new ccreg  ");
 				for (uint8_t i=0;i<ccParamAnz;i++)
 				{
 					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
@@ -510,9 +556,9 @@ void send_cmd()
 					hex = (uint8_t)msg_part.charAt(3 + i*2);
 					val = cc1101::hex2int(hex) + val;
 					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
-					printHex2(val);
+					//printHex2(val);
 				}
-				MSG_PRINTLN("");
+				//MSG_PRINTLN("");
 			}
 		}
 	}
@@ -532,19 +578,21 @@ void send_cmd()
 		if (extraDelay) delay(1);
 	}
 
+	MSG_PRINT(cmdstring); // echo
+	
 	if (ccParamAnz > 0) {
-		MSG_PRINT("ccreg write back ");
+		MSG_PRINT(F("ccreg write back "));
 		for (uint8_t i=0;i<ccParamAnz;i++)
 		{
 			val = ccReg[i];
 			printHex2(val);
 			cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
 		}
-		MSG_PRINTLN("");
+		//MSG_PRINTLN("");
 	}
-
+	
 	enableReceive();	// enable the receiver
-    MSG_PRINTLN(cmdstring); // echo
+	MSG_PRINTLN("");
 
 }
 
@@ -602,11 +650,11 @@ void HandleCommand()
 	  MSG_PRINT("V " PROGVERS " SIGNALduino ");
 	  if (hasCC1101) {
 		MSG_PRINT(F("cc1101 "));
-	    #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	  #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	    MSG_PRINT("(");
 	    MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
 	    MSG_PRINT(F("Mhz )"));
-	    #endif
+	  #endif
       }
 	MSG_PRINTLN("- compiled at " __DATE__ " " __TIME__)
 
@@ -657,8 +705,11 @@ void HandleCommand()
     } else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && isHexadecimalDigit(cmdstring.charAt(3)) && isHexadecimalDigit(cmdstring.charAt(4))) {
          reg = cmdstringPos2int(1);
          val = cmdstringPos2int(3);
-         EEPROM.write(reg, val);  
-         if (hasCC1101) {
+         EEPROM.write(reg, val);
+         if (reg == addr_MdebFifoLimit) {
+           MdebFifoLimit = val;
+         }
+         else if (hasCC1101) {
            cc1101::writeCCreg(reg, val);
          }
     } else {
@@ -720,8 +771,27 @@ inline void getConfig()
    MSG_PRINT(F(";MC="));
    MSG_PRINT(musterDec.MCenabled, DEC);
    MSG_PRINT(F(";Mred="));
-   MSG_PRINTLN(musterDec.MredEnabled, DEC);
+   MSG_PRINT(musterDec.MredEnabled, DEC);
+   if (LEDenabled == false) {
+      MSG_PRINT(F(";LED=0"));
+   }
+   MSG_PRINT(F(";Mdebug="));
+   MSG_PRINT(musterDec.MdebEnabled, DEC);
+   MSG_PRINT(F("_MScnt="));
+   MSG_PRINT(musterDec.MsMoveCountmax, DEC);
+   MSG_PRINT(F(";MuSplitThresh="));
+   MSG_PRINT(musterDec.MuSplitThresh, DEC);
+   if (musterDec.mcMinBitLen != mcMinBitLenDef) {
+      MSG_PRINT(F(";mcMinBitLen="));
+      MSG_PRINT(musterDec.mcMinBitLen, DEC);
+   }
+   if (musterDec.MdebEnabled) {
+      MSG_PRINT(F(";MdebFifoLimit="));
+      MSG_PRINT(MdebFifoLimit, DEC);
+   }
+   MSG_PRINTLN("");
 }
+
 
 
 inline void configCMD()
@@ -738,7 +808,13 @@ inline void configCMD()
 	bptr=&musterDec.MCenabled;
   }
   else if (cmdstring.charAt(2) == 'R') {  //Mreduce
-	  bptr = &musterDec.MredEnabled;
+	bptr=&musterDec.MredEnabled;
+  }
+  else if (cmdstring.charAt(2) == 'D') {  //Mdebug
+	bptr=&musterDec.MdebEnabled;
+  }
+  else if (cmdstring.charAt(2) == 'L') {  //LED
+	bptr=&LEDenabled;
   }
 
   if (cmdstring.charAt(1) == 'E') {   // Enable
@@ -749,7 +825,7 @@ inline void configCMD()
   } else {
 	return;
   }
-  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
+  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled);
 }
 
 inline void configSET()
@@ -758,8 +834,31 @@ inline void configSET()
 	if (cmdstring.substring(2,8) == "mcmbl=")    // mc min bit len
 	{	
 		musterDec.mcMinBitLen = cmdstring.substring(8).toInt(); 
-		MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
+		EEPROM.write(addr_mcmbl, musterDec.mcMinBitLen);
+		MSG_PRINT(musterDec.mcMinBitLen);
 	}
+	else if (cmdstring.substring(2,8) == "mscnt=")
+	{
+		musterDec.MsMoveCountmax = cmdstring.substring(8).toInt(); 
+		EEPROM.write(addr_MsMoveCountmax, musterDec.MsMoveCountmax);
+		MSG_PRINT(musterDec.MsMoveCountmax);
+	}
+	else if (cmdstring.substring(2,12) == "fifolimit=")
+	{
+		MdebFifoLimit = cmdstring.substring(12).toInt(); 
+		EEPROM.write(addr_MdebFifoLimit, MdebFifoLimit);
+		MSG_PRINT(MdebFifoLimit);
+	}
+	else if (cmdstring.substring(2,11) == "muthresh=")
+	{
+		musterDec.MuSplitThresh = cmdstring.substring(11).toInt();
+		uint8_t val = (musterDec.MuSplitThresh>>8) & 0xFF;
+		EEPROM.write(addr_MuSplitThresh, val);
+		val = musterDec.MuSplitThresh & 0xFF;
+		EEPROM.write(addr_MuSplitThresh+1, val);
+		MSG_PRINT(musterDec.MuSplitThresh);
+	}
+	MSG_PRINTLN(" CSet");
 }
 
 void serialEvent()
@@ -889,43 +988,68 @@ inline void changeReceiver() {
 
 //================================= EEProm commands ======================================
 
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red)
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t deb, int8_t led)
 {
 	mu=mu<<1;
 	mc=mc<<2;
-	red = red << 3;
-
-	int8_t dat = ms | mu | mc | red;
-	EEPROM.write(addr_features,dat);
+	red=red<<3;
+	deb=deb<<4;
+	led=led<<5;
+	int8_t dat =  ms | mu | mc | red | deb | led | 0xC0;
+    EEPROM.write(addr_features,dat);
 }
 
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red)
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led)
 {
+    int8_t high;
     int8_t dat = EEPROM.read(addr_features);
 
     *ms=bool (dat &(1<<0));
     *mu=bool (dat &(1<<1));
     *mc=bool (dat &(1<<2));
-	*red = bool(dat &(1 << 3));
-
-
+    *red=bool (dat &(1<<3));
+    *deb=bool (dat &(1<<4));
+    *led=bool (dat &(1<<5));
+    
+    MdebFifoLimit = EEPROM.read(addr_MdebFifoLimit);
+    musterDec.MsMoveCountmax = EEPROM.read(addr_MsMoveCountmax);
+    high = EEPROM.read(addr_MuSplitThresh);
+    musterDec.MuSplitThresh = EEPROM.read(addr_MuSplitThresh+1) + ((high << 8) & 0xFF00);
+    musterDec.mcMinBitLen = EEPROM.read(addr_mcmbl);
+    if (musterDec.mcMinBitLen == 0) {
+        musterDec.mcMinBitLen = mcMinBitLenDef;
+    }
 }
 
 void initEEPROM(void) {
 
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
-    DBG_PRINTLN("Reading values fom eeprom");
+    
+  if (musterDec.MdebEnabled) {
+    #ifdef DEBUG
+    MSG_PRINTLN(F("Reading values from eeprom"));
+    #endif
+  }
+
   } else {
-    storeFunctions(1, 1, 1,1);    // Init EEPROM with all flags enabled
-    //hier fehlt evtl ein getFunctions()
+    EEPROM.write(addr_features, 0xEF);    // Init EEPROM with all flags enabled, except debug
+    EEPROM.write(addr_MdebFifoLimit, MdebFifoLimitDef);
+    EEPROM.write(addr_MsMoveCountmax, MsMoveCountmaxDef);
+    EEPROM.write(addr_MuSplitThresh, 0);
+    EEPROM.write(addr_MuSplitThresh+1, 0);
+    EEPROM.write(addr_mcmbl, 0);
+
+    //storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
+    //#ifdef DEBUG
     MSG_PRINTLN(F("Init eeprom to defaults after flash"));
+    //#endif
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
     #ifdef CMP_CC1101
        cc1101::ccFactoryReset();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled,&musterDec.MredEnabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled);
 
 }
 
