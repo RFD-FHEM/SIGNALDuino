@@ -15,7 +15,6 @@
 extern String cmdstring;
 
 
-
 namespace cc1101 {
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	#define SS					  8  
@@ -43,7 +42,7 @@ namespace cc1101 {
 	// Status registers
 	#define CC1100_RSSI      0x34 // Received signal strength indication
 	#define CC1100_MARCSTATE 0x35 // Control state machine state
-	 
+
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset
 	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
@@ -54,7 +53,7 @@ namespace cc1101 {
 	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
 	#define CC1100_SFTX     0x3B  // Flush the TX FIFO buffer.
 
-	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
+	#define wait_Miso()       while(isHigh(misoPin))  // wait until SPI MISO line goes low 
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
 	
@@ -83,14 +82,14 @@ namespace cc1101 {
 	#define CC1100_STATE_SETTLING                  0x50
 	#define CC1100_STATE_RX_OVERFLOW               0x60
 	#define CC1100_STATE_TX_UNDERFLOW              0x70
-	
+
 
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-	uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat geändert wird
+	uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat geaendert wird
 	#endif
 	static const uint8_t initVal[] PROGMEM = 
 	{
-		      // IDX NAME     RESET   COMMENT
+		// IDX NAME     RESET   COMMENT
 		0x0D, // 00 IOCFG2    29     GDO2 as serial output
 		0x2E, // 01 IOCFG1           Tri-State
 		0x2D, // 02 IOCFG0    3F     GDO0 for input
@@ -155,7 +154,7 @@ namespace cc1101 {
 	}
 
 
-	uint8_t sendSPI(const uint8_t val) {				 // send byte via SPI
+	uint8_t sendSPI(const uint8_t val) {					     // send byte via SPI
 		SPDR = val;                                      // transfer byte via SPI
 		while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
 		return SPDR;
@@ -345,25 +344,16 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 	}
 
 
-	bool checkCC1101() {
-
-		uint8_t partnum = readReg(0xF0,0x80);  // Partnum
-		uint8_t version = readReg(0xF1,0x80);  // Version
-		DBG_PRINT("CCVersion=");	DBG_PRINTLN(version);
-		DBG_PRINT("CCPartnum=");	DBG_PRINTLN(partnum);
-
-		//checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
-		if (version == 0x00 || version == 0xFF)
-		{
-			DBG_PRINTLN(F("no CC11xx found!"));
-			DBG_PRINTLN();
-			return false;  // Todo: power down SPI etc
-		}
-		return true;
+	uint8_t getCCVersion()
+	{
+		return readReg(0xF1,0x80);  // Version
 	}
-
-
-
+	
+	uint8_t getCCPartnum()
+	{
+		return readReg(0xF0,0x80);  // Partnum
+	}
+	
 	inline void setup()
 	{
 		pinAsOutput(sckPin);
@@ -374,9 +364,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 		pinAsInputPullUp(PIN_MARK433);
 		#endif
-		//// Änderungsbeginn  ---> 
-
-
+		
 		SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
 		/*
 		SPCR = ((1 << SPE) |               		// SPI Enable
@@ -439,9 +427,9 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		cc1101_Deselect();
 		delayMicroseconds(45);
 		
-		DBG_PRINTLN("SRES Started");
+		//DBG_PRINTLN("SRES Started");
 		cmdStrobe(CC1101_SRES);                               // send reset
-		DBG_PRINTLN("POR Done");
+		//DBG_PRINTLN("POR Done");
 		delay(10);
 
 		cc1101_Select();
@@ -461,13 +449,13 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 
 	bool regCheck()
 	{
-		
+		/*
 		DBG_PRINT("CC1100_PKTCTRL0="); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));
 		DBG_PRINT(" vs EEPROM PKTCTRL0="); DBG_PRINTLN(initVal[CC1100_PKTCTRL0]);
 
 		DBG_PRINT("C1100_IOCFG2="); DBG_PRINT(readReg(CC1100_IOCFG2, CC1101_CONFIG));
 		DBG_PRINT(" vs EEPROM IOCFG2="); DBG_PRINTLN(initVal[CC1100_IOCFG2]);
-		
+		*/
 		return (readReg(CC1100_PKTCTRL0, CC1101_CONFIG) == initVal[CC1100_PKTCTRL0]) && (readReg(CC1100_IOCFG2, CC1101_CONFIG) == initVal[CC1100_IOCFG2]);
 	}
 
