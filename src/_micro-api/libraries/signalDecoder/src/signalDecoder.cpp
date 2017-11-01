@@ -372,7 +372,7 @@ void SignalDetectorClass::processMessage()
 			DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
 			DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
 #endif // DEBUGDECODE
-			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < (maxMsgSize))) //(!m_endfound && messageLen  >= minMessageLen))	// Check if message Length is long enough
+			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
 			{
 #ifdef DEBUGDECODE
 				MSG_PRINTLN("Filter Match: ");;
