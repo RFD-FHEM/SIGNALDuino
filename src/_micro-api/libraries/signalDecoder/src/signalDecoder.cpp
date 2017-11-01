@@ -582,7 +582,7 @@ void SignalDetectorClass::processMessage()
 
 
 					mend = min(mend, messageLen); // Workaround if mend=255
-					for (uint8_t i = mstart; i <= mend; ++i)
+					for (uint8_t i = mstart; i < mend; ++i)
 					{
 						MSG_PRINT(message[i]);
 					}
@@ -1653,7 +1653,7 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
+			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
 				pshort = true;
 			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
 				plong = true;
@@ -1695,11 +1695,12 @@ const bool ManchesterpatternDecoder::isManchester()
 				DBG_PRINT("vfy ");
 #endif
 
+				int8_t sequence[4] = { -1,-1,-1,-1 };
 				int z = 0;
 				while (z < pdec->messageLen)
 				{
 
-					if ( ((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
+					if (((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
 					{  
 #if DEBUGDETECT >= 1
 						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[z]); DBG_PRINT(";")
@@ -1730,6 +1731,23 @@ const bool ManchesterpatternDecoder::isManchester()
 
 							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
 
+#if DEBUGDETECT >= 1
+							bool break_flag = false;
+
+							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
+							{
+								DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
+								DBG_PRINT("="); DBG_PRINT(sequence[a]);
+
+								if (sequence[a] == -1 && a<3)
+								{
+									break_flag=true;
+								}
+							}
+							if (break_flag==true) break;
+#endif
+
+
 							tstclock = tstclock / 6;
 #if DEBUGDETECT >= 1
 							MSG_PRINT("  tstclock: "); DBG_PRINT(tstclock);
@@ -1744,6 +1762,7 @@ const bool ManchesterpatternDecoder::isManchester()
 							DBG_PRINT(", MC SH:"); DBG_PRINT(shorthigh);
 							DBG_PRINTLN("");
 #endif
+
 							// TOdo: Bei FFFF passt diese Pruefung nicht.
 
 #if DEBUGDETECT >= 1
@@ -1760,6 +1779,25 @@ const bool ManchesterpatternDecoder::isManchester()
 						{
 							pdec->mstart = z;
 							mc_start_found = true;
+						}
+					}
+					
+					if (z % 2== 0) { //Every even value
+						int8_t seq_found = -1;
+						uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
+
+						for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
+						{
+							if (sequence[a] == seq)
+							{
+								seq_found = a;
+							}	else if (sequence[a] == -1)
+							{
+								DBG_PRINT(" seq+:"); DBG_PRINT(seq);
+
+								sequence[a] = seq;
+								seq_found = a;
+							}
 						}
 					}
 					z++;
