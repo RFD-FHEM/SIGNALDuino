@@ -896,6 +896,12 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	uint16_t bstartpos = startpos *4/8;
 	uint16_t bendpos = endpos*4 / 8;
 	uint8_t bval;
+	if (startpos % 2 == 1)  // ungerade
+	{
+		message.getByte(bstartpos, &bval);
+		histo[bval & B00001111]++;
+		bstartpos++;
+	}
 	for (uint8_t i = bstartpos; i<bendpos; ++i)
 	{
 		message.getByte(i,&bval);
