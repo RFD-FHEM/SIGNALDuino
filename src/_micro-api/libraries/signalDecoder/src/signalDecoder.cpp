@@ -1774,7 +1774,6 @@ const bool ManchesterpatternDecoder::isManchester()
 #if DEBUGDETECT >= 1
 							DBG_PRINTLN("  -- MC found -- ");
 #endif
-							DBG_PRINTLN(" "); // Entfernen wenn seq ausgabe entfernt wird
 							return true;
 						}
 						else {
@@ -1800,7 +1799,7 @@ const bool ManchesterpatternDecoder::isManchester()
 								seq_found = a;
 							}	else if (sequence[a] == -1)
 							{
-								DBG_PRINT(" seq+:"); DBG_PRINT(seq);
+								DBG_PRINT(" seq+:"); DBG_PRINTLN(seq);
 
 								sequence[a] = seq;
 								seq_found = a;
