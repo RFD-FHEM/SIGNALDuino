@@ -582,7 +582,7 @@ void SignalDetectorClass::processMessage()
 
 
 					mend = min(mend, messageLen); // Workaround if mend=255
-					for (uint8_t i = mstart; i < mend; ++i)
+					for (uint8_t i = 0; i < messageLen; ++i)
 					{
 						MSG_PRINT(message[i]);
 					}
