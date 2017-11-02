@@ -1659,7 +1659,7 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
+			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.49))
 				pshort = true;
 			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
 				plong = true;
@@ -1790,7 +1790,7 @@ const bool ManchesterpatternDecoder::isManchester()
 					
 					if (z % 2== 0) { //Every even value
 						int8_t seq_found = -1;
-						uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
+						uint8_t seq = 100+(pdec->message[z] * 10) + pdec->message[z + 1];
 
 						for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
 						{
