@@ -1737,13 +1737,12 @@ const bool ManchesterpatternDecoder::isManchester()
 
 							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
 
-#if DEBUGDETECT >= 1
 							bool break_flag = false;
 
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
-								DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
-								DBG_PRINT("="); DBG_PRINT(sequence[a]);
+								//DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
+								//DBG_PRINT("="); DBG_PRINT(sequence[a]);
 
 								if (sequence[a] == -1 && a<3)
 								{
@@ -1751,6 +1750,8 @@ const bool ManchesterpatternDecoder::isManchester()
 								}
 							}
 							if (break_flag==true) break;
+#if DEBUGDETECT >= 1
+
 #endif
 
 
@@ -1790,8 +1791,9 @@ const bool ManchesterpatternDecoder::isManchester()
 					
 					if (z % 2== 0) { //Every even value
 						int8_t seq_found = -1;
-						uint8_t seq = 100+(pdec->message[z] * 10) + pdec->message[z + 1];
+						uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
 
+						if (seq < 10) seq += 100;
 						for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
 						{
 							if (sequence[a] == seq)
@@ -1799,7 +1801,7 @@ const bool ManchesterpatternDecoder::isManchester()
 								seq_found = a;
 							}	else if (sequence[a] == -1)
 							{
-								DBG_PRINT(" seq+:"); DBG_PRINTLN(seq);
+								DBG_PRINT(" +seq[:"); DBG_PRINT(seq); DBG_PRINTLN("]");
 
 								sequence[a] = seq;
 								seq_found = a;
