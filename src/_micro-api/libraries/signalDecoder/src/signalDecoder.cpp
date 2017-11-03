@@ -1701,7 +1701,9 @@ const bool ManchesterpatternDecoder::isManchester()
 				DBG_PRINT("vfy ");
 #endif
 
-				int8_t sequence[4] = { -1,-1,-1,-1 };
+				int8_t sequence_even[4] = { -1,-1,-1,-1 };				
+				int8_t sequence_odd[4] = { -1,-1,-1,-1 };
+
 				int z = 0;
 				while (z < pdec->messageLen)
 				{
@@ -1738,16 +1740,20 @@ const bool ManchesterpatternDecoder::isManchester()
 							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
 
 							bool break_flag = false;
-
+							int8_t seq_count_evenodd=0;
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
 								//DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
 								//DBG_PRINT("="); DBG_PRINT(sequence[a]);
 
-								if (sequence[a] == -1 && a<3)
-								{
-									break_flag=true;
-								}
+								if (sequence_even[a] > -1)
+									seq_count_evenodd++;
+								if ( sequence_odd[a] > -1)
+									seq_count_evenodd--;
+								
+								if (seq_count_evenodd != 0)
+									break_flag = true;
+
 							}
 							if (break_flag==true) break;
 #if DEBUGDETECT >= 1
@@ -1789,25 +1795,31 @@ const bool ManchesterpatternDecoder::isManchester()
 						}
 					}
 					
-					if (z % 2== 0) { //Every even value
-						int8_t seq_found = -1;
-						uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
+					int8_t seq_found = -1;
+					uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
 
-						if (seq < 10) seq += 100;
-						for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
-						{
-							if (sequence[a] == seq)
+					if (seq < 10) seq += 100;
+					
+					int8_t *seqptr;
+					if (z % 2 == 0)  //Every even value
+						seqptr = sequence_even;
+					else
+						seqptr = sequence_odd;
+
+					for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
+					{
+							if (seqptr[a] == seq)
 							{
 								seq_found = a;
-							}	else if (sequence[a] == -1)
+							}	else if (seqptr[a] == -1)
 							{
 								DBG_PRINT(" +seq[:"); DBG_PRINT(seq); DBG_PRINTLN("]");
 
-								sequence[a] = seq;
+								seqptr[a] = seq;
 								seq_found = a;
 							}
-						}
-					}
+							
+					} 
 					z++;
 				}
 			}
