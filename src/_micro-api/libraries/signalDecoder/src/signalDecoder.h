@@ -38,7 +38,7 @@
 #endif
 
 #define CMP_CC1101
-#define DEBUG 1
+#define DEBUG 0
 
 #include "output.h"
 #include "bitstore.h"
