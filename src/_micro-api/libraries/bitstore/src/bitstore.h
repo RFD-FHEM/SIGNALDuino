@@ -40,7 +40,7 @@ public:
 	bool getByte(const uint8_t idx, uint8_t *retvalue);
 	uint8_t bytecount;  // Number of stored bytes
 	uint8_t valcount;  // Number of total values stored  --- todo uint16_t
-	uint8_t debug;
+	//uint8_t debug;
 	uint8_t bcnt;   // fuer debugzwecke nach public verschoben
 
 	uint8_t operator[](const uint16_t pos) {
@@ -127,7 +127,7 @@ bool BitStore<bufSize>::addValue(uint8_t value)
 	//store[bytecount]=datastore[bytecount] | (value<<bcnt)
 	if (bcnt + 1 - valuelen >0 )
 		value <<= (bcnt + 1 - valuelen);
-	debug = value;
+	//debug = value;
 
 	datastore[bytecount] = datastore[bytecount] | value;  // (valcount*valuelen%8)
 														  /*

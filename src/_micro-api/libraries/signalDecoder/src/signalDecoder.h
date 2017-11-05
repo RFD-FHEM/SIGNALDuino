@@ -60,7 +60,7 @@
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define MCDEBUGDECODE 1
-//#define DEBUGGLEICH 1
+#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
 //#define DEBUGDoDETECT 3
 
@@ -102,19 +102,16 @@ public:
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
 
-	uint8_t bMoveFlag;
-	uint8_t valueLast = 99;
+	uint8_t bMoveFlag;   // nur zu debugzwecke
+	//uint8_t valueLast = 99;
 	int firstLast;
 	int lastPulse;
-	int mfirst;
-	int mlast;
 	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
 	uint8_t mstart;						  // Holds starting point for message
 	uint8_t mend;						  // Holds end point for message if detected
 	bool success;                         // True if a valid coding was found
 	bool m_truncated;					// Identify if message has been truncated
 	bool m_overflow;
-	bool endMsg;
 	void bufferMove(const uint8_t start);
 
 	uint16_t tol;                           // calculated tolerance for signal
