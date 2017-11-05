@@ -411,6 +411,7 @@ struct s_sendcmd {
 	uint8_t datastart;
 	uint16_t dataend;
 	int16_t buckets[6];
+	uint8_t repeats;
 } ;
 
 void send_cmd()
@@ -449,6 +450,8 @@ void send_cmd()
 			{
 				//type=combined;
 				//cmdNo=255;
+				cmdNo++;
+				command[cmdNo].type = combined;
 				extraDelay = false;
 			}
 			else if (msg_part.charAt(1) == 'M') // send manchester
@@ -476,7 +479,7 @@ void send_cmd()
 		    //MSG_PRINTLN("Adding bucket");
 
 		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
-			repeats= msg_part.substring(2).toInt();
+			command[cmdNo].repeats = msg_part.substring(2).toInt();
 		    //MSG_PRINTLN("Adding repeats");
 
 		} else if (msg_part.charAt(0) == 'D') {
@@ -521,12 +524,15 @@ void send_cmd()
 	if (hasCC1101) cc1101::setTransmitMode();	
 	#endif
 
+	
+	if (command[0].type == combined && command[0].repeats > 0) repeats = command[0].repeats;
+
 	for (uint8_t i=0;i<repeats;i++)
 	{
 		for (uint8_t c=0;c<=cmdNo;c++)
 		{
-			if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
-			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
+			if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
+			if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
 			digitalLow(PIN_SEND);
 		}
 		if (extraDelay) delay(1);
