@@ -1109,18 +1109,39 @@ bool SignalDetectorClass::getSync()
 
 				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 
+				/*
 				while (c < messageLen - 1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 				{
 					if (message[c + 1] == p && message[c] == clock) break;
 					c++;
 				}
+				*/
+				uint8_t clcksyncval = clock << 4 | p;
+				while (c <= message.bytecount)
+				{
+					if (message.datastore[c] == clcksyncval) {
+						mstart = ((c) * 8 / 4);
+						sync = p;
+						state = syncfound;
+						return true;
+					}
+					else if (c > 1 && (message.datastore[c] >> 4) == p && (message.datastore[c - 1] & B00001111) == clock) {
+						mstart = ((c) * 8 / 4) - 1;
+						sync = p;
+						state = syncfound;
+						return true;
+
+					}
+					c++;
+				}
+
 
 				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
 				//if (c<messageLen - minMessageLen)
 				//{
-					sync = p;
-					state = syncfound;
-					mstart = c;
+					//sync = p;
+					//state = syncfound;
+					//mstart = c;
 
 #ifdef DEBUGDECODE
 					//debug
@@ -1130,7 +1151,7 @@ bool SignalDetectorClass::getSync()
 					DBG_PRINT(", TOL: "); DBG_PRINT(tol);
 					DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
 #endif
-					return true;
+					//return true;
 				//}
 			}
 		}
