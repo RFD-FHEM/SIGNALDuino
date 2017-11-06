@@ -122,9 +122,6 @@ inline void SignalDetectorClass::updPattern( const uint8_t ppos)
 
 inline void SignalDetectorClass::doDetect()
 {
-
-
-
 	//printOut();
 
 	bool valid;
@@ -254,16 +251,22 @@ bool SignalDetectorClass::decode(const int * pulse)
 void SignalDetectorClass::compress_pattern()
 {
 
-	calcHisto();
+	//calcHisto();
 
-	for (uint8_t idx = 0; idx<patternLen-1; idx++)
+	uint8_t idx_a[maxNumPattern];
+	uint8_t idx_b[maxNumPattern];
+	uint8_t count = 0;
+
+	for (uint8_t idx = 0; idx<patternLen/2; idx++)
 	{
-		if (histo[idx] == 0)
+		/*if (histo[idx] == 0)
 			continue;
+		*/
 
-		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
+		for (uint8_t idx2 = patternLen +1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
+			//if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
+			if ( (pattern[idx] ^ pattern[idx2]) >> 15)
 				continue;
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
 #if DEBUGDETECT>2
@@ -273,8 +276,12 @@ void SignalDetectorClass::compress_pattern()
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
-				//unsigned long t = micros();
+				idx_a[count] = idx;
+				idx_b[count] = idx2;
+				count++;
+				
 				// Change val -> ref_val in message array
+			/*
 				uint8_t p = 0;
 				for (uint8_t i = 0; i<messageLen && p<histo[idx2]; i++)
 				{
@@ -284,22 +291,23 @@ void SignalDetectorClass::compress_pattern()
 						p++;
 					}
 				}
-			//	d = micros() - t;
+			*/
 
 #if DEBUGDETECT>2
+				/*
 				DBG_PRINT("compr: "); DBG_PRINT(idx2); DBG_PRINT("->"); DBG_PRINT(idx); DBG_PRINT(";");
 				DBG_PRINT(histo[idx2]); DBG_PRINT("*"); DBG_PRINT(pattern[idx2]);
 				DBG_PRINT("->");
 				DBG_PRINT(histo[idx]); DBG_PRINT("*"); DBG_PRINT(pattern[idx]);
-				
+				*/
 #endif // DEBUGDETECT
 
-
+				/*
 				int  sum = histo[idx] + histo[idx2];
 				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (long(pattern[idx2]) * histo[idx2])) / sum;
 				histo[idx] += histo[idx2];
 				pattern[idx2] = histo[idx2]= 0;
-
+				*/
 #if DEBUGDETECT>2
 				DBG_PRINT(" idx:"); DBG_PRINT(pattern[idx]);
 				DBG_PRINT(" idx2:"); DBG_PRINT(pattern[idx2]);
@@ -310,6 +318,52 @@ void SignalDetectorClass::compress_pattern()
 		}
 	}
 
+
+	if (count > 0) {
+		//uint16_t bstartpos = 0;
+		//uint16_t bendpos = messageLen * 4 / 8;  //TOdo: bendpos durch Größe im message objekt ersetzen
+		
+		//Histo löschen, Todo: prüfen ob das überhaupt notwendig ist
+		for (uint8_t i = 0; i<maxNumPattern; ++i)
+		{
+			histo[i] = 0;
+		}
+
+		uint8_t bval;
+		for (uint8_t i = 0; i<= message.bytecount; i++)
+		{
+			message.getByte(i, &bval);
+			uint8_t v1= bval & B00001111;
+			uint8_t v2= bval >> 4;
+			for (uint8_t c = 0; c < count;c++) {
+
+				if (v1 == idx_b[c]) { 
+					bval = v2 << 4 | idx_a[c] ; 
+					//histo[v1]--;
+					pattern[idx_a[c]] = (long(pattern[idx_a[c]]) + pattern[idx_b[c]]) / 2; // Moving average
+					c = count;
+				}
+				else if (v2 == idx_b[c]) { 
+					bval = idx_a[c] << 4 | v1;
+					//histo[v2]--;
+					pattern[idx_a[c]] = (long(pattern[idx_a[c]]) + pattern[idx_b[c]]) / 2; // Moving average
+					c = count;
+				}
+//				else { continue; }
+			}
+			message.datastore[i] = bval;
+			histo[bval &B00001111]++;
+			histo[bval >> 4]++;
+
+		}
+		if (messageLen % 2 == 1)
+		{
+			histo[bval & B00001111]--;
+		}
+	}
+	else { calcHisto(); } // calcisto aufrufen, wenn keine Zusammenfassung möglich war
+
+	/*
 	if (!checkMBuffer())
 	{
 		MSG_PRINTLN(F("after compress_pattern ->"));
@@ -324,7 +378,7 @@ void SignalDetectorClass::compress_pattern()
 		MSG_PRINTLN(F(" wrong Data in Buffer"));
 		printOut();
 	}
-
+	*/
 }
 
 void SignalDetectorClass::processMessage()
@@ -340,13 +394,14 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("Message received:");
 #endif
+		//unsigned long t = micros();
 
 		compress_pattern();
 
 		//calcHisto();
+		
 		getClock();
 		if (state == clockfound) getSync();
-
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
@@ -365,7 +420,7 @@ void SignalDetectorClass::processMessage()
 			bool m_endfound = false;
 
 			//uint8_t repeat;
-			while (mend < messageLen - 1)
+			/*while (mend < messageLen - 1)
 			{
 				if (message[mend + 1] == sync && message[mend] == clock) {
 					mend -= 1;					// Previus signal is last from message
@@ -373,11 +428,34 @@ void SignalDetectorClass::processMessage()
 					break;
 				}
 				mend += 2;
+			}*/
+			if (mstart % 2 == 0)
+			{
+				uint8_t clcksyncval = clock << 4 | sync;
+				for (uint8_t i = (mend / 2) + 1; i <= message.bytecount && m_endfound == false; i++)
+				{
+					if (message.datastore[i] == clcksyncval)
+					{
+						mend = ((i) * 8 / 4) + 1;
+						m_endfound = true;
+					}
+				}
+			} else {
+				for (uint8_t i = (mend / 2) + 1; i <= message.bytecount && m_endfound == false; i++)
+				{
+					if (message.datastore[i] >> 4 == sync && message.datastore[i - 1] & B00001111 == clock)
+					{
+						mend = ((i) * 8 / 4);
+						m_endfound = true;
+					}
+				}
 			}
+
+
+
 			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
 
-			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
 
 
 #if DEBUGDECODE > 1
@@ -390,7 +468,10 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
 			{
+				calcHisto(mstart, mend);	// Recalc histogram due to shortened message
+
 #ifdef DEBUGDECODE
+
 				MSG_PRINTLN("Filter Match: ");;
 #endif
 
@@ -519,7 +600,7 @@ void SignalDetectorClass::processMessage()
 
 
 			}
-			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
+			else if (m_endfound == false && mstart > 0) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
 				//MSG_PRINT("copy");
 #ifdef DEBUGDECODE
@@ -644,12 +725,14 @@ void SignalDetectorClass::processMessage()
 				}
 
 			}
+
 			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
 				//MSG_PRINT(" try mu");
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
+	//			d = micros() - t;
 
 				if (MredEnabled) {
 					int patternInt;
@@ -1000,7 +1083,7 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < messageLen*0.08) && (histo[p] > 1)
+				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
 				//(histo[p] < 8) && (histo[p] > 1)
 
 				//(syncMinFact*pattern[clock] <= syncabs)

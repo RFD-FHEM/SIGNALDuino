@@ -57,8 +57,8 @@
 #endif
 
 
-#define BAUDRATE               57600
-#define FIFO_LENGTH			   50
+#define BAUDRATE               115200
+#define FIFO_LENGTH			   100
 #define DEBUG				   1
 
 
@@ -77,7 +77,7 @@ SignalDetectorClass musterDec;
 #include <EEPROM.h>
 #include "cc1101.h"
 
-#define pulseMin  90
+#define pulseMin 85
 volatile bool blinkLED = false;
 String cmdstring = "";
 volatile unsigned long lastTime = micros();
@@ -270,8 +270,18 @@ void loop() {
 	wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
+		unsigned long t = micros();
+
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
+		
+		if (FiFo.count() >99) {
+			unsigned long d = micros() - t;
+			DBG_PRINT("decdur pm: "); DBG_PRINTLN(musterDec.d);
+
+			DBG_PRINT("decdur deode: "); DBG_PRINTLN(d);
+			musterDec.printOut();
+		}
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 	}
 
