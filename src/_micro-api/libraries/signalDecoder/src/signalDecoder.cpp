@@ -166,7 +166,7 @@ inline void SignalDetectorClass::doDetect()
 	
 	int8_t fidx = 0;
 	
-	if (!valid) {
+	if (!valid) {			// Nachrichtenende erkannt -> alles bis zum Nachrichtenende wird ausgegeben
 		
 		for (uint8_t n = 10; n >= 0; --n) {
 			// Try output
@@ -185,6 +185,7 @@ inline void SignalDetectorClass::doDetect()
 	else {  					// valid
 		if (messageLen >= maxMsgSize) {
 			processMessage(true);   // message Puffer voll aber kein message Ende
+			calcHisto();
 		}
 		else if (messageLen == minMessageLen) {
 			state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
@@ -202,7 +203,7 @@ inline void SignalDetectorClass::doDetect()
 			// Add pattern
 			if (patternLen == maxNumPattern)
 			{
-				calcHisto();
+				//calcHisto();
 				//bool gr2Flag = false;
 				if (histo[pattern_pos] > 2 && state > 0)
 				{
@@ -335,10 +336,10 @@ bool SignalDetectorClass::compress_pattern()
 				int  sum = histo[idx] + histo[idx2];
 				//int lPatternIdx = pattern[idx];
 				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (long(pattern[idx2]) * histo[idx2])) / sum;
-				/*if (abs(pattern[idx]) < 90) {
-					DBG_PRINT("upfirst<90 ");DBG_PRINT(idx);DBG_PRINT(" ");DBG_PRINT(idx2);DBG_PRINT(" ");DBG_PRINTLN(lPatternIdx);
-					printOut();
-				}*/
+				//if (abs(pattern[idx]) < 90) {
+				//	DBG_PRINT("upfirst<90 ");DBG_PRINT(idx);DBG_PRINT(" ");DBG_PRINT(idx2);DBG_PRINT(" ");DBG_PRINTLN(lPatternIdx);
+				//	printOut();
+				//}
 				histo[idx] += histo[idx2];
 				pattern[idx2] = histo[idx2]= 0;
 				ret = true;
@@ -391,7 +392,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 #endif
 
 		compress_pattern();
-		calcHisto();
+		//calcHisto();
 		//if (message[messageLen-1] == 7 ) {
 		//	printOut();
 		//}
@@ -729,6 +730,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				if (!m_endfound) {
 					mend = messageLen;
 				}
+				else {
+					calcHisto(0, mend);	// Recalc histogram due to shortened message
+				}
 				
 				if (MredEnabled) {
 					int patternInt;
@@ -823,10 +827,8 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 						MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
 					}
 				}
-				if (!p_valid) {
-					if (MdebEnabled) {
-						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
-					}
+				if (!p_valid && MdebEnabled) {			// Nachrichtenende erkannt
+					MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
 				}
 				MSG_PRINT(MSG_END);  MSG_PRINT("\n");
 				//if (m_endfound) {
@@ -847,7 +849,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 		
 		if (messageLen >= maxMsgSize && state == searching) {
 			DBG_PRINTLN(F("mOverflow&state=0!"));
+#ifdef DEBUGDECODE
 			printOut();
+#endif
 			m_truncated = false;     //  -> reset
 		}
 	}
@@ -960,7 +964,7 @@ int8_t SignalDetectorClass::findpatt(const int val)
 {
 	//seq[0] = Laenge  //seq[1] = 1. Eintrag //seq[2] = 2. Eintrag ...
 	// Iterate over patterns (1 dimension of array)
-	tol = abs(val)*0.2;
+	tol = abs(val)*tolFact;  // 0.2;
 	for (uint8_t idx = 0; idx<patternLen; ++idx)
 	{
 		if ((val ^ pattern[idx]) >> 15)
@@ -983,6 +987,7 @@ bool SignalDecoderClass::validSequence(const int * a, const int * b)
 
 void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 {
+	if (messageLen == 0) return;
 	for (uint8_t i = 0; i<maxNumPattern; ++i)
 	{
 		histo[i] = 0;
