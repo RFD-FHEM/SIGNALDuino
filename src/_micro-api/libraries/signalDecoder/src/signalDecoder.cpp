@@ -428,34 +428,45 @@ void SignalDetectorClass::processMessage()
 					break;
 				}
 				mend += 2;
-			}*/
+			}
+			uint8_t tmp_mend = mend;
+			mend = mstart+2;
+			m_endfound = false;
+			*/
 			if (mstart % 2 == 0)
 			{
 				uint8_t clcksyncval = clock << 4 | sync;
-				for (uint8_t i = (mend / 2) + 1; i <= message.bytecount && m_endfound == false; i++)
+				for (uint8_t i = (mend / 2) + 2; i <= message.bytecount && m_endfound == false; i++)
 				{
 					if (message.datastore[i] == clcksyncval)
 					{
-						mend = ((i) * 8 / 4) + 1;
+						mend = ((i) * 8 / 4) ;
 						m_endfound = true;
 					}
 				}
 			} else {
-				for (uint8_t i = (mend / 2) + 1; i <= message.bytecount && m_endfound == false; i++)
+				for (uint8_t i = (mend / 2) + 2; i <= message.bytecount && m_endfound == false; i++)
 				{
-					if (message.datastore[i] >> 4 == sync && message.datastore[i - 1] & B00001111 == clock)
+					if ((message.datastore[i] >> 4) == sync && (message.datastore[i-1] & B00001111) == clock)
 					{
-						mend = ((i) * 8 / 4);
+						mend = ((i) * 8 / 4) -1;
 						m_endfound = true;
 					}
 				}
 			}
-
-
+			if (!m_endfound) mend = messageLen;
+			
+			/*
+			if (mend != tmp_mend)
+			{
+				MSG_PRINT("mstart="); MSG_PRINT(mstart); MSG_PRINT(" mend="); MSG_PRINT(mend); MSG_PRINT(" tmp_mend="); MSG_PRINTLN(tmp_mend);
+				printOut();
+			}
+			
 
 			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
-
+			*/
 
 
 #if DEBUGDECODE > 1
@@ -1105,8 +1116,8 @@ bool SignalDetectorClass::getSync()
 				}
 
 				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
-				if (c<messageLen - minMessageLen)
-				{
+				//if (c<messageLen - minMessageLen)
+				//{
 					sync = p;
 					state = syncfound;
 					mstart = c;
@@ -1120,7 +1131,7 @@ bool SignalDetectorClass::getSync()
 					DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
 #endif
 					return true;
-				}
+				//}
 			}
 		}
 	}
