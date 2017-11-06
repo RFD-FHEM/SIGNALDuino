@@ -277,7 +277,7 @@ void loop() {
 		
 		if (FiFo.count() >99) {
 			unsigned long d = micros() - t;
-			DBG_PRINT("decdur pm: "); DBG_PRINTLN(musterDec.d);
+			//DBG_PRINT("decdur pm: "); DBG_PRINTLN(musterDec.d);
 
 			DBG_PRINT("decdur deode: "); DBG_PRINTLN(d);
 			musterDec.printOut();
