@@ -57,7 +57,7 @@
 #endif
 
 
-#define BAUDRATE               115200
+#define BAUDRATE               57600
 #define FIFO_LENGTH			   100
 #define DEBUG				   1
 
