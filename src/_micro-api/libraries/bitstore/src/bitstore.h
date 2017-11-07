@@ -164,7 +164,7 @@ bool BitStore<bufSize>::changeValue(const uint16_t pos, uint8_t value)
 	Serial.print("  datastore is (bin)");   Serial.print(datastore[bytepos], BIN);
 	Serial.print(" (dec)");   Serial.print(datastore[bytepos], DEC);
 	*/
-	if ((bytepos) >= buffsize - 1) return false; // Out of Buffer
+	if ((bytepos) >= buffsize) return false; // Out of Buffer
 												 // Serial.print("Pos:");   Serial.print(pos, DEC);
 												 // 01 11 11 00    10
 
