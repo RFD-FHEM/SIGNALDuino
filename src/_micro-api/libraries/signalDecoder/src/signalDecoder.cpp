@@ -1648,7 +1648,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		tstclock = -1;
 		equal_cnt = 0;
 
-		const int clockpulse = pdec->pattern[sortedPattern[i]];
+		const int clockpulse = pdec->pattern[sortedPattern[i]]; // double clock!
 		for (uint8_t x = 0; x < p; x++)
 		{
 #if DEBUGDETECT >= 1
@@ -1659,9 +1659,9 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.49))
+			if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
 				pshort = true;
-			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+			else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
 				plong = true;
 
 			#if DEBUGDETECT >= 3
