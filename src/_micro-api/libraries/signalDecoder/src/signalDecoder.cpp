@@ -56,8 +56,8 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 	}
 	if (start > messageLen - 1) {
 		if (patternLen != maxNumPattern) {
-			DBG_PRINT(F("msglen=")); MSG_PRINT(messageLen);
-			DBG_PRINT(F(" start=")); MSG_PRINT(start);
+			//DBG_PRINT(F("msglen=")); MSG_PRINT(messageLen);
+			//DBG_PRINT(F(" start=")); MSG_PRINT(start);
 			DBG_PRINTLN(F(" buffMove overflow!"));
 		}
 		reset();
@@ -1779,7 +1779,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		tstclock = -1;
 		equal_cnt = 0;
 
-		const int clockpulse = pdec->pattern[sortedPattern[i]];
+		const int clockpulse = pdec->pattern[sortedPattern[i]]; // double clock!
 		for (uint8_t x = 0; x < p; x++)
 		{
 #if DEBUGDETECT >= 1
@@ -1790,9 +1790,9 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
+			if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
 				pshort = true;
-			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+			else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
 				plong = true;
 
 			#if DEBUGDETECT >= 3
@@ -1832,11 +1832,14 @@ const bool ManchesterpatternDecoder::isManchester()
 				DBG_PRINT("vfy ");
 #endif
 
+				int8_t sequence_even[4] = { -1,-1,-1,-1 };				
+				int8_t sequence_odd[4] = { -1,-1,-1,-1 };
+
 				int z = 0;
 				while (z < pdec->messageLen)
 				{
 
-					if ( ((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
+					if (((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
 					{  
 #if DEBUGDETECT >= 1
 						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[z]); DBG_PRINT(";")
@@ -1866,6 +1869,28 @@ const bool ManchesterpatternDecoder::isManchester()
 #endif
 
 							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
+
+							bool break_flag = false;
+							int8_t seq_count_evenodd=0;
+							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
+							{
+								//DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
+								//DBG_PRINT("="); DBG_PRINT(sequence[a]);
+
+								if (sequence_even[a] > -1)
+									seq_count_evenodd++;
+								if ( sequence_odd[a] > -1)
+									seq_count_evenodd--;
+								
+								if (seq_count_evenodd != 0)
+									break_flag = true;
+
+							}
+							if (break_flag==true) break;
+#if DEBUGDETECT >= 1
+
+#endif
+
 
 							tstclock = tstclock / 6;
 #if DEBUGDETECT >= 1
@@ -1899,9 +1924,6 @@ const bool ManchesterpatternDecoder::isManchester()
 							mc_start_found = true;
 						}
 					}
-<<<<<<< HEAD
-=======
-					
 					int8_t seq_found = -1;
 					uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
 
@@ -1927,7 +1949,6 @@ const bool ManchesterpatternDecoder::isManchester()
 							}
 							
 					} 
->>>>>>> 40e637c... ManchesterpatternDecoder
 					z++;
 				}
 			}
