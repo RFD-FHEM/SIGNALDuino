@@ -1452,11 +1452,37 @@ const bool ManchesterpatternDecoder::doDecode() {
 			int pulseCnt = 0; 
 			bool preamble = false;
 
-			if (i > 0)
-				ManchesterBits.addValue(pdec->pattern[pdec->message[i]] > 0 ? 1 : 0);
+		//	if (i > 0)
+		//		ManchesterBits.addValue(pdec->pattern[pdec->message[i]] > 0 ? 1 : 0);
+
+
+			bool pulseIsLong = isLong(pdec->message[i]);
+			if (pulseIsLong && i > 0) {
+				int pClock = abs(pdec->pattern[pdec->message[i - 1]]);
+				if (pClock < maxPulse && (pdec->pattern[pdec->message[i - 1]] ^ pdec->pattern[pdec->message[i]]) >> 15)
+				{
+					int pClocks = round(pClock / (float)clock);
+					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.07) {
+#ifdef DEBUGDECODE
+						DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
+						if (pClock > 0) { DBG_PRINT("P"); }
+						else { DBG_PRINT("p"); }
+						DBG_PRINT(bit ^1);
+#endif					
+						ManchesterBits.addValue(bit^1);
+						//preamble = true;
+
+					}
+				}
+
+			}
 
 			// Todo: Prüfen ob noch notwendig
+			/*
 			for (uint8_t l=i; l<pdec->messageLen; l++) {
+				#ifdef DEBUGDECODE
+				DBG_PRINT(F("pc:")); DBG_PRINTLN(l);
+				#endif
 				bool pulseIsLong = isLong(pdec->message[l]);
 				
 				// no manchester
@@ -1495,7 +1521,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 					break;
 				}
 			}
-			
+			*/
+
+
 			// interpret first long as short if preamble was found 
 			if (preamble) {
 				ht = true;
@@ -1778,7 +1806,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		tstclock = -1;
 		equal_cnt = 0;
 
-		const int clockpulse = pdec->pattern[sortedPattern[i]];
+		const int clockpulse = pdec->pattern[sortedPattern[i]]; // double clock!
 		for (uint8_t x = 0; x < p; x++)
 		{
 #if DEBUGDETECT >= 1
@@ -1789,9 +1817,9 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.49))
+			if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
 				pshort = true;
-			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+			else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
 				plong = true;
 
 			#if DEBUGDETECT >= 3
@@ -1855,7 +1883,7 @@ const bool ManchesterpatternDecoder::isManchester()
 							equal_cnt = pdec->histo[shorthigh] + pdec->histo[longhigh] - pdec->histo[shortlow] - pdec->histo[longlow];
 
 #if DEBUGDETECT >= 1
-							DBG_PRINT("equalcnt: pos "); DBG_PRINT(pdec->mstart); DBG_PRINT(" to ") DBG_PRINT(pdec->mend); DBG_PRINT("count=");  DBG_PRINT(equal_cnt); DBG_PRINT(" ");
+							DBG_PRINT("equalcnt: pos "); DBG_PRINT(pdec->mstart); DBG_PRINT(" to ") DBG_PRINT(pdec->mend); DBG_PRINT(" count=");  DBG_PRINT(equal_cnt); DBG_PRINT(" ");
 #endif
 							mc_start_found = false;
 							if (abs(equal_cnt) > round(pdec->messageLen*0.04))  break; //Next loop
@@ -1943,7 +1971,7 @@ const bool ManchesterpatternDecoder::isManchester()
 								seq_found = a;
 							}	else if (seqptr[a] == -1)
 							{
-								DBG_PRINT(" +seq[:"); DBG_PRINT(seq); DBG_PRINTLN("]");
+								//DBG_PRINT(" +seq[:"); DBG_PRINT(seq); DBG_PRINTLN("]");
 
 								seqptr[a] = seq;
 								seq_found = a;
