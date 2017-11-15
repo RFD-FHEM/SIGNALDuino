@@ -33,6 +33,8 @@
 
 #define CMP_CC1101     // bitte auch das "#define CMP_CC1101" in der SignalDecoder.h beachten 
 
+//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+
 #define PROGNAME               "RF_RECEIVER"
 #define PROGVERS               "3.3.2-dev"
 #define VERSION_1               0x33
@@ -60,7 +62,7 @@
 #define BAUDRATE               57600
 #define FIFO_LENGTH            100      // 50
 
-//#define WATCHDOG		1 
+//#define WATCHDOG	1 // Der Watchdog ist in der Entwicklungs und Testphase deaktiviert. Es muss auch ohne Watchdog stabil funktionieren.
 #define DEBUG                  1
 
 #ifdef WATCHDOG
@@ -82,7 +84,7 @@ SignalDetectorClass musterDec;
 
 #define pulseMin  90
 #define MsMoveCountmaxDef 3
-#define MdebFifoLimitDef 60
+#define MdebFifoLimitDef 70
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
 String cmdstring = "";
@@ -457,7 +459,7 @@ struct s_sendcmd {
 	uint8_t datastart;
 	uint16_t dataend;
 	int16_t buckets[6];
-	uint8_t repeats;
+	//uint8_t repeats;
 } ;
 
 void send_cmd()
@@ -496,8 +498,8 @@ void send_cmd()
 			{
 				//type=combined;
 				//cmdNo=255;
-				cmdNo++;
-				command[cmdNo].type = combined;
+				//cmdNo++;
+				//command[cmdNo].type = combined;
 				extraDelay = false;
 			}
 			else if (msg_part.charAt(1) == 'M') // send manchester
@@ -525,7 +527,8 @@ void send_cmd()
 		    //MSG_PRINTLN("Adding bucket");
 
 		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
-			command[cmdNo].repeats = msg_part.substring(2).toInt();
+			repeats= msg_part.substring(2).toInt();
+			//command[cmdNo].repeats = msg_part.substring(2).toInt();
 		    //MSG_PRINTLN("Adding repeats");
 
 		} else if (msg_part.charAt(0) == 'D') {
@@ -550,7 +553,7 @@ void send_cmd()
 			
 			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 				uint8_t hex;
-				//MSG_PRINT("write new ccreg  ");
+				//MSG_PRINTLN("write new ccreg  ");
 				for (uint8_t i=0;i<ccParamAnz;i++)
 				{
 					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
@@ -569,15 +572,16 @@ void send_cmd()
 	#ifdef CMP_CC1101
 	if (hasCC1101) cc1101::setTransmitMode();	
 	#endif
-	
-	if (command[0].type == combined && command[0].repeats > 0) repeats = command[0].repeats;
+	//if (command[0].type == combined && command[0].repeats > 0) repeats = command[0].repeats;
 	
 	for (uint8_t i=0;i<repeats;i++)
 	{
 		for (uint8_t c=0;c<=cmdNo;c++)
 		{
-			if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
-			if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
+			if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
+			if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
+			//if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
+			//if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
 
 			digitalLow(PIN_SEND);
 		}
@@ -1038,7 +1042,7 @@ void initEEPROM(void) {
   }
 
   } else {
-    EEPROM.write(addr_features, 0xEF);    // Init EEPROM with all flags enabled, except debug
+    EEPROM.write(addr_features, 0xFF);    // Init EEPROM with all flags enabled, (0xEF except debug)
     EEPROM.write(addr_MdebFifoLimit, MdebFifoLimitDef);
     EEPROM.write(addr_MsMoveCountmax, MsMoveCountmaxDef);
     EEPROM.write(addr_MuSplitThresh, 0);
