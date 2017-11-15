@@ -1773,22 +1773,27 @@ const bool ManchesterpatternDecoder::isManchester()
 							int8_t seq_count_evenodd=0;
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
-								//DBG_PRINT("  seq["); DBG_PRINT(a); DBG_PRINT("]");
-								//DBG_PRINT("="); DBG_PRINT(sequence[a]);
+								DBG_PRINT("  seq_even["); DBG_PRINT(a); DBG_PRINT("]");
+								DBG_PRINT("="); DBG_PRINT(sequence_even[a]);
+								DBG_PRINT("  seq_odd["); DBG_PRINT(a); DBG_PRINT("]");
+								DBG_PRINT("="); DBG_PRINT(sequence_odd[a]);
 
-								if (sequence_even[a] > -1)
-									seq_count_evenodd++;
-								if ( sequence_odd[a] > -1)
-									seq_count_evenodd--;
-								
-								if (seq_count_evenodd != 0)
+								if (sequence_even[a] == -1 || sequence_odd[a] == -1)
+								{
 									break_flag = true;
+								}
 
 							}
-							if (break_flag==true) break;
+							if (break_flag == true) {
 #if DEBUGDETECT >= 1
-
+								DBG_PRINT("  sequence check not passed");
 #endif
+								break;
+							}
+#if DEBUGDETECT >= 1
+							DBG_PRINT("  all check passed");
+#endif
+
 
 
 							tstclock = tstclock / 6;
