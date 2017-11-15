@@ -1326,20 +1326,21 @@ const bool ManchesterpatternDecoder::doDecode() {
 		//		ManchesterBits.addValue(pdec->pattern[pdec->message[i]] > 0 ? 1 : 0);
 
 
-			bool pulseIsLong = isLong(pdec->message[i]);
-			if (pulseIsLong && i > 0) {
+			//bool pulseIsLong = isLong(pdec->message[i]);
+			if (i > 0) {
 				int pClock = abs(pdec->pattern[pdec->message[i - 1]]);
 				if (pClock < maxPulse && (pdec->pattern[pdec->message[i - 1]] ^ pdec->pattern[pdec->message[i]]) >> 15)
 				{
 					int pClocks = round(pClock / (float)clock);
-					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.07) {
+					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
 #ifdef DEBUGDECODE
 						DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
-						if (pClock > 0) { DBG_PRINT("P"); }
+						if (pdec->pattern[pdec->message[i - 1]] > 0) { DBG_PRINT("P"); }
 						else { DBG_PRINT("p"); }
 						DBG_PRINT(bit ^1);
 #endif					
-						ManchesterBits.addValue(bit^1);
+						if (pdec->pattern[pdec->message[i - 1]] > 0) bit = 1;
+						ManchesterBits.addValue(bit);
 						//preamble = true;
 
 					}
