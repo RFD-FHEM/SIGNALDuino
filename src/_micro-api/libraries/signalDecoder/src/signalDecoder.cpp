@@ -265,12 +265,14 @@ void SignalDetectorClass::compress_pattern()
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
+				uint8_t change_count = 0;
 				// Change val -> ref_val in message array
-				for (uint8_t i = 0; i<messageLen; i++)
+				for (uint8_t i = 0; i<messageLen && change_count < histo[idx2]; i++)
 				{
 					if (message[i] == idx2)
 					{
 						message.changeValue(i, idx);
+						change_count++;
 					}
 				}
 
