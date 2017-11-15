@@ -60,6 +60,7 @@
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
 //#define MCDEBUGDECODE 1
+//#define MCDEBUGSEQ 1
 #define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
 //#define DEBUGDoDETECT 3
