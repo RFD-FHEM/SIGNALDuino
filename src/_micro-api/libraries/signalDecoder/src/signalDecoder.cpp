@@ -570,7 +570,7 @@ void SignalDetectorClass::processMessage()
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("MC");
+					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -581,12 +581,10 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT("D=");
 
 
-					mend = min(mend, messageLen); // Workaround if mend=255
 					for (uint8_t i = 0; i < messageLen; ++i)
 					{
 						MSG_PRINT(message[i]);
 					}
-					MSG_PRINT(SERIAL_DELIMITER);
 
 					if (m_overflow) {
 						MSG_PRINT("O");
