@@ -1300,7 +1300,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 			//if (i > 2) i=i-2;
-			while (i>1)
+			while (i>1 && i < pdec->messageLen)
 			{
 				
 				if (!isShort(pdec->message[i-1]) || !isShort(pdec->message[i -2])) 
@@ -1312,7 +1312,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 		}
 
-		if (mc_sync && mc_start_found == false && (isLong(pdec->message[i]) || isShort(pdec->message[i])))
+		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
+		if (mc_sync && mc_start_found == false && (isLong(mpi) || isShort(mpi)))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
@@ -1330,7 +1331,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			if (i > 0) {
 				uint8_t pulseid = pdec->message[i - 1];
 				int pClock = abs(pdec->pattern[pulseid]);
-				if (pClock < maxPulse && (pdec->pattern[pulseid] ^ pdec->pattern[pdec->message[i]]) >> 15) 
+				if (pClock < maxPulse && (pdec->pattern[pulseid] ^ pdec->pattern[mpi]) >> 15) 
 				{
 					int pClocks = round(pClock / (float)clock);
 					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
@@ -1433,7 +1434,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			#ifdef DEBUGDECODE
 			char value=NULL;
 			#endif
-			if (isShort(pdec->message[i]) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
+			if (isShort(mpi) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
 			{
 				
 				i++;
@@ -1443,7 +1444,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				value = 'S';
 				#endif
 			}
-			else if (isLong(pdec->message[i])) {
+			else if (isLong(mpi)) {
 				bit = bit ^ (1);
 				hasbit = true;
 				ht = true;
@@ -1495,7 +1496,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 #endif
 					//pdec->printOut();
-					if (i == maxMsgSize-1 && i == pdec->messageLen-1 && isShort(pdec->message[i]))
+					if (i == maxMsgSize-1 && i == pdec->messageLen-1 && isShort(mpi))
 					{
 						pdec->mcDetected = true;
 					}
@@ -1537,7 +1538,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			if (mc_start_found) { // don't write if manchester processing was canceled
 #ifdef DEBUGDECODE
-				if (pdec->pattern[pdec->message[i]] < 0)
+				if (pdec->pattern[mpi] < 0)
 					value = (value + 0x20); //lowwecase
 				DBG_PRINT(value);
 #endif
@@ -1737,14 +1738,15 @@ const bool ManchesterpatternDecoder::isManchester()
 				int z = 0;
 				while (z < pdec->messageLen)
 				{
+					const uint8_t mpz = pdec->message[z]; // Store pattern for further processing
 
-					if (((isLong(pdec->message[z]) == false) && (isShort(pdec->message[z]) == false)) || (z == (pdec->messageLen-1)))
+					if (((isLong(mpz) == false) && (isShort(mpz) == false)) || (z == (pdec->messageLen-1)))
 					{  
 #if DEBUGDETECT >= 1
-						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(pdec->message[z]); DBG_PRINT(";")
+						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(mpz); DBG_PRINT(";")
 
-						DBG_PRINT("Long"); DBG_PRINT(isLong(pdec->message[z])); DBG_PRINT(";");
-						DBG_PRINT("Short"); DBG_PRINT(isShort(pdec->message[z])); DBG_PRINTLN(";");
+						DBG_PRINT("Long"); DBG_PRINT(isLong(mpz)); DBG_PRINT(";");
+						DBG_PRINT("Short"); DBG_PRINT(isShort(mpz)); DBG_PRINTLN(";");
 
 #endif
 						if ((z - pdec->mstart) > minbitlen)  // Todo: Hier wird auf minbitlen geprueft. Die Differenz zwischen mstart und mend sind aber Pulse und keine bits
@@ -1770,7 +1772,6 @@ const bool ManchesterpatternDecoder::isManchester()
 							if ((longlow == longhigh) || (shortlow == shorthigh) || (longlow == shortlow) || (longhigh == shorthigh) || (longlow == shorthigh) || (longhigh == shortlow)) break; //Check if the indexes are valid
 
 							bool break_flag = false;
-							int8_t seq_count_evenodd=0;
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
 								DBG_PRINT("  seq_even["); DBG_PRINT(a); DBG_PRINT("]");
@@ -1781,13 +1782,28 @@ const bool ManchesterpatternDecoder::isManchester()
 								if (sequence_even[a] == -1 || sequence_odd[a] == -1)
 								{
 									break_flag = true;
+
 								}
 
 							}
 							if (break_flag == true) {
 #if DEBUGDETECT >= 1
 								DBG_PRINT("  sequence check not passed");
-#endif
+#endif									
+								// Check if we can start a new calulation at a later position
+								if (pdec->messageLen - z > minbitlen)
+								{
+									// clear sequence buffers
+									for (uint8_t a = 0; a < 4; a++)
+									{
+										sequence_even[a] = -1;
+										sequence_odd[a] = -1;
+									}
+									
+									z++; // Increase z counter to start new check
+									continue;
+
+								}
 								break;
 							}
 #if DEBUGDETECT >= 1
@@ -1831,7 +1847,7 @@ const bool ManchesterpatternDecoder::isManchester()
 					}
 					
 					int8_t seq_found = -1;
-					uint8_t seq = (pdec->message[z] * 10) + pdec->message[z + 1];
+					uint8_t seq = (mpz* 10) + pdec->message[z + 1];
 
 					if (seq < 10) seq += 100;
 					
