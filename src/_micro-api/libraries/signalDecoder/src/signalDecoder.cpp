@@ -315,12 +315,14 @@ bool SignalDetectorClass::compress_pattern()
 				DBG_PRINT(" idx2= "); DBG_PRINT(idx2); DBG_PRINT("/"); DBG_PRINT(pattern[idx2]);
 				DBG_PRINT(" tol="); DBG_PRINT(tol);
 #endif
+				uint8_t change_count = 0;
 				// Change val -> ref_val in message array
-				for (uint8_t i = 0; i<messageLen; i++)
+				for (uint8_t i = 0; i<messageLen && change_count < histo[idx2]; i++)
 				{
 					if (message[i] == idx2)
 					{
 						message.changeValue(i, idx);
+						change_count++;
 					}
 				}
 
@@ -651,7 +653,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 
 #if DEBUGDECODE > 2
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("MC");
+					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -1792,11 +1794,11 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
-			//if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
+			//if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
+			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
 				pshort = true;
-			else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
-			//else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+			//else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
+			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
 				plong = true;
 
 			#if DEBUGDETECT >= 3
