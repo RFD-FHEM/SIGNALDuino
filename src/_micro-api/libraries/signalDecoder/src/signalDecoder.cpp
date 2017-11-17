@@ -1342,11 +1342,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
 #ifdef DEBUGDECODE
 						DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
-						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); }
-						else { DBG_PRINT("p"); }
-						DBG_PRINT(bit ^1);
+						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); bit = 0; }
+						else { DBG_PRINT("p"); bit = 1; }
+						DBG_PRINT(bit);
 #endif					
-						if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
+						//if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
 						ManchesterBits.addValue(bit);
 						//preamble = true;
 
@@ -1560,7 +1560,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			if (mc_start_found) { // don't write if manchester processing was canceled
 #ifdef DEBUGDECODE
-				if (pdec->pattern[mpi] < 0)
+				if (pdec->pattern[pdec->message[i+1]] < 0)
 					value = (value + 0x20); //lowwecase
 				DBG_PRINT(value);
 #endif
