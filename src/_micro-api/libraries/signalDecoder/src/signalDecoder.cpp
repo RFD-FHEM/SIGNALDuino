@@ -1290,30 +1290,35 @@ const bool ManchesterpatternDecoder::doDecode() {
 	bool hasbit = false;
 	uint8_t bit = 0;
 
+	bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+
 	while (i < pdec->messageLen)
 	{
 		// Start vom MC Signal suchen
+
 		if (mc_sync == false && (isLong(pdec->message[i])))
 		{
 			if (i>0) // Todo: Prüfen ob das 1. Bit damit korrekt ermittelt wird
-				bit = pdec->message[i] == longhigh ? 1 : 0;
+				bit = pdec->message[i] == longhigh ? 0: 1; 
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 			//if (i > 2) i=i-2;
-			while (i>1 && i < pdec->messageLen)
-			{
-				
-				if (!isShort(pdec->message[i-1]) || !isShort(pdec->message[i -2])) 
-				{ 
-					break;
-				}
 
+			// Check if ther are min three more short pulses bevore
+			if (i > 2 && isShort(pdec->message[i -3]) && isShort(pdec->message[i - 2]) &&  isShort(pdec->message[i - 1]) )
+			{
+				i--;  // Todo: Alle bereits erkannten Pulse zurücksüpringen
+				prelongdecoding = true;
+				bit = bit ^ 1; // need to flip the bit 
+			}
+			while (i>1 && isShort(pdec->message[i - 1]) && isShort(pdec->message[i - 2]))
+			{
 				i = i - 2;
 			}
 		}
-
 		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
-		if (mc_sync && mc_start_found == false && (isLong(mpi) || isShort(mpi)))
+
+		if (mc_sync && mc_start_found == false && (isShort(mpi) || isLong(mpi)))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
@@ -1445,12 +1450,29 @@ const bool ManchesterpatternDecoder::doDecode() {
 				#endif
 			}
 			else if (isLong(mpi)) {
+				//if (!firstlong)  
 				bit = bit ^ (1);
+				//firstlong = false;
 				hasbit = true;
 				ht = true;
 				#ifdef DEBUGDECODE
 				value = 'L';
 				#endif
+			}
+			else if (isShort(mpi) && prelongdecoding && isLong(pdec->message[i+1]))
+			{
+				// We must skip the last short pulse bevor the following long pulse
+				//i++;
+				prelongdecoding = false; // Reset flag, because this is a one time option
+				#ifdef DEBUGDECODE
+				value = 'L';
+				if (pdec->pattern[pdec->message[i]] < 0)
+					value = (value + 0x20); //lowwecase
+
+				#endif
+//				bit = bit ^ (1);
+				hasbit = true;
+				ht = true;
 			}
 			else { // Found something that fits not to our manchester signal
 #ifdef DEBUGDECODE
