@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("DMC");
+					MSG_PRINT("DMc");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -595,7 +595,7 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINTLN(MSG_END);
 //#endif
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("MC");
+					MSG_PRINT("Mc");
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
