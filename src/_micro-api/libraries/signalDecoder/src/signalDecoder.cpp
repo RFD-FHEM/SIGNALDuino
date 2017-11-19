@@ -678,7 +678,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					MSG_PRINTLN(MSG_END);
 #endif
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("MC");
+					MSG_PRINT("Mc");
 					MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
 					MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
@@ -1394,30 +1394,35 @@ const bool ManchesterpatternDecoder::doDecode() {
 	bool hasbit = false;
 	uint8_t bit = 0;
 
+	bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+
 	while (i < pdec->messageLen)
 	{
 		// Start vom MC Signal suchen
+
 		if (mc_sync == false && (isLong(pdec->message[i])))
 		{
 			if (i>0) // Todo: Prüfen ob das 1. Bit damit korrekt ermittelt wird
-				bit = pdec->message[i] == longhigh ? 1 : 0;
+				bit = pdec->message[i] == longhigh ? 0: 1; 
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 			//if (i > 2) i=i-2;
-			while (i>1 && i < pdec->messageLen)
-			{
-				
-				if (!isShort(pdec->message[i-1]) || !isShort(pdec->message[i -2])) 
-				{ 
-					break;
-				}
 
+			// Check if ther are min three more short pulses bevore
+			if (i > 2 && isShort(pdec->message[i -3]) && isShort(pdec->message[i - 2]) &&  isShort(pdec->message[i - 1]) )
+			{
+				i--;  // Todo: Alle bereits erkannten Pulse zurücksüpringen
+				prelongdecoding = true;
+				bit = bit ^ 1; // need to flip the bit 
+			}
+			while (i>1 && isShort(pdec->message[i - 1]) && isShort(pdec->message[i - 2]))
+			{
 				i = i - 2;
 			}
 		}
-
 		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
-		if (mc_sync && mc_start_found == false && (isLong(mpi) || isShort(mpi)))
+
+		if (mc_sync && mc_start_found == false && (isShort(mpi) || isLong(mpi)))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
@@ -1441,11 +1446,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
 #ifdef DEBUGDECODE
 						DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
-						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); }
-						else { DBG_PRINT("p"); }
-						DBG_PRINT(bit ^1);
+						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); bit = 0; }
+						else { DBG_PRINT("p"); bit = 1; }
+						DBG_PRINT(bit);
 #endif					
-						if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
+						//if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
 						ManchesterBits.addValue(bit);
 						//preamble = true;
 
@@ -1549,12 +1554,29 @@ const bool ManchesterpatternDecoder::doDecode() {
 				#endif
 			}
 			else if (isLong(mpi)) {
+				//if (!firstlong)  
 				bit = bit ^ (1);
+				//firstlong = false;
 				hasbit = true;
 				ht = true;
 				#ifdef MCDEBUGDECODE
 				value = 'L';
 				#endif
+			}
+			else if (isShort(mpi) && prelongdecoding && isLong(pdec->message[i+1]))
+			{
+				// We must skip the last short pulse bevor the following long pulse
+				//i++;
+				prelongdecoding = false; // Reset flag, because this is a one time option
+				#ifdef DEBUGDECODE
+				value = 'L';
+				if (pdec->pattern[pdec->message[i]] < 0)
+					value = (value + 0x20); //lowwecase
+
+				#endif
+//				bit = bit ^ (1);
+				hasbit = true;
+				ht = true;
 			}
 			else { // Found something that fits not to our manchester signal
 #ifdef MCDEBUGDECODE
@@ -1642,7 +1664,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			if (mc_start_found) { // don't write if manchester processing was canceled
 #ifdef MCDEBUGDECODE
-				if (pdec->pattern[mpi] < 0)
+				if (pdec->pattern[pdec->message[i+1]] < 0)
 					value = (value + 0x20); //lowwecase
 				DBG_PRINT(value);
 #endif
@@ -1794,11 +1816,11 @@ const bool ManchesterpatternDecoder::isManchester()
 			bool pshort = false;
 			bool plong = false;
 
-			//if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
-			if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
+			if (pdec->inTol(clockpulse/2, abs(aktpulse), clockpulse*0.2))
+			//if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.5))
 				pshort = true;
-			//else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
-			else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
+			else if (pdec->inTol(clockpulse, abs(aktpulse), clockpulse*0.40))
+			//else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
 				plong = true;
 
 			#if DEBUGDETECT >= 3
