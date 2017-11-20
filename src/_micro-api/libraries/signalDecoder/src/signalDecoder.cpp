@@ -985,7 +985,7 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < messageLen*0.08) && (histo[p] > 1)
+				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
 				//(histo[p] < 8) && (histo[p] > 1)
 
 				//(syncMinFact*pattern[clock] <= syncabs)
