@@ -154,6 +154,7 @@ void changeReceiver();
 uint8_t cmdstringPos2int(uint8_t pos);
 void printHex2(const byte hex);
 uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 void setup() {
@@ -218,6 +219,8 @@ void setup() {
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
 	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
 	cmdstring.reserve(40);
+
+	musterDec.setStreamCallback(writeCallback);
 
 	if (!hasCC1101 || cc1101::regCheck()) {
 		enableReceive();
@@ -321,7 +324,20 @@ void disableReceive() {
   #endif
 }
 
+//============================== Write callback =========================================
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
+{
+	while (!MSG_PRINTER.availableForWrite() )
+		yield();
+	//DBG_PRINTLN("Called writeCallback");
 
+	//MSG_PRINT(*buf);
+	//MSG_WRITE(buf, len);
+	Serial.write(buf,len);
+	
+	//serverClient.write("test");
+
+}
 
 //================================= RAW Send ======================================
 void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *buckets, String *source=&cmdstring)
