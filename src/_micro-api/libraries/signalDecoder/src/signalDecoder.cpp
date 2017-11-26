@@ -1796,11 +1796,14 @@ const bool ManchesterpatternDecoder::isManchester()
 							bool break_flag = false;
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
-#if DEBUGDETECT >= 0
+#ifdef DEBUGDETECT  //>=0
 								DBG_PRINT("  seq_even["); DBG_PRINT(a); DBG_PRINT("]");
 								DBG_PRINT("="); DBG_PRINT(sequence_even[a]);
 								DBG_PRINT("  seq_odd["); DBG_PRINT(a); DBG_PRINT("]");
 								DBG_PRINT("="); DBG_PRINT(sequence_odd[a]);
+#if DEBUGDETECT == 0
+								DBG_PRINTLN(" "); 
+#endif
 #endif
 								if ( (sequence_even[a] - sequence_odd[a] != 0) && (sequence_odd[a] == -1 || sequence_even[a] == -1))
 								{
