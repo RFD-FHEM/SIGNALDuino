@@ -286,7 +286,7 @@ void SignalDetectorClass::compress_pattern()
 
 
 				int  sum = histo[idx] + histo[idx2];
-				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (pattern[idx2] * histo[idx2])) / sum;
+				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (long(pattern[idx2]) * histo[idx2])) / sum;
 				histo[idx] += histo[idx2];
 				pattern[idx2] = histo[idx2]= 0;
 
