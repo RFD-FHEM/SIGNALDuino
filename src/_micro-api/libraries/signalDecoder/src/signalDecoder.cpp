@@ -30,6 +30,7 @@
 */
 #include "signalDecoder.h"
 
+#ifdef DEBUGGLEICH
 //Helper function to check buffer for bad data
 bool SignalDetectorClass::checkMBuffer()
 {
@@ -44,6 +45,7 @@ bool SignalDetectorClass::checkMBuffer()
 	}
 	return true;
 }
+#endif
 
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
@@ -55,10 +57,10 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		return;
 	}
 	if (start > messageLen - 1) {
-		if (patternLen != maxNumPattern) {
-			//DBG_PRINT(F("msglen=")); MSG_PRINT(messageLen);
-			//DBG_PRINT(F(" start=")); MSG_PRINT(start);
-			DBG_PRINTLN(F(" buffMove overflow!"));
+		if (start > messageLen) {
+			DBG_PRINT(F(" buffMove overflow!"));
+			DBG_PRINT(F(" start=")); MSG_PRINTLN(start);
+			//printOut();
 		}
 		reset();
 	}
@@ -219,6 +221,10 @@ inline void SignalDetectorClass::doDetect()
 					{
 						if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 						{
+							/*  // Test ob es was bringen wuerde, wenn der letzte Wert in message[] nicht ueberschrieben wuerde -> keine Vorteile erkennbar.
+							if (i == messageLen - 1) {
+								printOut();
+							} */
 							i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 							bufferMove(i);
 							calcHisto();
@@ -716,7 +722,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
 				bool m_endfound = false;
-				mend = mstart + minMessageLen;
+				mend = minMessageLen;
 				if (mend <= messageLen && MuSplitThresh > 0) {
 					for (uint8_t i = mend; i < messageLen; ++i) {
 						if (abs(pattern[message[i]]) >= MuSplitThresh) {
@@ -729,8 +735,12 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 						}
 					}
 				}
+
 				if (!m_endfound) {
 					mend = messageLen;
+					if (mstart > 0) {	// wurde in isManchester der mstart veraendert?
+						calcHisto();
+					}
 				}
 				else {
 					calcHisto(0, mend);	// Recalc histogram due to shortened message
@@ -1016,6 +1026,27 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 		message.getByte(bendpos, &bval);
 		histo[bval & B00001111]--;
 	}
+	
+	/*
+	// patternLen reduzieren, wenn in der histo[] mindestens die letzten 3 Einträge 0 sind.  Bringt anscheinend keine merklichen Vorteile.
+	if (patternLen == maxNumPattern && histo[maxNumPattern-1] == 0) {
+		for (uint8_t i = maxNumPattern-2; i > 0; --i)
+		{
+			if (histo[i] > 0) {
+				if (i < 5 && state == 0) {
+					MSG_PRINT("chist i=");
+					MSG_PRINT(i);
+					MSG_PRINT(" ep=");
+					MSG_PRINT(endpos);
+					patternLen = i + 1;
+					pattern_pos = patternLen;
+					printOut();
+				}
+				break;
+			}
+			
+		}
+	}*/
 }
 
 bool SignalDetectorClass::getClock()
@@ -1089,7 +1120,7 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < messageLen*0.08) && (histo[p] > 1)
+				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
 				//(histo[p] < 8) && (histo[p] > 1)
 
 				//(syncMinFact*pattern[clock] <= syncabs)
