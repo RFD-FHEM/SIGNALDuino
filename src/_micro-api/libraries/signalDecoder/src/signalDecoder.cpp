@@ -994,9 +994,14 @@ bool SignalDetectorClass::getSync()
 #if DEBUGDETECT > 3
 	DBG_PRINTLN("  --  Searching Sync  -- ");
 #endif
+		uint8_t syncLenMax = 100; 		      //  wenn in den ersten ca 100 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
+	
+	
+	
 
 	if (state == clockfound)		// we need a clock to find this type of sync
 	{
+		syncLenMax=sd_min(syncLenMax, messageLen - minMessageLen);
 		// clock wurde bereits durch getclock bestimmt.
 		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
 		{
@@ -1033,14 +1038,14 @@ bool SignalDetectorClass::getSync()
 
 				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 
-				while (c < messageLen - 1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				while (c < syncLenMax)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
 				{
 					if (message[c + 1] == p && message[c] == clock) break;
 					c++;
 				}
 
 				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
-				if (c<messageLen - minMessageLen)
+				if (c<syncLenMax)
 				{
 					sync = p;
 					state = syncfound;
