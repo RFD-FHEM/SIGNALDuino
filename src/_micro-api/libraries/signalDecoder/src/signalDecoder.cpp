@@ -182,6 +182,7 @@ inline void SignalDetectorClass::doDetect()
 		if (messageLen > 0) reset();	// nur zur Sicherheit, duerfte eigentlich nie vorkommen
 		
 		MsMoveCount = MsMoveCountmax;
+		MuMoveCount = 0;
 		addPattern();
 	}
 	else {  					// valid
@@ -722,18 +723,27 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
 				bool m_endfound = false;
-				mend = minMessageLen;
-				if (mend <= messageLen && MuSplitThresh > 0) {
-					for (uint8_t i = mend; i < messageLen; ++i) {
-						if (abs(pattern[message[i]]) >= MuSplitThresh) {
-							mend = i;
-							m_endfound = true;
-							//MSG_PRINT(F("MUend found="));
-							//MSG_PRINTLN(mend);
-							//printOut();
-							break;
+				
+				bool isMuRepeat = isMuMessageRepeat();
+#ifdef DEBUGMUREPEAT
+				DBG_PRINTLN(isMuRepeat, DEC);
+#endif
+				if (isMuRepeat) {
+					mend = minMessageLen;
+					if (mend <= messageLen && MuSplitThresh > 0) {
+						for (uint8_t i = mend; i < messageLen-1; ++i) {
+							if (abs(pattern[message[i]]) >= MuSplitThresh) {
+								mend = i;
+								m_endfound = true;
+								//MSG_PRINT(F("MUend found="));
+								//MSG_PRINTLN(mend);
+								//printOut();
+								break;
+							}
 						}
 					}
+				
+					//printOut();
 				}
 
 				if (!m_endfound) {
@@ -743,7 +753,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					}
 				}
 				else {
-					calcHisto(0, mend);	// Recalc histogram due to shortened message
+					calcHisto(0, mend-1);	// Recalc histogram due to shortened message
 				}
 				
 				if (MredEnabled) {
@@ -829,14 +839,20 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				printMsgSuccess = true;
 				success = true;
 				
-				if (m_endfound && (messageLen - mend) >= minMessageLen) {
-					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
-					MsMoveCount--;
-					bufferMove(mend);
-					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
-					mstart = 0;
-					if (MdebEnabled) {
-						MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
+				if (m_endfound) {
+					if (p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
+						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
+						MuMoveCount++;
+						bufferMove(mend);
+						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
+						mstart = 0;
+						if (MdebEnabled) {
+							MSG_PRINT("w"); MSG_PRINT(MuMoveCount); MSG_PRINT(SERIAL_DELIMITER);
+						}
+					} else {
+						if (MdebEnabled) {
+							MSG_PRINT("w-"); MSG_PRINT(SERIAL_DELIMITER);
+						}
 					}
 				}
 				if (!p_valid && MdebEnabled) {			// Nachrichtenende erkannt
@@ -936,7 +952,7 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT(pattern[clock]);
 	} else
 		DBG_PRINT("NULL");
-	DBG_PRINT(F(", Tol: ")); DBG_PRINT(tol);
+	//DBG_PRINT(F(", Tol: ")); DBG_PRINT(tol);
 	DBG_PRINT(F(", PattLen: ")); DBG_PRINT(patternLen); DBG_PRINT(" ("); DBG_PRINT(pattern_pos); DBG_PRINT(")");
 	DBG_PRINT(F(", Pulse: F/L/FL/LP ")); DBG_PRINT(*first); DBG_PRINT(", "); DBG_PRINT(*last);DBG_PRINT(", "); DBG_PRINT(firstLast);DBG_PRINT(", ");DBG_PRINT(lastPulse);
 	DBG_PRINT(F(", mStart: ")); DBG_PRINT(mstart);
@@ -1089,7 +1105,7 @@ bool SignalDetectorClass::getClock()
 
 bool SignalDetectorClass::getSync()
 {
-	// Durchsuchen aller Musterpulse und prueft ob darin ein Sync Faktor enthalten ist. Anschließend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander uebertragen wurde
+	// Durchsuchen aller Musterpulse und prueft ob darin ein Sync Faktor enthalten ist. Anschliessend wird verifiziert ob dieser Syncpuls auch im Signal nacheinander uebertragen wurde
 	//
 #if DEBUGDETECT > 3
 	DBG_PRINTLN("  --  Searching Sync  -- ");
@@ -1166,6 +1182,41 @@ bool SignalDetectorClass::getSync()
 	}
 	sync = -1; // Workaround for sync detection bug.
 	return false;
+}
+
+bool SignalDetectorClass::isMuMessageRepeat()
+{
+#ifdef DEBUGMUREPEAT
+	DBG_PRINT(F("WT: "));
+#endif
+	for (int8_t p = patternLen - 1; p >= 0; --p)
+	{
+		if (abs(pattern[p]) < MuSplitThresh || histo[p] == 0) {
+			continue;
+		}
+#ifdef DEBUGMUREPEAT
+		DBG_PRINT(F("P"));
+		DBG_PRINT(p);
+		DBG_PRINT(F(":"));
+		DBG_PRINT(histo[p]);
+		DBG_PRINT(F(" "));
+#endif
+		if (histo[p] == 1)
+		{
+			uint8_t i = 0;
+			while (i < 10)				// todo ist 10 ok, oder ist es zu gross oder zu klein?	
+			{
+				if (message[i] == p) break;	// p ist kein Wiederholungstrenner, da er schon am Anfang vorkommt
+				i++;
+			}
+			if (i >= 10)
+			{
+				return true;		// p ist ein Wiederholungstrenner
+			}
+		}
+		else if (histo[p] < 8) return true;	// wenn p nicht zu oft vorkommt, dann ist es höchtwahrscheinlich ein Wiederholungstrenner
+	}
+	return false;					// kein Wiederholungstrenner gefunden
 }
 
 void SignalDetectorClass::printMsgStr(const String * first, const String * second, const String * third)

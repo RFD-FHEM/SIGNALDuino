@@ -64,6 +64,7 @@
 //#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
 //#define DEBUGDoDETECT 3
+//#define DEBUGMUREPEAT 1
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -77,7 +78,7 @@ public:
 	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
-																		 MredEnabled = 1;      // 1 = compress printmsg 
+																		 MuMoveCount = 0;
 																	   };
 
 	void reset();
@@ -94,8 +95,10 @@ public:
 	bool MSenabled;
 	bool MredEnabled;                       // 1 = compress printMsgRaw
 	bool MdebEnabled;                       // 1 = print message debug info  enabled
+	bool MfiltEnabled;        // fuer Nachrichten Filter reserviert
 	uint8_t MsMoveCountmax;
 	uint8_t MsMoveCount;
+	uint8_t MuMoveCount;
 	uint16_t MuSplitThresh;
 	bool printMsgSuccess;
 	
@@ -153,6 +156,7 @@ public:
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	bool checkMBuffer();
+	bool isMuMessageRepeat();
 
 };
 

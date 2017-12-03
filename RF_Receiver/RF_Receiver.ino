@@ -84,7 +84,7 @@ SignalDetectorClass musterDec;
 
 #define pulseMin  90
 #define MsMoveCountmaxDef 3
-#define MdebFifoLimitDef 70
+#define MdebFifoLimitDef 80
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
 String cmdstring = "";
@@ -159,8 +159,8 @@ unsigned long getUptime();
 void getConfig();
 void getPing();
 void configCMD();
-void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1, int8_t red=1, int8_t deb=0, int8_t led=1);
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led);
+void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1, int8_t red=1, int8_t deb=0, int8_t led=1, int8_t filt=0);
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *filt);
 void initEEPROM(void);
 void changeReceiver();
 uint8_t cmdstringPos2int(uint8_t pos);
@@ -174,12 +174,12 @@ void setup() {
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
-	if (musterDec.MdebEnabled) {
-		DBG_PRINTLN(F("Using sFIFO"));
-	}
+	//if (musterDec.MdebEnabled) {
+	DBG_PRINTLN(F("Using sFIFO"));
+	//}
 #ifdef WATCHDOG
 	if (MCUSR & (1 << WDRF)) {
-		DBG_PRINTLN(F("Watchdog caused a reset"));
+		MSG_PRINTLN(F("Watchdog caused a reset"));
 	}
 	/*
 	if (MCUSR & (1 << BORF)) {
@@ -785,6 +785,9 @@ inline void getConfig()
    if (LEDenabled == false) {
       MSG_PRINT(F(";LED=0"));
    }
+   if (musterDec.MfiltEnabled == true) {
+      MSG_PRINT(F(";Mfilt=1"));
+   }
    MSG_PRINT(F(";Mdebug="));
    MSG_PRINT(musterDec.MdebEnabled, DEC);
    MSG_PRINT(F("_MScnt="));
@@ -826,6 +829,9 @@ inline void configCMD()
   else if (cmdstring.charAt(2) == 'L') {  //LED
 	bptr=&LEDenabled;
   }
+  else if (cmdstring.charAt(2) == 'F') {  // message filter (reserviert)
+	bptr=&musterDec.MfiltEnabled;
+  }
 
   if (cmdstring.charAt(1) == 'E') {   // Enable
 	*bptr=true;
@@ -835,7 +841,7 @@ inline void configCMD()
   } else {
 	return;
   }
-  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled);
+  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled, musterDec.MfiltEnabled);
 }
 
 inline void configSET()
@@ -998,18 +1004,19 @@ inline void changeReceiver() {
 
 //================================= EEProm commands ======================================
 
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t deb, int8_t led)
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t deb, int8_t led, int8_t filt)
 {
 	mu=mu<<1;
 	mc=mc<<2;
 	red=red<<3;
 	deb=deb<<4;
 	led=led<<5;
-	int8_t dat =  ms | mu | mc | red | deb | led | 0xC0;
+	filt=filt<<6;
+	int8_t dat =  ms | mu | mc | red | deb | led | filt | 0x80;
     EEPROM.write(addr_features,dat);
 }
 
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led)
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *filt)
 {
     int8_t high;
     int8_t dat = EEPROM.read(addr_features);
@@ -1020,6 +1027,7 @@ void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led)
     *red=bool (dat &(1<<3));
     *deb=bool (dat &(1<<4));
     *led=bool (dat &(1<<5));
+    *filt=bool (dat &(1<<6));
     
     MdebFifoLimit = EEPROM.read(addr_MdebFifoLimit);
     musterDec.MsMoveCountmax = EEPROM.read(addr_MsMoveCountmax);
@@ -1035,18 +1043,18 @@ void initEEPROM(void) {
 
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
     
-  if (musterDec.MdebEnabled) {
+  //if (musterDec.MdebEnabled) {
     #ifdef DEBUG
     MSG_PRINTLN(F("Reading values from eeprom"));
     #endif
-  }
+  //}
 
   } else {
-    EEPROM.write(addr_features, 0xFF);    // Init EEPROM with all flags enabled, (0xEF except debug)
+    EEPROM.write(addr_features, 0xBF);    // Init EEPROM with all flags enabled, except filt
     EEPROM.write(addr_MdebFifoLimit, MdebFifoLimitDef);
     EEPROM.write(addr_MsMoveCountmax, MsMoveCountmaxDef);
-    EEPROM.write(addr_MuSplitThresh, 0);
-    EEPROM.write(addr_MuSplitThresh+1, 0);
+    EEPROM.write(addr_MuSplitThresh, 0x1b);   // 7000
+    EEPROM.write(addr_MuSplitThresh+1, 0x58);
     EEPROM.write(addr_mcmbl, 0);
 
     //storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
@@ -1059,7 +1067,7 @@ void initEEPROM(void) {
        cc1101::ccFactoryReset();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MfiltEnabled);
 
 }
 
