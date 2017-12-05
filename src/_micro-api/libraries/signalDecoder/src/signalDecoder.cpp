@@ -584,7 +584,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				MSG_PRINT("\n");
 				
 				printMsgSuccess = true;
-				success = true;
+				//success = true;
 
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
@@ -611,7 +611,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				bufferMove(mend+1);
 				mstart = 0;
 				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-				success = true;	// don't process other message types
+				//success = true;	// don't process other message types
 			}
 			else {
 #ifdef DEBUGDECODE
@@ -622,8 +622,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				//MSG_PRINT(MSG_END);
 				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
 				
-				success = true;	// don't process other message types
+				//success = true;	// don't process other message types
 			}
+			success = true;
 		}
 		if (success == false && (MUenabled || MCenabled)) {
 
@@ -717,7 +718,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				}
 
 			}
-			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
+			if (MUenabled && (state == clockfound || state == syncfound) && success == false && messageLen >= minMessageLen) {
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
