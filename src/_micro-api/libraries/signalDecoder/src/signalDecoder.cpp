@@ -185,7 +185,7 @@ inline void SignalDetectorClass::doDetect()
 
 
 			}
-			for (uint8_t i = messageLen - 1; i >= 0 && histo[pattern_pos] > 0; --i)
+			for (uint8_t i = messageLen - 1 ; i >= 0 && histo[pattern_pos] > 0 && messageLen>0; --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 				{
@@ -884,6 +884,8 @@ bool SignalDecoderClass::validSequence(const int * a, const int * b)
 
 void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 {
+	if (messageLen == 0) return;
+
 	for (uint8_t i = 0; i<maxNumPattern; ++i)
 	{
 		histo[i] = 0;
