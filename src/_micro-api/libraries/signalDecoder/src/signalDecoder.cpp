@@ -406,7 +406,10 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 		//	printOut();
 		//}
 		getClock();
-		if (state == clockfound) getSync();
+		if (state == clockfound && MSenabled)
+		{
+			getSync();
+		}
 #if DEBUGDECODE >1
 		DBG_PRINT("msgRec state="); DBG_PRINTLN(state)
 #endif
@@ -414,7 +417,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
-		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
+		if (state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
 		{
 #if DEBUGDECODE >1
 			MSG_PRINTLN(" MScheck: ");
@@ -718,7 +721,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				}
 
 			}
-			if (MUenabled && (state == clockfound || state == syncfound) && success == false && messageLen >= minMessageLen) {
+			if (MUenabled && (state == clockfound) && success == false && messageLen >= minMessageLen) {
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
@@ -870,7 +873,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 		
 		if (success == false) 
 		{
-
+			m_truncated = false;     //  -> reset
 #if DEBUGDETECT >= 1
 			DBG_PRINTLN("nothing to to");
 #endif		
