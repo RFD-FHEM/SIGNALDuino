@@ -631,8 +631,7 @@ void SignalDetectorClass::processMessage()
 				}
 
 			}
-			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
-				//MSG_PRINT(" try mu");
+			if (MUenabled && success == false && (state == clockfound || state == syncfound) && messageLen >= minMessageLen) {
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
