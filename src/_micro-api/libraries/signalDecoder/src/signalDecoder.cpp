@@ -47,6 +47,7 @@ bool SignalDetectorClass::checkMBuffer()
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
+	if (start == 0 || messageLen == 0) 	return;
 
 	if (start > messageLen - 1) {
 
@@ -214,6 +215,7 @@ inline void SignalDetectorClass::doDetect()
 
 	// Add data to buffer
 	addData(fidx);
+	histo[fidx]++;
 
 #if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
@@ -631,8 +633,7 @@ void SignalDetectorClass::processMessage()
 				}
 
 			}
-			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
-				//MSG_PRINT(" try mu");
+			if (MUenabled && success == false && (state == clockfound || state == syncfound) && messageLen >= minMessageLen) {
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
@@ -966,67 +967,40 @@ bool SignalDetectorClass::getSync()
 #if DEBUGDETECT > 3
 	DBG_PRINTLN("  --  Searching Sync  -- ");
 #endif
-
 	if (state == clockfound)		// we need a clock to find this type of sync
-	{
-		// clock wurde bereits durch getclock bestimmt.
+	{					// clock wurde bereits durch getclock bestimmt
+		
+		const uint8_t syncLenMax = 100; 		      //  wenn in den ersten ca 100 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
 		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
 		{
-			//if (pattern[p] > 0 || (abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact))  continue;  // Werte >0 oder laenger maxfact sind keine Sync Pulse
-			//if (pattern[p] == -1*maxPulse)  continue;  // Werte >0 sind keine Sync Pulse
-			//if (!validSequence(&pattern[clock],&pattern[p])) continue;
-			/*
-			if ( (pattern[p] > 0) ||
-			((abs(pattern[p]) > syncMaxMicros && abs(pattern[p])/pattern[clock] > syncMaxFact)) ||
-			(pattern[p] == -maxPulse) ||
-			(!validSequence(&pattern[clock],&pattern[p])) ||
-			(histo[p] > 6)
-			) continue;
-			*/
 			uint16_t syncabs = abs(pattern[p]);
 			if ((pattern[p] < 0) &&
-				//((abs(pattern[p]) <= syncMaxMicros && abs(pattern[p])/pattern[clock] <= syncMaxFact)) &&
 				(syncabs < syncMaxMicros && syncabs / pattern[clock] <= syncMaxFact) &&
 				(syncabs > syncMinFact*pattern[clock]) &&
-				// (syncabs < maxPulse) &&
-				//	 (validSequence(&pattern[clock],&pattern[p])) &&
 				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
-				//(histo[p] < 8) && (histo[p] > 1)
-
-				//(syncMinFact*pattern[clock] <= syncabs)
 				)
 			{
-				//if ((syncMinFact* (pattern[clock]) <= -1*pattern[p])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
-				// Pruefe ob Sync und Clock valide sein koennen
-				//	if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
 
 				// Pruefen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
-
-				//while (c < messageLen-1 && message[c+1] != p && message[c] != clock)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
-
-				while (c < messageLen - 1)		// Todo: Abstand zum Ende berechnen, da wir eine mindest Nachrichtenlaenge nach dem sync erwarten, brauchen wir nicht bis zum Ende suchen.
+				
+				while (c < min(syncLenMax,messageLen - minMessageLen))
 				{
-					if (message[c + 1] == p && message[c] == clock) break;
-					c++;
-				}
-
-				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
-				if (c<messageLen - minMessageLen)
-				{
-					sync = p;
-					state = syncfound;
-					mstart = c;
-
+					if (message[c + 1] == p && message[c] == clock) {
+						sync = p;
+						state = syncfound;
+						mstart = c;
 #ifdef DEBUGDECODE
-					//debug
-					DBG_PRINTLN();
-					DBG_PRINT("PD sync: ");
-					DBG_PRINT(pattern[clock]); DBG_PRINT(", "); DBG_PRINT(pattern[p]);
-					DBG_PRINT(", TOL: "); DBG_PRINT(tol);
-					DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
+						//debug
+						DBG_PRINTLN();
+						DBG_PRINT("PD sync: ");
+						DBG_PRINT(pattern[clock]); DBG_PRINT(", "); DBG_PRINT(pattern[p]);
+						DBG_PRINT(", TOL: "); DBG_PRINT(tol);
+						DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
 #endif
-					return true;
+						return true;
+					};
+					c++;
 				}
 			}
 		}
