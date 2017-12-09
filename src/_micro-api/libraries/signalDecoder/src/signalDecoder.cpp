@@ -564,7 +564,7 @@ void SignalDetectorClass::processMessage()
 				MSG_PRINT("vcnt: "); MSG_PRINT(mcdecoder.ManchesterBits.valcount);
 #endif
 
-				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+				if ((mcDetected || mcdecoder.isManchester()) )	// Check if valid manchester pattern and try to decode
 				{
 #if DEBUGDECODE > 1
 					MSG_PRINT(" MC found: ");
@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("DMC");
+					MSG_PRINT("DMc");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -594,31 +594,33 @@ void SignalDetectorClass::processMessage()
 					}
 					MSG_PRINTLN(MSG_END);
 //#endif
-					MSG_PRINT(MSG_START);
-					MSG_PRINT("MC");
-					MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("SL="); MSG_PRINT(pattern[mcdecoder.shortlow]); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("SH="); MSG_PRINT(pattern[mcdecoder.shorthigh]); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("D=");  mcdecoder.printMessageHexStr();
-					MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("C="); MSG_PRINT(mcdecoder.clock); MSG_PRINT(SERIAL_DELIMITER);
-					MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
-					#ifdef CMP_CC1101
-					  MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
-					#endif
-					MSG_PRINT(MSG_END);
-					MSG_PRINT("\n");
+					if (mcdecoder.doDecode())
+					{
+						MSG_PRINT(MSG_START);
+						MSG_PRINT("Mc");
+						MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("SL="); MSG_PRINT(pattern[mcdecoder.shortlow]); MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("SH="); MSG_PRINT(pattern[mcdecoder.shorthigh]); MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("D=");  mcdecoder.printMessageHexStr();
+						MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("C="); MSG_PRINT(mcdecoder.clock); MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("L="); MSG_PRINT(mcdecoder.ManchesterBits.valcount); MSG_PRINT(SERIAL_DELIMITER);
+#ifdef CMP_CC1101
+						MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+#endif
+						MSG_PRINT(MSG_END);
+						MSG_PRINT("\n");
 
 #ifdef DEBUGDECODE
-					DBG_PRINTLN("");
+						DBG_PRINTLN("");
 #endif
 
-//					printMsgStr(&preamble, &mcbitmsg, &postamble);
-					mcDetected = false;
-					success = true;
-					
+						//					printMsgStr(&preamble, &mcbitmsg, &postamble);
+						mcDetected = false;
+						success = true;
+					}
 
 				}
 				else if (mcDetected == true && m_truncated == true) {
@@ -1341,13 +1343,12 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if (pClock < maxPulse && (pdec->pattern[pulseid] ^ pdec->pattern[mpi]) >> 15) 
 				{
 					int pClocks = round(pClock / (float)clock);
+					DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
+
 					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
-#ifdef DEBUGDECODE
-						DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
 						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); bit = 0; }
 						else { DBG_PRINT("p"); bit = 1; }
 						DBG_PRINT(bit);
-#endif					
 						//if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
 						ManchesterBits.addValue(bit);
 						//preamble = true;
@@ -1540,7 +1541,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					DBG_PRINT(":pidx=");
 					DBG_PRINT(pdec->message[i]);
 					DBG_PRINT(":minblen=");
-					DBG_PRINT(ManchesterBits.valcount>=minbitlen);
+					DBG_PRINTLN(ManchesterBits.valcount>=minbitlen);
 
 					
 					//DBG_PRINT(pdec->pattern[pdec->message[i]]);
