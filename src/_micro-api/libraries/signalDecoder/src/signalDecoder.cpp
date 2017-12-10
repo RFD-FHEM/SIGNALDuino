@@ -331,13 +331,13 @@ void SignalDetectorClass::processMessage()
 		compress_pattern();
 		calcHisto();
 		getClock();
-		if (state == clockfound) getSync();
+		if (state == clockfound && MSenabled) getSync();
 
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
 
-		if (MSenabled && state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
+		if (state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
 		{
 #if DEBUGDECODE >0
 			MSG_PRINT(" MS check: ");
@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
-					MSG_PRINT("DMc");
+					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -597,8 +597,8 @@ void SignalDetectorClass::processMessage()
 					if (mcdecoder.doDecode())
 					{
 						MSG_PRINT(MSG_START);
-						MSG_PRINT("Mc");
-						MSG_PRINT(SERIAL_DELIMITER);
+						MSG_PRINT("MC;");
+						//MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("SL="); MSG_PRINT(pattern[mcdecoder.shortlow]); MSG_PRINT(SERIAL_DELIMITER);
