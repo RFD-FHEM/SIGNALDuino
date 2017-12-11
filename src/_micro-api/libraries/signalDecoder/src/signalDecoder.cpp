@@ -329,7 +329,7 @@ void SignalDetectorClass::processMessage()
 #endif
 
 		compress_pattern();
-		calcHisto();
+		//calcHisto();
 		getClock();
 		if (state == clockfound && MSenabled) getSync();
 
@@ -589,6 +589,7 @@ void SignalDetectorClass::processMessage()
 					}
 
 					if (m_overflow) {
+						MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("O");
 						MSG_PRINT(SERIAL_DELIMITER);
 					}
