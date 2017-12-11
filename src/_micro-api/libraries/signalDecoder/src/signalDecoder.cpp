@@ -47,6 +47,7 @@ bool SignalDetectorClass::checkMBuffer()
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
+	if (start == 0 || messageLen == 0) 	return;
 
 	if (start > messageLen - 1) {
 
@@ -214,6 +215,7 @@ inline void SignalDetectorClass::doDetect()
 
 	// Add data to buffer
 	addData(fidx);
+	histo[fidx]++;
 
 #if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
