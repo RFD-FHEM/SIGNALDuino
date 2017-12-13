@@ -215,7 +215,7 @@ inline void SignalDetectorClass::doDetect()
 
 	// Add data to buffer
 	addData(fidx);
-	histo[fidx]++;
+	//histo[fidx ]++;  // need changes in unittests
 
 #if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(" MC found: ");
 #endif // DEBUGDECODE
 
-//#if DEBUGDECODE == 1 // todo kommentar entfernen
+#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
 					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -596,7 +596,7 @@ void SignalDetectorClass::processMessage()
 						MSG_PRINT(SERIAL_DELIMITER);
 					}
 					MSG_PRINTLN(MSG_END);
-//#endif
+#endif
 					if (mcdecoder.doDecode())
 					{
 						MSG_PRINT(MSG_START);
@@ -1249,12 +1249,9 @@ unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 */
 
 const bool ManchesterpatternDecoder::doDecode() {
-	//MSG_PRINT("bitcnt:");MSG_PRINTLN(bitcnt);
 
 	uint8_t i = 0;
 	pdec->m_truncated = false;
-//	bool mc_start_found = false;
-//	bool mc_sync = false;
 	pdec->mstart = 0; // Todo: pruefen ob start aus isManchester uebernommen werden kann
 #ifdef DEBUGDECODE
 	DBG_PRINT("mlen:");
@@ -1264,193 +1261,83 @@ const bool ManchesterpatternDecoder::doDecode() {
 	DBG_PRINTLN("");
 
 #endif
-//	char  lastbit;
-	bool ht = false;
-	bool hasbit = false;
 	uint8_t bit = 0;
 
-	bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+	//bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+	#ifdef DEBUGDECODE
+	char value = NULL;
+	#endif
 
 	while (i < pdec->messageLen)
 	{
-		// Start vom MC Signal suchen
-
-		if (mc_sync == false && (isLong(pdec->message[i])))
+		// Start vom MC Signal suchen, dazu long suchen
+		if (mc_sync == false && isLong(pdec->message[i]))
 		{
-			if (i>0) // Todo: Prüfen ob das 1. Bit damit korrekt ermittelt wird
-				bit = pdec->message[i] == longhigh ? 0: 1; 
+			bit = pdec->message[i] == longhigh ? 0 : 1;
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
-			//if (i > 2) i=i-2;
 
-			// Check if ther are min three more short pulses bevore
-			if (i > 2 && isShort(pdec->message[i -3]) && isShort(pdec->message[i - 2]) &&  isShort(pdec->message[i - 1]) )
+			if (i > 1) // Todo: Eventuell reicht auch i>0 ?
 			{
-				i--;  // Todo: Alle bereits erkannten Pulse zurücksüpringen
-				prelongdecoding = true;
-				bit = bit ^ 1; // need to flip the bit 
+				bit = bit ^ 1; // need to flip the bit once
+				ManchesterBits.addValue(bit);
+	
+				if (isShort(pdec->message[i - 1]) && --i>2)
+				{
+					while (i > 1)
+					{
+						if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
+						{
+							i = i - 2;
+						} else {
+							// Letzter Durchlauf
+							if (pdec->message[i - 1] == shorthigh && pdec->pattern[pdec->message[i - 2]] < pdec->pattern[longlow]) 
+							{
+								i = 0; // leave the while loop after adding the value
+							} else { 
+								break;  // Add no more value
+							}
+						}
+						ManchesterBits.addValue(bit);
+					}
+				}
+				i = pdec->mstart; // recover i to mstart
 			}
-			while (i>1 && isShort(pdec->message[i - 1]) && isShort(pdec->message[i - 2]))
+			mc_start_found = true;
+
+			/*
+			if (i < pdec->mstart) // We have moved back
 			{
-				i = i - 2;
+				i = pdec->mstart;
+				ManchesterBits.addValue(bit); // add a bit for the first half of our long pulse
+
 			}
+			*/
 		}
+		
 		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
-
-		if (mc_sync && mc_start_found == false && (isShort(mpi) || isLong(mpi)))
+		/*
+		if (mc_start_found == false && mc_sync && (isShort(mpi) || isLong(mpi)))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
-			//mc_sync = true;
-
-			// lookup for first long
-			int pulseCnt = 0; 
-			bool preamble = false;
-
-		//	if (i > 0)
-		//		ManchesterBits.addValue(pdec->pattern[pdec->message[i]] > 0 ? 1 : 0);
-
-
-			//bool pulseIsLong = isLong(pdec->message[i]);
-			if (i > 0) {
-				uint8_t pulseid = pdec->message[i - 1];
-				int pClock = abs(pdec->pattern[pulseid]);
-				if (pClock < maxPulse && (pdec->pattern[pulseid] ^ pdec->pattern[mpi]) >> 15) 
-				{
-					int pClocks = round(pClock / (float)clock);
-					DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C;"));
-
-					if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.08) {
-						if (pdec->pattern[pulseid] > 0) { DBG_PRINT("P"); bit = 0; }
-						else { DBG_PRINT("p"); bit = 1; }
-						DBG_PRINT(bit);
-						//if (pdec->pattern[pulseid] > 0) bit = 1; // Oder bit= bit ^ 1, da bereits mit dem ersten long das bit ermittelt wurde?
-						ManchesterBits.addValue(bit);
-						//preamble = true;
-
-					}
-				}
-
-			}
-
-			// Todo: Prüfen ob noch notwendig
-			/*
-			for (uint8_t l=i; l<pdec->messageLen; l++) {
-				#ifdef DEBUGDECODE
-				DBG_PRINT(F("pc:")); DBG_PRINTLN(l);
-				#endif
-				bool pulseIsLong = isLong(pdec->message[l]);
-				
-				// no manchester
-				if (!(pulseIsLong || isShort(pdec->message[l]))) {
-					break;
-				}
-				
-				pulseCnt += (pulseIsLong ? 2 : 1);
-				// probe signal to match manchester
-				if (pulseIsLong) {
-					// probe clock based preamble
-					if (l == i && i > 0) {
-						int pClock = abs(pdec->pattern[pdec->message[l - 1]]);
-
-						if (pClock < maxPulse && (pdec->pattern[pdec->message[l - 1]] ^ pdec->pattern[pdec->message[l]] )>>15)
-						{
-							int pClocks = round(pClock / (float)clock);
-							
-							if (pClocks > 1 && abs(1 - (pClock / (pClocks * (float)clock))) <= 0.07) {
-#ifdef DEBUGDECODE
-								DBG_PRINT(F("preamble:")); DBG_PRINT(pClocks); DBG_PRINT(F("C"));
-#endif
-								pdec->mstart--;
-								preamble = true;
-								break;
-							}
-						}
-					}
-					
-					ht=((pulseCnt & 0x1) == 0);
-#ifdef DEBUGDECODE
-					if (ht) {
-						DBG_PRINT(F("pulseShift:")); DBG_PRINT(l); DBG_PRINT(";");
-					}
-#endif
-					break;
-				}
-			}
-			*/
-
-
-			// interpret first long as short if preamble was found 
-			if (preamble) {
-				ht = true;
-				i++;
-				continue;
-			}
-			
-		}
-		// Sync to a long or short pulse 
-		/*
-		if (mc_start_found && !mc_sync)
-		{
-			while ( (!isShort(pdec->message[i]  || !isLong(pdec->message[i])) && i < pdec->messageLen) {
-				i++;
-			}
-			if (i < pdec->messageLen) {
-				lastbit = (char)((unsigned int)pdec->pattern[pdec->message[i]] >> 15); // 1, wenn Pegel Low war, 0 bei einem High Pegel.
-				//lastbit = ~lastbit;  //TODO: Pruefen ob negiert korrekt ist.
-
-				uint8_t z = i - pdec->mstart;
-				if ((z < 1) or ((z % 2) == 0))
-					i = pdec->mstart;
-				else
-					i = pdec->mstart + 1;
-				//ManchesterBits->addValue((lastbit));
-				mc_sync = true;
-				//i++;
-				//MSG_PRINT("lb:"); MSG_PRINT(lastbit,DEC);
-			}
 		}
 		*/
 		// Decoding occures here
 		if (mc_sync && mc_start_found)
 		{
-			#ifdef DEBUGDECODE
-			char value=NULL;
-			#endif
 			if (isShort(mpi) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
 			{
-				
 				i++;
-				ht = true;
-			    hasbit = true;
 				#ifdef DEBUGDECODE
 				value = 'S';
 				#endif
 			}
 			else if (isLong(mpi)) {
-				//if (!firstlong)  
 				bit = bit ^ (1);
-				//firstlong = false;
-				hasbit = true;
-				ht = true;
 				#ifdef DEBUGDECODE
 				value = 'L';
 				#endif
-			}
-			else if (isShort(mpi) && prelongdecoding && isLong(pdec->message[i+1]))
-			{
-				// We must skip the last short pulse bevor the following long pulse
-				//i++;
-				prelongdecoding = false; // Reset flag, because this is a one time option
-				#ifdef DEBUGDECODE
-				value = 'L';
-				if (pdec->pattern[pdec->message[i]] < 0)
-					value = (value + 0x20); //lowwecase
-
-				#endif
-//				bit = bit ^ (1);
-				hasbit = true;
-				ht = true;
 			}
 			else { // Found something that fits not to our manchester signal
 #ifdef DEBUGDECODE
@@ -1459,27 +1346,17 @@ const bool ManchesterpatternDecoder::doDecode() {
 				DBG_PRINT(ManchesterBits.valcount);
 #endif
 
-				   //if (i < pdec->messageLen-minbitlen)
 				if (ManchesterBits.valcount < minbitlen)
 				{
-//					if (isShort(pdec->message[i]) && i < pdec->messageLen - 1 && !isShort(pdec->message[i + 1])) {
-//						// unequal number of short pulses. Restart, but one pulse ahead i is incremented at end of while loop
-//						i = pdec->mstart;
-//					}
-					//pdec->mstart=i;
 					mc_start_found = false; // Reset to find new starting position
 					mc_sync = false;
-					ht = false; // reset short count too
 #ifdef DEBUGDECODE
 					MSG_PRINT(":RES:");
 #endif
 					ManchesterBits.reset();
 
 				} else {
-					pdec->mend = i - (ht ? 0 : 1); // keep short in buffer
-//					if (isShort(pdec->message[i]) && i == maxMsgSize - 1)) {
-//						pdec->mend--;
-//					}
+					pdec->mend = i; // Todo: keep short in buffer
 #ifdef DEBUGDECODE
 					DBG_PRINT(":mpos=");
 					DBG_PRINT(i);
@@ -1502,7 +1379,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 					}
 		
 					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
-					//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 #ifdef DEBUGDECODE
 					DBG_PRINT(":mpos=");
 					DBG_PRINT(i);
@@ -1517,17 +1393,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					DBG_PRINT(pdec->message[i]);
 					DBG_PRINT(":minblen=");
 					DBG_PRINTLN(ManchesterBits.valcount>=minbitlen);
-
-					
-					//DBG_PRINT(pdec->pattern[pdec->message[i]]);
-
 #endif
-					/*
-					if (i+1 ==pdec->messageLen && !isShort(pdec->message[pdec->messageLen-1]))
-						mc_start_found = false;  // This will break serval unit tests. Normaly setting this to false shoud be done by reset, needs to be checked if reset shoud be called after hex string is printed out
-					*/
-							
-				
 					return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 				}
 #ifdef DEBUGDECODE
@@ -1536,32 +1402,25 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 
 
-			if (mc_start_found) { // don't write if manchester processing was canceled
+			if (mc_start_found) { // don't add bit if manchester processing was canceled
 #ifdef DEBUGDECODE
-				if (pdec->pattern[pdec->message[i+1]] < 0)
-					value = (value + 0x20); //lowwecase
+				if (pdec->pattern[mpi] > 0)
+					value = (value + 0x20); //lowwercase
 				DBG_PRINT(value);
 #endif
-	
-				if (hasbit) {
-					ManchesterBits.addValue(bit);
+				ManchesterBits.addValue(bit);
 #ifdef DEBUGDECODE
-					DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
+				DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount-1));
 #endif
-					hasbit = false;
-				} else {
+			} else {
 #ifdef DEBUGDECODE
-					DBG_PRINT("_");
+				DBG_PRINT("_");
 #endif
-				}
 			}
-
-
-		}
-		//MSG_PRINT(" S MC ");
+		} // 		endif (mc_sync && mc_start_found)
 		i++;
 	}
-	pdec->mend = i - (ht ? 0 : 1); // keep short in buffer;
+	pdec->mend = i; // Todo: keep short in buffer;
 
 #ifdef DEBUGDECODE
 	DBG_PRINT(":mpos=");
