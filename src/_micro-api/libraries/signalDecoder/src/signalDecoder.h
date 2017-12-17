@@ -59,7 +59,7 @@
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-//#define MCDEBUGDECODE 1
+#define MCDEBUGDECODE 1
 //#define MCDEBUGSEQ 1
 //#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
@@ -133,6 +133,7 @@ public:
 	//String preamble;
 	//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
+	bool mcValid;
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function
@@ -188,9 +189,9 @@ public:
 	int8_t shorthigh;
 	int clock; // Manchester calculated clock		
 	int8_t minbitlen;
+	uint8_t mc_sync_pos;
 	
 	bool mc_start_found = false;
-	bool mc_sync = false;
 
 	const bool isLong(const uint8_t pulse_idx);
 	const bool isShort(const uint8_t pulse_idx);
