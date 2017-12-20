@@ -59,7 +59,7 @@
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-#define MCDEBUGDECODE 1
+#define MCDEBUGDECODE 2
 //#define MCDEBUGSEQ 1
 //#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
@@ -134,6 +134,7 @@ public:
 	//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	bool mcValid;
+	bool mcRepeat;				// ist true wenn evtl noch eine Wiederholung folgen kann
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function

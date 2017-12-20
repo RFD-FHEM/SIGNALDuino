@@ -660,7 +660,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 #endif
 				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
 				{
-#ifdef MCDEBUGDECODE
+#if MCDEBUGDECODE > 1
 					MSG_PRINT(MSG_START);
 					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -715,6 +715,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 						if (mcdecoder.mc_sync_pos > 0) {
 							MSG_PRINT("s"); MSG_PRINT(mcdecoder.mc_sync_pos); MSG_PRINT(SERIAL_DELIMITER);
 							MSG_PRINT("b"); MSG_PRINT(mstart); MSG_PRINT(SERIAL_DELIMITER);
+#ifdef MCDEBUGDECODE
 							uint8_t ims = mstart;
 							if (mstart > 3) {
 								ims = 3;
@@ -742,6 +743,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 								}
 							}
 							MSG_PRINT(SERIAL_DELIMITER);
+#endif
 						}
 					}
 					
@@ -752,6 +754,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					if (p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
 						bufferMove(mend);
 						mstart = 0;
+						mcRepeat = true;
 					}
 					
 					MSG_PRINT(MSG_END);
@@ -966,6 +969,7 @@ void SignalDetectorClass::reset()
 	m_overflow = false;
 	mcDetected = false;
 	mcValid = true;
+	mcRepeat = false;
 	//MSG_PRINTLN("reset");
 	mend = 0;
 	//DBG_PRINT(":sdres:");
@@ -1267,7 +1271,7 @@ bool SignalDetectorClass::isMuMessageRepeat()
 				return true;		// p ist ein Wiederholungstrenner
 			}
 		}
-		else if (histo[p] < 8) return true;	// wenn p nicht zu oft vorkommt, dann ist es höchtwahrscheinlich ein Wiederholungstrenner
+		else if (histo[p] < 8) return true;	// wenn p nicht zu oft vorkommt, dann ist es hoechstwahrscheinlich ein Wiederholungstrenner
 	}
 	return false;					// kein Wiederholungstrenner gefunden
 }
@@ -1340,7 +1344,7 @@ ManchesterpatternDecoder::~ManchesterpatternDecoder()
 */
 void ManchesterpatternDecoder::reset()
 {
-#if MCDEBUGDECODE > 1
+#if MCDEBUGDECODE > 2
 	DBG_PRINT("mcrst:");
 #endif
 	longlow =   -1;
@@ -1513,7 +1517,6 @@ unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 const bool ManchesterpatternDecoder::doDecode() {
 
 	uint8_t i = 1;
-	pdec->mcValid = true;
 	pdec->m_truncated = false;
 	pdec->mstart = 0; // Todo: pruefen ob start aus isManchester uebernommen werden kann
 #ifdef DEBUGDECODE
@@ -1529,110 +1532,116 @@ const bool ManchesterpatternDecoder::doDecode() {
 	#ifdef DEBUGDECODE
 	char value = NULL;
 	#endif
-
-	while (i < pdec->messageLen-1)
+	while (i < pdec->messageLen-30)
 	{
-		// Start vom MC Signal suchen, dazu long suchen. Vor dem longlow darf kein Puls groesser long sein 
-		pulseid = pdec->message[i];
-		if (pulseid == longhigh || (pulseid == longlow && pdec->pattern[pdec->message[i-1]] <= pdec->pattern[longhigh]))
+		pdec->mcValid = true;
+		while (i < pdec->messageLen-1)
 		{
-			bit = pulseid == longhigh ? 1 : 0;
-			mc_sync_pos = i;  // Save sync position for later
-			break;
-		}
-		i++;
-	}
-	
-	if (i >= pdec->messageLen-1)	// kein long gefunden, duerfte eigentlich nicht vorkommen
-	{
-		pdec->mcValid = false;
-		return false;
-	}
-		
-	ManchesterBits.addValue(bit);
-	
-	pdec->mstart = 255;
-	if (isShort(pdec->message[i - 1]) && --i > 1)
-	{
-		while (i > 1)
-		{
-			if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
+			// Start vom MC Signal suchen, dazu long suchen. Vor dem longlow darf kein Puls groesser long sein 
+			pulseid = pdec->message[i];
+			if (pulseid == longhigh || (pulseid == longlow && pdec->pattern[pdec->message[i-1]] <= pdec->pattern[longhigh]))
 			{
-				i = i - 2;
-			} else {
-				// Letzter Durchlauf
-				if (pdec->message[i - 1] == shorthigh) 
-				{
-					pdec->mstart = i - 2;
-					i = 0; // leave the while loop after adding the value
-				} else { 
-					break;  // Add no more value
-				}
-			}
-			ManchesterBits.addValue(bit);
-		}
-	}
-	if (pdec->mstart == 255)
-	{
-		pdec->mstart = i;
-	}
-	
-	i = mc_sync_pos; 	// recover i to sync_pos
-	mc_start_found = true;
-	
-	// Decoding
-	while (i < pdec->messageLen)
-	{
-		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
-		
-		if (isLong(mpi))
-		{
-			bit = bit ^ (1);
-		}
-		else {
-			if (i >= pdec->messageLen-1) break;
-			
-			if (bit == 0)
-			{
-				if (mpi != shortlow)
-				{
-					break;
-				}
-				else if (pdec->message[i+1] != shorthigh)
-				{
-					if (pdec->message[i+1] == longhigh) pdec->mcValid = false;     // invalid, nach shortlow muss shorthigh folgen
-					break;
-				}
-			}
-			else  // bit = 1
-			{
-				if (mpi != shorthigh)
-				{
-					break;
-				}
-				else if (pdec->message[i+1] != shortlow)
-				{
-					if (pdec->message[i+1] == longlow) pdec->mcValid = false;     // invalid, nach shorthigh muss shortlow folgen
-					break;
-				}
+				bit = pulseid == longhigh ? 1 : 0;
+				mc_sync_pos = i;  // Save sync position for later
+				break;
 			}
 			i++;
 		}
-		i++;
-		ManchesterBits.addValue(bit);
-	}
-	
-	if (i < pdec->messageLen) i++;		// wenn Abbruch durch break
-	
-	if (ManchesterBits.valcount < minbitlen)
-	{
-		return false;
-	}
-	else 
-	{
-		pdec->mend = i;
 		
-		return true;
+		if (i >= pdec->messageLen-1)	// kein long gefunden, duerfte eigentlich nicht vorkommen
+		{
+			pdec->mcValid = false;
+			return false;
+		}
+			
+		ManchesterBits.addValue(bit);
+		
+		pdec->mstart = 255;
+		if (isShort(pdec->message[i - 1]) && --i > 1)
+		{
+			while (i > 1)
+			{
+				if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
+				{
+					i = i - 2;
+				} else {
+					// Letzter Durchlauf
+					if (pdec->message[i - 1] == shorthigh) 
+					{
+						pdec->mstart = i - 2;
+						i = 0; // leave the while loop after adding the value
+					} else { 
+						break;  // Add no more value
+					}
+				}
+				ManchesterBits.addValue(bit);
+			}
+		}
+		if (pdec->mstart == 255)
+		{
+			pdec->mstart = i;
+		}
+		
+		i = mc_sync_pos; 	// recover i to sync_pos
+		mc_start_found = true;
+		
+		// Decoding
+		while (i < pdec->messageLen)
+		{
+			const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
+			
+			if (isLong(mpi))
+			{
+				bit = bit ^ (1);
+			}
+			else {
+				if (i >= pdec->messageLen-1) break;
+				
+				if (bit == 0)
+				{
+					if (mpi != shortlow)
+					{
+						break;
+					}
+					else if (pdec->message[i+1] != shorthigh)
+					{
+						if (pdec->message[i+1] == longhigh) pdec->mcValid = false;     // invalid, nach shortlow muss shorthigh folgen
+						break;
+					}
+				}
+				else  // bit = 1
+				{
+					if (mpi != shorthigh)
+					{
+						break;
+					}
+					else if (pdec->message[i+1] != shortlow)
+					{
+						if (pdec->message[i+1] == longlow) pdec->mcValid = false;     // invalid, nach shorthigh muss shortlow folgen
+						break;
+					}
+				}
+				i++;
+			}
+			i++;
+			ManchesterBits.addValue(bit);
+		}
+		
+		if (i < pdec->messageLen) i++;		// wenn Abbruch durch break
+		
+		if (ManchesterBits.valcount < minbitlen)
+		{
+			if (pdec->mcRepeat == false && i > minMessageLen)	// es ist keine Wiederholung und es wurde nach minMessageLen nichts gefunden -> weiter mit MU-Nachricht
+			{
+				return false;
+			}
+			ManchesterBits.reset();		// weiter suchen
+		}
+		else 
+		{
+			pdec->mend = i;
+			return true;
+		}
 	}
 }
 /*
