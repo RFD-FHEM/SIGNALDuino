@@ -600,7 +600,7 @@ void SignalDetectorClass::processMessage()
 					if (mcdecoder.doDecode())
 					{
 						MSG_PRINT(MSG_START);
-						MSG_PRINT("MC;");
+						MSG_PRINT("Mc;");
 						//MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
@@ -1277,11 +1277,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 
-			if (i > 1) // Todo: Eventuell reicht auch i>0 ?
+			if (i >0 ) // Todo: Eventuell reicht auch i>0 ?
 			{
 				bit = bit ^ 1; // need to flip the bit once
 				ManchesterBits.addValue(bit);
-	
+				
 				if (isShort(pdec->message[i - 1]) && --i>2)
 				{
 					while (i > 1)
@@ -1301,7 +1301,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 						ManchesterBits.addValue(bit);
 					}
 				}
-				i = pdec->mstart; // recover i to mstart
+				if (i == pdec->mstart) i++; // 1. long shoud not be processed twice if there was nothing valid before that pulse
+				else i = pdec->mstart; // recover i to mstart
 			}
 			mc_start_found = true;
 
