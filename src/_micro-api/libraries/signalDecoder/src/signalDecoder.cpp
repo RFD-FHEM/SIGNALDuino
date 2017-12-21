@@ -600,7 +600,7 @@ void SignalDetectorClass::processMessage()
 					if (mcdecoder.doDecode())
 					{
 						MSG_PRINT(MSG_START);
-						MSG_PRINT("MC;");
+						MSG_PRINT("Mc;");
 						//MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LL="); MSG_PRINT(pattern[mcdecoder.longlow]); MSG_PRINT(SERIAL_DELIMITER);
 						MSG_PRINT("LH="); MSG_PRINT(pattern[mcdecoder.longhigh]); MSG_PRINT(SERIAL_DELIMITER);
@@ -1263,60 +1263,70 @@ const bool ManchesterpatternDecoder::doDecode() {
 #endif
 	uint8_t bit = 0;
 
-	bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+	//bool prelongdecoding = false; // Flag that we are in a decoding bevore the 1. long pulse
+	#ifdef DEBUGDECODE
+	char value = NULL;
+	#endif
 
 	while (i < pdec->messageLen)
 	{
 		// Start vom MC Signal suchen, dazu long suchen
-		if (mc_sync == false && (isLong(pdec->message[i])))
+		if (mc_sync == false && isLong(pdec->message[i]))
 		{
-			bit = pdec->message[i] == longhigh ? 0: 1; 
+			bit = pdec->message[i] == longhigh ? 0 : 1;
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 
-			while (i>1 )
+			if (i >0 ) // Todo: Eventuell reicht auch i>0 ?
 			{
-				if (i == pdec->mstart) {
-					bit = bit ^ 1; // need to flip the bit once
-					if (abs(pdec->pattern[pdec->message[i - 1]]) > pdec->pattern[longhigh])
+				bit = bit ^ 1; // need to flip the bit once
+				ManchesterBits.addValue(bit);
+				
+				if (isShort(pdec->message[i - 1]) && --i>2)
+				{
+					while (i > 1)
 					{
-						ManchesterBits.addValue(bit); // Add one bit to our buffer.
-						break;
+						if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
+						{
+							i = i - 2;
+						} else {
+							// Letzter Durchlauf
+							if (pdec->message[i - 1] == shorthigh && pdec->pattern[pdec->message[i - 2]] < pdec->pattern[longlow]) 
+							{
+								i = 0; // leave the while loop after adding the value
+							} else { 
+								break;  // Add no more value
+							}
+						}
+						ManchesterBits.addValue(bit);
 					}
 				}
-				if (isShort(pdec->message[i -2]) && isShort(pdec->message[i - 1]))
-				{
-					i = i - 2;
-				}
-				else {
-					break;
-				}
-				ManchesterBits.addValue(bit); // only short pulses, we can add them in reverse order
-
+				if (i == pdec->mstart) i++; // 1. long shoud not be processed twice if there was nothing valid before that pulse
+				else i = pdec->mstart; // recover i to mstart
 			}
+			mc_start_found = true;
 
+			/*
 			if (i < pdec->mstart) // We have moved back
 			{
 				i = pdec->mstart;
 				ManchesterBits.addValue(bit); // add a bit for the first half of our long pulse
 
 			}
+			*/
 		}
 		
 		const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
-
+		/*
 		if (mc_start_found == false && mc_sync && (isShort(mpi) || isLong(mpi)))
 		{
 			pdec->mstart = i;
 			mc_start_found = true;
 		}
-
+		*/
 		// Decoding occures here
 		if (mc_sync && mc_start_found)
 		{
-			#ifdef DEBUGDECODE
-			char value=NULL;
-			#endif
 			if (isShort(mpi) && (i + 1 < pdec->messageLen && isShort(pdec->message[i + 1])))
 			{
 				i++;
