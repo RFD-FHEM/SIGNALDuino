@@ -64,6 +64,7 @@
 
 //#define WATCHDOG	1 // Der Watchdog ist in der Entwicklungs und Testphase deaktiviert. Es muss auch ohne Watchdog stabil funktionieren.
 //#define DEBUGSENDCMD  1
+//#define SENDTODECODER 1 // damit wird in der send_raw Routine anstatt zu senden, die Pulse direkt dem Decoder uebergeben
 #define DEBUG                  1
 
 #ifdef WATCHDOG
@@ -256,10 +257,12 @@ void setup() {
 	cmdstring.reserve(maxCmdString);
 
         if (!hasCC1101 || cc1101::regCheck()) {
+#ifndef SENDTODECODER
 		enableReceive();
 		if (musterDec.MdebEnabled) {
 			MSG_PRINTLN(F("receiver enabled"));
 		}
+#endif
 	}
 	else {
 		MSG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
@@ -382,7 +385,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 	uint8_t index=0;
 	unsigned long stoptime=micros();
 	bool isLow;
-	uint16_t dur;
+	int16_t dur;
 	for (uint16_t i=startpos;i<=endpos;i++ )
 	{
 		//MSG_PRINT(cmdstring.substring(i,i+1));
@@ -390,16 +393,22 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 		//MSG_PRINT(index);
 		isLow=buckets[index] >> 15;
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
-
+#ifndef SENDTODECODER
 		while (stoptime > micros()){
 			;
 		}
 		isLow ? digitalLow(PIN_SEND): digitalHigh(PIN_SEND);
 		stoptime+=dur;
+#else
+		if (isLow) dur = -dur;
+		musterDec.decode(&dur);
+#endif
 	}
+#ifndef SENDTODECODER
 	while (stoptime > micros()){
 		;
 	}
+#endif
 	//MSG_PRINTLN("");
 
 }
@@ -452,6 +461,11 @@ bool split_cmdpart(int16_t *startpos, int16_t *startdata)
 	}
 	msg_cmd0 = cmdstring.charAt(*startpos);
 	msg_cmd1 = cmdstring.charAt(*startpos+1);
+	/*MSG_PRINT("split_spos=");
+	MSG_PRINT(*startpos);
+	MSG_PRINT(" cmd=");
+	MSG_PRINT(msg_cmd0);
+	MSG_PRINTLN(msg_cmd1);*/
 
 	if (msg_cmd0 == 'S') {
 		*startdata = 0;
@@ -550,7 +564,7 @@ void send_cmd()
 				startdata = -1;
 				break;
 			}
-			command[cmdNo].buckets[counter]=cmdstring.substring(startdata).toInt();
+			command[cmdNo].buckets[counter]=cmdstring.substring(startdata, start_pos-1).toInt();
 #ifdef DEBUGSENDCMD
 		        MSG_PRINT("P");
 			MSG_PRINT(counter);
@@ -593,6 +607,7 @@ void send_cmd()
 #ifdef DEBUGSENDCMD
 			MSG_PRINT("F=");
 #endif
+#ifndef SENDTODECODER
 			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 				uint8_t hex;
 				//MSG_PRINTLN("write new ccreg  ");
@@ -604,11 +619,12 @@ void send_cmd()
 					hex = (uint8_t)cmdstring.charAt(startdata+1 + i*2);
 					val = cc1101::hex2int(hex) + val;
 					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
-#ifdef DEBUGSENDCMD
+  #ifdef DEBUGSENDCMD
 					printHex2(val);
-#endif
+  #endif
 				}
 			}
+#endif
 #ifdef DEBUGSENDCMD
 			MSG_PRINTLN("");
 #endif
@@ -620,12 +636,12 @@ void send_cmd()
 		MSG_PRINT(F("send failed"));
 	} else
 	{
-	
+#ifndef SENDTODECODER
 		#ifdef CMP_CC1101
 		if (hasCC1101) cc1101::setTransmitMode();	
 		#endif
+#endif
 		//if (command[0].type == combined && command[0].repeats > 0) repeats = command[0].repeats;
-		
 		for (uint8_t i=0;i<repeats;i++)
 		{
 			for (uint8_t c=0;c<=cmdNo;c++)
@@ -641,7 +657,7 @@ void send_cmd()
 		}
 
 		MSG_PRINT(cmdstring); // echo
-		
+#ifndef SENDTODECODER
 		if (ccParamAnz > 0) {
 			MSG_PRINT(F("ccreg write back "));
 			for (uint8_t i=0;i<ccParamAnz;i++)
@@ -652,8 +668,11 @@ void send_cmd()
 			}
 			//MSG_PRINTLN("");
 		}
+#endif
 	}
+#ifndef SENDTODECODER
 	enableReceive();	// enable the receiver
+#endif
 	MSG_PRINTLN("");
 }
 
@@ -1043,7 +1062,9 @@ inline void changeReceiver() {
   }
   if (cmdstring.charAt(1) == 'E')
   {
+#ifndef SENDTODECODER
   	enableReceive();
+#endif
   }
 }
 
