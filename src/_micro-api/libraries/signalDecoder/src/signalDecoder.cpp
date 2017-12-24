@@ -751,7 +751,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					printMsgSuccess = true;
 					
 					if (p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
-						bufferMove(mend);
+						bufferMove(mend-1);
 						mstart = 0;
 						mcRepeat = true;
 						if (MdebEnabled) {
