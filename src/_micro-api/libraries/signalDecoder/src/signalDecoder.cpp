@@ -405,11 +405,10 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 		//if (message[messageLen-1] == 7 ) {
 		//	printOut();
 		//}
+
 		getClock();
-		if (state == clockfound && MSenabled)
-		{
-			getSync();
-		}
+		if (state == clockfound && MSenabled && mcRepeat == false) getSync();  // wenn MC Wiederholungen ausgegeben werden, wird die MS Decodierung uebersprungen
+
 #if DEBUGDECODE >1
 		DBG_PRINT("msgRec state="); DBG_PRINTLN(state)
 #endif
@@ -667,7 +666,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
-						if (idx > 2 && histo[idx] == 0) continue;
+						if (idx > 4 && histo[idx] == 0) continue;
 						MSG_PRINT('P'); MSG_PRINT(idx); MSG_PRINT('='); MSG_PRINT(pattern[idx]); MSG_PRINT(SERIAL_DELIMITER);
 					}
 					MSG_PRINT("D=");
@@ -755,6 +754,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 						bufferMove(mend);
 						mstart = 0;
 						mcRepeat = true;
+						if (MdebEnabled) {
+							MSG_PRINT("w"); MSG_PRINT(SERIAL_DELIMITER);
+						}
 					}
 					
 					MSG_PRINT(MSG_END);
@@ -1636,6 +1638,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 				return false;
 			}
 			ManchesterBits.reset();		// weiter suchen
+			//DBG_PRINT("mcResMpos=");
+			//DBG_PRINTLN(i);
 		}
 		else 
 		{
