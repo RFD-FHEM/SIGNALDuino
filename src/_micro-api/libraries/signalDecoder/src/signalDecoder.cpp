@@ -596,7 +596,7 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 					SDC_PRINTLN(MSG_END);
-//#endif
+#endif
 					SDC_PRINT(MSG_START);
 					SDC_PRINT("Mc");
 					n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder.longlow], pattern[mcdecoder.longhigh]);
