@@ -572,7 +572,7 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(" MC found: ");
 #endif // DEBUGDECODE
 
-#if DEBUGDECODE == 1 // todo kommentar entfernen
+//#if DEBUGDECODE == 1 // todo kommentar entfernen
 					MSG_PRINT(MSG_START);
 					MSG_PRINT("DMC");
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -596,7 +596,7 @@ void SignalDetectorClass::processMessage()
 						MSG_PRINT(SERIAL_DELIMITER);
 					}
 					MSG_PRINTLN(MSG_END);
-#endif
+//#endif
 					if (mcdecoder.doDecode())
 					{
 						MSG_PRINT(MSG_START);
