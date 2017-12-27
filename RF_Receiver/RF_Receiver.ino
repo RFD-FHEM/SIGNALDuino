@@ -488,11 +488,10 @@ bool split_cmdpart(int16_t *startpos, int16_t *startdata)
 
 struct s_sendcmd {
 	int16_t sendclock;
-	uint8_t type;
 	uint8_t datastart;
 	uint16_t dataend;
 	int16_t buckets[maxSendPattern];
-	//uint8_t repeats;
+	uint8_t repeats;
 } ;
 
 void send_cmd()
@@ -506,7 +505,8 @@ void send_cmd()
 	int16_t start_pos=0;
 	int16_t startdata=0;
 	uint8_t counter=0;
-	bool extraDelay = true;
+	bool isCombined = false;
+	bool extraDelay = false;
 
 	s_sendcmd command[maxSendCmd];
 
@@ -532,33 +532,33 @@ void send_cmd()
 #ifdef DEBUGSENDCMD
 				MSG_PRINTLN("SC");
 #endif
-				//type=combined;
-				//cmdNo=255;
-				//cmdNo++;
-				//command[cmdNo].type = combined;
-				extraDelay = false;
+				isCombined = true;
 			}
-			else if (msg_cmd1 == 'M') // send manchester
+			else if (msg_cmd1 == 'M' || msg_cmd1 == 'R') // send manchester or raw
 			{
 				cmdNo++;
-				command[cmdNo].type=manchester;
+				isCombined = false;
+				command[cmdNo].sendclock = 0;
+				command[cmdNo].repeats = 1;
 #ifdef DEBUGSENDCMD
-				MSG_PRINTLN("SM");
+				MSG_PRINT("S");
+				MSG_PRINTLN(msg_cmd1);
 #endif
 			}
-			else if (msg_cmd1 == 'R') // send raw
-			{
-				cmdNo++;
-				command[cmdNo].type=raw;
-#ifdef DEBUGSENDCMD
-				MSG_PRINTLN("SR");
-#endif
-				extraDelay = false;
-
+		} else if (msg_cmd0 == 'R') {
+			if (isCombined) {
+				repeats = cmdstring.substring(startdata, start_pos-1).toInt();
+			} else {
+				if (cmdNo == 255) continue;
+				command[cmdNo].repeats = cmdstring.substring(startdata, start_pos-1).toInt();
 			}
-		}
-		else if (msg_cmd0 == 'P') // Do some basic detection if data matches what we expect
-		{
+#ifdef DEBUGSENDCMD
+			MSG_PRINT("R=");
+			MSG_PRINTLN(cmdstring.substring(startdata, start_pos-1).toInt());
+#endif
+		} else if (cmdNo == 255) {	// es wurde noch kein SR oder SM erkannt
+			continue;
+		} else if (msg_cmd0 == 'P') { // Do some basic detection if data matches what we expect
 			counter = cmdstring.substring(startdata-2, startdata-1).toInt(); // extract the pattern number
 			if (counter > maxSendPattern) {
 				startdata = -1;
@@ -571,14 +571,6 @@ void send_cmd()
 			MSG_PRINT("=");
 			MSG_PRINTLN(command[cmdNo].buckets[counter]);
 #endif
-
-		} else if(msg_cmd0 == 'R') {
-			repeats= cmdstring.substring(startdata).toInt();
-			//command[cmdNo].repeats = msg_part.substring(2).toInt();
-#ifdef DEBUGSENDCMD
-			MSG_PRINT("R=");
-			MSG_PRINTLN(repeats);
-#endif
 		} else if (msg_cmd0 == 'D') {
 			command[cmdNo].datastart = startdata;
 			command[cmdNo].dataend = start_pos-1;
@@ -586,23 +578,14 @@ void send_cmd()
 			MSG_PRINT("D=");
 			MSG_PRINTLN(cmdstring.substring(startdata, start_pos-1));
 #endif
-		    //MSG_PRINT("locating data start:");
-		   // MSG_PRINT(command[cmdNo].datastart);
-		    //MSG_PRINT(" end:");
-			//MSG_PRINTLN(command[cmdNo].dataend);
-			//if (type==raw) send_raw(&msg_part,buckets);
-			//if (type==manchester) send_mc(&msg_part,sendclock);
-			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
-			//digitalLow(PIN_SEND);
-		} else if(msg_cmd0 == 'C')
-		{
-			command[cmdNo].sendclock = cmdstring.substring(startdata).toInt();
+		} else if (msg_cmd0 == 'C') {
+			command[cmdNo].sendclock = cmdstring.substring(startdata, start_pos-1).toInt();
+			extraDelay = true;
 #ifdef DEBUGSENDCMD
 			MSG_PRINT("C=");
 			MSG_PRINTLN(command[cmdNo].sendclock);
 #endif
-		} else if(msg_cmd0 == 'F')
-		{
+		} else if (msg_cmd0 == 'F') {
 			ccParamAnz = (start_pos - startdata) / 2;
 #ifdef DEBUGSENDCMD
 			MSG_PRINT("F=");
@@ -641,19 +624,23 @@ void send_cmd()
 		if (hasCC1101) cc1101::setTransmitMode();	
 		#endif
 #endif
-		//if (command[0].type == combined && command[0].repeats > 0) repeats = command[0].repeats;
 		for (uint8_t i=0;i<repeats;i++)
 		{
 			for (uint8_t c=0;c<=cmdNo;c++)
 			{
-				if (command[c].type==raw) send_raw(command[c].datastart,command[c].dataend,command[c].buckets);
-				if (command[c].type==manchester) send_mc(command[c].datastart,command[c].dataend,command[c].sendclock);
-				//if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
-				//if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
-
+				if (command[c].sendclock == 0) {   // raw
+					for (uint8_t rep = 0; rep < command[c].repeats; rep++) {
+						send_raw(command[c].datastart, command[c].dataend, command[c].buckets);
+					}
+				} else {
+					for (uint8_t rep = 0; rep < command[c].repeats; rep++) {
+						if (rep > 0) delay(1);
+						send_mc(command[c].datastart, command[c].dataend, command[c].sendclock);
+					}
+				}
 				digitalLow(PIN_SEND);
 			}
-			if (extraDelay) delay(1);
+			//if (extraDelay) delay(1);
 		}
 
 		MSG_PRINT(cmdstring); // echo
