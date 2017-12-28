@@ -86,7 +86,7 @@ SignalDetectorClass musterDec;
 
 #define pulseMin  90
 #define maxCmdString 240
-#define maxSendPattern 7
+#define maxSendPattern 8
 #define MsMoveCountmaxDef 3
 #define MdebFifoLimitDef 80
 #define mcMinBitLenDef   17
@@ -548,14 +548,18 @@ void send_cmd()
 		} else if (msg_cmd0 == 'R') {
 			if (isCombined) {
 				repeats = cmdstring.substring(startdata, start_pos-1).toInt();
+#ifdef DEBUGSENDCMD
+				MSG_PRINT("R=");
+				MSG_PRINTLN(repeats);
+#endif
 			} else {
 				if (cmdNo == 255) continue;
 				command[cmdNo].repeats = cmdstring.substring(startdata, start_pos-1).toInt();
-			}
 #ifdef DEBUGSENDCMD
-			MSG_PRINT("R=");
-			MSG_PRINTLN(cmdstring.substring(startdata, start_pos-1).toInt());
+				MSG_PRINT("R=");
+				MSG_PRINTLN(command[cmdNo].repeats);
 #endif
+			}
 		} else if (cmdNo == 255) {	// es wurde noch kein SR oder SM erkannt
 			continue;
 		} else if (msg_cmd0 == 'P') { // Do some basic detection if data matches what we expect
