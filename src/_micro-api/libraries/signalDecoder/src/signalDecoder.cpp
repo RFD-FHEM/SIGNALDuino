@@ -104,7 +104,7 @@ inline void SignalDetectorClass::addData(const int8_t value)
 		SDC_PRINT(" mstart="); SDC_PRINT(mstart);
 		SDC_PRINT(" mend="); SDC_PRINT(mend);
 		SDC_PRINT(" msglen="); SDC_PRINT(messageLen);
-		SDC_PRINT(" bytecnt="); SDC_PRINT(message.bytecount); 
+		SDC_PRINT(" bytecnt=");SDC_PRINT(message.bytecount);
 		SDC_PRINT(" valcnt="); SDC_PRINT(message.valcount);
 		SDC_PRINT(" mTrunc="); SDC_PRINT(m_truncated);
 		SDC_PRINT(" state="); SDC_PRINT(state);
@@ -447,12 +447,16 @@ void SignalDetectorClass::processMessage()
 						message.getByte(i/2,&n);
 						SDC_WRITE(n);
 					}
+
 					/*
 					SDC_PRINT(SERIAL_DELIMITER);
 					n = sprintf(buf, ";C%X;S%X;R%X;", clock, sync, rssiValue);
 					SDC_WRITE((const uint8_t *)buf, n);
 					*/
-			        }
+					n = sprintf(buf, ";C%X;S%X;R%X;", clock, sync, rssiValue);
+					SDC_WRITE((const uint8_t *)buf, n);
+
+			    }
 				else {
 					SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER);		
 					for (uint8_t idx = 0; idx < patternLen; idx++)
@@ -476,9 +480,10 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("SP="); SDC_PRINT(itoa(sync, buf, 10));      SDC_PRINT(SERIAL_DELIMITER);     // SyncPulse
 					SDC_PRINT("R=");  SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
 					*/
+					n = sprintf(buf, ";CP=%i;SP=%i;R=%i;", clock, sync, rssiValue);
+					SDC_WRITE((const uint8_t *)buf, n);
+
 				}
-				n = sprintf(buf, ";CP=%i;SP=%i;R=%i;", clock, sync, rssiValue);
-				SDC_WRITE((const uint8_t *)buf, n);
 
 				if (m_overflow) {
 					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
@@ -558,22 +563,22 @@ void SignalDetectorClass::processMessage()
 				if (mcDetected == false)
 				{
 					mcdecoder.reset();
-					mcdecoder.setMinBitLen(mcMinBitLen);								
+					mcdecoder.setMinBitLen(mcMinBitLen);
 				}
 #if DEBUGDETECT>3
 				SDC_PRINT("vcnt: "); SDC_PRINT(mcdecoder.ManchesterBits.valcount);
 #endif
 
-				if ((mcDetected || mcdecoder.isManchester()) )	// Check if valid manchester pattern and try to decode
+				if ((mcDetected || mcdecoder.isManchester()))	// Check if valid manchester pattern and try to decode
 				{
 #if DEBUGDECODE > 1
 					SDC_PRINTLN(" MC found: ");
 #endif // DEBUGDECODE
 
-#if DEBUGDECODE == 1 // todo kommentar entfernen
+					//#if DEBUGDECODE == 1 // todo kommentar entfernen
 					SDC_WRITE(MSG_START);
 					SDC_PRINT("DMc");
-					SDC_PRINT(SERIAL_DELIMITER);
+					SDC_WRITE(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
@@ -588,40 +593,43 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t i = 0; i < messageLen; ++i)
 					{
-						SDC_PRINT(itoa(message[i],buf,10));
+						SDC_PRINT(itoa(message[i], buf, 10));
 					}
+					SDC_PRINT(SERIAL_DELIMITER);
 
 					if (m_overflow) {
 						SDC_PRINT("O");
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 					SDC_PRINTLN(MSG_END);
-#endif
-					SDC_PRINT(MSG_START);
-					SDC_PRINT("Mc");
-					n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder.longlow], pattern[mcdecoder.longhigh]);
-					SDC_WRITE((const uint8_t *)buf, n);
-					n = sprintf(buf, ";SL=%i;SH=%i", pattern[mcdecoder.shortlow], pattern[mcdecoder.shorthigh]);
-					SDC_WRITE((const uint8_t *)buf, n);
+					//#endif
+					if (mcdecoder.doDecode())
+					{
+						SDC_PRINT(MSG_START);
+						SDC_PRINT("Mc");
+						n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder.longlow], pattern[mcdecoder.longhigh]);
+						SDC_WRITE((const uint8_t *)buf, n);
+						n = sprintf(buf, ";SL=%i;SH=%i;", pattern[mcdecoder.shortlow], pattern[mcdecoder.shorthigh]);
+						SDC_WRITE((const uint8_t *)buf, n);
 
-					/*
-					SDC_PRINT("LL="); SDC_PRINT(pattern[mcdecoder.longlow]); SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("LH="); SDC_PRINT(pattern[mcdecoder.longhigh]); SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("SL="); SDC_PRINT(pattern[mcdecoder.shortlow]); SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("SH="); SDC_PRINT(pattern[mcdecoder.shorthigh]); SDC_PRINT(SERIAL_DELIMITER);
-					*/
-					SDC_PRINT("D=");  mcdecoder.printMessageHexStr();
-					
-					n = sprintf(buf, ";C=%i;L=%i;R=%i;", clock, mcdecoder.ManchesterBits.valcount, rssiValue);
-					SDC_WRITE((const uint8_t *)buf, n);
-					/*
-					SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("C="); SDC_PRINT(mcdecoder.clock); SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("L="); SDC_PRINT(mcdecoder.ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
-  					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
-					*/
-					SDC_WRITE(MSG_END);
-					SDC_WRITE(char(0xA));
+						/*
+						SDC_PRINT("LL="); SDC_PRINT(pattern[mcdecoder.longlow]); SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("LH="); SDC_PRINT(pattern[mcdecoder.longhigh]); SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("SL="); SDC_PRINT(pattern[mcdecoder.shortlow]); SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("SH="); SDC_PRINT(pattern[mcdecoder.shorthigh]); SDC_PRINT(SERIAL_DELIMITER);
+						*/
+						SDC_PRINT("D=");  mcdecoder.printMessageHexStr();
+
+						n = sprintf(buf, ";C=%i;L=%i;R=%i;", clock, mcdecoder.ManchesterBits.valcount, rssiValue);
+						SDC_WRITE((const uint8_t *)buf, n);
+						/*
+						SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("C="); SDC_PRINT(mcdecoder.clock); SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("L="); SDC_PRINT(mcdecoder.ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
+						SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
+						*/
+						SDC_WRITE(MSG_END);
+						SDC_WRITE(char(0xA));
 
 
 #ifdef DEBUGDECODE
@@ -641,7 +649,8 @@ void SignalDetectorClass::processMessage()
 				}
 
 			}
-			if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
+		}
+		if (MUenabled && state == clockfound && success == false && messageLen >= minMessageLen) {
 				//SDC_PRINT(" try mu");
 
 #if DEBUGDECODE > 1
@@ -694,8 +703,9 @@ void SignalDetectorClass::processMessage()
 						message.getByte(i/2,&n);
 						SDC_WRITE(n);
 					}
+					n = sprintf(buf, ";C%X;R%X;", clock, rssiValue);
+					SDC_WRITE((const uint8_t *)buf, n);
 
-			
 				}
 				else {
 				
@@ -720,9 +730,11 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("CP="); SDC_PRINT(clock);     SDC_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					*/
+					n = sprintf(buf, ";CP=%i;R=%i;", clock, rssiValue);
+					SDC_WRITE((const uint8_t *)buf, n);
+
 				}
-				n = sprintf(buf, ";CP=%i;R=%i;", clock, rssiValue);
-				SDC_WRITE((const uint8_t *)buf, n);
+
 
 				if (m_overflow) {
 					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
@@ -737,41 +749,41 @@ void SignalDetectorClass::processMessage()
 
 		}
 		
-		if (success == false) 
+	if (success == false) 
+	{
+		if (m_truncated)
 		{
-			if (m_truncated)
-			{
-				// no clock, not mc but truncated buffer, so we are now here
+			// no clock, not mc but truncated buffer, so we are now here
 
-				int dp = 2000;  // marked as max value, but outside buffer range
-				for (uint8_t i = 0; i < patternLen; i++)
+			int dp = 2000;  // marked as max value, but outside buffer range
+			for (uint8_t i = 0; i < patternLen; i++)
+			{
+				if (pattern[i] > 0)
 				{
-					if (pattern[i] > 0)
+					if (sd_min(pattern[i], dp) < dp)  				// Todo wenn der Puffer nur aus negativen Werten besteh, dann müssen wir auch etwas machen
 					{
-						if (sd_min(pattern[i], dp) < dp)  				// Todo wenn der Puffer nur aus negativen Werten besteh, dann müssen wir auch etwas machen
-						{
-							dp = i;
-						}
-					}
-				}
-				for (uint8_t i = 0; i < messageLen && dp <2000; i++)
-				{
-					if (message[i] == dp) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
-					{
-						i--; // i verringern, damit ein zusätzlicher Wert erhalten bleibt
-						bufferMove(i);
-						break;
+						dp = i;
 					}
 				}
 			}
-			else {
-
-#if DEBUGDETECT >= 1
-				DBG_PRINTLN("nothing to to");
-#endif		
+			for (uint8_t i = 0; i < messageLen && dp <2000; i++)
+			{
+				if (message[i] == dp) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
+				{
+					i--; // i verringern, damit ein zusätzlicher Wert erhalten bleibt
+					bufferMove(i);
+					break;
+				}
 			}
 		}
+		else {
+
+#if DEBUGDETECT >= 1
+			DBG_PRINTLN("nothing to to");
+#endif		
+		}
 	}
+	
 	if (!m_truncated)  // Todo: Eventuell auf vollen Puffer prüfen
 	{
 		reset();
@@ -1037,13 +1049,12 @@ bool SignalDetectorClass::getSync()
 						DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
 #endif
 						return true;
-					};
-					c++;
-				}
+				};
+				c++;
 			}
 		}
 	}
-	sync = -1; // Workaround for sync detection bug.
+	sync = -1;		// Workaround for sync detection bug.
 	return false;
 }
 
@@ -1283,7 +1294,7 @@ void ManchesterpatternDecoder::getMessageLenStr(String* str)
 
 unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 
-	unsigned char c;
+	uint8_t c;
 	ManchesterBits.getByte(idx,&c);
 	return  c;
 }
@@ -1401,7 +1412,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					mc_start_found = false; // Reset to find new starting position
 					mc_sync = false;
 #ifdef DEBUGDECODE
-					SDC_PRINT(":RES:");
+					DBG_PRINT(":RES:");
 #endif
 					ManchesterBits.reset();
 
@@ -1547,7 +1558,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	{
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
 		#if DEBUGDETECT >= 1
-				SDC_PRINT(p);
+		DBG_PRINT("p"); 
 		#endif		
 
 		uint8_t ptmp = p;
@@ -1726,7 +1737,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 							tstclock = tstclock / 6;
 #if DEBUGDETECT >= 1
-							SDC_PRINT("  tstclock: "); DBG_PRINT(tstclock);
+							DBG_PRINT("  tstclock: "); DBG_PRINT(tstclock);
 #endif
 							clock = tstclock;
 
