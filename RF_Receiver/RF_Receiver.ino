@@ -220,7 +220,7 @@ void setup() {
 	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
 	cmdstring.reserve(40);
 
-	musterDec.setStreamCallback(writeCallback);
+	musterDec.setStreamCallback(&writeCallback);
 
 	if (!hasCC1101 || cc1101::regCheck()) {
 		enableReceive();
@@ -333,7 +333,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 
 	//MSG_PRINT(*buf);
 	//MSG_WRITE(buf, len);
-	Serial.write(buf,len);
+	MSG_PRINTER.write(buf,len);
 	
 	//serverClient.write("test");
 
