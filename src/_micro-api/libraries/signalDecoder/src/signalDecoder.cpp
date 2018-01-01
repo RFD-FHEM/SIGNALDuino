@@ -604,7 +604,7 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 					SDC_PRINTLN(MSG_END);
-//#endif
+#endif
 					if (mcdecoder.doDecode())
 					{
 						SDC_PRINT(MSG_START);
