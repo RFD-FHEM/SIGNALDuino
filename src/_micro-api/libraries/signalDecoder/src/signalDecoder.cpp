@@ -307,6 +307,7 @@ void SignalDetectorClass::compress_pattern()
 			}
 		}
 	}
+	/*
 	if (!checkMBuffer())
 	{
 		SDC_PRINTLN("after compress_pattern ->");
@@ -321,7 +322,7 @@ void SignalDetectorClass::compress_pattern()
 		SDC_PRINTLN(" wrong Data in Buffer");
 		printOut();
 	}
-
+	*/
 }
 
 void SignalDetectorClass::processMessage()
