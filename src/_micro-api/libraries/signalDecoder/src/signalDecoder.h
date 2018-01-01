@@ -36,14 +36,28 @@
 #else
 	#include "WProgram.h"
 #endif
+#define DEBUG 1
 
 #define CMP_CC1101
 //#define DEBUG 1
 
-#include "output.h"
-#include "bitstore.h"
-#include "FastDelegate.h"
+#ifndef WIFI_ESP
+#include <output.h>
+#else
+#include <ESP8266WiFi.h>
+extern WiFiClient serverClient;
+#define DBG_PRINTER Serial
+#define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
+#define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+#endif
 
+#define SDC_PRINT(...) {  write(__VA_ARGS__); }
+#define SDC_WRITE(...) {  write(__VA_ARGS__); }
+#define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
+
+
+#include <bitstore.h>
+#include <FastDelegate.h>
 #define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
@@ -53,9 +67,10 @@
 #define maxPulse 32001  // Magic Pulse Length
 
 
-#define SERIAL_DELIMITER ';'
-#define MSG_START char(0x2)			// this is a non printable Char
-#define MSG_END char(0x3)			// this is a non printable Char
+#define SERIAL_DELIMITER  char(';')
+#define MSG_START char(0x2)		// this is a non printable Char
+#define MSG_END   char(0x3)			// this is a non printable Char
+
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
@@ -79,7 +94,10 @@ public:
 	bool decode(const int* pulse);
 	const status getState();
 	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
+	typedef fastdelegate::FastDelegate2<const uint8_t*, uint8_t, size_t> Func2pRetuint8t;
+
 	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
+	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
 
 
 	//private:
@@ -103,7 +121,7 @@ public:
 	void bufferMove(const uint8_t start);
 
 	uint16_t tol;                           // calculated tolerance for signal
-	//uint8_t bitcnt;
+											//uint8_t bitcnt;
 	status state;                           // holds the status of the detector
 	int buffer[2];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
@@ -113,12 +131,15 @@ public:
 	uint8_t patternLen;                     // counter for length of pattern
 	uint8_t pattern_pos;
 	int8_t sync;							// index to sync in pattern if it exists
-	//String preamble;
-	//String postamble;
+											//String preamble;
+											//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
-	FuncRetuint8t _rssiCallback=NULL;			// Holds the pointer to a callback Function
+	FuncRetuint8t _rssiCallback=NULL;		// Holds the pointer to a callback Function
+	Func2pRetuint8t _streamCallback=NULL;	// Holds the pointer to a callback Function
+	Stream *msgPort;						// Holds a pointer to a stream object for outputting
+
 
 	void addData(const int8_t value);
 	void addPattern();
@@ -130,14 +151,17 @@ public:
 	void calcHisto(const uint8_t startpos = 0, uint8_t endpos = 0);
 	bool getClock(); // Searches a clock in a given signal
 	bool getSync();	 // Searches clock and sync in given Signal
-	int8_t printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble = NULL, const String *postamble = NULL);
-	void printMsgStr(const String *first, const String *second, const String *third);
+	//int8_t printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble = NULL, const String *postamble = NULL);
+	//void printMsgStr(const String *first, const String *second, const String *third);
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
+	size_t write(const uint8_t *buffer, size_t size);
+	size_t write(const char *str);
+	size_t write(uint8_t b);
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
-	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
+												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	bool checkMBuffer();
 
 
@@ -161,7 +185,7 @@ public:
 	const bool isManchester();
 	void reset();
 #ifndef UNITTEST
-//private:
+	//private:
 #endif
 	BitStore<50> ManchesterBits;       // A store using 1 bit for every value stored. It's used for storing the Manchester bit data in a efficent way
 	SignalDetectorClass *pdec;
@@ -171,7 +195,7 @@ public:
 	int8_t shorthigh;
 	int clock; // Manchester calculated clock		
 	int8_t minbitlen;
-	
+
 	bool mc_start_found = false;
 	bool mc_sync = false;
 
@@ -182,4 +206,3 @@ public:
 
 
 #endif
-
