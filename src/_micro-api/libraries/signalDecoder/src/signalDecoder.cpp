@@ -775,13 +775,20 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 #endif // DEBUGDECODE
 				bool m_endfound = false;
 				
-				bool isMuRepeat = isMuMessageRepeat();
+				bool isMuRepeat = false;
+				if (MuSplitThresh > 0) {
+					if (mstart > 0) {	// wurde in isManchester der mstart veraendert und calcHisto ausgefuehrt?
+						calcHisto();
+						mstart = 0;
+					}
+					isMuRepeat = isMuMessageRepeat();
+				}
 #ifdef DEBUGMUREPEAT
 				DBG_PRINTLN(isMuRepeat, DEC);
 #endif
 				if (isMuRepeat) {
 					mend = minMessageLen;
-					if (mend <= messageLen && MuSplitThresh > 0) {
+					if (mend <= messageLen) {
 						for (uint8_t i = mend; i < messageLen-1; ++i) {
 							if (abs(pattern[message[i]]) >= MuSplitThresh) {
 								mend = i;
@@ -799,7 +806,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 
 				if (!m_endfound) {
 					mend = messageLen;
-					if (mstart > 0) {	// wurde in isManchester der mstart veraendert?
+					if (mstart > 0) {	// wurde in isManchester der mstart veraendert und calcHisto ausgefuehrt?
 						calcHisto();
 					}
 				}
@@ -1635,11 +1642,14 @@ const bool ManchesterpatternDecoder::doDecode() {
 		{
 			if (pdec->mcRepeat == false && i > minMessageLen)	// es ist keine Wiederholung und es wurde nach minMessageLen nichts gefunden -> weiter mit MU-Nachricht
 			{
+				pdec->mstart = i;
 				return false;
 			}
 			ManchesterBits.reset();		// weiter suchen
-			//DBG_PRINT("mcResMpos=");
-			//DBG_PRINTLN(i);
+#if MCDEBUGDECODE > 1
+			DBG_PRINT("mcResMpos=");
+			DBG_PRINTLN(i);
+#endif
 		}
 		else 
 		{
