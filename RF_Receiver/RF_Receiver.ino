@@ -85,7 +85,7 @@ SignalDetectorClass musterDec;
 #include "cc1101.h"
 
 #define pulseMin  90
-#define maxCmdString 240
+#define maxCmdString 350  // 250
 #define maxSendPattern 8
 #define MsMoveCountmaxDef 3
 #define MdebFifoLimitDef 80
@@ -386,6 +386,7 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 	unsigned long stoptime=micros();
 	bool isLow;
 	int16_t dur;
+
 	for (uint16_t i=startpos;i<=endpos;i++ )
 	{
 		//MSG_PRINT(cmdstring.substring(i,i+1));
@@ -577,7 +578,7 @@ void send_cmd()
 #endif
 		} else if (msg_cmd0 == 'D') {
 			command[cmdNo].datastart = startdata;
-			command[cmdNo].dataend = start_pos-1;
+			command[cmdNo].dataend = start_pos-2;
 #ifdef DEBUGSENDCMD
 			MSG_PRINT("D=");
 			MSG_PRINTLN(cmdstring.substring(startdata, start_pos-1));
@@ -1127,11 +1128,13 @@ void initEEPROM(void) {
     //#ifdef DEBUG
     MSG_PRINTLN(F("Init eeprom to defaults after flash"));
     //#endif
+    #ifdef CMP_CC1101
+       if (EEPROM.read(EE_MAGIC_OFFSET) != VERSION_1) {  // ccFactoryReset nur wenn VERSION_1 nicht passt
+          cc1101::ccFactoryReset();
+       }
+    #endif
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
-    #ifdef CMP_CC1101
-       cc1101::ccFactoryReset();
-    #endif
   }
   getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MfiltEnabled);
 
