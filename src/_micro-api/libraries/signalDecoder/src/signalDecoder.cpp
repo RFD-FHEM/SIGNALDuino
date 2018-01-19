@@ -471,7 +471,7 @@ void SignalDetectorClass::processMessage()
 					}
 					SDC_PRINT("D=");
 
-					for (uint8_t i = mstart; i <= mend; ++i)
+					for (uint8_t i = mstart; i <= mend; i++)
 					{
 						SDC_PRINT(itoa(message[i], buf, 10));
 					}
@@ -1028,19 +1028,13 @@ bool SignalDetectorClass::getSync()
 
 				// Pruefen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
-				
-				while (c < min(syncLenMax,messageLen - minMessageLen))
+				uint8_t max_search = sd_min(syncLenMax, messageLen - minMessageLen);
+				while (c < max_search)
 				{
-					if (message[c + 1] == p && message[c] == clock) break;
-					c++;
-				}
-
-				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
-				if (c<syncLenMax)
-				{
-					sync = p;
-					state = syncfound;
-					mstart = c;
+					if (message[c + 1] == p && message[c] == clock) {
+						sync = p;
+						state = syncfound;
+						mstart = c;
 
 #ifdef DEBUGDECODE
 						//debug
@@ -1048,10 +1042,14 @@ bool SignalDetectorClass::getSync()
 						DBG_PRINT("PD sync: ");
 						DBG_PRINT(pattern[clock]); DBG_PRINT(", "); DBG_PRINT(pattern[p]);
 						DBG_PRINT(", TOL: "); DBG_PRINT(tol);
-						DBG_PRINT(", sFACT: "); DBG_PRINTLN(pattern[sync] / (float)pattern[clock]);
+						DBG_PRINT(", sFACT: "); DBG_PRINT(pattern[sync] / (float)pattern[clock]);
+						DBG_PRINT(", mstart: "); DBG_PRINTLN(mstart);
 #endif
 						return true;
-				};
+					};
+					c++;
+				}
+				//if (c==messageLen) continue;	// nichts gefunden, also Sync weitersuchen
 				c++;
 			}
 		}
