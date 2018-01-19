@@ -33,7 +33,7 @@
 
 #define CMP_CC1101     // bitte auch das "#define CMP_CC1101" in der SignalDecoder.h beachten 
 
-#define PROGVERS               "3.3.1-RC2"
+#define PROGVERS               "3.3.1-RC3"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
