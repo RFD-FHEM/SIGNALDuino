@@ -28,17 +28,19 @@
 *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 */
+
+
 #ifndef _SIGNALDECODER_h
 #define _SIGNALDECODER_h
+
 
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
-	#include "WProgram.h"
+	//#include "WProgram.h"
 #endif
 #define DEBUG 1
 
-#define CMP_CC1101
 //#define DEBUG 1
 
 #ifndef WIFI_ESP
@@ -138,7 +140,7 @@ public:
 	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;		// Holds the pointer to a callback Function
 	Func2pRetuint8t _streamCallback=NULL;	// Holds the pointer to a callback Function
-	Stream *msgPort;						// Holds a pointer to a stream object for outputting
+	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
 
 
 	void addData(const int8_t value);
