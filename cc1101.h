@@ -17,12 +17,18 @@ extern String cmdstring;
 
 
 namespace cc1101 {
+	
+	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	#define SS					  8  
 	#define PIN_MARK433			  4  // LOW -> 433Mhz | HIGH -> 868Mhz
+	
+	#elif ARDUINO_ATMEGA328P_MINICUL  // 8Mhz 
+	#define PIN_MARK433			  0
 	#endif
-
-	#define csPin	SS	   // CSN  out
+	*/
+	
+#define csPin	SS	   // CSN  out
 	#define mosiPin MOSI   // MOSI out
 	#define misoPin MISO   // MISO in
 	#define sckPin  SCK    // SCLK out	
@@ -371,7 +377,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		pinAsInput(misoPin);
 		pinAsOutput(csPin);                    // set pins for SPI communication
 		
-		#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+		#ifdef PIN_MARK433
 		pinAsInputPullUp(PIN_MARK433);
 		#endif
 		//// Änderungsbeginn  ---> 
@@ -389,7 +395,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 
 		SPSR = (1 << SPI2X);             		// Double Clock Rate
 		*/
-		pinAsInput(PIN_SEND);        // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+		pinAsInput(PIN_SEND);				// gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
 		digitalHigh(csPin);                 // SPI init
 		digitalHigh(sckPin);
 		digitalLow(mosiPin);
