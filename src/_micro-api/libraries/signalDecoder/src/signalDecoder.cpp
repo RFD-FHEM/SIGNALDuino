@@ -142,7 +142,7 @@ inline void SignalDetectorClass::doDetect()
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 //      if (messageLen == 0) valid = true;
 	if (!valid) {
-		//SDC_PRINT(" not valid ");
+		DBG_PRINT(" not valid ");
 
 		// Try output
 		processMessage();
@@ -1016,6 +1016,8 @@ bool SignalDetectorClass::getSync()
 	{					// clock wurde bereits durch getclock bestimmt
 		
 		const uint8_t syncLenMax = 100; 		      //  wenn in den ersten ca 100 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
+		const uint8_t max_search = sd_min(syncLenMax, messageLen - minMessageLen);
+
 		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
 		{
 			uint16_t syncabs = abs(pattern[p]);
@@ -1028,7 +1030,6 @@ bool SignalDetectorClass::getSync()
 
 				// Pruefen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
-				uint8_t max_search = sd_min(syncLenMax, messageLen - minMessageLen);
 				while (c < max_search)
 				{
 					if (message[c + 1] == p && message[c] == clock) {
@@ -1336,12 +1337,17 @@ const bool ManchesterpatternDecoder::doDecode() {
 			bit = pdec->message[i] == longhigh ? 0 : 1;
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
-
 			if (i >0 ) // Todo: Eventuell reicht auch i>0 ?
 			{
 				bit = bit ^ 1; // need to flip the bit once
+
 				ManchesterBits.addValue(bit);
-				
+#ifdef DEBUGDECODE
+				value = bit == 1 ? 'P' : 'p';
+				DBG_PRINT(value);
+				DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount - 1));
+#endif
+
 				if (isShort(pdec->message[i - 1]) && --i>2)
 				{
 					while (i > 1)
@@ -1359,6 +1365,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 							}
 						}
 						ManchesterBits.addValue(bit);
+#ifdef DEBUGDECODE
+						DBG_PRINT(value);
+						DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount - 1));
+#endif
+
 					}
 				}
 				if (i == pdec->mstart) i++; // 1. long shoud not be processed twice if there was nothing valid before that pulse
