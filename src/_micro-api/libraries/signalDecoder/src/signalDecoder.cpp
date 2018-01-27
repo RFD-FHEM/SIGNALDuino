@@ -475,7 +475,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 			DBG_PRINT(F(" msglen=")); DBG_PRINTLN(messageLen);
 			
 #endif // DEBUGDECODE
-			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
+		    if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && (messageLen - mstart) >= minMessageLen))
+		    {
+			if (m_endfound || (!m_endfound && messageLen < maxMsgSize))
 			{
 #if DEBUGDECODE >1
 				MSG_PRINTLN(F("Filter Match: "));;
@@ -571,13 +573,13 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				}
 				m_truncated = false;
 				
-				if ((messageLen - mend) >= minMessageLen && MsMoveCount > 0) {
+				if ((p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) && MsMoveCount > 0) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
 					MsMoveCount--;
 					bufferMove(mend+1);
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
 					mstart = 0;
-					if (MdebEnabled) {
+					if (MdebEnabled && messageLen > 0) {
 						MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
 					}
 				}
@@ -607,6 +609,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				}
 			} 
 			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
+						// mir ist nicht klar in welchen Faellen dies aufgerufen wird
 #if DEBUGDECODE >1
 				DBG_PRINTLN(F(" MSmoveMsg "));
 #endif
@@ -627,6 +630,10 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				//success = true;	// don't process other message types
 			}
 			success = true;
+		    }
+		    else {		  // m_endfound && (mend - mstart) < minMessageLen)  -> weiter mit MU message verarbeitung
+			success == false;
+		    }
 		}
 		if (success == false && (MUenabled || MCenabled)) {
 
@@ -640,7 +647,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 			//preamble = "";
 			//postamble = "";
 
-			if (MCenabled)
+			if (MCenabled && state != syncfound)
 			{
 				//DBG_PRINT(" mc: ");
 
@@ -768,7 +775,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				}
 
 			}
-			if (MUenabled && (state == clockfound) && success == false && messageLen >= minMessageLen) {
+			if (MUenabled && (state == clockfound || state == syncfound) && success == false && messageLen >= minMessageLen) {
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
