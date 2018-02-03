@@ -59,7 +59,7 @@
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-#define MCDEBUGDECODE 2
+//#define MCDEBUGDECODE 2
 //#define MCDEBUGSEQ 1
 //#define DEBUGGLEICH 1
 //#define DEBUGDECODE 1
@@ -144,7 +144,7 @@ public:
 	inline void updPattern(const uint8_t ppos);
 
 	void doDetect();
-	void processMessage(const bool p_valid);
+	void processMessage(const uint8_t p_valid);
 	bool compress_pattern();
 	void calcHisto(const uint8_t startpos = 0, uint8_t endpos = 0);
 	bool getClock(); // Searches a clock in a given signal

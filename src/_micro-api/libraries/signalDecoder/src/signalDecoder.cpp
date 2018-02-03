@@ -170,7 +170,7 @@ inline void SignalDetectorClass::doDetect()
 	
 	if (!valid) {			// Nachrichtenende erkannt -> alles bis zum Nachrichtenende wird ausgegeben
 		
-		for (uint8_t n = 10; n >= 0; --n) {
+		for (uint8_t n = 10; n > 0; --n) {
 			// Try output
 			processMessage(0);
 			if (messageLen == 0) {
@@ -187,7 +187,7 @@ inline void SignalDetectorClass::doDetect()
 	}
 	else {  					// valid
 		if (messageLen >= maxMsgSize) {
-			processMessage(true);   // message Puffer voll aber kein message Ende
+			processMessage(1);   // message Puffer voll aber kein message Ende
 			calcHisto();
 		}
 		else if (messageLen == minMessageLen) {
@@ -210,10 +210,22 @@ inline void SignalDetectorClass::doDetect()
 				//bool gr2Flag = false;
 				if (histo[pattern_pos] > 2 && state > 0)
 				{
-					/*gr2Flag = true;
+					//gr2Flag = true;
 					//DBG_PRINTLN(F("addP_histop>2"));  // pattern buffer full after proccessMessage
-					printOut();*/
-					processMessage(true);
+					//printOut();
+					bool saveMsgSuccess = false;
+					for (uint8_t n = 10; n > 0; --n) {
+						if (printMsgSuccess) {
+							saveMsgSuccess = true;
+							printMsgSuccess = false;
+						}
+						processMessage(2);
+						if (messageLen < minMessageLen || printMsgSuccess == false) {
+							break;
+						}
+					}
+					printMsgSuccess = saveMsgSuccess;
+					//printOut();
 					calcHisto();
 
 				}
@@ -378,11 +390,11 @@ bool SignalDetectorClass::compress_pattern()
 	return ret;
 }
 
-void SignalDetectorClass::processMessage(const bool p_valid)
+void SignalDetectorClass::processMessage(const uint8_t p_valid)
 {
 	//yield();
 
-	if (p_valid) {
+	if (p_valid > 0) {
 		m_truncated = true;
 	} else {			// nicht valid (message Ende) -> reset wenn kleiner minMessageLen
 		m_truncated = false;	
@@ -477,7 +489,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 #endif // DEBUGDECODE
 		    if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && (messageLen - mstart) >= minMessageLen))
 		    {
-			if (m_endfound || (!m_endfound && messageLen < maxMsgSize))
+			if (m_endfound || (!m_endfound && messageLen < maxMsgSize && p_valid != 2))  // nicht ausgeben, wenn kein Ende gefunden und patternpuffer overflow
 			{
 #if DEBUGDECODE >1
 				MSG_PRINTLN(F("Filter Match: "));;
@@ -571,9 +583,16 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				if (m_overflow) {
 					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
 				}
+				if (MdebEnabled) {
+					if (p_valid == 0) {					// Nachrichtenende erkannt
+						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
+					} else if (p_valid == 2) {				// Patternpuffer overflow
+						MSG_PRINT("p"); MSG_PRINT(SERIAL_DELIMITER);
+					}
+				}
 				m_truncated = false;
 				
-				if ((p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) && MsMoveCount > 0) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
+				if ((p_valid > 0 || (p_valid == 0 && (messageLen - mend) >= minMessageLen)) && MsMoveCount > 0) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
 					MsMoveCount--;
 					bufferMove(mend+1);
@@ -593,7 +612,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
-				if (!p_valid) {   // wenn ein Nachrichtenende erkannt wurde, kann alles geloescht werden
+				if (p_valid == 0) {   // wenn ein Nachrichtenende erkannt wurde, kann alles geloescht werden
 					m_truncated = false;
 #if DEBUGDECODE >1
 					DBG_PRINT(F(" MSmoveMsg,noEnd->reset "));
@@ -625,8 +644,9 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				//MSG_PRINT(MSG_START);
 				//MSG_PRINT("Buffer overflow while processing signal");
 				//MSG_PRINT(MSG_END);
-				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
-				
+				if (p_valid != 2) {
+					reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
+				}
 				//success = true;	// don't process other message types
 			}
 			success = true;
@@ -692,11 +712,15 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					if (m_overflow) {
 						MSG_PRINT("O"); MSG_PRINT(SERIAL_DELIMITER);
 					}
-					if (!p_valid) {			// Nachrichtenende erkannt
-						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
-					}
-					if (mcValid == false) {
-						MSG_PRINT("i"); MSG_PRINT(SERIAL_DELIMITER);
+					if (MdebEnabled) {
+						if (p_valid == 0) {					// Nachrichtenende erkannt
+							MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
+						} else if (p_valid == 2) {				// Patternpuffer overflow
+							MSG_PRINT("p"); MSG_PRINT(SERIAL_DELIMITER);
+						}
+						if (mcValid == false) {
+							MSG_PRINT("i"); MSG_PRINT(SERIAL_DELIMITER);
+						}
 					}
 					MSG_PRINTLN(MSG_END);
 #endif
@@ -757,7 +781,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					success = true;
 					printMsgSuccess = true;
 					
-					if (p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
+					if (p_valid > 0 || (p_valid == 0 && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
 						bufferMove(mend-1);
 						mstart = 0;
 						mcRepeat = true;
@@ -818,7 +842,7 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 					}
 				}
 				else {
-					calcHisto(0, mend-1);	// Recalc histogram due to shortened message
+					calcHisto(0, mend);	// Recalc histogram due to shortened message
 				}
 				
 				if (MredEnabled) {
@@ -900,35 +924,33 @@ void SignalDetectorClass::processMessage(const bool p_valid)
 				printMsgSuccess = true;
 				success = true;
 				
-				if (m_endfound) {
-					if (p_valid || (!p_valid && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
-						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
-						MuMoveCount++;
-						bufferMove(mend);
-						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
-						mstart = 0;
-						if (MdebEnabled) {
-							MSG_PRINT("w"); MSG_PRINT(MuMoveCount); MSG_PRINT(SERIAL_DELIMITER);
-						}
-					} else {
-						if (MdebEnabled) {
-							MSG_PRINT("w-"); MSG_PRINT(SERIAL_DELIMITER);
-						}
-					}
-				}
-				
 				if (m_overflow) {
 					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
 				}
-				
 				if (MdebEnabled) {
-					if (!p_valid) {			// Nachrichtenende erkannt
+					if (p_valid == 0) {					// Nachrichtenende erkannt
 						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
+					} else if (p_valid == 2) {				// Patternpuffer overflow
+						MSG_PRINT("p"); MSG_PRINT(SERIAL_DELIMITER);
 					}
 					if (mcValid == false) {
 						MSG_PRINT("i"); MSG_PRINT(SERIAL_DELIMITER);
 					}
 				}
+				
+				if (m_endfound) {
+					if (MdebEnabled) {
+						MSG_PRINT("w"); MSG_PRINT(MuMoveCount); MSG_PRINT(SERIAL_DELIMITER);
+					}
+					MuMoveCount++;
+					if (p_valid > 0 || (p_valid == 0 && (messageLen - mend) >= minMessageLen)) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
+						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
+						bufferMove(mend);
+						//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
+						mstart = 0;
+					}
+				}
+				
 				MSG_PRINT(MSG_END);  MSG_PRINT("\n");
 				//if (m_endfound) {
 				//  MSG_PRINT(F("MUend="));
