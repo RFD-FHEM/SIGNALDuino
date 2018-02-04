@@ -36,7 +36,7 @@
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2-dev"
+#define PROGVERS               "3.3.2b-dev"
 #define VERSION_1               0x33
 #define VERSION_2               0x2d
 
@@ -87,8 +87,6 @@ SignalDetectorClass musterDec;
 #define pulseMin  90
 #define maxCmdString 350  // 250
 #define maxSendPattern 8
-#define MsMoveCountmaxDef 3
-#define MdebFifoLimitDef 80
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
 String cmdstring = "";
@@ -98,6 +96,11 @@ volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool LEDenabled = true;
 uint8_t MdebFifoLimit = 80;
+
+#define CSetAnz 4
+const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muthresh", "L"};
+const uint8_t CSetAddr[] = {  0xf0,     0xf1,    0xf2,     0xf3,   0xf4};
+const uint8_t CSetDef[] =  {    80,       0,       4,     0x1f,   0x40};
 
 #ifdef CMP_MEMDBG
 
@@ -139,17 +142,12 @@ int16_t stackSize=0; // partition size for current snapshot of the stack section
 int16_t freeMem1=0;  // available ram calculation #1
 int16_t freeMem2=0;  // available ram calculation #2
 
-#endif
+#endif  // CMP_MEMDBG
 
 
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
-#define addr_MdebFifoLimit   0xf0
-#define addr_mcmbl            0xf1
-#define addr_MsMoveCountmax  0xf2
-#define addr_MuSplitThresh   0xf3
 #define addr_features        0xff
-
 
 void handleInterrupt();
 void enableReceive();
@@ -693,11 +691,19 @@ void HandleCommand()
   #define  cmd_patable 'x' 
   #define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
 
-
+  bool unsuppCmd = false;
+  
   if (cmdstring.charAt(0) == cmd_ping){
 	getPing();
   }  // ?: Kommandos anzeigen
   else if (cmdstring.charAt(0) == cmd_help) {
+    if (cmdstring.charAt(1) == 'S') {
+	for (uint8_t i = 0; i < 4; i++) {
+	    MSG_PRINT(CSetCmd[i]);
+	    MSG_PRINT(" ");
+        }
+	MSG_PRINTLN("");
+    } else {
 	MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
 	MSG_PRINT(cmd_Version);MSG_PRINT(cmd_space);
 	MSG_PRINT(cmd_freeRam);MSG_PRINT(cmd_space);
@@ -714,6 +720,7 @@ void HandleCommand()
 		MSG_PRINT(cmd_ccFactoryReset);MSG_PRINT(cmd_space);
 	}
 	MSG_PRINTLN("");
+    }
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
@@ -766,7 +773,7 @@ void HandleCommand()
 		cc1101::readCCreg(reg);
       }
     else {
-      MSG_PRINTLN(F("Unsupported command"));
+      unsuppCmd = true; 
     }
   }
   else if (cmdstring.charAt(0) == cmd_write) {            // write EEPROM und CC11001 register
@@ -776,14 +783,11 @@ void HandleCommand()
          reg = cmdstringPos2int(1);
          val = cmdstringPos2int(3);
          EEPROM.write(reg, val);
-         if (reg == addr_MdebFifoLimit) {
-           MdebFifoLimit = val;
-         }
-         else if (hasCC1101) {
+         if (hasCC1101) {
            cc1101::writeCCreg(reg, val);
          }
     } else {
-         MSG_PRINTLN(F("Unsupported command"));
+         unsuppCmd = true;
     }
   }
   // R<adr>  read EEPROM
@@ -810,12 +814,21 @@ void HandleCommand()
      printHex2(val);
      MSG_PRINTLN(F(" to PATABLE done"));
   }
-  else if (cmdstring.charAt(0) == cmd_ccFactoryReset && hasCC1101) { 
-     cc1101::ccFactoryReset();
-     cc1101::CCinit();
+  else if (cmdstring.charAt(0) == cmd_ccFactoryReset) {
+     if (cmdstring.charAt(1) == 'C') {
+         initEEPROMconfig();
+     } else if (hasCC1101) {
+         cc1101::ccFactoryReset();
+         cc1101::CCinit();
+     } else {
+         unsuppCmd = true;
+     }
   }
   else {
-	  MSG_PRINTLN(F("Unsupported command"));
+      unsuppCmd = true;
+  }
+  if (unsuppCmd) {
+      MSG_PRINTLN(F("Unsupported command"));
   }
 }
 
@@ -906,35 +919,43 @@ inline void configCMD()
 
 inline void configSET()
 { 
-	//MSG_PRINT(cmdstring.substring(2, 8));
-	if (cmdstring.substring(2,8) == "mcmbl=")    // mc min bit len
-	{	
-		musterDec.mcMinBitLen = cmdstring.substring(8).toInt(); 
-		EEPROM.write(addr_mcmbl, musterDec.mcMinBitLen);
-		MSG_PRINT(musterDec.mcMinBitLen);
+	uint8_t i = cmdstring.indexOf("=",4);
+	uint8_t n = 0;
+	uint8_t val;
+	while (n < CSetAnz) {
+		if (cmdstring.substring(2, i) == CSetCmd[n]) {
+			MSG_PRINT(CSetCmd[n]);
+			MSG_PRINT("=");
+			if (n != 3) {
+				val = cmdstring.substring(i+1).toInt();
+				MSG_PRINTLN(val);
+				EEPROM.write(CSetAddr[n], val);
+			}
+			break;
+		}
+		n++;
 	}
-	else if (cmdstring.substring(2,8) == "mscnt=")
-	{
-		musterDec.MsMoveCountmax = cmdstring.substring(8).toInt(); 
-		EEPROM.write(addr_MsMoveCountmax, musterDec.MsMoveCountmax);
-		MSG_PRINT(musterDec.MsMoveCountmax);
+	
+	if (n == 0) {  				// fifolimit
+		MdebFifoLimit = val;
 	}
-	else if (cmdstring.substring(2,12) == "fifolimit=")
-	{
-		MdebFifoLimit = cmdstring.substring(12).toInt(); 
-		EEPROM.write(addr_MdebFifoLimit, MdebFifoLimit);
-		MSG_PRINT(MdebFifoLimit);
+	else if (n == 1) {			// mcmbl
+		musterDec.mcMinBitLen = val;
 	}
-	else if (cmdstring.substring(2,11) == "muthresh=")
-	{
-		musterDec.MuSplitThresh = cmdstring.substring(11).toInt();
-		uint8_t val = (musterDec.MuSplitThresh>>8) & 0xFF;
-		EEPROM.write(addr_MuSplitThresh, val);
+	else if (n == 2) {			// mscnt
+		musterDec.MsMoveCountmax = val;
+	}
+	else if (n == 3) {			// muthresh
+		musterDec.MuSplitThresh = cmdstring.substring(i+1).toInt();
+		val = (musterDec.MuSplitThresh>>8) & 0xFF;
+		EEPROM.write(CSetAddr[n], val);			// high
 		val = musterDec.MuSplitThresh & 0xFF;
-		EEPROM.write(addr_MuSplitThresh+1, val);
-		MSG_PRINT(musterDec.MuSplitThresh);
+		EEPROM.write(CSetAddr[n+1], val);		// low
+		MSG_PRINTLN(musterDec.MuSplitThresh);
 	}
-	MSG_PRINTLN(F(" CSet"));
+	else {
+		MSG_PRINTLN("");
+	}
 }
 
 void serialEvent()
@@ -1083,6 +1104,11 @@ void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t de
     EEPROM.write(addr_features,dat);
 }
 
+void callGetFunctions(void)
+{
+	 getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MfiltEnabled);
+}
+
 void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *filt)
 {
     int8_t high;
@@ -1096,18 +1122,30 @@ void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, b
     *led=bool (dat &(1<<5));
     *filt=bool (dat &(1<<6));
     
-    MdebFifoLimit = EEPROM.read(addr_MdebFifoLimit);
-    musterDec.MsMoveCountmax = EEPROM.read(addr_MsMoveCountmax);
-    high = EEPROM.read(addr_MuSplitThresh);
-    musterDec.MuSplitThresh = EEPROM.read(addr_MuSplitThresh+1) + ((high << 8) & 0xFF00);
-    musterDec.mcMinBitLen = EEPROM.read(addr_mcmbl);
+    MdebFifoLimit = EEPROM.read(CSetAddr[0]);
+    musterDec.MsMoveCountmax = EEPROM.read(CSetAddr[2]);
+    high = EEPROM.read(CSetAddr[3]);
+    musterDec.MuSplitThresh = EEPROM.read(CSetAddr[4]) + ((high << 8) & 0xFF00);
+    musterDec.mcMinBitLen = EEPROM.read(CSetAddr[1]);
     if (musterDec.mcMinBitLen == 0) {
         musterDec.mcMinBitLen = mcMinBitLenDef;
     }
 }
 
-void initEEPROM(void) {
+void initEEPROMconfig(void)
+{
+	EEPROM.write(addr_features, 0xBF);    	// Init EEPROM with all flags enabled, except filt
+	EEPROM.write(CSetAddr[0], CSetDef[0]);	// fifolimit
+	EEPROM.write(CSetAddr[1], CSetDef[1]);	// mcmbl
+	EEPROM.write(CSetAddr[2], CSetDef[2]);	// mscnt
+	EEPROM.write(CSetAddr[3], CSetDef[3]);	// muthresh high
+	EEPROM.write(CSetAddr[4], CSetDef[4]);	// muthresh low
+	callGetFunctions();
+	MSG_PRINTLN(F("Init eeprom to defaults"));
+}
 
+void initEEPROM(void)
+{
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
     
   //if (musterDec.MdebEnabled) {
@@ -1117,17 +1155,8 @@ void initEEPROM(void) {
   //}
 
   } else {
-    EEPROM.write(addr_features, 0xBF);    // Init EEPROM with all flags enabled, except filt
-    EEPROM.write(addr_MdebFifoLimit, MdebFifoLimitDef);
-    EEPROM.write(addr_MsMoveCountmax, MsMoveCountmaxDef);
-    EEPROM.write(addr_MuSplitThresh, 0x1b);   // 7000
-    EEPROM.write(addr_MuSplitThresh+1, 0x58);
-    EEPROM.write(addr_mcmbl, 0);
-
+    initEEPROMconfig();
     //storeFunctions(1, 1, 1);    // Init EEPROM with all flags enabled
-    //#ifdef DEBUG
-    MSG_PRINTLN(F("Init eeprom to defaults after flash"));
-    //#endif
     #ifdef CMP_CC1101
        if (EEPROM.read(EE_MAGIC_OFFSET) != VERSION_1) {  // ccFactoryReset nur wenn VERSION_1 nicht passt
           cc1101::ccFactoryReset();
@@ -1136,9 +1165,5 @@ void initEEPROM(void) {
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MfiltEnabled);
-
+  callGetFunctions();
 }
-
-
-
