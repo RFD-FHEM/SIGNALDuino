@@ -181,7 +181,7 @@ inline void SignalDetectorClass::doDetect()
 		
 		if (messageLen > 0) reset();	// nur zur Sicherheit, duerfte eigentlich nie vorkommen
 		
-		MsMoveCount = MsMoveCountmax;
+		MsMoveCount = 0;
 		MuMoveCount = 0;
 		addPattern();
 	}
@@ -224,6 +224,8 @@ inline void SignalDetectorClass::doDetect()
 							break;
 						}
 					}
+					MsMoveCount = 0;
+					MuMoveCount = 0;
 					printMsgSuccess = saveMsgSuccess;
 					//printOut();
 					calcHisto();
@@ -411,14 +413,31 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("msgRec:");
 #endif
+		if (MsMoveCount == 0 && MuMoveCount == 0) {	// bei Wiederholungen wird kein compress_pattern benötigt
+			compress_pattern();
+		}
 
-		compress_pattern();
-		//calcHisto();
-		//if (message[messageLen-1] == 7 ) {
-		//	printOut();
-		//}
-
-		getClock();
+		state = searching;
+		if (MsMoveCount > 0) {
+			mstart = 0;
+			while (mstart < 10) {
+				if (message[mstart + 1] == sync && message[mstart] == clock) {	// nach sync und clock von der 1.Nachricht suchen
+					state = syncfound;	//	sync und clock gefunden -> es muss nicht erneut nach clock und sync gesucht werden
+					break;
+				}
+				mstart++;
+			}
+			if (state == searching) {	// die sync und clock Werte stimmen nicht mit der 1.Nachricht ueberein
+				MsMoveCount = 0;
+				calcHisto();
+			}
+		} else if (MuMoveCount > 0) {
+			calcHisto();
+		}
+		
+		if (state == searching) {
+			getClock();
+		}
 		if (state == clockfound && MSenabled && mcRepeat == false) getSync();  // wenn MC Wiederholungen ausgegeben werden, wird die MS Decodierung uebersprungen
 
 #if DEBUGDECODE >1
@@ -435,13 +454,25 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 
 			//printOut();
 #endif	
-
 			// Setup of some protocol identifiers, should be retrieved via fhem in future
 
-			mend = mstart + 2;   // GGf. kann man die Mindestlaenge von x Signalen vorspringen
+			mend = mstart + 2;
 			bool m_endfound = false;
 
-			//uint8_t repeat;
+			while (mend < (mstart + 10))	// testen ob innerhalb 10 Zeichen nach dem sync ein weiterer sync folgt, falls ja diesen als neuen mstart verwenden 
+			{
+				if (message[mend + 1] == sync && message[mend] == clock) {
+#ifdef DEBUGDECODE
+					DBG_PRINT(F("MStart:")); DBG_PRINT(mstart);
+					DBG_PRINT(F(" new MStart:")); DBG_PRINTLN(mend);
+#endif
+					mstart = mend;
+					mend += 2;
+					break;
+				}
+				mend++;
+			}
+			
 			while (mend < messageLen - 1)
 			{
 				if (message[mend + 1] == sync && message[mend] == clock) {
@@ -451,24 +482,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				}
 				mend += 2;
 			}
-													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
-			if ((mend - mstart) < minMessageLen) {
-#ifdef DEBUGDECODE
-				DBG_PRINT(F("new MStart: old:")); DBG_PRINTLN(mstart);
-#endif
-				m_endfound = false;
-				mstart = mend + 1;
-				mend = mstart + 2;
-				while (mend < messageLen - 1)
-				{
-					if (message[mend + 1] == sync && message[mend] == clock) {
-						mend -= 1;					// Previus signal is last from message
-						m_endfound = true;
-						break;
-					}
-					mend += 2;
-				}
-			}
+
 			if (mend > messageLen || !m_endfound) mend = messageLen - 1;  // Reduce mend if we are behind messageLen
 			
 			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
@@ -498,7 +512,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 
 				//preamble = "";
 				//postamble = "";
-
+			    if (MsMoveCount < MsMoveCountmax) {
 				/*				Output raw message Data				*/
 				if (MredEnabled) {
 					int patternInt;
@@ -590,24 +604,30 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 						MSG_PRINT("p"); MSG_PRINT(SERIAL_DELIMITER);
 					}
 				}
+			    }
 				m_truncated = false;
 				
-				if ((p_valid > 0 || (p_valid == 0 && (messageLen - mend) >= minMessageLen)) && MsMoveCount > 0) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
+				if ((m_endfound || MsMoveCount > 0)) {
+				    if (MdebEnabled && MsMoveCount < MsMoveCountmax) {
+					MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
+				    }
+				    MsMoveCount++;
+				}
+				if (m_endfound) {
+				   if ((p_valid > 0 || (p_valid == 0 && (messageLen - mend) >= minMessageLen)) && MsMoveCount > 0) {  // wenn Nachrichtenende erkannt wurde, dann muss der Rest laenger als minMessageLen sein
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINT(messageLen); MSG_PRINT(" "); MSG_PRINTLN(MsMoveCount)
-					MsMoveCount--;
 					bufferMove(mend+1);
 					//MSG_PRINT(F("MS move. messageLen ")); MSG_PRINTLN(messageLen);
 					mstart = 0;
-					if (MdebEnabled && messageLen > 0) {
-						MSG_PRINT("m"); MSG_PRINT(MsMoveCount); MSG_PRINT(SERIAL_DELIMITER);
-					}
+				   }
 				}
-				
+			    if (MsMoveCount <= MsMoveCountmax) {
 				MSG_PRINT(MSG_END);
 				MSG_PRINT("\n");
-				
-				printMsgSuccess = true;
-				//success = true;
+			    }
+			    
+			    printMsgSuccess = true;
+			    //success = true;
 
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
