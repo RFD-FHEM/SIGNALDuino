@@ -1348,8 +1348,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 				DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount - 1));
 #endif
 
-				if (isShort(pdec->message[i - 1]) && --i>2)
+				if (isShort(pdec->message[i - 1]) && i>3)
 				{
+					i--;
 					while (i > 1)
 					{
 						if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))

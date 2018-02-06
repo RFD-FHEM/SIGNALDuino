@@ -39,9 +39,8 @@
 #else
 	//#include "WProgram.h"
 #endif
-#define DEBUG 1
-
 //#define DEBUG 1
+
 
 #ifndef WIFI_ESP
 #include <output.h>
