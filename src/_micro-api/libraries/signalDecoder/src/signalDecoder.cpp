@@ -1350,6 +1350,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 				if (isShort(pdec->message[i - 1]) && i>3)
 				{
+					i--;
 					while (i > 1)
 					{
 						if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
