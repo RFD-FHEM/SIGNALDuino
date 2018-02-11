@@ -1,7 +1,7 @@
 /*
 *   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
-*   2014-2015  N.Butzek, S.Butzek
+*   2014-2015  N.Butzek, S.Butzek---
 *   2015-2017  S.Butzek
 
 *   This library contains classes to perform decoding of digital signals
@@ -1348,9 +1348,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 				DBG_PRINT(ManchesterBits.getValue(ManchesterBits.valcount - 1));
 #endif
 
-				if (isShort(pdec->message[i - 1]) && i>3)
+				if (isShort(pdec->message[i - 1]) && --i>1)
 				{
-					i--;
 					while (i > 1)
 					{
 						if (isShort(pdec->message[i - 2]) && isShort(pdec->message[i - 1]))
@@ -1373,6 +1372,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 					}
 				}
+				else if (i > 0 && pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])i++; // increment i, so that it is resettet to mstart two lines later
 				if (i == pdec->mstart) i++; // 1. long shoud not be processed twice if there was nothing valid before that pulse
 				else i = pdec->mstart; // recover i to mstart
 			}
