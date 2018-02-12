@@ -1450,7 +1450,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 					{
 						pdec->mcDetected = true;
 					}
-		
+					else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (isLong(pdec->message[i + 1]) || isShort(pdec->message[i + 1])))
+					{
+						i++;  // This will remove a gap between two transmissions of a message preventing the gap to be interpreded as part of the message itself
+					}
+
 					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
 #ifdef DEBUGDECODE
 					DBG_PRINT(":mpos=");
