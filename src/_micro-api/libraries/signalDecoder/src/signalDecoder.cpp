@@ -339,11 +339,13 @@ void SignalDetectorClass::processMessage()
 		DBG_PRINTLN("Message received:");
 #endif
 
-		compress_pattern();
-		//calcHisto();
-		getClock();
-		if (state == clockfound && MSenabled) getSync();
-
+		if (!mcDetected)
+		{
+			compress_pattern();
+			//calcHisto();
+			getClock();
+			if (state == clockfound && MSenabled) getSync();
+		}
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
@@ -1455,10 +1457,13 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (i == maxMsgSize-1 && i == pdec->messageLen-1 && isShort(mpi))
 					{
 						pdec->mcDetected = true;
+						pdec->state = mcdecoding; // Try to prevent other processing
+
 					}
 					else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (isLong(pdec->message[i + 1]) || isShort(pdec->message[i + 1])))
 					{
 						i++;  // This will remove a gap between two transmissions of a message preventing the gap to be interpreded as part of the message itself
+						pdec->state = mcdecoding; // Try to prevent other processing
 					}
 
 					pdec->bufferMove(i);   // Todo: BufferMove könnte in die Serielle Ausgabe verschoben werden, das würde ein paar Mikrosekunden Zeit sparen
@@ -1523,6 +1528,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 #ifdef DEBUGDECODE
 		DBG_PRINT(":mcDet:");
 #endif
+		pdec->state = mcdecoding;
 		pdec->mcDetected = true; // This will reset the message buffer in the processMessage method and preserve it till then
 		return false;		     // Prevents serial output of data we already have in the buffer
 
