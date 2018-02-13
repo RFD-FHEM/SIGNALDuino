@@ -6,7 +6,7 @@
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
-	#include "WProgram.h"
+	//#include "WProgram.h"
 #endif
 #include <EEPROM.h>
 #include "output.h"
@@ -16,12 +16,18 @@ extern String cmdstring;
 
 
 namespace cc1101 {
+	
+	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	#define SS					  8  
 	#define PIN_MARK433			  4  // LOW -> 433Mhz | HIGH -> 868Mhz
+	
+	#elif ARDUINO_ATMEGA328P_MINICUL  // 8Mhz 
+	#define PIN_MARK433			  0
 	#endif
-
-	#define csPin	SS	   // CSN  out
+	*/
+	
+#define csPin	SS	   // CSN  out
 	#define mosiPin MOSI   // MOSI out
 	#define misoPin MISO   // MISO in
 	#define sckPin  SCK    // SCLK out	
@@ -53,7 +59,8 @@ namespace cc1101 {
 	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
 	#define CC1100_SFTX     0x3B  // Flush the TX FIFO buffer.
 
-	#define wait_Miso()       while(isHigh(misoPin))  // wait until SPI MISO line goes low 
+	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return 255; miso_count--; }      // wait until SPI MISO line goes low 
+	#define waitV_Miso()      while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
 	
@@ -180,7 +187,7 @@ namespace cc1101 {
 
 	void writeReg(const uint8_t regAddr, const uint8_t val) {     // write single register into the CC1101 IC via SPI
 		cc1101_Select();                                // select CC1101
-		wait_Miso();                                    // wait until MISO goes low
+		waitV_Miso();                                    // wait until MISO goes low
 		sendSPI(regAddr);                               // send register address
 		sendSPI(val);                                   // send value
 		cc1101_Deselect();                              // deselect CC1101
@@ -192,7 +199,7 @@ namespace cc1101 {
 		// da ich mir nicht sicher bin ob es timing maessig passt, wenn es nach jedem sendSPI(0x00) eine kurze Pause beim msgprint gibt.
 		
 		cc1101_Select();                                // select CC1101
-		wait_Miso();                                    // wait until MISO goes low
+		waitV_Miso();                                    // wait until MISO goes low
 		sendSPI(CC1100_PATABLE | CC1100_READ_BURST);    // send register address
 		for (uint8_t i = 0; i < 8; i++) {
 			PatableArray[i] = sendSPI(0x00);        // read result
@@ -208,7 +215,7 @@ namespace cc1101 {
 
 	void writePatable(void) {
 		cc1101_Select();                                // select CC1101
-		wait_Miso();                                    // wait until MISO goes low
+		waitV_Miso();                                    // wait until MISO goes low
 		sendSPI(CC1100_PATABLE | CC1100_WRITE_BURST);   // send register address
 		for (uint8_t i = 0; i < 8; i++) {
 			sendSPI(EEPROM.read(EE_CC1100_PA+i));                     // send value
@@ -361,7 +368,7 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		pinAsInput(misoPin);
 		pinAsOutput(csPin);                    // set pins for SPI communication
 		
-		#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+		#ifdef PIN_MARK433
 		pinAsInputPullUp(PIN_MARK433);
 		#endif
 		
