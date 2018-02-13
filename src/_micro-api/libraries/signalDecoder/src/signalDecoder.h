@@ -34,7 +34,7 @@
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
-	#include "WProgram.h"
+	//#include "WProgram.h"
 #endif
 
 #define CMP_CC1101
@@ -53,18 +53,18 @@
 #define maxPulse 32001  // Magic Pulse Length
 
 
-#define SERIAL_DELIMITER ';'
+#define SERIAL_DELIMITER  char(';')
 #define MSG_START char(0x2)			// this is a non printable Char
 #define MSG_END char(0x3)			// this is a non printable Char
 
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 255  // Very verbose output
-//#define MCDEBUGDECODE 2
-//#define MCDEBUGSEQ 1
+//#define MCDEBUGDECODE 2    // debug mc-decoder
+//#define MCDEBUGDETECT 5    // debug isManchester
 //#define DEBUGGLEICH 1
-//#define DEBUGDECODE 1
-//#define DEBUGDoDETECT 3
-//#define DEBUGMUREPEAT 1
+//#define DEBUGDECODE 1    // debug processMessage
+//#define DEBUGDoDETECT 3  // debug compress_pattern
+//#define DEBUGMUREPEAT 1  // debug isMuMessageRepeat
 
 enum status { searching, clockfound, syncfound, detecting };
 
@@ -120,7 +120,7 @@ public:
 	void bufferMove(const uint8_t start);
 
 	uint16_t tol;                           // calculated tolerance for signal
-	//uint8_t bitcnt;
+
 	status state;                           // holds the status of the detector
 	int buffer[2];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
@@ -130,8 +130,6 @@ public:
 	uint8_t patternLen;                     // counter for length of pattern
 	uint8_t pattern_pos;
 	int8_t sync;							// index to sync in pattern if it exists
-	//String preamble;
-	//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	bool mcValid;
 	bool mcRepeat;				// ist true wenn evtl noch eine Wiederholung folgen kann
@@ -156,7 +154,7 @@ public:
 	void printOut();
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
-	//bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
+
 	bool checkMBuffer();
 	bool isMuMessageRepeat();
 
