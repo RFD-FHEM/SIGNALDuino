@@ -51,7 +51,7 @@
 
 
 
-#define PROGVERS               "3.3.1-RC3"
+#define PROGVERS               "3.3.1-RCR"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
@@ -70,7 +70,7 @@
 		#define PIN_LED               4
 		#define PIN_SEND              2   // gdo0Pin TX out
 		#define PIN_RECEIVE           3
-		#define PIN_MARK433			  0
+		#define PIN_MARK433			  A0
 	#else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out
