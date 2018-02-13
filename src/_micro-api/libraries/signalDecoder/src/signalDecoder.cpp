@@ -1826,7 +1826,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 const bool ManchesterpatternDecoder::isManchester()
 {
 	// Durchsuchen aller Musterpulse und prueft ob darin eine clock vorhanden ist
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 	DBG_PRINTLN("");
 	DBG_PRINTLN("  --  chk MC -- ");
 	DBG_PRINT("mstart:");
@@ -1847,7 +1847,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	for (uint8_t i = 0; i < pdec->patternLen; i++)
 	{
 		if (pdec->histo[i] < minHistocnt) continue;		// Skip this pattern, due to less occurence in our message
-		#if DEBUGDETECT >= 1
+		#if MCDEBUGDETECT >= 1
 				MSG_PRINT(p);
 		#endif		
 
@@ -1858,13 +1858,13 @@ const bool ManchesterpatternDecoder::isManchester()
 			sortedPattern[p] = sortedPattern[p-1];
 			p--;
 		}
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 		DBG_PRINT("="); DBG_PRINT(i); DBG_PRINT(",");
 #endif
 		sortedPattern[p] = i;
 		p = ptmp+1;
 	}
-#if DEBUGDETECT >= 3
+#if MCDEBUGDETECT >= 3
 	DBG_PRINT("Sorted:");
 	for (uint8_t i = 0; i < p; i++)
 	{
@@ -1877,7 +1877,7 @@ const bool ManchesterpatternDecoder::isManchester()
 	for (uint8_t i = 0; i<p ; i++)
 	{
 		if (pdec->pattern[sortedPattern[i]] <=0) continue;
-#if DEBUGDETECT >= 2
+#if MCDEBUGDETECT >= 2
 		DBG_PRINT("CLK="); DBG_PRINT(sortedPattern[i]); DBG_PRINT(":");
 #endif
 		longlow = -1;
@@ -1892,7 +1892,7 @@ const bool ManchesterpatternDecoder::isManchester()
 		const int clockpulse = pdec->pattern[sortedPattern[i]]; // double clock!
 		for (uint8_t x = 0; x < p; x++)
 		{
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 			DBG_PRINT(sortedPattern[x]); 
 #endif
 
@@ -1907,11 +1907,11 @@ const bool ManchesterpatternDecoder::isManchester()
 			//else if (pdec->inTol(clockpulse*2, abs(aktpulse), clockpulse*0.80))
 				plong = true;
 
-			#if DEBUGDETECT >= 3
+			#if MCDEBUGDETECT >= 3
 			DBG_PRINT("^=(PS="); DBG_PRINT(pshort); DBG_PRINT(";");
 			DBG_PRINT("PL="); DBG_PRINT(plong); DBG_PRINT(";)");
 			#endif
-			#if DEBUGDETECT >= 1
+			#if MCDEBUGDETECT >= 1
 			DBG_PRINT(",");
 			#endif
 
@@ -1940,7 +1940,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 			if ((longlow != -1) && (shortlow != -1) && (longhigh != -1) && (shorthigh != -1))
 			{
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 				DBG_PRINT("vfy ");
 #endif
 
@@ -1954,7 +1954,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 					if (((isLong(mpz) == false) && (isShort(mpz) == false)) || (z == (pdec->messageLen-1)))
 					{  
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 						DBG_PRINT(z); DBG_PRINT("=")DBG_PRINT(mpz); DBG_PRINT(";")
 
 						DBG_PRINT("Long"); DBG_PRINT(isLong(mpz)); DBG_PRINT(";");
@@ -1968,16 +1968,16 @@ const bool ManchesterpatternDecoder::isManchester()
 							pdec->calcHisto(pdec->mstart, pdec->mend);
 							equal_cnt = pdec->histo[shorthigh] + pdec->histo[longhigh] - pdec->histo[shortlow] - pdec->histo[longlow];
 
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINT("equalcnt: pos "); DBG_PRINT(pdec->mstart); DBG_PRINT(" to ") DBG_PRINT(pdec->mend); DBG_PRINT(" count=");  DBG_PRINT(equal_cnt); DBG_PRINT(" ");
 #endif
 							mc_start_found = false;
 							if (abs(equal_cnt) > round(pdec->messageLen*0.04))  break; //Next loop
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINT(" MC equalcnt matched");
 #endif
 							if (neg_cnt != pos_cnt) break;  // Both must be 2   //TODO: For FFFF we have only 3 valid pulses!
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINT("  MC neg and pos pattern cnt is equal");
 #endif
 
@@ -1986,11 +1986,14 @@ const bool ManchesterpatternDecoder::isManchester()
 							bool break_flag = false;
 							for (uint8_t a = 0; a < 4 && break_flag==false; a++)
 							{
-#ifdef MCDEBUGSEQ
+#ifdef MCDEBUGDETECT  //>=0
 								DBG_PRINT("  seq_even["); DBG_PRINT(a); DBG_PRINT("]");
 								DBG_PRINT("="); DBG_PRINT(sequence_even[a]);
 								DBG_PRINT("  seq_odd["); DBG_PRINT(a); DBG_PRINT("]");
 								DBG_PRINT("="); DBG_PRINT(sequence_odd[a]);
+#if MCDEBUGDETECT == 0
+								DBG_PRINTLN(" "); 
+#endif
 #endif
 								if ( (sequence_even[a] - sequence_odd[a] != 0) && (sequence_odd[a] == -1 || sequence_even[a] == -1))
 								{
@@ -1999,7 +2002,7 @@ const bool ManchesterpatternDecoder::isManchester()
 
 							}
 							if (break_flag == true) {
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 								DBG_PRINT("  sequence check not passed");
 #endif									
 								// Check if we can start a new calulation at a later position
@@ -2018,19 +2021,19 @@ const bool ManchesterpatternDecoder::isManchester()
 								}
 								break;
 							}
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINT("  all check passed");
 #endif
 
 
 
 							tstclock = tstclock / 6;
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							MSG_PRINT("  tstclock: "); DBG_PRINT(tstclock);
 #endif
 							clock = tstclock;
 
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINT(" MC LL:"); DBG_PRINT(longlow);
 							DBG_PRINT(", MC LH:"); DBG_PRINT(longhigh);
 
@@ -2039,7 +2042,7 @@ const bool ManchesterpatternDecoder::isManchester()
 							DBG_PRINTLN("");
 #endif
 							// TOdo: Bei FFFF passt diese Pruefung nicht.
-#if DEBUGDETECT >= 1
+#if MCDEBUGDETECT >= 1
 							DBG_PRINTLN("  -- MC found -- ");
 #endif
 							return true;
