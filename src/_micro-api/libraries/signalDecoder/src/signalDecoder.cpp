@@ -1378,6 +1378,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					}
 				}
 				else if (i > 0 && pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])i++; // increment i, so that it is resettet to mstart two lines later
+				
 				if (i == pdec->mstart) i++; // 1. long shoud not be processed twice if there was nothing valid before that pulse
 				else i = pdec->mstart; // recover i to mstart
 			}
@@ -1458,7 +1459,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 						pdec->state = mcdecoding; // Try to prevent other processing
 
 					}
-					else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (isLong(pdec->message[i + 1]) || isShort(pdec->message[i + 1])))
+					else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (isLong(pdec->message[i + 1]) || isShort(pdec->message[i + 1]))
+						|| (i<pdec->messageLen - 2 && isShort(mpi) && pdec->pattern[pdec->message[i + 1]] < pdec->pattern[longlow] && (isLong(pdec->message[i + 2]) || isShort(pdec->message[i + 3])) && i++)
+						)
 					{
 						i++;  // This will remove a gap between two transmissions of a message preventing the gap to be interpreded as part of the message itself
 						pdec->state = mcdecoding; // Try to prevent other processing
