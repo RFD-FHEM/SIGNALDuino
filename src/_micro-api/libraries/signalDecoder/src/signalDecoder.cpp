@@ -343,6 +343,10 @@ void SignalDetectorClass::processMessage()
 			getClock();
 			if (state == clockfound && MSenabled) getSync();
 		}
+		else {
+			calcHisto();
+		}
+
 #if DEBUGDETECT >= 1
 		printOut();
 #endif
