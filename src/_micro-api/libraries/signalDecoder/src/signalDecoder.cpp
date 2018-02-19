@@ -580,13 +580,14 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
-#if DEBUGDECODE == 1 // todo kommentar entfernen
+//#if DEBUGDECODE == 1 // todo kommentar entfernen
 					SDC_WRITE(MSG_START);
 					SDC_PRINT("DMc");
 					SDC_WRITE(SERIAL_DELIMITER);
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
+						calcHisto();
 						if (histo[idx] == 0) continue;
 						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
 						n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
@@ -606,8 +607,13 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT("O");
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
+					if (mcDetected) {
+						SDC_PRINT("MD");
+						SDC_WRITE(SERIAL_DELIMITER);
+					}
+
 					SDC_PRINTLN(MSG_END);
-#endif
+//#endif
 					if (mcdecoder.doDecode())
 					{
 						SDC_PRINT(MSG_START);
