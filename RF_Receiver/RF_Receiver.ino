@@ -237,9 +237,8 @@ void setup() {
 	DBG_PRINTLN("Starting timerjob");
 	delay(50);
 
-	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
+	Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
-
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -258,19 +257,18 @@ void setup() {
 }
 
 void cronjob() {
-
+	 cli();
 	 const unsigned long  duration = micros() - lastTime;
-	 
-	 if (duration > maxPulse) { //Auf Maximalwert pr�fen.
+	 Timer1.setPeriod(32001);
+	 if (duration >= maxPulse) { //Auf Maximalwert pr�fen.
 		 int sDuration = maxPulse;
 		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			 sDuration = -sDuration;
 		 }
 		 FiFo.enqueue(sDuration);
-
 		 lastTime = micros();
-	
-
+	 } else if (duration > 10000) {
+		 Timer1.setPeriod(maxPulse-duration+16);
 	 }
 	 digitalWrite(PIN_LED, blinkLED);
 	 blinkLED = false;
@@ -280,7 +278,7 @@ void cronjob() {
 		 DBG_PRINT("SF:"); DBG_PRINTLN(FiFo.count());
 	 }
 	 */
-
+	 sei();
 }
 
 
@@ -311,6 +309,7 @@ void loop() {
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
+  cli();
   const unsigned long Time=micros();
   //const bool state = digitalRead(PIN_RECEIVE);
   const unsigned long  duration = Time - lastTime;
@@ -327,11 +326,9 @@ void handleInterrupt() {
     }
 	//MSG_PRINTLN(sDuration);
     FiFo.enqueue(sDuration);
-
-
     //++fifocnt;
   } // else => trash
-
+  sei();
 }
 
 void enableReceive() {
