@@ -190,8 +190,8 @@ public:
 	void setMinBitLen(const uint8_t len);
 #ifdef NOSTRING
 	const char* getMessageHexStr();
-	void getMessagePulseStr();
-	void getMessageClockStr();
+	const char* getMessagePulseStr();
+	const char* getMessageClockStr();
 	const char* getMessageLenStr();
 #else
 	void getMessageHexStr(String *message);

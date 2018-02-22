@@ -1286,16 +1286,18 @@ void ManchesterpatternDecoder::printMessageHexStr()
 */
 
 #ifdef NOSTRING		
-void ManchesterpatternDecoder::getMessagePulseStr()
+const char * ManchesterpatternDecoder::getMessagePulseStr()
 #else
 void ManchesterpatternDecoder::getMessagePulseStr(String* str)
 #endif
 {
-
-
 #ifdef NOSTRING		
-	pdec->write(SERIAL_DELIMITER);
+	char *message = (char*)malloc(sizeof(char)*50);
+	char *mptr = message;
 
+	sprintf(message, ";LL=%i;LH=%i;SL=%i;SH=%i;", pdec->pattern[longlow], pdec->pattern[longhigh], pdec->pattern[shortlow], pdec->pattern[shorthigh]);
+
+	return message;
 #else		
 	str->reserve(32);
 	if (!str)
@@ -1335,11 +1337,20 @@ void ManchesterpatternDecoder::printMessagePulseStr()
 */
 
 #ifdef NOSTRING		
-void ManchesterpatternDecoder::getMessageClockStr()
+const char * ManchesterpatternDecoder::getMessageClockStr()
 #else
 void ManchesterpatternDecoder::getMessageClockStr(String* str)
 #endif
 {
+#ifdef NOSTRING		
+
+	char *message = (char*)malloc(sizeof(char) * 10);
+	char *mptr = message;
+
+	sprintf(message, ";C=%i;", clock);
+
+	return message;
+#endif
 	#ifndef NOSTRING		
 	str->reserve(7);
 	if (!str)
@@ -1360,7 +1371,7 @@ void ManchesterpatternDecoder::getMessageLenStr(String* str)
 #else
 	char *buf = (char*)malloc(6);
 
-	sprintf(buf, "L=%i;", ManchesterBits.valcount);
+	sprintf(buf, ";L=%i", ManchesterBits.valcount);
 #endif
 	return buf;
 }
@@ -1419,7 +1430,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 			if (i >0 ) 
 			{
 				//if ( (bit == 0 && pdec->message[i - 1] == shortlow) || (bit == 1 && pdec->message[i - 1] == shorthigh)) {
-				if ((bit == 0 && (pdec->message[i - 1] == shortlow || pdec->pattern[pdec->message[i - 1]] < pdec->pattern[pdec->pattern[longlow]])) || (bit == 1 && (pdec->message[i - 1] == shorthigh || pdec->pattern[pdec->message[i - 1]] > pdec->pattern[longhigh]))) {
+				if ((bit == 0 && (pdec->message[i - 1] == shortlow || pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])) || (bit == 1 && (pdec->message[i - 1] == shorthigh || pdec->pattern[pdec->message[i - 1]] > pdec->pattern[longhigh]))) {
 
 					bit = bit ^ 1; // Vor dem long die Bits erkennen 
 					ManchesterBits.addValue(bit);
@@ -1467,7 +1478,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 				}
 				i = pdec->mstart; // recover i to mstart
-			}
+			} else
+				bit = bit ^ 1; // umdrehen, da es erneut beim dekodieren umgedreht wird 
+
 			mc_start_found = true;
 
 		}
