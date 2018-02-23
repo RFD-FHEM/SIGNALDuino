@@ -946,9 +946,10 @@ namespace arduino { namespace test
 	TEST_F(Tests, mcMaverick1)
 	{
 		// Fehlerhafte Taktdate beim Sender. Erkennung als MC nicht möglich.
+		// protocolid: temp1=24, temp2=-532;
 		//std::string dstr = "MU;P0=-4913;P1=228;P2=361;P3=-632;P4=-382;P5=153;P6=106;D=0101010101010101023232323245354245354245323232323542463232323232323232323236424;";
 		std::string dstr = "MU;P0=-288;P1=211;P2=467;P3=-4872;P4=-527;D=3131313131313131324242424201410201410201424242424102014102014242410201410242014242424242424242424242424241024201410242014102420142424102014102;";
-		std::string baseStr = "AA999559959A5555555A69A566";
+		std::string baseStr = "AA999559959A5555555A69A566"; // Invertiert FFAA999559959A5555555A69A566
 		import_sigdata(&dstr);                                                        
 		ooDecode.printOut();
 
@@ -957,6 +958,7 @@ namespace arduino { namespace test
 		ASSERT_TRUE(mcdecoder.isManchester());
 		ASSERT_TRUE(mcdecoder.doDecode());
 		ASSERT_EQ(111, mcdecoder.ManchesterBits.valcount);
+		std::cout << geFullMCString();
 
 		std::string mcStr;
 		mcStr = mcdecoder.getMessageHexStr();
