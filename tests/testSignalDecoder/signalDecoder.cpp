@@ -1420,21 +1420,18 @@ const bool ManchesterpatternDecoder::doDecode() {
 	{
 		// Start vom MC Signal suchen, dazu long suchen
 		if (mc_sync == false  && isLong(pdec->message[i]))
-		//if (mc_sync == false && (pdec->message[i] == longhigh || (pdec->message[i] == longlow && pdec->pattern[pdec->message[i - 1]] <= pdec->pattern[longhigh])))
 		{
 			bit = pdec->message[i] == longhigh ? 0 : 1; // Bit welches an der 2. Hälfte des long beginnt
-			// Wen lh also bit = 1 dann haben wir einen slow->shigh davor. der davor empfangene short gehört zu dem Bit 1 und darf nicht weiter beachtet werden!
+			const uint8_t mpiLessOne = pdec->message[i-1]; // Store previois pattern for further processing
+
+														// Wen lh also bit = 1 dann haben wir einen slow->shigh davor. der davor empfangene short gehört zu dem Bit 1 und darf nicht weiter beachtet werden!
 			mc_sync = true;
 			pdec->mstart = i;  // Save sync position for later
 
 			if (i >0 ) 
 			{
-				//if ( (bit == 0 && pdec->message[i - 1] == shortlow) || (bit == 1 && pdec->message[i - 1] == shorthigh)) {
-				if ((bit == 0 && (pdec->message[i - 1] == shortlow || pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])) || (bit == 1 && (pdec->message[i - 1] == shorthigh || pdec->pattern[pdec->message[i - 1]] > pdec->pattern[longhigh]))) {
-
+				if ((bit == 0 && (mpiLessOne == shortlow || pdec->pattern[mpiLessOne] < pdec->pattern[longlow])) || (bit == 1 && (mpiLessOne == shorthigh || pdec->pattern[mpiLessOne] > pdec->pattern[longhigh]))) {
 					bit = bit ^ 1; // Vor dem long die Bits erkennen 
-					if (isShort(pdec->message[i - 1]))
-						i--;
 				} else {
 					pdec->mstart++;
 				}
@@ -1444,10 +1441,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				DBG_PRINT(value);
 				DBG_PRINT((int)ManchesterBits.getValue(ManchesterBits.valcount - 1), DEC);
 #endif
-
-
-				//if (isShort(pdec->message[i - 1]) && --i>1)
-				while (i > 1 && isShort(pdec->message[i - 1]))
+				while (--i > 1 && isShort(pdec->message[i]) && isShort(pdec->message[i - 1])  )
 				{
 
 					if ((bit == 1 && (pdec->message[i - 2] == shortlow || pdec->pattern[pdec->message[i - 2]] < pdec->pattern[longlow])) || (bit == 0 && (pdec->message[i - 2] == shorthigh || pdec->pattern[pdec->message[i - 2]] > pdec->pattern[longhigh])))
@@ -1461,36 +1455,16 @@ const bool ManchesterpatternDecoder::doDecode() {
 						DBG_PRINT((int)ManchesterBits.getValue(ManchesterBits.valcount - 1), DEC);
 #endif
 					}
-					i = i - 2;
-					/*
-					if (i==1 && bit == 1 && pdec->message[i - 1] == shorthigh) break;
-					if (isShort(pdec->message[i - 1]) && isShort(pdec->message[i ]))
-					{
-						if (i>1) i = i - 2;
-						else i = 0;
-					} else {
-						// Letzter Durchlauf
-						if (pdec->message[i ] == shorthigh && pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])
-						{
-							i = 0; // leave the while loop after adding the value
-						} else {
-							break;  // Add no more value
-						}
-					}
-					ManchesterBits.addValue(bit);*/
-
-
+					i--;
 				}
 				i = pdec->mstart; // recover i to mstart
 			} else
 				bit = bit ^ 1; // umdrehen, da es erneut beim dekodieren umgedreht wird 
 
-			mc_start_found = true;
-
 		}
 
 		// Decoding occures here
-		if (mc_sync && mc_start_found)
+		if (mc_sync)
 		{
 			const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
 
@@ -1545,7 +1519,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 						DBG_PRINT((int)pdec->message[i], DEC);
 						//DBG_PRINT(pdec->pattern[pdec->message[i]]);
 #endif
-						//pdec->printOut();
 						if (i == maxMsgSize - 1 && i == pdec->messageLen - 1 && isShort(mpi))
 						{
 							pdec->mcDetected = true;
@@ -1586,18 +1559,11 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 			}
 
-	
-		
-
-
-				if (mc_start_found) { // don't add bit if manchester processing was canceled
-#ifdef DEBUGDECODE
-				//if (pdec->pattern[mpi] > 0)
-				//value = (value + 0x20); //lowwercase
-				DBG_PRINT(value);
-#endif
+			if (mc_sync) { // don't add bit if manchester processing was canceled
 				ManchesterBits.addValue(bit);
+
 #ifdef DEBUGDECODE
+				DBG_PRINT(value);
 				DBG_PRINT((uint8_t)ManchesterBits.getValue(ManchesterBits.valcount-1),DEC);
 #endif
 			} else {
@@ -1605,7 +1571,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				DBG_PRINT("_");
 #endif
 			}
-		} // 		endif (mc_sync && mc_start_found)
+		} // 		endif (mc_sync)
 		i++;
 	}
 	pdec->mend = i; // Todo: keep short in buffer;
@@ -1640,34 +1606,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 		// Return false will allow mu processing
 	}
-	// Check if last entry in our message array belongs to our manchester signal
-	/*
-	if (i == maxMsgSize && i == pdec->messageLen  && pdec->mstart > 0 && ManchesterBits.valcount > minbitlen / 2)
-	{
-#ifdef DEBUGDECODE
-		DBG_PRINT(":bmove:");
-#endif
 
-		pdec->bufferMove(pdec->mstart);
-		//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-		
-		pdec->mcDetected = true;
-		return false;
-	}
-	// Buffer is full with mc signal, so we clear the buffer and caputre additional signaldata
-	else if (i == maxMsgSize && i == pdec->messageLen && pdec->mstart == 0)
-	{
-		pdec->mcDetected = true;
-		pdec->messageLen = 0;
-		pdec->message.reset();
-		//pdec->m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
-#ifdef DEBUGDECODE
-		DBG_PRINT(":bflush:");
-
-#endif
-		return false;
-	}
-	*/
 	return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed, then return true, otherwise false
 
 													//SDC_PRINT(" ES MC ");
