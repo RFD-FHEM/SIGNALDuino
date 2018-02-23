@@ -1051,10 +1051,13 @@ namespace arduino { namespace test
 
 	TEST_F(Tests, mcHideki2)
 	{
+		// protocol not invert
+		// model=Hideki_30, sensor id=a1, channel=4, cnt=1, bat=ok, temp=23.1, humidity=28,
 		int data[] = { 996, -972, 980, -980, 968, -492, 488, -492, 488, -972, 488, -492, 976, -492, 488, -484, 488, -492, 488, -488, 492, -972, 488, -488, 980, -972, 488, -492, 980, -968, 980, -492, 488, -488, 484, -980, 976, -976, 488, -488, 980, -980, 972, -976, 492, -488, 972, -488, 492, -980, 972, -488, 488, -492, 488, -488, 484, -980, 976, -492, 480, -492, 488, -980, 488, -492, 972, -488, 488, -492, 488, -484, 488, -488, 492, -980, 968, -980, 492, -488, 488, -484, 488, -492, 976, -492, 488, -972, 488, -492, 488, -492, 480, -492, 488, -488, 492, -488, 488, -484, 980, -980, 968, -980, 980, -980, 480, -492, 976, -492, 488, -484, 488, -980, 488, -492, 488, -480, 492, -488, 492, -488, 972, -488, 492, -976, 980, -972, 980, -488, 488, -972, 492, -488, 116, -32001 };
 		uint16_t len = sizeof(data) / sizeof(data[0]);
 		uint16_t i = 0;
 		bool decoded;
+		ooDecode.mcdecoder = &mcdecoder;
 		for (int j = 0, i=10; j <3; j++)
 		{
 			for ( ;i < len; i++)
@@ -1063,24 +1066,30 @@ namespace arduino { namespace test
 				if (state) {
 					decoded = true;
 					std::cout << outputStr;
+					outputStr = "";
+					std::cout << geFullMCString();
+
 				}
 			}
 			i = 0;
 		}
 		ASSERT_TRUE(state);
-	}
 
+	}
 	TEST_F(Tests, mcHideki3)
 	{
-		// hideki protocol inverted
+		// model=Hideki_30, sensor id=bb, channel=4, cnt=1, bat=ok, temp=22.7, humidity=28, 
+		// hideki protocol not inverted
 		std::string dstr = "MU;P0=-100;P1=943;P2=-1011;P3=-539;P4=437;D=01212134342431243121342434312134342124312124313421213434243434343134343434212434343134243434312431212121342124343434343134342434343430;";
+
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
 		//ASSERT_TRUE(state);
-
-		std::string hexRef = "AE4B174A6B83E8612AD0380";
-		std::string lenRef = "L=90;";
+		std::cout << geFullMCString();
+		                      
+		std::string hexRef = "51B4E8B5947C179ED52FC78";
+		std::string lenRef = ";L=89";
 
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 		ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
@@ -1088,59 +1097,67 @@ namespace arduino { namespace test
 
 	TEST_F(Tests, mcHideki4)
 	{
-		//hideki protocol not inverted  because -4668 gap in front of the first manchester pulse (pos=3)
+		// model=Hideki_30, sensor id=bb, channel=4, cnt=3, bat=ok, temp=22.7, humidity=28, 
+		//hideki protocol not inverted  
 		std::string dstr = "MU;P0=-12568;P1=264;P2=-4668;P3=948;P4=-1008;P5=-514;P6=456;D=012343435656465346534356465653435656434653434653465343565646565656535656565643465656535646565653465343434356434656534653465653465650;";
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
 		//ASSERT_TRUE(state);
-		
-		std::string hexRef = "A8DA745ADA3E0BCF6A976EE";
-		std::string lenRef = "L=91;";
+		std::cout << geFullMCString();
+
+		std::string hexRef = "A8DA745ADA3E0BCF6A976EC";
+		std::string lenRef = ";L=90";
 		ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 	}
 
 	TEST_F(Tests, mcHideki5)
 	{
-		//hideki protocol not inverted  because there is a long gap in front of our data
+		// model=Hideki_30, sensor id=bb, channel=4, cnt=2, bat=ok, temp=22.7, humidity=28,
+		//hideki protocol not inverted
 		std::string dstr = "MU;P0=-32001;P1=922;P2=-1033;P3=-546;P4=425;D=0121213434243124312134243431213434212431212434312121343424343434313434343421243434313424343431243121212134212431243434312134243430;";
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
 		//ASSERT_TRUE(state);
+		std::cout << geFullMCString();
 
-		std::string hexRef = "A8DA745AEA3E0BCF6A96F4E";
-		std::string lenRef = "L=91;";
+		std::string hexRef = "A8DA745AEA3E0BCF6A96F4C";
+		std::string lenRef = ";L=90";
 		ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 	}
 
 	TEST_F(Tests, mcHideki6)
 	{
-		//hideki protocol  inverted  because the first long is a low pulse and in front of this is a to short pulse
+		// model=Hideki_30, sensor id=bb, channel=4, cnt=3, bat=ok, temp=22.7, humidity=28,
+		//hideki protocol not inverted  
 		std::string dstr = "MU;P0=-32001;P1=272;P2=-1007;P3=944;P5=-536;P6=444;D=12323235656265326532356265653235656232653232653265323565626565656535656565623265656535626565653265323232356232656532653265653265650;";
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
 		//ASSERT_TRUE(state);
+		std::cout << geFullMCString();
 
-		std::string hexRef = "57258BA525C1F4309568910";
-		std::string lenRef = "L=91;";
+		std::string hexRef = "A8DA745ADA3E0BCF6A976EC";
+		std::string lenRef = ";L=90";
 		ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 	}
 	TEST_F(Tests, mcHideki7)
 	{
-		//hideki protocol not inverted  because 
+		//model=Hideki_30, sensor id=bb, channel=4, cnt=1, bat=ok, temp=22.7, humidity=28,
+		//hideki protocol not inverted   
 		std::string dstr = "MU;P0=-544;P1=956;P2=-1016;P3=436;D=01212103032301230121032303012103032123012123010321210303230303030103030303212303030103230303012301212121032123030303030103032303030300;";
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
 		//ASSERT_TRUE(state);
+		std::cout << geFullMCString();
 
-		std::string hexRef = "A8DA745ACA3E0BCF6A97E3E";
-		std::string lenRef = "L=91;";
+		std::string hexRef = "A8DA745ACA3E0BCF6A97E3C";
+		std::string lenRef = ";L=90";
 		ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 	}

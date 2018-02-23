@@ -1433,14 +1433,17 @@ const bool ManchesterpatternDecoder::doDecode() {
 				if ((bit == 0 && (pdec->message[i - 1] == shortlow || pdec->pattern[pdec->message[i - 1]] < pdec->pattern[longlow])) || (bit == 1 && (pdec->message[i - 1] == shorthigh || pdec->pattern[pdec->message[i - 1]] > pdec->pattern[longhigh]))) {
 
 					bit = bit ^ 1; // Vor dem long die Bits erkennen 
-					ManchesterBits.addValue(bit);
-#ifdef DEBUGDECODE
-					value = bit == 1 ? 'P' : 'p';
-					DBG_PRINT(value);
-					DBG_PRINT((int)ManchesterBits.getValue(ManchesterBits.valcount - 1), DEC);
-#endif
 					i--;
+				} else {
+					
 				}
+				ManchesterBits.addValue(bit);
+#ifdef DEBUGDECODE
+				value = bit == 1 ? 'P' : 'p';
+				DBG_PRINT(value);
+				DBG_PRINT((int)ManchesterBits.getValue(ManchesterBits.valcount - 1), DEC);
+#endif
+
 
 				//if (isShort(pdec->message[i - 1]) && --i>1)
 				while (i > 1 && isShort(pdec->message[i - 1]))
