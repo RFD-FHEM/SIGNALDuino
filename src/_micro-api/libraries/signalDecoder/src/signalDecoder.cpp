@@ -1724,10 +1724,39 @@ const bool ManchesterpatternDecoder::isManchester()
 								}
 
 							}
-							if (break_flag == true) {
+							if (break_flag == false) {
+								break_flag = true; // Must be set false during loops
+								uint8_t seq_a = (longhigh * 10) + longlow;
+								uint8_t seq_b = (longlow * 10) + longhigh;
+								if (seq_a < 10) seq_a += 100;
+								if (seq_b < 10) seq_b += 100;
+								for (uint8_t a = 0; a < 4 && break_flag == true; a++)  // check longlow longhigh and vice versa
+								{
+									if (sequence_even[a] == seq_a || sequence_odd[a] == seq_a)
+									{
+										for (uint8_t a2 = 0; a2 < 4 && break_flag == true; a2++)
+										{
+											if (sequence_even[a2] == seq_b || sequence_odd[a2] == seq_b)
+											{
+												break_flag = false;
+											}
+
+										}
+									}
+
+								}
 #if DEBUGDETECT >= 1
-								DBG_PRINT("  sequence check not passed");
+								if (break_flag == true)
+									DBG_PRINT("  sequence dual long match failed ");
 #endif									
+								}
+							else {
+#if DEBUGDETECT >= 1
+								DBG_PRINT("  basic sequence not passed ");
+#endif								
+							}
+
+							if (break_flag == true) {
 								// Check if we can start a new calulation at a later position
 								if (pdec->messageLen - z > minbitlen)
 								{
@@ -1737,13 +1766,13 @@ const bool ManchesterpatternDecoder::isManchester()
 										sequence_even[a] = -1;
 										sequence_odd[a] = -1;
 									}
-									
 									z++; // Increase z counter to start new check
 									continue;
 
 								}
 								break;
 							}
+
 #if DEBUGDETECT >= 1
 							DBG_PRINT("  all check passed");
 #endif
