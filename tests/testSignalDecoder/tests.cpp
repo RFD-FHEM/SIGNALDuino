@@ -1171,28 +1171,18 @@ namespace arduino { namespace test
 		ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 	}
 
-	TEST_F(Tests, mcInvalidMC_unfinished)
+	TEST_F(Tests, mcInvalidMC)
 	{
 		// FS20
-		//std::string dstr = "DMc;P0=-394;P1=397;P4=-603;P6=593;D=46464101064641064106464106464641010646410101010101010101010106410646410646410106410101;";
 		std::string dstr = "DMc;P0=-2448;P1=403;P2=-388;P3=308;P4=620;P5=-603;P6=-8960;D=01212321212121212121212124512121245124545451212451212121212124512121212121212121212124512124545124512451212121245454545451212454512121216121212121212121212121212451212124512454545121245121212121212451212121212121212121212451212454512451245121212124545454;";
-		// Siro
-		//std::string dstr = "MU;P1=391;P4=-413;P5=596;P6=-614;D=17141414141414141414141414561414145614565656141456141414141414561414141414141414145614561414565614141456141414561414141456141456561;";
 		ooDecode.mcdecoder = &mcdecoder;
 
-		/*
-		ooDecode.mcDetected=true;
-		mcdecoder.longlow = 0;
-		mcdecoder.longhigh = 1;
-		mcdecoder.shorthigh = 2;
-		mcdecoder.shortlow = 3;
-		*/
 		state = import_sigdata(&dstr);
 		ooDecode.calcHisto();
 		ooDecode.printOut();
-		ASSERT_TRUE(mcdecoder.isManchester());
+		ASSERT_FALSE(mcdecoder.isManchester());
 
-		ASSERT_FALSE(mcdecoder.doDecode());
+		ASSERT_TRUE(mcdecoder.doDecode());
 		//ASSERT_FALSE(mcdecoder.isManchester());
 		ASSERT_FALSE(state);
 	}
