@@ -1474,13 +1474,14 @@ const bool ManchesterpatternDecoder::doDecode() {
 					value = 'l';
 				#endif
 			} else {
-				if (bit == 0  && i < pdec->messageLen - 2 && mpi == shortlow && pdec->message[i + 1] == shorthigh)
+				const uint8_t mpiPlusOne = pdec->message[i + 1]; // Store previois pattern for further processing
+				if (bit == 0  && i < pdec->messageLen - 2 && mpi == shortlow && mpiPlusOne == shorthigh)
 				{
 					#ifdef DEBUGDECODE
 					value = 's';
 					#endif
 				}
-				else if (bit == 1 && i < pdec->messageLen - 2 && mpi == shorthigh && pdec->message[i + 1] == shortlow)
+				else if (bit == 1 && i < pdec->messageLen - 2 && mpi == shorthigh && mpiPlusOne == shortlow)
 				{
 					#ifdef DEBUGDECODE
 					value = 'S';
@@ -1523,8 +1524,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 							//i--; // Process short later again, do not remove it
 							pdec->state = mcdecoding; // Try to prevent other processing
 						}
-						else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (pdec->message[i + 1] == longhigh || pdec->message[i + 1] == shorthigh)
-							|| (i<pdec->messageLen - 2 && isShort(mpi) && pdec->pattern[pdec->message[i + 1]] < pdec->pattern[longlow] && (isLong(pdec->message[i + 2]) || isShort(pdec->message[i + 3])) && i++)
+						else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (mpiPlusOne == longhigh || mpiPlusOne == shorthigh)
+							|| (i<pdec->messageLen - 2 && isShort(mpi) && pdec->pattern[mpiPlusOne] < pdec->pattern[longlow] && (isLong(pdec->message[i + 2]) || isShort(pdec->message[i + 3])) && i++)
 							)
 						{
 							i++;  // This will remove a gap between two transmissions of a message preventing the gap to be interpreded as part of the message itself
