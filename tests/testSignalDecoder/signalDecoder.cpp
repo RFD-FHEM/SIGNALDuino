@@ -80,9 +80,6 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" move error "); 	DBG_PRINT(start);
 		//printOut();
 	}
-
-
-
 }
 
 
@@ -1398,7 +1395,6 @@ unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 
 const bool ManchesterpatternDecoder::doDecode() {
 	//SDC_PRINT("bitcnt:");SDC_PRINTLN(bitcnt);
-
 	uint8_t i = 0;
 	pdec->m_truncated = false;
 	pdec->mstart = 0; // Todo: pruefen ob start aus isManchester uebernommen werden kann
@@ -1415,6 +1411,8 @@ const bool ManchesterpatternDecoder::doDecode() {
 	#ifdef DEBUGDECODE
 	char value = NULL;
 	#endif
+
+	pdec->mcDetected = false; // Reset our flag, so we can set it again or not for second decoding
 
 	while (i < pdec->messageLen)
 	{
@@ -1519,13 +1517,13 @@ const bool ManchesterpatternDecoder::doDecode() {
 						DBG_PRINT((int)pdec->message[i], DEC);
 						//DBG_PRINT(pdec->pattern[pdec->message[i]]);
 #endif
-						if (i == maxMsgSize - 1 && i == pdec->messageLen - 1 && isShort(mpi))
+						if (i == maxMsgSize - 1 && i == pdec->messageLen - 1 )
 						{
 							pdec->mcDetected = true;
 							//i--; // Process short later again, do not remove it
 							pdec->state = mcdecoding; // Try to prevent other processing
 						}
-						else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (isLong(pdec->message[i + 1]) || isShort(pdec->message[i + 1]))
+						else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (pdec->message[i + 1] == longhigh || pdec->message[i + 1] == shorthigh)
 							|| (i<pdec->messageLen - 2 && isShort(mpi) && pdec->pattern[pdec->message[i + 1]] < pdec->pattern[longlow] && (isLong(pdec->message[i + 2]) || isShort(pdec->message[i + 3])) && i++)
 							)
 						{
@@ -1548,7 +1546,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 						DBG_PRINT(":minblen=");
 						DBG_PRINTLN(ManchesterBits.valcount >= minbitlen, DEC);
 #endif
-						return (ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
+						return (!pdec->mcDetected && ManchesterBits.valcount >= minbitlen);  // Min 20 Bits needed
 					}
 #ifdef DEBUGDECODE
 					DBG_PRINT(")");

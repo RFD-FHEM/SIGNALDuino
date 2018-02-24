@@ -895,8 +895,8 @@ namespace arduino { namespace test
 		ASSERT_FALSE(state);
 
 		bool result = mcdecoder.doDecode();
-		ASSERT_EQ(227, mcdecoder.ManchesterBits.valcount - 1);
-		ASSERT_EQ(253, ooDecode.messageLen);
+		ASSERT_EQ(226, mcdecoder.ManchesterBits.valcount - 1);
+		ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgeführt, und das löst einen reset aus, da wir am Ende sind.
 		ASSERT_FALSE(mcdecoder.pdec->mcDetected);
 		ASSERT_TRUE(result);
 
@@ -919,7 +919,8 @@ namespace arduino { namespace test
 	TEST_F(Tests,mcLong2) //Maverick et733
 	{
 			const int pause = 5000;
-			const int pulse = -230;
+			const int pulse = -100;
+			//ooDecode.mcdecoder = &mcdecoder;
 			std::string dstr2 = "AA9995595555595999A9A9A669";
 			for (uint8_t r = 0; r < 4; r++)
 			{
@@ -931,7 +932,12 @@ namespace arduino { namespace test
 				DigitalSimulate(pause);
 				state = import_mcdata(&dstr2, 0, dstr2.length(), 250);
 			}
-			ASSERT_EQ(146,ooDecode.messageLen);
+			DigitalSimulate(-32001);
+
+
+			std::cout << outputStr << "\n";
+
+			ASSERT_EQ(147,ooDecode.messageLen);
 			ooDecode.calcHisto();
 			ooDecode.printOut();
 			ASSERT_TRUE(mcdecoder.isManchester());
@@ -974,10 +980,11 @@ namespace arduino { namespace test
 		std::string dstr2 = "0B0F9FFA555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB63AAA";
 		state = import_mcdata(&dstr2, 0, dstr2.length(), 450);
 		DigitalSimulate(1);
+		ooDecode.printOut();
 		ASSERT_FALSE(state);
 		ASSERT_EQ(4, ooDecode.messageLen);  // 254+3 is the number of pulses.
 		ASSERT_TRUE(ooDecode.mcDetected);  
-		ASSERT_EQ(224, mcdecoder.ManchesterBits.valcount-1);  // 254+3 is the number of pulses. At this time, we have processed only the buffer after bufferoverflow which is equal to 224 bits
+		ASSERT_EQ(223, mcdecoder.ManchesterBits.valcount-1);  // 254+3 is the number of pulses. At this time, we have processed only the buffer after bufferoverflow which is equal to 224 bits
 
 		ooDecode.calcHisto();
 		ooDecode.printOut();
@@ -990,7 +997,7 @@ namespace arduino { namespace test
 		*/
 
 		bool result = mcdecoder.doDecode();
-		ASSERT_EQ(227, mcdecoder.ManchesterBits.valcount - 1);
+		ASSERT_EQ(226, mcdecoder.ManchesterBits.valcount - 1);
 		ASSERT_TRUE(result);
 
 		std::string mcStr;
@@ -1166,8 +1173,6 @@ namespace arduino { namespace test
 
 	TEST_F(Tests, mcInvalidMC_unfinished)
 	{
-
-
 		// FS20
 		//std::string dstr = "DMc;P0=-394;P1=397;P4=-603;P6=593;D=46464101064641064106464106464641010646410101010101010101010106410646410646410106410101;";
 		std::string dstr = "DMc;P0=-2448;P1=403;P2=-388;P3=308;P4=620;P5=-603;P6=-8960;D=01212321212121212121212124512121245124545451212451212121212124512121212121212121212124512124545124512451212121245454545451212454512121216121212121212121212121212451212124512454545121245121212121212451212121212121212121212451212454512451245121212124545454;";
