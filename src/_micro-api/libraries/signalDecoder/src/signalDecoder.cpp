@@ -328,7 +328,7 @@ bool SignalDetectorClass::compress_pattern()
 		{
 			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
 				continue;
-			const int tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
+			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
 #if DEBUGDoDETECT >3
@@ -413,9 +413,9 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("msgRec:");
 #endif
-		if (MsMoveCount == 0 && MuMoveCount == 0) {	// bei Wiederholungen wird kein compress_pattern benötigt
+		//if (MsMoveCount == 0 && MuMoveCount == 0) {	// bei Wiederholungen wird kein compress_pattern benötigt
 			compress_pattern();
-		}
+		//}
 
 		state = searching;
 		if (MsMoveCount > 0) {
@@ -795,6 +795,9 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 							MSG_PRINT(SERIAL_DELIMITER);
 #endif
 						}
+					}
+					if (m_overflow) {
+						MSG_PRINT("O"); MSG_PRINT(SERIAL_DELIMITER);
 					}
 					
 					mcDetected = false;
