@@ -32,18 +32,25 @@
 
 #ifndef _SIGNALDECODER_h
 #define _SIGNALDECODER_h
+#define NOSTRING
 
+#ifndef DEC
+#define DEC 10
+#endif
 
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
 	//#include "WProgram.h"
+	
 #endif
-//#define DEBUG 1
+#define DEBUG 1
+#include "arduino.h"
+
 
 
 #ifndef WIFI_ESP
-#include <output.h>
+#include "output.h"
 #else
 #include <ESP8266WiFi.h>
 extern WiFiClient serverClient;
@@ -57,8 +64,8 @@ extern WiFiClient serverClient;
 #define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
 
 
-#include <bitstore.h>
-#include <FastDelegate.h>
+#include "bitstore.h"
+#include "FastDelegate.h"
 #define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
@@ -72,11 +79,13 @@ extern WiFiClient serverClient;
 #define MSG_START char(0x2)		// this is a non printable Char
 #define MSG_END   char(0x3)			// this is a non printable Char
 
-//#define DEBUGDETECT 3
+#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 1
+#define DEBUGDECODE 1
 
-enum status { searching, clockfound, syncfound, detecting,  mcdecoding };
+enum status { searching, clockfound, syncfound, detecting, mcdecoding };
+
+
 
 
 
@@ -85,11 +94,12 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
-																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
+	SignalDetectorClass() : first(buffer), last(first + 1), message(4) {
+																		 buffer[0] = 0; reset(); mcMinBitLen = 17;
 																		 MsMoveCount = 0; 
 																		 MredEnabled = 1;      // 1 = compress printmsg 
-																	   };
+																		 mcdecoder = nullptr;
+																		};
 
 	void reset();
 	bool decode(const int* pulse);
@@ -112,6 +122,7 @@ public:
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
+	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
 
 	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
 	uint8_t mstart;						  // Holds starting point for message
@@ -136,7 +147,7 @@ public:
 											//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
-	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
+	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;		// Holds the pointer to a callback Function
 	Func2pRetuint8t _streamCallback=NULL;	// Holds the pointer to a callback Function
 	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
@@ -171,15 +182,23 @@ public:
 class ManchesterpatternDecoder
 {
 public:
-	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) { pdec = ref_dec; 	reset(); };
+	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) {
+		pdec = ref_dec; reset();
+	};
 	~ManchesterpatternDecoder();
 	const bool doDecode();
 	void setMinBitLen(const uint8_t len);
+#ifdef NOSTRING
+	const char* getMessageHexStr();
+	const char* getMessagePulseStr();
+	const char* getMessageClockStr();
+	const char* getMessageLenStr();
+#else
 	void getMessageHexStr(String *message);
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
 	void getMessageLenStr(String* str);
-
+#endif
 	void printMessageHexStr();
 	void printMessagePulseStr();
 
@@ -204,6 +223,4 @@ public:
 	const bool isShort(const uint8_t pulse_idx);
 	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 };
-
-
 #endif
