@@ -329,7 +329,7 @@ void loop() {
 		command_available=false;
 		HandleCommand();
 		if (!command_available) { cmdstring = ""; }
-		blinkLED=true;
+		  blinkLED=true;
 	}
 #ifdef WATCHDOG
 	wdt_reset();
@@ -359,6 +359,7 @@ void loop() {
 
 //========================= Pulseauswertung ================================================
 void handleInterrupt() {
+  cli();
   const unsigned long Time=micros();
   //const bool state = digitalRead(PIN_RECEIVE);
   const unsigned long  duration = Time - lastTime;
@@ -379,7 +380,7 @@ void handleInterrupt() {
 
     //++fifocnt;
   } // else => trash
-
+  sei();
 }
 
 void enableReceive() {
