@@ -1,4 +1,11 @@
 language: c
+sudo: false
+
+env: 
+ - RECEIVER=cc1101
+ - RECEIVER=basic
+ - BOARD=nano
+
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
@@ -18,31 +25,45 @@ install:
 - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
 - ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
 - mkdir $PWD/release
-- arduino --board arduino:avr:nano --save-prefs
 - arduino --pref "compiler.warning_level=all" --save-prefs
 - arduino --pref "build.path=$PWD/release" --save-prefs
-script:
 - ls -l /usr/local/share/arduino/libraries/
 - file /usr/local/share/arduino/libraries/*/*
 - echo $PWD
 - echo $HOME
 - ls $PWD
-- arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&1
+jobs:
+ - - name: nanocc1101
+     include:
+      script: echo $RECEIVER echo $BOARD 
+      env: BOARD=nano
+      env: RECEIVER=cc1101
+      script: echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
+      script: arduino --board arduino:avr:nano --save-prefs-
+      script: arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&
+
+jobs:
+  include:
+      script: echo $RECEIVER echo $BOARD 
+      env: BOARD=nano
+      env: RECEIVER=none
+      script:
+       - echo "compiler.cpp.extra_flags=" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
+       - arduino --board arduino:avr:nano --save-prefs-
+       - arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&
+
+#  env: BOARD=nano  
+# script: 
+#  - arduino --board arduino:avr:nano --save-prefs-
+# - echo "Running test stage"
+# env: RECEIVER=cc1101
+# script:	  
+# - echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
+
 after_success:
 - file $PWD/release/*
-- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano.hex
+#- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
 notifications:
   email:
     on_success: change
     on_failure: change
-deploy:
-  skip_cleanup: true
-  provider: releases
-  api_key:
-    secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
-  file: '$PWD/release/SIGNALDuino_nano.hex'
-  on:
-    repo: RFD-FHEM/SIGNALESP
-    tags: true
-    condition: "$TRAVIS_TAG =~ ^release.*$"
-    branch: dev-r33_cc1101
