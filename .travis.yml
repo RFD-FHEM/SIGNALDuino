@@ -2,9 +2,9 @@ language: c
 sudo: false
 
 env: 
- - RECEIVER=cc1101
- - RECEIVER=basic
- - BOARD=nano
+ - RECEIVER=cc1101 BOARD=nano
+ - RECEIVER=basic BOARD=nano
+ - 
 
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
