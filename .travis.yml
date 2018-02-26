@@ -1,11 +1,8 @@
 language: c
-sudo: false
-
 env: 
- - RECEIVER=cc1101 BOARD=nano
- - RECEIVER=basic BOARD=nano
-
- before_install:
+  - RECEIVER=cc1101 BOARD=nano
+  - RECEIVER=basic BOARD=nano
+before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
 - sleep 3
@@ -33,8 +30,15 @@ install:
 - ls $PWD
 jobs:
   include:
-  - stage: test
-      script: echo $RECEIVER $BOARD 
+  - - stage: cc1101
+      env: RECEIVER=cc1101
+      script: echo $RECEIVER $BOARD    
+jobs:
+  include:
+  - - stage: basic
+      env: RECEIVER=basic
+      script : echo $BOARD   $RECEIVER
+
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
