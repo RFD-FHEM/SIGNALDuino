@@ -39,7 +39,9 @@ jobs:
   - - stage: basic
       if: env(RECEIVER) = basic
       script : echo $BOARD   $RECEIVER
-  script : echo Global script doing some stuff with $BOARD and  $RECEIVER
+  script : echo job script doing some stuff with $BOARD and  $RECEIVER
+
+script : echo Global script doing some stuff with $BOARD and  $RECEIVER
 
 after_success:
 - file $PWD/release/*
