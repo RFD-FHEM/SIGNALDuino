@@ -33,16 +33,8 @@ install:
 - ls $PWD
 jobs:
   include:
+  - stage: test
       script: echo $RECEIVER $BOARD 
-
-#  env: BOARD=nano  
-# script: 
-#  - arduino --board arduino:avr:nano --save-prefs-
-# - echo "Running test stage"
-# env: RECEIVER=cc1101
-# script:	  
-# - echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
-
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
