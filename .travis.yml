@@ -36,7 +36,6 @@ jobs:
  - - name: nanocc1101
      include:
       script: echo $RECEIVER echo $BOARD 
-      env: BOARD=nano
       env: RECEIVER=cc1101
       script: echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
       script: arduino --board arduino:avr:nano --save-prefs-
@@ -45,8 +44,7 @@ jobs:
 jobs:
   include:
       script: echo $RECEIVER echo $BOARD 
-      env: BOARD=nano
-      env: RECEIVER=none
+      env: RECEIVER=basic
       script:
        - echo "compiler.cpp.extra_flags=" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
        - arduino --board arduino:avr:nano --save-prefs-
