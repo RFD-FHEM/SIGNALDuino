@@ -1,48 +1,73 @@
 language: c
+env: 
+   matrix:
+    - RECEIVER=cc1101 BOARD=nano
+    - RECEIVER=cc1101 BOARD=minicul
+    - RECEIVER=cc1101 BOARD=radino
+    - BOARD=promini
+    - BOARD=nano
+   global:
+    - IDE_VERSION=1.8.5
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
-- sleep 3
-- export DISPLAY=:1.0
-- wget http://downloads.arduino.cc/arduino-1.6.13-linux64.tar.xz
-- tar xf arduino-1.6.13-linux64.tar.xz
-- sudo mv arduino-1.6.13 /usr/local/share/arduino
+- wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
+- tar xf arduino-$IDE_VERSION-linux64.tar.xz
+- sudo mv arduino-$IDE_VERSION /usr/local/share/arduino
 - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
+- export DISPLAY=:1.0
 install:
 - arduino --install-library "ArduinoJson"
 - arduino --install-library "TimerOne"
-- ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
-- ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
-- ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
-- ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
-- ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
+- arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs
+#- ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
+#- ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
+#- ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
+#- ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
+#- ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
 - ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
+#- find $PWD/src/_micro-api/libraries -name "*.cpp" -or -name "*.h" -exec echo -s {} "$PWD/RF_Receiver/" \;
+#- find -maxdepth 3 $PWD/src/_micro-api/libraries -name "*.cpp" -or -name "*.h" -exec ln -s {} "$PWD/RF_Receiver/" \;
+- find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries" | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" | xargs cp -aR -t $PWD/RF_Receiver/
 - mkdir $PWD/release
-- arduino --board arduino:avr:nano --save-prefs
 - arduino --pref "compiler.warning_level=all" --save-prefs
 - arduino --pref "build.path=$PWD/release" --save-prefs
+#- ls -l /usr/local/share/arduino/libraries/
+#- file /usr/local/share/arduino/libraries/*/*
+#- echo $PWD
+#- echo $HOME
+#- ls $PWD
+#- file $PWD/release/*
+- chmod +x ./build.sh
+jobs:
+  include:
+    - stage: deploy
+      script: skip     # usually you do not want to rerun any tests
+      env: 
+       - RECEIVER=cc1101 BOARD=nano
+       - BOARD=nano
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+           secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
+        file: '$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex'
+        on:
+          repo: RFD-FHEM/SIGNALESP
+          tags: true
+          condition: "$TRAVIS_TAG =~ ^release.*$"
+          branch: dev-r33_cc1101
+  allow_failures:
+       - env: RECEIVER=cc1101 BOARD=radino
+       - env: RECEIVER=cc1101 BOARD=minicul
 script:
-- ls -l /usr/local/share/arduino/libraries/
-- file /usr/local/share/arduino/libraries/*/*
-- echo $PWD
-- echo $HOME
-- ls $PWD
-- arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&1
+- ./build.sh
+#- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
 after_success:
+- echo "Compile ${BOARD} ${RECEIVER} finshed"
+- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}.hex
 - file $PWD/release/*
-- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano.hex
 notifications:
   email:
     on_success: change
     on_failure: change
-deploy:
-  skip_cleanup: true
-  provider: releases
-  api_key:
-    secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
-  file: '$PWD/release/SIGNALDuino_nano.hex'
-  on:
-    repo: RFD-FHEM/SIGNALESP
-    tags: true
-    condition: "$TRAVIS_TAG =~ ^release.*$"
-    branch: dev-r33_cc1101
