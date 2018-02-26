@@ -31,13 +31,15 @@ install:
 jobs:
   include:
   - - stage: cc1101
-      env: RECEIVER=cc1101
-      script: echo $RECEIVER $BOARD    
+      if: env(RECEIVER) = cc1101
+      script : echo $BOARD   $RECEIVER
+
 jobs:
   include:
   - - stage: basic
-      env: RECEIVER=basic
+      if: env(RECEIVER) = basic
       script : echo $BOARD   $RECEIVER
+  script : echo Global script doing some stuff with $BOARD and  $RECEIVER
 
 after_success:
 - file $PWD/release/*
