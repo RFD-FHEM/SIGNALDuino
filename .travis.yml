@@ -33,22 +33,8 @@ install:
 - echo $HOME
 - ls $PWD
 jobs:
- - - name: nanocc1101
-     include:
-      script: echo $RECEIVER echo $BOARD 
-      env: RECEIVER=cc1101
-      script: echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
-      script: arduino --board arduino:avr:nano --save-prefs-
-      script: arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&
-
-jobs:
   include:
-      script: echo $RECEIVER echo $BOARD 
-      env: RECEIVER=basic
-      script:
-       - echo "compiler.cpp.extra_flags=" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
-       - arduino --board arduino:avr:nano --save-prefs-
-       - arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&
+      script: $RECEIVER echo $BOARD 
 
 #  env: BOARD=nano  
 # script: 
