@@ -11,7 +11,8 @@ elif [ "${BOARD}" = "minicul" ]; then
   arduino --board arduino:avr:promini --save-prefs
 elif [ "${BOARD}" = "RADINO" ]; then
   echo "compiler.cpp.extra_flags=-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
-  arduino --board In-Circuit:radino:radino CC1101 --save-prefs
+ arduino --install-boards In-Circuit:radinoCC1101 
+ arduino --board In-Circuit:radino:radinoCC1101 --save-prefs
 fi
 
 
