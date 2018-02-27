@@ -29,12 +29,9 @@ install:
 #- echo $HOME
 #- ls $PWD
 - chmod +x ./build.sh
-jobs:
-  - include: 
-    - stage: test 
-      script: ./build.sh
-after_success:
 - file $PWD/release/*
+script:
+- ./build.sh
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
 notifications:
   email:
