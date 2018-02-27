@@ -1,33 +1,34 @@
 language: c
 env: 
-  - RECEIVER=cc1101 BOARD=nano
-  - RECEIVER=basic BOARD=nano
+  matrix:
+    - RECEIVER=cc1101     BOARD=nano
+    - RECEIVER=basic BOARD=nano
 before_install:
-- /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
-  --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
-- sleep 3
+#- /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
+#  --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
+#- sleep 3
 - export DISPLAY=:1.0
-- wget http://downloads.arduino.cc/arduino-1.6.13-linux64.tar.xz
-- tar xf arduino-1.6.13-linux64.tar.xz
-- sudo mv arduino-1.6.13 /usr/local/share/arduino
-- sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
+#- wget http://downloads.arduino.cc/arduino-1.6.13-linux64.tar.xz
+#- tar xf arduino-1.6.13-linux64.tar.xz
+#- sudo mv arduino-1.6.13 /usr/local/share/arduino
+#- sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
 install:
-- arduino --install-library "ArduinoJson"
-- arduino --install-library "TimerOne"
-- ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
-- ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
-- ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
-- ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
-- ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
-- ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
+#- arduino --install-library "ArduinoJson"
+#- arduino --install-library "TimerOne"
+#- ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
+#- ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
+#- ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
+#- ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
+#- ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
+#- ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
 - mkdir $PWD/release
-- arduino --pref "compiler.warning_level=all" --save-prefs
-- arduino --pref "build.path=$PWD/release" --save-prefs
-- ls -l /usr/local/share/arduino/libraries/
-- file /usr/local/share/arduino/libraries/*/*
-- echo $PWD
-- echo $HOME
-- ls $PWD
+#- arduino --pref "compiler.warning_level=all" --save-prefs
+#- arduino --pref "build.path=$PWD/release" --save-prefs
+#- ls -l /usr/local/share/arduino/libraries/
+#- file /usr/local/share/arduino/libraries/*/*
+#- echo $PWD
+#- echo $HOME
+#- ls $PWD
 jobs:
   include:
   - - stage: cc1101
