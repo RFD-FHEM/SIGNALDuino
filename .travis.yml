@@ -28,8 +28,8 @@ install:
 #- echo $PWD
 #- echo $HOME
 #- ls $PWD
+#- file $PWD/release/*
 - chmod +x ./build.sh
-- file $PWD/release/*
 script:
 - ./build.sh
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
