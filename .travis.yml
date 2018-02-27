@@ -31,9 +31,9 @@ install:
 jobs:
   include:
     - stage: test
-    - script: ./build # call custom build script
+      script: ./build # call custom build script
     - stage: deploy
-    - script: echo "noch kein deploy script vorhanden"
+      script: echo "noch kein deploy script vorhanden"
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
