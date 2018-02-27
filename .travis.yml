@@ -31,9 +31,9 @@ install:
 jobs:
   include:
   - - stage: cc1101
-      script : echo cc1101: $BOARD   $RECEIVER
+      script : echo cc1101 $BOARD   $RECEIVER
   - - stage: basic
-      script : echo basic: $BOARD   $RECEIVER
+      script : echo basic $BOARD   $RECEIVER
   script : echo job script doing some stuff with $BOARD and  $RECEIVER
 
 script : echo Global script doing some stuff with $BOARD and  $RECEIVER
