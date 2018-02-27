@@ -34,8 +34,8 @@ script:
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
 after_success:
 - echo "Compile ${BOARD} ${RECEIVER} finshed"
-- file $PWD/release/*
 - mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}.hex
+- file $PWD/release/*
 notifications:
   email:
     on_success: change
