@@ -1,11 +1,10 @@
 #!/bin/bash
 set -ev
 if [ "${RECEIVER}" = "cc1101" ]; then
-  echo "setting compiler flags for cc1101"
+  echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
 fi
 
 if [ "${BOARD}" = "nano" ]; then
-  echo "setting board to NANO"
+  arduino --board arduino:avr:nano --save-prefs-
 fi
-
 echo "Compile now for ${BOARD} with ${RECEIVER}"
