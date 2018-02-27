@@ -37,21 +37,16 @@ jobs:
   script : echo job script doing some stuff with $BOARD and  $RECEIVER
 
 script : echo Global script doing some stuff with $BOARD and  $RECEIVER
-stages:
-  - name: cc1101
-    # require the branch name to be master
-    if: branch = master
 
 stages:
   - name: basic
-    # require the tag name to match a regular expression
     if: env(RECEIVER) = basic
+    script : echo baisc mode
 
 stages:
-  - name: deploy
-    # require the event type to be either `push` or `pull_request`
+  - name: cc1101
     if: env(RECEIVER) = cc1101
-
+    script : echo cc1101 mode
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
