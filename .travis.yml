@@ -40,9 +40,7 @@ stages:
   - name: basic
     if: env(RECEIVER) = basic
   - name: c1101
-    if: env(RECEIVER) = cc1101	
-	
-	
+    if: env(RECEIVER) = cc1101
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
