@@ -42,8 +42,6 @@ stages:
   - name: basic
     if: env(RECEIVER) = basic
     script : echo baisc mode
-
-stages:
   - name: cc1101
     if: env(RECEIVER) = cc1101
     script : echo cc1101 mode
