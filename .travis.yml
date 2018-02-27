@@ -31,7 +31,8 @@ install:
 chmod +x ./build.sh
 jobs:
   include:
-    - script: ./build.sh
+    - stage: test
+      script: ./build.sh
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
