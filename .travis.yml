@@ -30,11 +30,11 @@ install:
 #- ls $PWD
 jobs:
   include:
-    - stage:test
+    - stage: test
       script: echo "this is the test stage"
-    - stage basic
+    - stage: basic
       script: echo "this is the basic stage"
-    - stage cc1101
+    - stage: cc1101
       script: echi "this is the cc1101 stage"	
 stages:
   - test
