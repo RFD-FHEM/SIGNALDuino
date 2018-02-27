@@ -30,17 +30,9 @@ install:
 #- ls $PWD
 jobs:
   include:
-    - stage: Test   
-      script: skip
-    - stage: basic
-      script: echo "this is the basic stage"
-    - stage: cc1101
-      script: echo "this is the cc1101 stage"	
-stages:
-  - name: basic
-    if: env(RECEIVER) = basic
-  - name: c1101
-    if: env(RECEIVER) = cc1101
+    - script: ./build # call custom build script
+    - stage: deploy
+    - script: echo "noch kein deploy script vorhanden"
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
