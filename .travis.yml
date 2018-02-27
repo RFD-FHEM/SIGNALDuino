@@ -37,6 +37,20 @@ jobs:
   script : echo job script doing some stuff with $BOARD and  $RECEIVER
 
 script : echo Global script doing some stuff with $BOARD and  $RECEIVER
+stages:
+  - name: cc1101
+    # require the branch name to be master
+    if: branch = master
+
+stages:
+  - name: basic
+    # require the tag name to match a regular expression
+    if: env(RECEIVER) = basic
+
+stages:
+  - name: deploy
+    # require the event type to be either `push` or `pull_request`
+    if: env(RECEIVER) = cc1101
 
 after_success:
 - file $PWD/release/*
