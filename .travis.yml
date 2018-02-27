@@ -1,6 +1,6 @@
 language: c
 env: 
-  - RECEIVER=cc1101     BOARD=nano
+  - RECEIVER=cc1101 BOARD=nano
   - RECEIVER=basic BOARD=nano
 before_install:
 #- /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
@@ -37,11 +37,10 @@ jobs:
     - stage: cc1101
       script: echi "this is the cc1101 stage"	
 stages:
-  - test
-  - name: basic
+  - name basic:
     if: env(RECEIVER) = basic
-  - name: cc1101
-    if: env(RECEIVER) = cc1101
+  - name cc1101:
+    if: env(RECEIVER) = cc1101	
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
