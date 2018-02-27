@@ -34,9 +34,6 @@ jobs:
   - - stage: cc1101
       if: env(RECEIVER) = cc1101
       script : echo $BOARD   $RECEIVER
-
-jobs:
-  include:
   - - stage: basic
       if: env(RECEIVER) = basic
       script : echo $BOARD   $RECEIVER
