@@ -1,7 +1,11 @@
 language: c
 env: 
   - RECEIVER=cc1101 BOARD=nano
+  - RECEIVER=cc1101 BOARD=minicul
+  - RECEIVER=cc1101 BOARD=radino
+  - BOARD=promini
   - BOARD=nano
+ 
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
@@ -13,6 +17,8 @@ before_install:
 install:
 - arduino --install-library "ArduinoJson"
 - arduino --install-library "TimerOne"
+- arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs
+- arduino --install-boards In-Circuit:radino
 - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
 - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
 - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
