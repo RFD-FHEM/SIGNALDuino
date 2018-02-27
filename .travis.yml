@@ -31,11 +31,9 @@ install:
 jobs:
   include:
   - - stage: cc1101
-      if: env(RECEIVER) = cc1101
-      script : echo $BOARD   $RECEIVER
+      script : echo cc1101: $BOARD   $RECEIVER
   - - stage: basic
-      if: env(RECEIVER) = basic
-      script : echo $BOARD   $RECEIVER
+      script : echo basic: $BOARD   $RECEIVER
   script : echo job script doing some stuff with $BOARD and  $RECEIVER
 
 script : echo Global script doing some stuff with $BOARD and  $RECEIVER
