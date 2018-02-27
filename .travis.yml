@@ -29,9 +29,9 @@ install:
 #- echo $HOME
 #- ls $PWD
 jobs:
-  exclude:
-    - stage: test
   include:
+    - stage Test   
+      script: skip
     - stage: basic
       script: echo "this is the basic stage"
     - stage: cc1101
