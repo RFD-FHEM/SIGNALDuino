@@ -30,6 +30,8 @@ install:
 #- ls $PWD
 - chmod +x ./build.sh
 jobs:
+  - include: 
+    - stage: test 
       script: ./build.sh
 after_success:
 - file $PWD/release/*
