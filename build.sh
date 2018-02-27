@@ -5,6 +5,8 @@ if [ "${RECEIVER}" = "cc1101" ]; then
 fi
 
 if [ "${BOARD}" = "nano" ]; then
-  arduino --board arduino:avr:nano --save-prefs-
+  arduino --board arduino:avr:nano --save-prefs
 fi
+
 echo "Compile now for ${BOARD} with ${RECEIVER}"
+arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&1
