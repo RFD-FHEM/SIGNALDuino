@@ -30,21 +30,18 @@ install:
 #- ls $PWD
 jobs:
   include:
-  - - stage: cc1101
-      script : echo cc1101 $BOARD   $RECEIVER
-  - - stage: basic
-      script : echo basic $BOARD   $RECEIVER
-  script : echo job script doing some stuff with $BOARD and  $RECEIVER
-
-script : echo Global script doing some stuff with $BOARD and  $RECEIVER
-
+    - stage:test
+      script: echo "this is the test stage"
+    - stage basic
+      script: echo "this is the basic stage"
+    - stage cc1101
+      script: echi "this is the cc1101 stage"	
 stages:
+  - test
   - name: basic
     if: env(RECEIVER) = basic
-    script : echo baisc mode
   - name: cc1101
     if: env(RECEIVER) = cc1101
-    script : echo cc1101 mode
 after_success:
 - file $PWD/release/*
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
