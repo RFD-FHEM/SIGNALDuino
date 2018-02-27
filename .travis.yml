@@ -30,7 +30,7 @@ install:
 #- ls $PWD
 jobs:
   include:
-    - stage Test   
+    - stage: Test   
       script: skip
     - stage: basic
       script: echo "this is the basic stage"
