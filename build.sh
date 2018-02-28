@@ -5,7 +5,7 @@ if [ "${RECEIVER}" = "cc1101" ]; then
 fi
 
 if [ "${BOARD}" = "nano" ]; then
-  arduino --board arduino:avr:nano328 --save-prefs 2>&1
+  arduino --board arduino:avr:nano --save-prefs 2>&1
 elif [ "${BOARD}" = "minicul" ]; then
   echo "compiler.cpp.extra_flags=-DARDUINO_ATMEGA328P_MINICUL=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
   arduino --board arduino:avr:pro328 --save-prefs 2>&1
