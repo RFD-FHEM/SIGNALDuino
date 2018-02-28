@@ -49,6 +49,8 @@ jobs:
           tags: true
           condition: "$TRAVIS_TAG =~ ^release.*$"
           branch: dev-r33_cc1101
+  allow_failures:
+       env: RECEIVER=cc1101 BOARD=radino
 script:
 - ./build.sh
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
