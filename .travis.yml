@@ -1,5 +1,11 @@
 language: c
- 
+   env: 
+          - RECEIVER=cc1101 BOARD=nano
+          - RECEIVER=cc1101 BOARD=minicul
+          - RECEIVER=cc1101 BOARD=radino
+          - BOARD=promini
+          - BOARD=nano
+
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
@@ -33,17 +39,11 @@ jobs:
     - stage: deploy
       script: skip     # usually you do not want to rerun any tests
       deploy:
-         env: 
-          - RECEIVER=cc1101 BOARD=nano
-          - RECEIVER=cc1101 BOARD=minicul
-          - RECEIVER=cc1101 BOARD=radino
-          - BOARD=promini
-          - BOARD=nano
         skip_cleanup: true
         provider: releases
         api_key:
            secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
-        file: '$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}hex'
+        file: '$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex'
         on:
           repo: RFD-FHEM/SIGNALESP
           tags: true
