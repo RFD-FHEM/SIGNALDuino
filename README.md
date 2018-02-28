@@ -1,4 +1,4 @@
-# SIGNALDuino uC v3.3-0 (development version) with cc1101 support
+# SIGNALDuino uC v3.3-1 (development version) with cc1101 support 
 
 ### Getting started
 
