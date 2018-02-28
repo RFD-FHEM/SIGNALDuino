@@ -37,9 +37,9 @@ jobs:
   include:
     - stage: deploy
       script: skip     # usually you do not want to rerun any tests
-      env:
-        - RECEIVER=cc1101 BOARD=nano
-        - RECEIVER=cc1101 BOARD=minicul
+      env: 
+       - RECEIVER=cc1101 BOARD=nano
+       - BOARD=nano
       deploy:
         skip_cleanup: true
         provider: releases
