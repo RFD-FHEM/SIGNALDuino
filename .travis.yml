@@ -1,10 +1,4 @@
 language: c
-env: 
-  - RECEIVER=cc1101 BOARD=nano
-  - RECEIVER=cc1101 BOARD=minicul
-  - RECEIVER=cc1101 BOARD=radino
-  - BOARD=promini
-  - BOARD=nano
  
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
@@ -39,6 +33,12 @@ jobs:
     - stage: deploy
       script: skip     # usually you do not want to rerun any tests
       deploy:
+         env: 
+          - RECEIVER=cc1101 BOARD=nano
+          - RECEIVER=cc1101 BOARD=minicul
+          - RECEIVER=cc1101 BOARD=radino
+          - BOARD=promini
+          - BOARD=nano
         skip_cleanup: true
         provider: releases
         api_key:
