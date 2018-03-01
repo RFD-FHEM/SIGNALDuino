@@ -1,14 +1,17 @@
 language: c
 env: 
-   - RECEIVER=cc1101 BOARD=nano
-   - RECEIVER=cc1101 BOARD=minicul
-   - RECEIVER=cc1101 BOARD=radino
-   - BOARD=promini
-   - BOARD=nano
+   matrix:
+    - RECEIVER=cc1101 BOARD=nano
+    - RECEIVER=cc1101 BOARD=minicul
+    - RECEIVER=cc1101 BOARD=radino
+    - BOARD=promini
+    - BOARD=nano
+   global:
+    - IDE_VERSION=1.8.5
 before_install:
 - /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_1.pid --make-pidfile
   --background --exec /usr/bin/Xvfb -- :1 -ac -screen 0 1280x1024x16
-- wget http://downloads.arduino.cc/arduino-1.6.13-linux64.tar.xz
+- wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
 - tar xf arduino-1.6.13-linux64.tar.xz
 - sudo mv arduino-1.6.13 /usr/local/share/arduino
 - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
