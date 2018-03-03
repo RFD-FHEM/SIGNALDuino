@@ -43,7 +43,7 @@
 
 
 #ifndef WIFI_ESP
-#include <output.h>
+#include "output.h"
 #else
 #include <ESP8266WiFi.h>
 extern WiFiClient serverClient;
@@ -57,8 +57,8 @@ extern WiFiClient serverClient;
 #define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
 
 
-#include <bitstore.h>
-#include <FastDelegate.h>
+#include "bitstore.h"
+#include "FastDelegate.h"
 #define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
