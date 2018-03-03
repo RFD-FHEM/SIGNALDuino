@@ -93,7 +93,7 @@
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
-#include <TimerOne.h>  // Timer for LED Blinking
+#include "TimerOne.h"  // Timer for LED Blinking
 
 #include "SimpleFIFO.h"
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
@@ -665,10 +665,10 @@ void HandleCommand()
 	    #ifdef PIN_MARK433
 	    MSG_PRINT("(");
 	    MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
-	    MSG_PRINT(F("Mhz )"));
+	    MSG_PRINT(F("Mhz)"));
 	    #endif
       }
-	MSG_PRINTLN("- compiled at " __DATE__ " " __TIME__)
+	MSG_PRINTLN(" - compiled at " __DATE__ " " __TIME__)
 
   }
   // R: FreeMemory
