@@ -45,9 +45,17 @@
 #ifdef ARDUINO_ATMEGA328P_MINICUL
 	#define CMP_CC1101     
 #endif
+
+// Get compatibility with arduino ide and visualmicro
 #ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+#define ARDUINO_RADINOCC1101
+#endif
+
+#ifdef ARDUINO_RADINOCC1101
 	#define CMP_CC1101     
 #endif
+
+
 
 
 
@@ -59,7 +67,7 @@
 
 
 #ifdef CMP_CC1101
-	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	#ifdef ARDUINO_RADINOCC1101
 		#define PIN_LED               13
 		#define PIN_SEND              9   // gdo0Pin TX out
 		#define PIN_RECEIVE				   7
