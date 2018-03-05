@@ -45,10 +45,13 @@ jobs:
     - stage: deploy
       script: ./build.sh BOARD=minicul RECEIVER=cc1101   
     - stage: deploy
+      env: RECEIVER=cc1101 BOARD=radino
       script: ./build.sh BOARD=radino RECEIVER=cc1101   
     - stage: deploy
+      env:  BOARD=nano
       script: ./build.sh BOARD=nano    
     - stage: deploy
+      env:  BOARD=promini
       script: ./build.sh BOARD=promini
       deploy:
         skip_cleanup: true
