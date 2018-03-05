@@ -41,19 +41,21 @@ install:
 jobs:
   include:
     - stage: deploy
-      script: ./build.sh BOARD=nano RECEIVER=cc1101 
+      env: RECEIVER=nano BOARD=minicul	  
+      script: ./build.sh 
     - stage: deploy
-      script: ./build.sh BOARD=minicul RECEIVER=cc1101   
+      env: RECEIVER=cc1101 BOARD=minicul
+      script: ./build.sh 
     - stage: deploy
       env: RECEIVER=cc1101 BOARD=radino
-      script: ./build.sh BOARD=radino RECEIVER=cc1101   
+      script: ./build.sh 
     - stage: deploy
       env:  BOARD=nano
-      script: ./build.sh BOARD=nano    
+      script: ./build.sh    
     - stage: deploy
       env:  BOARD=promini
-      script: ./build.sh BOARD=promini
-      deploy:
+      script: ./build.sh 
+ deploy:
         skip_cleanup: true
         provider: releases
         api_key:

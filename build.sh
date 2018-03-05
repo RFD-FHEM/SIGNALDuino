@@ -37,4 +37,4 @@ fi
 
 
 echo "Compile now for ${BOARD} with ${RECEIVER}"
-#arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&1
+arduino -v --verbose-build --verify $PWD/RF_Receiver/RF_Receiver.ino 2>&1
