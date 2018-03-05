@@ -42,9 +42,13 @@ jobs:
   include:
     - stage: deploy
       script: ./build.sh BOARD=nano RECEIVER=cc1101 
+    - stage: deploy
       script: ./build.sh BOARD=minicul RECEIVER=cc1101   
+    - stage: deploy
       script: ./build.sh BOARD=radino RECEIVER=cc1101   
+    - stage: deploy
       script: ./build.sh BOARD=nano    
+    - stage: deploy
       script: ./build.sh BOARD=promini
       deploy:
         skip_cleanup: true
