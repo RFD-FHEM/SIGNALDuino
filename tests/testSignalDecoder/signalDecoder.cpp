@@ -672,6 +672,7 @@ void SignalDetectorClass::processMessage()
 					uint8_t patternIdx;
 					
 					SDC_PRINT("Mu");  SDC_PRINT(SERIAL_DELIMITER);
+					calcHisto();
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
@@ -719,6 +720,7 @@ void SignalDetectorClass::processMessage()
 				else {
 				
 					SDC_PRINT("MU");  SDC_PRINT(SERIAL_DELIMITER);
+					calcHisto();
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
