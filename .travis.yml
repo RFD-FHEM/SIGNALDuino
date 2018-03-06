@@ -41,24 +41,9 @@ install:
 jobs:
   include:
     - stage: deploy
-    - script: ./build.sh BOARD=nano RECEIVER=cc1101
-    - script: ./build.sh BOARD=nano
-  allow_failures:
-      # - env: RECEIVER=cc1101 BOARD=radino
-      # - env: RECEIVER=cc1101 BOARD=minicul
-script:
-- ./build.sh
-#- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
-after_success:
-- echo "Compile ${BOARD} ${RECEIVER} finshed"
-- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}.hex
-- file $PWD/release/*
-
-notifications:
-  email:
-    on_success: change
-    on_failure: change
-deploy:
+    - script: export BOARD=nano && export && RECEIVER=cc1101 && ./build.sh
+    - script: export BOARD=nano && ./build.sh
+    - deploy:
         skip_cleanup: true
         provider: releases
         api_key:
@@ -69,3 +54,19 @@ deploy:
           tags: true
           condition: "$TRAVIS_TAG =~ ^release.*$"
           branch: dev-r33_cc1101
+
+  allow_failures:
+      # - env: RECEIVER=cc1101 BOARD=radino
+      # - env: RECEIVER=cc1101 BOARD=minicul
+script:
+#- ./build.sh
+#- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
+after_success:
+- echo "Compile ${BOARD} ${RECEIVER} finshed"
+- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}.hex
+- file $PWD/release/*
+
+notifications:
+  email:
+    on_success: change
+    on_failure: change
