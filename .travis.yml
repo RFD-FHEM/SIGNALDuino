@@ -41,13 +41,13 @@ install:
 jobs:
   include:
     - stage: deploy
-      env: RECEIVER=nano BOARD=minicul	  
+      env: RECEIVER=nano	  
       script: ./build.sh 
     - stage: deploy
-      env: RECEIVER=cc1101 BOARD=minicul
+      env: RECEIVER=cc1101 
       script: ./build.sh 
     - stage: deploy
-      env: RECEIVER=cc1101 BOARD=radino
+      env: RECEIVER=cc1101 
       script: ./build.sh 
     - stage: deploy
       env:  BOARD=nano

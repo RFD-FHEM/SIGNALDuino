@@ -5,12 +5,12 @@ do
     case "$1" in
         BOARD*)   
                BOARD=`echo $1 | cut -d= -f2`
-            ;;
+        ;;
         RECEIVER*) 
                RECEIVER=`echo $1 | cut -d= -f2`
 		;;
         *) echo "got argument $1"
-            ;;
+        ;;
     esac
     shift
 done
