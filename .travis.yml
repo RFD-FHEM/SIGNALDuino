@@ -63,7 +63,9 @@ jobs:
   allow_failures:
       # - env: RECEIVER=cc1101 BOARD=radino
       # - env: RECEIVER=cc1101 BOARD=minicul
-#- ./build.sh
+script: 
+  - echo "running script"
+ #- ./build.sh
 #- mv $PWD/release//RF_Receiver.ino.hex $PWD/release/SIGNALDuino_nano_cc1101.hex
 after_success:
 - echo "Compile ${BOARD} ${RECEIVER} finshed"
