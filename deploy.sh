@@ -1,7 +1,8 @@
 #!/bin/bash
 #set -e
 
-if [ "$TRAVIS_TAG" =~ "^release.*$" or "$TRAVIS_TAG" =~ "^R\d\.\d.*$" AND "$TRAVIC_BRANCH" = "dev-r33_cc1101"]
+#if [ "$TRAVIS_TAG" =~ "^release.*$" OR "$TRAVIS_TAG" =~ "^R\d\.\d.*$" AND "$TRAVIC_BRANCH" = "dev-r33_cc1101"  ]
+if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BRANCH" = "dev-r33_cc1101" ]]
   then
     curl --location "https://github.com/tfausak/github-release/releases/download/0.1.8/github-release-1.1.4-$TRAVIS_OS_NAME.gz" > github-release.gz
     gunzip github-release.gz
@@ -14,7 +15,7 @@ if [ "$TRAVIS_TAG" =~ "^release.*$" or "$TRAVIS_TAG" =~ "^R\d\.\d.*$" AND "$TRAV
       --name "SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}"
   fi
   
-if [ "$TRAVIS_TAG" =~ "^nightly.*$" ]
+if [[ $TRAVIS_TAG =~ ^nightly.*$  ]]
   then
     DATE=`date +%Y-%m-%d`
     curl --location "https://github.com/tfausak/github-release/releases/download/0.1.8/github-release-1.1.4-$TRAVIS_OS_NAME.gz" > github-release.gz
