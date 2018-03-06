@@ -3,7 +3,7 @@ env:
    matrix:
     - RECEIVER=cc1101 BOARD=nano
 #    - RECEIVER=cc1101 BOARD=minicul
-    - RECEIVER=cc1101 BOARD=radino
+#    - RECEIVER=cc1101 BOARD=radino
 #    - BOARD=promini
 #    - BOARD=nano
    global:
@@ -41,19 +41,10 @@ install:
 jobs:
   include:
     - stage: deploy
-      env: RECEIVER=nano	  
+      env: BOARD=nano 	   
       script: ./build.sh 
     - stage: deploy
-      env: RECEIVER=cc1101 
-      script: ./build.sh 
-    - stage: deploy
-      env: RECEIVER=cc1101 
-      script: ./build.sh 
-    - stage: deploy
-      env:  BOARD=nano
-      script: ./build.sh    
-    - stage: deploy
-      env:  BOARD=promini
+      env: BOARD=nano RECEIVER=cc1101 
       script: ./build.sh 
  deploy:
         skip_cleanup: true
