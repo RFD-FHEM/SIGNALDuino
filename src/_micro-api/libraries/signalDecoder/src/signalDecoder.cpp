@@ -1808,39 +1808,41 @@ const bool ManchesterpatternDecoder::isManchester()
 							mc_start_found = false;
 							mc_sync = false;
 						}
-					} else {
+					}
+					else {
 						if (mc_start_found == false)
 						{
 							pdec->mstart = z;
 							mc_start_found = true;
 						}
-					}
-					
-					int8_t seq_found = -1;
-					uint8_t seq = (mpz* 10) + pdec->message[z + 1];
 
-					if (seq < 10) seq += 100;
-					
-					int8_t *seqptr;
-					if (z % 2 == 0)  //Every even value
-						seqptr = sequence_even;
-					else
-						seqptr = sequence_odd;
+						int8_t seq_found = -1;
+						uint8_t seq = (mpz * 10) + pdec->message[z + 1];
 
-					for (uint8_t a = 0; a < 4 && seq_found==-1; a++)
-					{
+						if (seq < 10) seq += 100;
+
+						int8_t *seqptr;
+						if (z % 2 == 0)  //Every even value
+							seqptr = sequence_even;
+						else
+							seqptr = sequence_odd;
+
+						for (uint8_t a = 0; a < 4 && seq_found == -1; a++)
+						{
 							if (seqptr[a] == seq)
 							{
 								seq_found = a;
-							}	else if (seqptr[a] == -1)
+							}
+							else if (seqptr[a] == -1)
 							{
 								//DBG_PRINT(" +seq[:"); DBG_PRINT(seq); DBG_PRINTLN("]");
 
 								seqptr[a] = seq;
 								seq_found = a;
 							}
-							
-					} 
+
+						}
+					}
 					z++;
 				}
 			}

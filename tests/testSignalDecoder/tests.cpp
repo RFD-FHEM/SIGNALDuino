@@ -1200,6 +1200,43 @@ namespace arduino { namespace test
 		std::cout << outputStr;
 	}
 
+	TEST_F(Tests, mcInvalidMC2)
+	{
+		std::string dstr = "DMC;P0=32001;P1=-24044;P2=404;P3=-384;P4=596;P5=-600;P6=-9660;D=01232323232323232323232323454523232345454523234545452323452323234545454545232345232323232323234523452345454545232345462323232323232323232323234545232323454545232345454523234523232345454545452323452323232323232345234523454545452323454623232323232323232323;";
+		ooDecode.mcdecoder = &mcdecoder;
+
+		state = import_sigdata(&dstr);
+		//std::cout << outputStr;
+
+		ooDecode.calcHisto();
+		ooDecode.printOut();
+		ASSERT_FALSE(mcdecoder.isManchester());
+
+		ASSERT_TRUE(mcdecoder.doDecode());
+		//ASSERT_FALSE(mcdecoder.isManchester());
+		ASSERT_FALSE(state);
+
+	}
+
+	TEST_F(Tests, mcInvalidMC3)
+	{
+		std::string dstr = "DMC;P0=-32001;P1=-24044;P2=404;P3=-384;P4=596;P5=-600;P6=-9660;D=01232323232323232323232323454523232345454523234545452323452323234545454545232345232323232323234523452345454545232345462323232323232323232323234545232323454545232345454523234523232345454545452323452323232323232345234523454545452323454623232323232323232323;";
+		ooDecode.mcdecoder = &mcdecoder;
+
+		state = import_sigdata(&dstr);
+		//std::cout << outputStr;
+
+		ooDecode.calcHisto();
+		ooDecode.printOut();
+		ASSERT_FALSE(mcdecoder.isManchester());
+
+		ASSERT_TRUE(mcdecoder.doDecode());
+		//ASSERT_FALSE(mcdecoder.isManchester());
+		ASSERT_FALSE(state);
+
+	}
+
+
   //--------------------------------------------------------------------------------------------------
   /*
   TEST_F(Tests, testDigitalPinString)
