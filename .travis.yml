@@ -41,8 +41,8 @@ install:
 jobs:
   include:
     - stage: deploy
-      script: ./build.sh BOARD=nano
-      script: ./build.sh BOARD=nano RECEIVER=cc1101
+        script: ./build.sh BOARD=nano
+        script: ./build.sh BOARD=nano RECEIVER=cc1101
   allow_failures:
       # - env: RECEIVER=cc1101 BOARD=radino
       # - env: RECEIVER=cc1101 BOARD=minicul
