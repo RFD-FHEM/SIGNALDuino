@@ -1,4 +1,4 @@
-language: c
+#language: c
 env: 
    matrix:
 #    - RECEIVER=cc1101 BOARD=nano
@@ -46,7 +46,7 @@ jobs:
 
     - stage: deploy
       script: 
-        - script: export BOARD=nano && ./build.sh
+        - export BOARD=nano && ./build.sh
 
     - deploy:
         skip_cleanup: true
