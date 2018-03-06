@@ -1,7 +1,7 @@
 language: c
 env: 
    matrix:
-    - RECEIVER=cc1101 BOARD=nano
+#    - RECEIVER=cc1101 BOARD=nano
 #    - RECEIVER=cc1101 BOARD=minicul
 #    - RECEIVER=cc1101 BOARD=radino
 #    - BOARD=promini
@@ -41,11 +41,8 @@ install:
 jobs:
   include:
     - stage: deploy
-      env: BOARD=nano 	   
-      script: ./build.sh 
-    - stage: deploy
-      env: BOARD=nano RECEIVER=cc1101 
-      script: ./build.sh 
+      script: ./build.sh BOARD=nano
+      script: ./build.sh BOARD=nano RECEIVER=cc1101
   allow_failures:
       # - env: RECEIVER=cc1101 BOARD=radino
       # - env: RECEIVER=cc1101 BOARD=minicul
