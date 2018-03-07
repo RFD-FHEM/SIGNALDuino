@@ -15,8 +15,8 @@ if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BR
       --name "SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}"
   fi
   
-#if [[ $TRAVIS_TAG =~ ^nightly.*$  ]]
-#  then
+if [[ $TRAVIS_TAG =~ ^nightly.*$  ]]
+  then
     DATE=`date +%Y-%m-%d`
     curl --location "https://github.com/tfausak/github-release/releases/download/1.1.4/github-release-1.1.4-$TRAVIS_OS_NAME.gz" > github-release.gz
     gunzip github-release.gz
@@ -27,5 +27,5 @@ if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BR
       --repo RFD-FHEM/SIGNALDuino \
       --file "$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex" \
       --name "nightly-SIGNALDuino_${BOARD}${RECEIVER}${DATE}" \
-      --tag "nighty" 
-#  fi
+      --tag "$TRAVIS_TAG" \
+  fi
