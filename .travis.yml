@@ -26,11 +26,11 @@ jobs:
   include:
   - stage: deploy
     script:
-    - export BOARD=nano && export && RECEIVER=cc1101 && ./build.sh && ./deploy.sh
-  - stage: deploy
+      - export BOARD=nano && export RECEIVER=cc1101 
     script:
-    - export BOARD=nano && ./build.sh && ./deploy.sh
-  - deploy:
+      -  ./build.sh 
+    deploy:
+      #- ./deploy.sh
       skip_cleanup: true
       provider: releases
       api_key:
@@ -39,8 +39,26 @@ jobs:
       on:
         repo: RFD-FHEM/SIGNALDuino
         tags: true
-        condition: $TRAVIS_TAG =~ ^release.*$
-        branch: dev-r33_cc1101
+        #condition: $TRAVIS_TAG =~ ^release.*$
+        #branch: dev-r33_cc1101
+
+  - stage: deploy
+    install:
+      - export BOARD=nano
+    script:
+      -  ./build.sh 
+    deploy:
+      #- ./deploy.sh
+      skip_cleanup: true
+      provider: releases
+      api_key:
+        secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
+      file: $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+      on:
+        repo: RFD-FHEM/SIGNALDuino
+        tags: true
+        #condition: $TRAVIS_TAG =~ ^release.*$
+        #branch: dev-r33_cc1101
   allow_failures: 
 script:
 - echo "running script"
