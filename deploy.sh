@@ -25,7 +25,7 @@ if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BR
       --token "$GH_API_KEY" \
       --owner Sidey79 \
       --repo RFD-FHEM/SIGNALDuino \
-      --tag "$TRAVIS_TAG" \
+#      --tag "$TRAVIS_TAG" \
       --file "$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex" \
       --name "nightly-SIGNALDuino_${BOARD}${RECEIVER}${DATE}"
 #  fi
