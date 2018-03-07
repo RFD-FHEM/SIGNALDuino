@@ -25,8 +25,11 @@ install:
 jobs:
   include:
   - stage: deploy
+    env:
+      - BOARD=nano
+      - RECEIVER=cc1101
     script:
-      - export BOARD=nano && export RECEIVER=cc1101 
+ #     - export BOARD=nano && export RECEIVER=cc1101 
     script:
       -  ./build.sh 
     deploy:
@@ -43,8 +46,10 @@ jobs:
         #branch: dev-r33_cc1101
 
   - stage: deploy
+    env:
+      - BOARD=nano
     install:
-      - export BOARD=nano
+#      - export BOARD=nano
     script:
       -  ./build.sh 
     deploy:
