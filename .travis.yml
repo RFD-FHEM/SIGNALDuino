@@ -27,7 +27,10 @@ jobs:
   - stage: deploy
     env:
       - BOARD=nano
-      - RECEIVER=cc1101
+      - RECEIVER=cc1101  
+    install:
+      - chmod +x ./build.sh
+	
     script:
  #     - export BOARD=nano && export RECEIVER=cc1101 
     script:
@@ -49,7 +52,7 @@ jobs:
     env:
       - BOARD=nano
     install:
-#      - export BOARD=nano
+      - chmod +x ./build.sh
     script:
       -  ./build.sh 
     deploy:
