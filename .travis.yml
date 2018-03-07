@@ -1,69 +1,51 @@
 language: c
-
-env: 
-   matrix:
-#    - RECEIVER=cc1101 BOARD=nano
-#    - RECEIVER=cc1101 BOARD=minicul
-#    - RECEIVER=cc1101 BOARD=radino
-#    - BOARD=promini
-#    - BOARD=nano
-   global:
-    - IDE_VERSION=1.8.5
-    - GH_API_KEY:
-        secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
-
+env:
+  matrix: 
+  global:
+  - IDE_VERSION=1.8.5
+  - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
 before_install:
 - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
 - tar xf arduino-$IDE_VERSION-linux64.tar.xz
 - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino
 - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
-
 install:
 - arduino --install-library "ArduinoJson"
 - arduino --install-library "TimerOne"
-- arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs
+- arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json
+  --save-prefs
 - ln -s $PWD/cc1101.h $PWD/RF_Receiver/cc1101.h
-- find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries" | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" | xargs cp -aR -t $PWD/RF_Receiver/
+- find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"
+  | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" | xargs cp -aR -t $PWD/RF_Receiver/
 - mkdir $PWD/release
 - arduino --pref "compiler.warning_level=all" --save-prefs
 - arduino --pref "build.path=$PWD/release" --save-prefs
 - chmod +x ./build.sh
 - chmod +x ./deploy.sh
-
-
 jobs:
   include:
-    - stage: deploy
-      script: 
-        - export BOARD=nano && export && RECEIVER=cc1101 && ./build.sh && ./deploy.sh
-
-    - stage: deploy
-      script: 
-        - export BOARD=nano && ./build.sh && ./deploy.sh
-        
-    - deploy:
-        skip_cleanup: true
-        provider: releases
-        api_key:
-           secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
-        file: '$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex'
-        on:
-          repo: RFD-FHEM/SIGNALDuino
-          tags: true
-          condition: "$TRAVIS_TAG =~ ^release.*$"
-          branch: dev-r33_cc1101
-
-  allow_failures:
-      # - env: RECEIVER=cc1101 BOARD=radino
-      # - env: RECEIVER=cc1101 BOARD=minicul
-
-
-script: 
-  - echo "running script"
-
+  - stage: deploy
+    script:
+    - export BOARD=nano && export && RECEIVER=cc1101 && ./build.sh && ./deploy.sh
+  - stage: deploy
+    script:
+    - export BOARD=nano && ./build.sh && ./deploy.sh
+  - deploy:
+      skip_cleanup: true
+      provider: releases
+      api_key:
+        secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
+      file: $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+      on:
+        repo: RFD-FHEM/SIGNALDuino
+        tags: true
+        condition: $TRAVIS_TAG =~ ^release.*$
+        branch: dev-r33_cc1101
+  allow_failures: 
+script:
+- echo "running script"
 after_success:
 - file $PWD/release/*
-
 notifications:
   email:
     on_success: change
