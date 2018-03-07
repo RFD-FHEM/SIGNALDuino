@@ -22,21 +22,18 @@ install:
 - arduino --pref "build.path=$PWD/release" --save-prefs
 - chmod +x ./build.sh
 - chmod +x ./deploy.sh
+
 jobs:
   include:
   - stage: deploy
     env:
       - BOARD=nano
       - RECEIVER=cc1101  
-    install:
-      - chmod +x ./build.sh
-	
     script:
- #     - export BOARD=nano && export RECEIVER=cc1101 
+      - chmod +x ./build.sh
     script:
       -  ./build.sh 
     deploy:
-      #- ./deploy.sh
       skip_cleanup: true
       provider: releases
       api_key:
@@ -51,8 +48,6 @@ jobs:
   - stage: deploy
     env:
       - BOARD=nano
-    install:
-      - chmod +x ./build.sh
     script:
       -  ./build.sh 
     deploy:
