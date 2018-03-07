@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-#if [ "$TRAVIS_TAG" =~ "^release.*$" OR "$TRAVIS_TAG" =~ "^R\d\.\d.*$" AND "$TRAVIC_BRANCH" = "dev-r33_cc1101"  ]
 if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BRANCH" = "dev-r33_cc1101" ]]
   then
     curl --location "https://github.com/tfausak/github-release/releases/download/1.1.4/github-release-1.1.4-$TRAVIS_OS_NAME.gz" > github-release.gz
@@ -13,7 +12,7 @@ if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BR
       --tag "$TRAVIS_TAG" \
       --file "$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex" \
       --name "SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}"
-  fi
+fi
   
 if [[ $TRAVIS_TAG =~ ^nightly.*$  ]]
   then
@@ -28,4 +27,4 @@ if [[ $TRAVIS_TAG =~ ^nightly.*$  ]]
       --file "$PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex" \
       --name "nightly-SIGNALDuino_${BOARD}${RECEIVER}${DATE}" \
       --tag "$TRAVIS_TAG" \
-  fi
+fi
