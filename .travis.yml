@@ -30,8 +30,6 @@ jobs:
       - BOARD=nano
       - RECEIVER=cc1101  
     script:
-      - chmod +x ./build.sh
-    script:
       -  ./build.sh 
     deploy:
       skip_cleanup: true
