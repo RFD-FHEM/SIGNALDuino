@@ -28,6 +28,13 @@ install:
 - chmod +x ./deploy.sh
 script:
 - ./build.sh
+before_deploy:
+  - git config --global user.email "builds@travis-ci.com"
+  - git config --global user.name "Travis CI"
+  - export GIT_TAG=´grep "#define PROGVERS" RF_Receiver/RF_Receiver.ino  | cut -d\" -f2´
+  - git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER"
+  - git push -q https://$GH_API_KEY:x-oauth-basic@github.com/RFD-FHEM/SIGNALDuino --tags
+  - ls -R
 
 deploy:
   #- ./deploy.sh
