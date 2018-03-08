@@ -38,42 +38,45 @@ deploy:
      #condition: $TRAVIS_TAG =~ ^release.*$
      #branch: dev-r33_cc1101
 
-jobs:
-  include:
-  - stage: deploy
-    env:
-      - BOARD=nano
-      - RECEIVER=cc1101  
-    script:
-      -  ./build.sh 
-    
-    - stage: deploy
-    env:
-      - BOARD=nano
-    script:
-      -  ./build.sh 
-
-     - stage: deploy
+jobs: 
+  include: 
+    - 
+      env: 
+        - BOARD=nano
+        - RECEIVER=cc1101
+      script: 
+        - ./build.sh
+      stage: deploy
+    - 
+      env: 
+        - BOARD=nano
+      script: 
+        - ./build.sh
+      stage: deploy
+    - 
      env:
       - BOARD=radino
       - RECEIVER=cc1101  
      script:
       -  ./build.sh  
+     stage: deploy
 
-     - stage: deploy
+    - 
+     stage: deploy
      env:
       - BOARD=minicul
       - RECEIVER=cc1101  
      script:
       -  ./build.sh  
 
-     - stage: deploy
+    -
+     stage: deploy
      env:
       - BOARD=promini
      script:
       -  ./build.sh  
-	  
- allow_failures: 
+
+allow_failures: 
 script:
 - echo "running script"
 after_success:
