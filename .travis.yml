@@ -49,7 +49,7 @@ deploy:
      prerelease: true
      #condition: "$TRAVIS_EVENT_TYPE = cron"
      #condition: $TRAVIS_TAG =~ ^release.*$
-     #branch: dev-r33_cc1101
+     branch: dev-r33_cc1101
 
 jobs: 
   include: 
