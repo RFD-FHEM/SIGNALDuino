@@ -33,8 +33,8 @@ before_deploy:
   - git config --global user.name "Travis CI"
   - export GIT_TAG=`grep "#define PROGVERS" $PWD/RF_Receiver/RF_Receiver.ino  | cut -d\" -f2`
   - git fetch --tags --force
-  - git rev-parse -q --verify "refs/tags/$GIT_TAG" && \
-    git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER" && \
+  - git rev-parse -q --verify "refs/tags/$GIT_TAG" && 
+    git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER" && 
     git push -q https://$GH_API_KEY:x-oauth-basic@github.com/RFD-FHEM/SIGNALDuino --tags
   - ls -R
 
