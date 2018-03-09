@@ -45,7 +45,7 @@ deploy:
   file: $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
   on:
      repo: RFD-FHEM/SIGNALDuino
-     tags: true
+     #tags: true
      prerelease: true
      #condition: "$TRAVIS_EVENT_TYPE = cron"
      #condition: $TRAVIS_TAG =~ ^release.*$
