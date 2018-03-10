@@ -580,7 +580,7 @@ void SignalDetectorClass::processMessage()
 #endif // DEBUGDECODE
 
 //#if DEBUGDECODE == 1 // todo kommentar entfernen
-//#if DEBUGDECODE == 1 // todo kommentar entfernen
+#if DEBUGDECODE == 1 // todo kommentar entfernen
 					SDC_WRITE(MSG_START);
 					SDC_PRINT("DMC");
 					SDC_WRITE(SERIAL_DELIMITER);
@@ -613,7 +613,7 @@ void SignalDetectorClass::processMessage()
 					}
 
 					SDC_PRINTLN(MSG_END);
-//#endif
+#endif
 					if (mcdecoder.doDecode())
 					{
 						SDC_PRINT(MSG_START);
