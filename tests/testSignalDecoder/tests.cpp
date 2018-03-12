@@ -316,17 +316,22 @@ namespace arduino { namespace test
 
 		  ooDecode.reset();
 		  mcdecoder.reset();
-		  mcdecoder.minbitlen = 7;
+		  mcdecoder.minbitlen = 7;               
 		  std::string dstr("MU;P0=-300;P1=300;P2=-600;P3=600;D=10101010323010;"); //00001011       1 1 1 1 0 1 00
 		  bool state = import_sigdata(&dstr);                                                    
 
 	 	
-		  ASSERT_FALSE(mcdecoder.isManchester());
+		  //ASSERT_FALSE(mcdecoder.isManchester());
 		  ooDecode.calcHisto();
 		  ooDecode.printOut();
-		  ASSERT_TRUE(mcdecoder.isManchester());
+		  //ASSERT_TRUE(mcdecoder.isManchester());
 		  ASSERT_FALSE(state);
-  
+		  mcdecoder.longlow = 3;
+		  mcdecoder.longhigh = 2;
+		  mcdecoder.shortlow = 1;
+		  mcdecoder.shorthigh = 0;
+		  mcdecoder.clock = 299;
+		  
 		  bool result = mcdecoder.doDecode();
 		 // ASSERT_TRUE(result);
 		 // ASSERT_TRUE(mcdecoder.mc_start_found);
@@ -1239,6 +1244,41 @@ namespace arduino { namespace test
 	TEST_F(Tests, mcInvalidMC4)
 	{
 		std::string dstr = "DMC;P0=-402;P1=-9280;P2=208;P3=-603;P4=382;P7=585;D=2343232373737340404040737340407340407373737373404040404040404040404040404073737373407373404041;";
+		ooDecode.mcdecoder = &mcdecoder;
+
+		state = import_sigdata(&dstr);
+		//std::cout << outputStr;
+
+		ooDecode.calcHisto();
+		ooDecode.printOut();
+		ASSERT_FALSE(mcdecoder.isManchester());
+
+		ASSERT_TRUE(mcdecoder.doDecode());
+		//ASSERT_FALSE(mcdecoder.isManchester());
+		ASSERT_FALSE(state);
+
+	}
+
+	TEST_F(Tests, mcInvalidMC5)
+	{
+		std::string dstr = "DMC;P0=-402;P1=228;P3=394;P4=575;P5=-615;P6=-9296;D=010103040404040304545303045454530303030454530304530304530303030303045304530303030303030303030303030453030304536;";
+		ooDecode.mcdecoder = &mcdecoder;
+
+		state = import_sigdata(&dstr);
+		//std::cout << outputStr;
+
+		ooDecode.calcHisto();
+		ooDecode.printOut();
+		ASSERT_FALSE(mcdecoder.isManchester());
+
+		ASSERT_TRUE(mcdecoder.doDecode());
+		//ASSERT_FALSE(mcdecoder.isManchester());
+		ASSERT_FALSE(state);
+
+	}
+	TEST_F(Tests, mcInvalidMC6)
+	{
+		std::string dstr = "DMC;P0=581;P1=-398;P2=-9512;P3=248;P4=-600;P5=385;P6=188;D=23454646404040451515151040451510451510451515151515104045151515151515151515151515151045151045152;";
 		ooDecode.mcdecoder = &mcdecoder;
 
 		state = import_sigdata(&dstr);
