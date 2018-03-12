@@ -1807,6 +1807,11 @@ const bool ManchesterpatternDecoder::isManchester()
 						else {
 							mc_start_found = false;
 							mc_sync = false;
+							for (uint8_t a = 0; a < 4; a++)
+							{
+								sequence_even[a] = sequence_odd[a] = -1;
+							}
+
 						}
 					}
 					else {

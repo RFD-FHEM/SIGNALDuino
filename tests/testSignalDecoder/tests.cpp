@@ -1236,6 +1236,23 @@ namespace arduino { namespace test
 
 	}
 
+	TEST_F(Tests, mcInvalidMC4)
+	{
+		std::string dstr = "DMC;P0=-402;P1=-9280;P2=208;P3=-603;P4=382;P7=585;D=2343232373737340404040737340407340407373737373404040404040404040404040404073737373407373404041;";
+		ooDecode.mcdecoder = &mcdecoder;
+
+		state = import_sigdata(&dstr);
+		//std::cout << outputStr;
+
+		ooDecode.calcHisto();
+		ooDecode.printOut();
+		ASSERT_FALSE(mcdecoder.isManchester());
+
+		ASSERT_TRUE(mcdecoder.doDecode());
+		//ASSERT_FALSE(mcdecoder.isManchester());
+		ASSERT_FALSE(state);
+
+	}
 
   //--------------------------------------------------------------------------------------------------
   /*
