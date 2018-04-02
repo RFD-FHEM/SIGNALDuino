@@ -108,7 +108,7 @@ SignalDetectorClass musterDec;
 #include "cc1101.h"
 
 #define pulseMin  90
-#define maxCmdString 350  // 250
+#define maxCmdString 300 // 250
 #define maxSendPattern 8
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
@@ -842,6 +842,7 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_ccFactoryReset) {
      if (cmdstring.charAt(1) == 'C') {
          initEEPROMconfig();
+	 callGetFunctions();
      } else if (hasCC1101) {
          cc1101::ccFactoryReset();
          cc1101::CCinit();
@@ -1165,7 +1166,6 @@ void initEEPROMconfig(void)
 	EEPROM.write(CSetAddr[2], CSetDef[2]);	// mscnt
 	EEPROM.write(CSetAddr[3], CSetDef[3]);	// muthresh high
 	EEPROM.write(CSetAddr[4], CSetDef[4]);	// muthresh low
-	callGetFunctions();
 	MSG_PRINTLN(F("Init eeprom to defaults"));
 }
 
