@@ -1035,7 +1035,7 @@ bool SignalDetectorClass::getSync()
 	if (state == clockfound)		// we need a clock to find this type of sync
 	{					// clock wurde bereits durch getclock bestimmt
 		
-		const uint8_t syncLenMax = 100; 		      //  wenn in den ersten ca 100 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
+		const uint8_t syncLenMax = 125; 		      //  wenn in den ersten ca 125 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
 		const uint8_t max_search = sd_min(syncLenMax, messageLen - minMessageLen);
 
 		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
