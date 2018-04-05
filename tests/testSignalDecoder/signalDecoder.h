@@ -2,7 +2,7 @@
 *   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
-*   2015-2017  S.Butzek
+*   2015-2018  S.Butzek
 
 *   This library contains different classes to perform detecting of digital signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -32,21 +32,25 @@
 
 #ifndef _SIGNALDECODER_h
 #define _SIGNALDECODER_h
-#define NOSTRING
+
+
+#ifdef WIN32
+	#define ARDUINO 101
+	#define NOSTRING
+#endif
 
 #ifndef DEC
 #define DEC 10
 #endif
 
+
+
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
 	//#include "WProgram.h"
-	
 #endif
-#define DEBUG 1
-#include "arduino.h"
-
+//#define DEBUG 1
 
 
 #ifndef WIFI_ESP
@@ -63,6 +67,9 @@ extern WiFiClient serverClient;
 #define SDC_WRITE(...) {  write(__VA_ARGS__); }
 #define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
 
+#ifndef F 
+#define F(V1) V1
+#endif
 
 #include "bitstore.h"
 #include "FastDelegate.h"
@@ -79,23 +86,22 @@ extern WiFiClient serverClient;
 #define MSG_START char(0x2)		// this is a non printable Char
 #define MSG_END   char(0x3)			// this is a non printable Char
 
-#define DEBUGDETECT 3
+//#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
-#define DEBUGDECODE 1
+//#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
-
-
-
+class ManchesterpatternDecoder;
+class SignalDetectorClass;
 
 class SignalDetectorClass
 {
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) {
-																		 buffer[0] = 0; reset(); mcMinBitLen = 17;
+	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
+																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MredEnabled = 1;      // 1 = compress printmsg 
 																		 mcdecoder = nullptr;
@@ -179,12 +185,11 @@ public:
 
 };
 
+
 class ManchesterpatternDecoder
 {
 public:
-	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) {
-		pdec = ref_dec; reset();
-	};
+	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) { pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
 	const bool doDecode();
 	void setMinBitLen(const uint8_t len);
@@ -223,4 +228,5 @@ public:
 	const bool isShort(const uint8_t pulse_idx);
 	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 };
+
 #endif

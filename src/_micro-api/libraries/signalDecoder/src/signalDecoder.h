@@ -2,7 +2,7 @@
 *   Pattern Decoder Library V3
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
-*   2015-2017  S.Butzek
+*   2015-2018  S.Butzek
 
 *   This library contains different classes to perform detecting of digital signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -34,6 +34,17 @@
 #define _SIGNALDECODER_h
 
 
+#ifdef WIN32
+	#define ARDUINO 101
+	#define NOSTRING
+#endif
+
+#ifndef DEC
+#define DEC 10
+#endif
+
+
+
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
 #else
@@ -56,6 +67,9 @@ extern WiFiClient serverClient;
 #define SDC_WRITE(...) {  write(__VA_ARGS__); }
 #define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
 
+#ifndef F 
+#define F(V1) V1
+#endif
 
 #include "bitstore.h"
 #include "FastDelegate.h"
@@ -76,9 +90,10 @@ extern WiFiClient serverClient;
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
 
-enum status { searching, clockfound, syncfound, detecting,  mcdecoding };
+enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
-
+class ManchesterpatternDecoder;
+class SignalDetectorClass;
 
 class SignalDetectorClass
 {
@@ -89,7 +104,8 @@ public:
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MredEnabled = 1;      // 1 = compress printmsg 
-																	   };
+																		 mcdecoder = nullptr;
+																		};
 
 	void reset();
 	bool decode(const int* pulse);
@@ -112,6 +128,7 @@ public:
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
+	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
 
 	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
 	uint8_t mstart;						  // Holds starting point for message
@@ -136,7 +153,7 @@ public:
 											//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
-	uint8_t rssiValue;						// Holds the RSSI value retrieved via a rssi callback
+	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
 	FuncRetuint8t _rssiCallback=NULL;		// Holds the pointer to a callback Function
 	Func2pRetuint8t _streamCallback=NULL;	// Holds the pointer to a callback Function
 	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
@@ -168,6 +185,7 @@ public:
 
 };
 
+
 class ManchesterpatternDecoder
 {
 public:
@@ -175,11 +193,17 @@ public:
 	~ManchesterpatternDecoder();
 	const bool doDecode();
 	void setMinBitLen(const uint8_t len);
+#ifdef NOSTRING
+	const char* getMessageHexStr();
+	const char* getMessagePulseStr();
+	const char* getMessageClockStr();
+	const char* getMessageLenStr();
+#else
 	void getMessageHexStr(String *message);
 	void getMessagePulseStr(String *str);
 	void getMessageClockStr(String* str);
 	void getMessageLenStr(String* str);
-
+#endif
 	void printMessageHexStr();
 	void printMessagePulseStr();
 
@@ -204,6 +228,5 @@ public:
 	const bool isShort(const uint8_t pulse_idx);
 	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 };
-
 
 #endif
