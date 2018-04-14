@@ -83,7 +83,7 @@
 
 
 #define BAUDRATE               57600
-#define FIFO_LENGTH            100      // 50
+#define FIFO_LENGTH            120      // 50
 
 //#define WATCHDOG	1 // Der Watchdog ist in der Entwicklungs und Testphase deaktiviert. Es muss auch ohne Watchdog stabil funktionieren.
 //#define DEBUGSENDCMD  1
