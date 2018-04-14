@@ -1232,7 +1232,7 @@ bool SignalDetectorClass::getSync()
 	if (state == clockfound)		// we need a clock to find this type of sync
 	{					// clock wurde bereits durch getclock bestimmt
 		
-		uint8_t syncLenMax = 100; 		      //  wenn in den ersten ca 100 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
+		uint8_t syncLenMax = 120; 		      //  wenn in den ersten ca 120 Pulsen kein Sync gefunden wird, dann ist es kein MS Signal
 				
 		if (syncLenMax > messageLen - minMessageLen)  // der Abstand vom sync zum Ende sollte mindestens minMessageLen sein
 		{
@@ -1261,12 +1261,12 @@ bool SignalDetectorClass::getSync()
 				(syncabs > syncMinFact*pattern[clock]) &&
 				// (syncabs < maxPulse) &&
 				//	 (validSequence(&pattern[clock],&pattern[p])) &&
-				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
-				//(histo[p] < 8) && (histo[p] > 1)
-
-				//(syncMinFact*pattern[clock] <= syncabs)
+				(histo[p] < messageLen*0.08) && (histo[p] > 1)	// histo[p] => 1)
 				)
 			{
+				// if (histo[p] == 1 && messageLen == maxMsgSize)	// ist evtl notwendig, wenn histo[p] => 1
+				// continue;
+				
 				//if ((syncMinFact* (pattern[clock]) <= -1*pattern[p])) {//n>9 => langer Syncpulse (als 10*int16 darstellbar
 				// Pruefe ob Sync und Clock valide sein koennen
 				//	if (histo[p] > 6) continue;    // Maximal 6 Sync Pulse  Todo: 6 Durch Formel relativ zu messageLen ersetzen
