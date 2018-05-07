@@ -59,7 +59,7 @@
 
 
 
-#define PROGVERS               "3.3.1-RC5"
+#define PROGVERS               "3.3.1-RC6"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
@@ -265,28 +265,30 @@ void setup() {
 }
 
 void cronjob() {
-	 cli();
-	 const unsigned long  duration = micros() - lastTime;
-	 Timer1.setPeriod(32001);
-	 if (duration >= maxPulse) { //Auf Maximalwert pr�fen.
-		 int sDuration = maxPulse;
-		 if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
-			 sDuration = -sDuration;
-		 }
-		 FiFo.enqueue(sDuration);
-		 lastTime = micros();
+	static uint8_t cnt = 0;
+	cli();
+	const unsigned long  duration = micros() - lastTime;
+
+	Timer1.setPeriod(32001);
+	
+	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
+		int sDuration = maxPulse;
+		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
+			sDuration = -sDuration;
+		}
+		FiFo.enqueue(sDuration);
+		lastTime = micros();
 	 } else if (duration > 10000) {
-		 Timer1.setPeriod(maxPulse-duration+16);
+		Timer1.setPeriod(maxPulse-duration+16);
 	 }
 	 digitalWrite(PIN_LED, blinkLED);
 	 blinkLED = false;
-	/*
-	 if (FiFo.count() >19)
-	 {
-		 DBG_PRINT("SF:"); DBG_PRINTLN(FiFo.count());
-	 }
-	 */
+
 	 sei();
+	
+	 // Infrequent time uncritical jobs (~ every 2 hours)
+	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+		 getUptime();
 }
 
 
@@ -923,10 +925,9 @@ inline unsigned long getUptime()
 	unsigned long seconds = now / 1000;
 	if (now < last) {
 		times_rolled++;
-		seconds += (( long(4294967295) / 1000 )*times_rolled);
 	}
 	last = now;
-	return seconds;
+	return (0xFFFFFFFF / 1000) * times_rolled + (now / 1000);
 }
 
 inline void getPing()
