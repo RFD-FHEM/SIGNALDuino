@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2b-dev"
+#define PROGVERS               "3.3.2-rc1"
 #define VERSION_1               0x33
 #define VERSION_2               0x2d
 
@@ -271,10 +271,6 @@ void setup() {
 	Timer1.initialize(31*1000); //Interrupt wird jede n Millisekunden ausgeloest
 	Timer1.attachInterrupt(cronjob);
 
-
-	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
-	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
-	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
 	cmdstring.reserve(maxCmdString);
 
         if (!hasCC1101 || cc1101::regCheck()) {
@@ -291,7 +287,8 @@ void setup() {
 }
 
 void cronjob() {
-
+	static uint16_t cnt0 = 0;
+	static uint8_t cnt1 = 0;
 	 const unsigned long  duration = micros() - lastTime;
 	 
 	 if (duration > maxPulse) { //Auf Maximalwert pruefen.
@@ -305,14 +302,13 @@ void cronjob() {
 	
 
 	 }
+	if (cnt0++ == 0) {
+		if (cnt1++ == 0) {
+			getUptime();
+		}
+	}
 	 digitalWrite(PIN_LED, blinkLED);
 	 blinkLED = false;
-	/*
-	 if (FiFo.count() >19)
-	 {
-		 DBG_PRINT("SF:"); DBG_PRINTLN(FiFo.count());
-	 }
-	 */
 
 }
 
@@ -1076,16 +1072,14 @@ int freeRam () {
 inline unsigned long getUptime()
 {
 	unsigned long now = millis();
-	static uint16_t times_rolled = 0;
+	static uint8_t times_rolled = 0;
 	static unsigned long last = 0;
 	// If this run is less than the last the counter rolled
-	unsigned long seconds = now / 1000;
 	if (now < last) {
 		times_rolled++;
-		seconds += (( long(4294967295) / 1000 )*times_rolled);
 	}
 	last = now;
-	return seconds;
+	return (0xFFFFFFFF / 1000) * times_rolled + (now / 1000);
 }
 
 inline void getPing()
