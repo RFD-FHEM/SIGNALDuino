@@ -59,8 +59,8 @@ namespace cc1101 {
 	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
 	#define CC1100_SFTX     0x3B  // Flush the TX FIFO buffer.
 
-	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return 255; miso_count--; }      // wait until SPI MISO line goes low 
-	#define waitV_Miso()      while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
+	#define wait_Miso()       while(isHigh(misoPin) ) //{ static uint8_t miso_count=255;delay(1); if(miso_count==0) return 255; miso_count--; }      // wait until SPI MISO line goes low 
+	#define waitV_Miso()      while(isHigh(misoPin) ) //{ static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
 	
