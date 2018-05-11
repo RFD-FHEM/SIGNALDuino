@@ -34,7 +34,7 @@
 // Config flags for compiling correct options / boards Define only one
 //#define ARDUINO_ATMEGA328P_MINICUL 1
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-#define OTHER_BOARD_WITH_CC1101  1
+//#define OTHER_BOARD_WITH_CC1101  1
 
 //#define CMP_MEMDBG 1
 
