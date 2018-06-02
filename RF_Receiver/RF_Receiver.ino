@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2-rc1"
+#define PROGVERS               "3.3.2-rc2"
 #define VERSION_1               0x33
 #define VERSION_2               0x2d
 
@@ -531,7 +531,6 @@ void send_cmd()
 	s_sendcmd command[maxSendCmd];
 
 	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
-	uint8_t ccReg[4];
 	uint8_t val;
 
 	disableReceive();
@@ -620,7 +619,6 @@ void send_cmd()
 				//MSG_PRINTLN("write new ccreg  ");
 				for (uint8_t i=0;i<ccParamAnz;i++)
 				{
-					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
 					hex = (uint8_t)cmdstring.charAt(startdata + i*2);
 					val = cc1101::hex2int(hex) * 16;
 					hex = (uint8_t)cmdstring.charAt(startdata+1 + i*2);
@@ -673,7 +671,7 @@ void send_cmd()
 			MSG_PRINT(F("ccreg write back "));
 			for (uint8_t i=0;i<ccParamAnz;i++)
 			{
-				val = ccReg[i];
+				val = EEPROM.read(0x0f + i);
 				printHex2(val);
 				cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
 			}
