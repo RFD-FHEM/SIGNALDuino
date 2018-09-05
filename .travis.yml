@@ -55,7 +55,6 @@ deploy:
      branch: dev-r33_cc1101
 
 jobs: 
-jobs: 
   include: 
     - 
       env: 
