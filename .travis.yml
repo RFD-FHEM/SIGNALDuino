@@ -82,8 +82,8 @@ jobs:
      env:
       - BOARD=promini
     -
-    stage: unittest
-    script: 
+      stage: unittest
+      script: 
            - cd $TRAVIS_BUILD_DIR/ci/travis
              ./install_googletest.sh
            - cd $TRAVIS_BUILD_DIR/ci/travis
