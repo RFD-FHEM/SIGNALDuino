@@ -92,10 +92,9 @@ jobs:
              ./build_library.sh   
            - cd $TRAVIS_BUILD_DIR/tests/ci
              ./build_signalDecoderTests.sh
-           - cd $TRAVIS_BUILD_DIR/install/build/bin  
+           - cd $TRAVIS_BUILD_DIR/install
              ls -l
-             ./win32arduino_unittest 
-           - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/build/bin/release
+           - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/build
              ls -l
              ./TestProject 
 allow_failures: 
