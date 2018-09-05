@@ -48,12 +48,13 @@ deploy:
   file: $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
   on:
      repo: RFD-FHEM/SIGNALDuino
-     #tags: true
+     tags: true
      prerelease: true
      #condition: "$TRAVIS_EVENT_TYPE = cron"
      #condition: $TRAVIS_TAG =~ ^release.*$
      branch: dev-r33_cc1101
 
+jobs: 
 jobs: 
   include: 
     - 
@@ -82,6 +83,20 @@ jobs:
      env:
       - BOARD=promini
 
+    -
+    stage: unittest
+    script: 
+           - cd $TRAVIS_BUILD_DIR/ci/travis;
+             ./install_googletest.sh;
+           - cd $TRAVIS_BUILD_DIR/ci/travis;
+             ./install_rapidassist.sh;
+           - cd $TRAVIS_BUILD_DIR/ci/travis;
+             ./build_library.sh;
+           - cd $TRAVIS_BUILD_DIR/ci/travis;
+             ./build_buttonlibrary.sh;
+           - cd $TRAVIS_BUILD_DIR/build/bin;
+             ./win32arduino_unittest || true; #do not fail build even if a test fails.
+             ./TestProject || true;
 allow_failures: 
 after_success:
 - file $PWD/release/*
