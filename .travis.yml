@@ -84,16 +84,15 @@ jobs:
     -
       stage: unittest
       script: 
-           - cd $TRAVIS_BUILD_DIR/ci/travis
+           - cd $TRAVIS_BUILD_DIR/test/ci
              ./install_googletest.sh
-           - cd $TRAVIS_BUILD_DIR/ci/travis
+           - cd $TRAVIS_BUILD_DIR/test/ci
              ./install_rapidassist.sh
-           - cd $TRAVIS_BUILD_DIR/ci/travis
+           - cd $TRAVIS_BUILD_DIR/test/ci
              ./build_library.sh
-           - cd $TRAVIS_BUILD_DIR/ci/travis
-             ./build_buttonlibrary.sh
-           - cd $TRAVIS_BUILD_DIR/build/bin
+           - cd $TRAVIS_BUILD_DIR/test/ci/build/bin/release
              ./win32arduino_unittest || true
+           - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/build/bin/release
              ./TestProject || true
 allow_failures: 
 after_success:
@@ -102,3 +101,6 @@ notifications:
   email:
     on_success: change
     on_failure: change
+stages:
+  - unittest
+  - deploy
