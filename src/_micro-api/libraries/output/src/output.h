@@ -1,4 +1,7 @@
 // output.h
+#ifndef _OUTPUT_h
+#define _OUTPUT_h
+
 
 #ifdef ARDUINO_RADINOCC1101
 #define portOfPin(P) \
@@ -31,8 +34,7 @@
 
 //#define DEBUG
 
-#ifndef _OUTPUT_h
-#define _OUTPUT_h
+
 
 #if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
