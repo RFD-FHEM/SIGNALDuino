@@ -1,4 +1,5 @@
-language: c
+language: cpp
+sudo: required 
 env:
   matrix: 
     env: 
@@ -76,26 +77,24 @@ jobs:
      env:
       - BOARD=minicul
       - RECEIVER=cc1101  
-
     -
      stage: deploy
      env:
       - BOARD=promini
-
     -
     stage: unittest
     script: 
-           - cd $TRAVIS_BUILD_DIR/ci/travis;
-             ./install_googletest.sh;
-           - cd $TRAVIS_BUILD_DIR/ci/travis;
-             ./install_rapidassist.sh;
-           - cd $TRAVIS_BUILD_DIR/ci/travis;
-             ./build_library.sh;
-           - cd $TRAVIS_BUILD_DIR/ci/travis;
-             ./build_buttonlibrary.sh;
-           - cd $TRAVIS_BUILD_DIR/build/bin;
-             ./win32arduino_unittest || true; #do not fail build even if a test fails.
-             ./TestProject || true;
+           - cd $TRAVIS_BUILD_DIR/ci/travis
+             ./install_googletest.sh
+           - cd $TRAVIS_BUILD_DIR/ci/travis
+             ./install_rapidassist.sh
+           - cd $TRAVIS_BUILD_DIR/ci/travis
+             ./build_library.sh
+           - cd $TRAVIS_BUILD_DIR/ci/travis
+             ./build_buttonlibrary.sh
+           - cd $TRAVIS_BUILD_DIR/build/bin
+             ./win32arduino_unittest || true
+             ./TestProject || true
 allow_failures: 
 after_success:
 - file $PWD/release/*
