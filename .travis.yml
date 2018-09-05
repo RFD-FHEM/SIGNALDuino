@@ -84,13 +84,13 @@ jobs:
     -
       stage: unittest
       script: 
-           - cd $TRAVIS_BUILD_DIR/test/ci
+           - cd $TRAVIS_BUILD_DIR/tests/ci
              ./install_googletest.sh
-           - cd $TRAVIS_BUILD_DIR/test/ci
+           - cd $TRAVIS_BUILD_DIR/tests/ci
              ./install_rapidassist.sh
-           - cd $TRAVIS_BUILD_DIR/test/ci
+           - cd $TRAVIS_BUILD_DIR/tests/ci
              ./build_library.sh
-           - cd $TRAVIS_BUILD_DIR/test/ci/build/bin/release
+           - cd $TRAVIS_BUILD_DIR/tests/ci/build/bin/release
              ./win32arduino_unittest || true
            - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/build/bin/release
              ./TestProject || true
