@@ -28,6 +28,9 @@ echo ===========================================================================
 cmake --build .
 echo
 
+ls -l
+pwd
+
 # Delete all temporary environment variable created
 unset GTEST_ROOT
 unset rapidassist_DIR

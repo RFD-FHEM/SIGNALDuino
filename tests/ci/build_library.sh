@@ -32,6 +32,9 @@ echo ===========================================================================
 make install
 echo
 
+pwd
+ls -l
+
 # Delete all temporary environment variable created
 unset GTEST_ROOT
 unset rapidassist_DIR
