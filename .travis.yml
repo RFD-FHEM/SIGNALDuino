@@ -89,8 +89,10 @@ jobs:
            - cd $TRAVIS_BUILD_DIR/tests/ci
              ./install_rapidassist.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
-             ./build_library.sh
-           - cd TRAVIS_BUILD_DIR/install/build/bin  
+             ./build_library.sh   
+           - cd $TRAVIS_BUILD_DIR/tests/ci
+             ./build_signalDecoderTests.sh
+           - cd $TRAVIS_BUILD_DIR/install/build/bin  
              ls -l
              ./win32arduino_unittest 
            - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/build/bin/release
