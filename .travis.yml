@@ -90,7 +90,7 @@ jobs:
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./install_rapidassist.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
-           - ./build_library.sh   
+           - ./build_win32arduino.sh.sh   
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./build_signalDecoderTests.sh
            - cd $TRAVIS_BUILD_DIR/
