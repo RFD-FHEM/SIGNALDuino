@@ -95,7 +95,7 @@ jobs:
            - ./build_signalDecoderTests.sh
            - cd $TRAVIS_BUILD_DIR/
            - ls -l
-           - cd $TRAVIS_BUILD_DIR/tests/
+           - cd $TRAVIS_BUILD_DIR/tests/build
            - ls -l
            - ./TestProject 
 allow_failures: 
