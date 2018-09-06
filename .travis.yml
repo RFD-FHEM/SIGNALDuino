@@ -85,18 +85,18 @@ jobs:
       stage: unittest
       script: 
            - cd $TRAVIS_BUILD_DIR/tests/ci
-             ./install_googletest.sh
+           - ./install_googletest.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
-             ./install_rapidassist.sh
+           - ./install_rapidassist.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
-             ./build_library.sh   
+           - ./build_library.sh   
            - cd $TRAVIS_BUILD_DIR/tests/ci
-             ./build_signalDecoderTests.sh
+           - ./build_signalDecoderTests.sh
            - cd $TRAVIS_BUILD_DIR/
-             ls -l
+           - ls -l
            - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/
-             ls -l
-             ./TestProject 
+           - ls -l
+           - ./TestProject 
 allow_failures: 
 after_success:
 - file $PWD/release/*
