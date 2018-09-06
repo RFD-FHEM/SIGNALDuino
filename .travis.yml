@@ -84,6 +84,7 @@ jobs:
     -
       stage: unittest
       script: 
+           - chmod +x $TRAVIS_BUILD_DIR/tests/ci/*.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./install_googletest.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
@@ -94,7 +95,7 @@ jobs:
            - ./build_signalDecoderTests.sh
            - cd $TRAVIS_BUILD_DIR/
            - ls -l
-           - cd $TRAVIS_BUILD_DIR/tests/testSignalDecoder/
+           - cd $TRAVIS_BUILD_DIR/tests/
            - ls -l
            - ./TestProject 
 allow_failures: 
