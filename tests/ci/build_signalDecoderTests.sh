@@ -10,7 +10,7 @@ fi
 export GTEST_ROOT=$TRAVIS_BUILD_DIR/third_parties/googletest/install
 export rapidassist_DIR=$TRAVIS_BUILD_DIR/third_parties/RapidAssist/install
 export win32arduino_DIR=$TRAVIS_BUILD_DIR/install
-export TEST_PROJECT_DIR=$TRAVIS_BUILD_DIR/tests/testSignalDecoder/
+export TEST_PROJECT_DIR=$TRAVIS_BUILD_DIR/tests
 
 
 
