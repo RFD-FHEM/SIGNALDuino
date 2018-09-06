@@ -7,9 +7,8 @@ if [ "$TRAVIS_BUILD_DIR" = "" ]; then
   exit 1;
 fi
 
-export GTEST_ROOT=$TRAVIS_BUILD_DIR/third_parties/googletest/install
-export rapidassist_DIR=$TRAVIS_BUILD_DIR/third_parties/RapidAssist/install
-echo rapidassist_DIR=$rapidassist_DIR
+export rapidassist_DIR=$CMAKE_PREFIX_PATH/RapidAssist
+#echo rapidassist_DIR=$rapidassist_DIR
 
 echo ============================================================================
 echo Cloning RapidAssist into $TRAVIS_BUILD_DIR/third_parties/RapidAssist
