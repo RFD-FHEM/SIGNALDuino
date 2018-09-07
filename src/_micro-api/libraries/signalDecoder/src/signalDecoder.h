@@ -38,6 +38,9 @@
 	#define ARDUINO 101
 	#define NOSTRING
 #endif
+#if defined(__linux__)
+	include <stdlib.h>
+#endif
 
 #ifndef DEC
 #define DEC 10
