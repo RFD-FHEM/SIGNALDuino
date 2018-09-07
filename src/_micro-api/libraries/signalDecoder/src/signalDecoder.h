@@ -34,7 +34,7 @@
 #define _SIGNALDECODER_h
 
 
-#ifdef WIN32
+#if defined(WIN32) || defined(__linux__)
 	#define ARDUINO 101
 	#define NOSTRING
 #endif

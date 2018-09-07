@@ -9,7 +9,7 @@ fi
 
 #export rapidassist_DIR=$TRAVIS_BUILD_DIR/third_parties/RapidAssist/install
 #echo rapidassist_DIR=$rapidassist_DIR
-#export INSTALL_LOCATION=$TRAVIS_BUILD_DIR/install
+export WIN32ARDUINO_INSTALL_DIR=$CMAKE_PREFIX_PATH/win32arduino
 
 echo ============================================================================
 echo Generating...
@@ -17,7 +17,7 @@ echo ===========================================================================
 cd $TRAVIS_BUILD_DIR/tests/win32arduino
 mkdir -p build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX=$INSTALL_LOCATION -DWIN32ARDUINO_BUILD_TEST=ON -DWIN32ARDUINO_BUILD_SAMPLES=ON ..
+cmake -DCMAKE_INSTALL_PREFIX=$WIN32ARDUINO_INSTALL_DIR -DWIN32ARDUINO_BUILD_TEST=ON -DWIN32ARDUINO_BUILD_SAMPLES=ON ..
 
 echo ============================================================================
 echo Compiling...

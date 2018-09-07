@@ -10,7 +10,6 @@ fi
 export TEST_PROJECT_DIR=$TRAVIS_BUILD_DIR/tests
 
 
-
 echo ============================================================================
 echo Generating...
 echo ============================================================================
@@ -29,7 +28,7 @@ ls -l
 pwd
 
 # Delete all temporary environment variable created
-unset GTEST_ROOT
-unset rapidassist_DIR
-unset win32arduino_DIR
-unset LIBRARY_TEMP_DIR
+#unset GTEST_ROOT
+#unset rapidassist_DIR
+#unset win32arduino_DIR
+#unset LIBRARY_TEMP_DIR

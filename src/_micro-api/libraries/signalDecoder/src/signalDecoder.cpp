@@ -37,7 +37,7 @@
 #define sd_max(a,b) ((a)>(b)?(a):(b))
 
 
-#ifdef WIN32
+#if defined(WIN32) || defined(__linux__)
 	#define ARDUINO 101
 	#define NOSTRING
 #endif

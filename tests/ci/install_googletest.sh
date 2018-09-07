@@ -6,7 +6,7 @@ if [ "$TRAVIS_BUILD_DIR" = "" ]; then
   echo "Please define 'TRAVIS_BUILD_DIR' environment variable.";
   exit 1;
 fi
-
+export GOOGLETEST_INSTALL_DIR=$CMAKE_PREFIX_PATH/googletest
 echo ============================================================================
 echo Cloning googletest into $TRAVIS_BUILD_DIR/tests/googletest
 echo ============================================================================
@@ -26,8 +26,7 @@ echo Compiling...
 echo ============================================================================
 mkdir -p build
 cd build
-#cmake -DCMAKE_INSTALL_PREFIX=$GTEST_ROOT -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF ..
-cmake -DBUILD_GMOCK=OFF -DCMAKE_INSTALL_PREFIX=$GTEST_ROOT -DCMAKE_BUILD_TYPE=Release  -Dgtest_force_shared_crt=ON  ..
+cmake -DBUILD_GMOCK=OFF -DCMAKE_INSTALL_PREFIX=$GOOGLETEST_INSTALL_DIR -DCMAKE_BUILD_TYPE=Release  -Dgtest_force_shared_crt=ON  ..
 
 cmake --build .
 echo

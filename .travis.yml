@@ -84,6 +84,7 @@ jobs:
     -
       stage: unittest
       script: 
+           - export CMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/tests/install
            - chmod +x $TRAVIS_BUILD_DIR/tests/ci/*.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./install_googletest.sh
