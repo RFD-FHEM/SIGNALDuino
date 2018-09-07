@@ -88,10 +88,11 @@ jobs:
            - chmod +x $TRAVIS_BUILD_DIR/tests/ci/*.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./install_googletest.sh
+           - export GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./install_rapidassist.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
-           - ./build_win32arduino.sh.sh   
+           - ./build_win32arduino.sh
            - cd $TRAVIS_BUILD_DIR/tests/ci
            - ./build_signalDecoderTests.sh
            - cd $TRAVIS_BUILD_DIR/
