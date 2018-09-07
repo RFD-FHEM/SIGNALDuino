@@ -53,7 +53,7 @@
 #undef max
 #undef min
 
-#include "Tests.h"
+#include "tests.h"
 #include <string>
 #include "arduino.h"
 #if defined(GTEST_OS_WINDOWS)

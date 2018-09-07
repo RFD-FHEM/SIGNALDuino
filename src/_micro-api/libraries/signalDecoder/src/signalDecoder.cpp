@@ -482,7 +482,8 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t i = mstart; i <= mend; i++)
 					{
-						SDC_PRINT(itoa(message[i], buf, 10));
+						sprintf(buf, "%d", message[i]);
+						SDC_PRINT(buf);
 					}
 					/*
 					SDC_PRINT(SERIAL_DELIMITER);
@@ -741,9 +742,11 @@ void SignalDetectorClass::processMessage()
 
 					}
 					SDC_PRINT("D=");
-					for (uint8_t i = 0; i < messageLen; ++i)
+
+					for (uint8_t i = mstart; i <= mend; i++)
 					{
-						SDC_PRINT(itoa(message[i], buf, 10));
+						sprintf(buf, "%d", message[i]);
+						SDC_PRINT(buf);
 					}
 					//String postamble;
 					/*

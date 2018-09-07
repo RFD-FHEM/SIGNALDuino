@@ -39,7 +39,7 @@
 	#define NOSTRING
 #endif
 #if defined(__linux__)
-	include <stdlib.h>
+	#include <stdlib.h>
 #endif
 
 #ifndef DEC
