@@ -90,7 +90,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 }
 
 
-inline void SignalDetectorClass::addData(const int8_t value)
+void SignalDetectorClass::addData(const int8_t value)
 {
 	//message += value;
 	/*if (message.valcount >= 254)
