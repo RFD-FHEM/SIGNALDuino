@@ -99,7 +99,7 @@ jobs:
            - ls -l
            - cd $TRAVIS_BUILD_DIR/tests/build
            - ls -l
-           - ./TestProject 
+           - ./bin/TestProject 
 allow_failures: 
 after_success:
 - file $PWD/release/*
