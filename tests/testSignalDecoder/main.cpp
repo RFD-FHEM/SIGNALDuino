@@ -4,8 +4,8 @@
 #include "targetver.h"
 
 #include <stdio.h>
-#include <tchar.h>
-#include <arduino.h>
+//#include <tchar.h>
+//#include <arduino.h>
 
 #include <gtest/gtest.h>
 //#include <gmock/gmock.h>

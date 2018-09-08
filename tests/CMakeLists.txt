@@ -47,7 +47,7 @@ target_include_directories(TestProject PRIVATE
   ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/fastdelegate/src/
   ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/output/src/
   ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/bitstore/src/
-  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signaldecoder/src/
+  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signalDecoder/src/
   ${PROJECT_SOURCE_DIR}/testSignalDecoder/
 
 )

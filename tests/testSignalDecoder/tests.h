@@ -24,7 +24,7 @@ namespace arduino {
 		bool DigitalSimulate(const int pulse);
 		bool import_sigdata(std::string *cmdstring, const bool raw = false);
 		bool import_mcdata(std::string *cmdstring, const uint8_t startpos, const uint8_t endpos, const int16_t clock);
-		std::string Tests::geFullMCString();
+		std::string geFullMCString();
 
 
 		virtual void SetUp();

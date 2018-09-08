@@ -6,9 +6,7 @@ if [ "$TRAVIS_BUILD_DIR" = "" ]; then
   echo "Please define 'TRAVIS_BUILD_DIR' environment variable.";
   exit 1;
 fi
-
 export rapidassist_DIR=$CMAKE_PREFIX_PATH/RapidAssist
-#echo rapidassist_DIR=$rapidassist_DIR
 
 echo ============================================================================
 echo Cloning RapidAssist into $TRAVIS_BUILD_DIR/third_parties/RapidAssist

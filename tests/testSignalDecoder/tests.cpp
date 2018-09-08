@@ -55,7 +55,7 @@
 
 #include "tests.h"
 #include <string>
-#include "arduino.h"
+#include "Arduino.h"
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
 #define NOSTRING
@@ -116,7 +116,7 @@ namespace arduino {
 					for (int i = startpos + 2; i < endpos; i++)
 					{
 						const char cpulse = cmdstring->at(i);
-						const int ipulse = atoi(&cpulse);
+						const int8_t ipulse = atoi(&cpulse);
 
 						//state = DigitalSimulate(buckets[cmdstring->substring(i, i + 1).toInt()]);
 						if (!raw) {
@@ -562,7 +562,7 @@ namespace arduino {
 
 			char lstr[10];
 
-			itoa(mcdecoder.ManchesterBits.valcount,lstr,10);
+			sprintf(lstr, "%d", mcdecoder.ManchesterBits.valcount);
 			mcStr = mcdecoder.getMessageLenStr();
 			base = "L="+ std::string(lstr) +std::string(";");
 			//ASSERT_STREQ(mcStr.c_str(), base.c_str());
@@ -605,7 +605,7 @@ namespace arduino {
 			std::cout << geFullMCString();
 
 
-			itoa(mcdecoder.ManchesterBits.valcount, lstr, 10);
+			sprintf(lstr, "%d", mcdecoder.ManchesterBits.valcount);
 			mcStr = mcdecoder.getMessageLenStr();
 			base = std::string(";")  + "L="+ std::string(lstr) ;
 			ASSERT_STREQ(mcStr.c_str(), base.c_str());
@@ -724,8 +724,7 @@ namespace arduino {
 			  mcStr.clear();
 
 			  char lstr[10];
-
-			  itoa(mcdecoder.ManchesterBits.valcount, lstr, 10);
+			  sprintf(lstr, "%d", mcdecoder.ManchesterBits.valcount);
 			  mcStr = mcdecoder.getMessageLenStr();
 			  base = std::string(";") +"L=" + std::string(lstr) ;
 			  ASSERT_STREQ(mcStr.c_str(), base.c_str());
@@ -767,7 +766,7 @@ namespace arduino {
 
 			  //char lstr[10];
 
-			  itoa(mcdecoder.ManchesterBits.valcount, lstr, 10);
+			  sprintf(lstr, "%d", mcdecoder.ManchesterBits.valcount);
 			  mcStr = mcdecoder.getMessageLenStr();
 			  base = ";L=" + std::string(lstr);
 			  ASSERT_STREQ(mcStr.c_str(), base.c_str());
