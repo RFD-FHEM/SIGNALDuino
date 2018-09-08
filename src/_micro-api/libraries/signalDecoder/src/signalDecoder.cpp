@@ -1382,7 +1382,7 @@ void ManchesterpatternDecoder::getMessageLenStr(String* str)
 #ifndef NOSTRING		
 	str->concat("L="); str->concat(ManchesterBits.valcount); str->concat(SERIAL_DELIMITER);
 #else
-	char *buf = (char*)malloc(6);
+	char *buf = (char*)malloc(7);
 
 	sprintf(buf, ";L=%i", ManchesterBits.valcount);
 	return buf;
