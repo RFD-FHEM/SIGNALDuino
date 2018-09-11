@@ -20,10 +20,10 @@ before_install:
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz
   - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino
-  - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino
 install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz;   
-  - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino;   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino;
+  - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino;  
+  - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino;
   - arduino --install-library "ArduinoJson";
   - arduino --install-library "TimerOne";
   - arduino --pref "compiler.warning_level=all" --save-prefs;
