@@ -231,17 +231,16 @@ inline void SignalDetectorClass::doDetect()
 					calcHisto();
 
 				}
-				if (messageLen > 0) {
-					for (uint8_t i = messageLen - 1; i >= 0 && histo[pattern_pos] > 0; --i)
+				if (messageLen > 0 && histo[pattern_pos] > 0) {
+					for (uint8_t i = messageLen; i > 0; --i)
 					{
-						if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
+						if (message[i-1] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 						{
 							/*  // Test ob es was bringen wuerde, wenn der letzte Wert in message[] nicht ueberschrieben wuerde -> keine Vorteile erkennbar.
 							if (i == messageLen - 1) {
 								printOut();
 							} */
-							i++; // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
-							bufferMove(i);
+							bufferMove(i);  // i um eins erhoehen, damit zukuenftigen Berechnungen darauf aufbauen koennen
 							calcHisto();
 							break;
 						}
