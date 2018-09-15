@@ -53,9 +53,9 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2-rc2"
+#define PROGVERS               "3.3.2.1-rc3"
 #define VERSION_1               0x33
-#define VERSION_2               0x2d
+#define VERSION_2               0x21
 
 #ifdef CMP_CC1101
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
@@ -83,7 +83,7 @@
 
 
 #define BAUDRATE               57600
-#define FIFO_LENGTH            120      // 50
+#define FIFO_LENGTH            130      // 50
 
 //#define WATCHDOG	1 // Der Watchdog ist in der Entwicklungs und Testphase deaktiviert. Es muss auch ohne Watchdog stabil funktionieren.
 //#define DEBUGSENDCMD  1
@@ -108,7 +108,7 @@ SignalDetectorClass musterDec;
 #include "cc1101.h"
 
 #define pulseMin  90
-#define maxCmdString 300 // 250
+#define maxCmdString 350 // 250
 #define maxSendPattern 8
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
@@ -118,12 +118,12 @@ char msg_cmd1 = ' ';
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool LEDenabled = true;
-uint8_t MdebFifoLimit = 80;
+uint8_t MdebFifoLimit = 120;
 
 #define CSetAnz 4
 const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muthresh", "L"};
 const uint8_t CSetAddr[] = {  0xf0,     0xf1,    0xf2,     0xf3,   0xf4};
-const uint8_t CSetDef[] =  {    80,       0,       4,     0x1f,   0x40};
+const uint8_t CSetDef[] =  {    120,       0,       4,     0x1f,   0x40};
 
 #ifdef CMP_MEMDBG
 
@@ -186,8 +186,8 @@ unsigned long getUptime();
 void getConfig();
 void getPing();
 void configCMD();
-void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1, int8_t red=1, int8_t deb=0, int8_t led=1, int8_t filt=0);
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *filt);
+void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1, int8_t red=1, int8_t deb=0, int8_t led=1, int8_t overfl=0);
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *overfl);
 void initEEPROM(void);
 void changeReceiver();
 uint8_t cmdstringPos2int(uint8_t pos);
@@ -878,8 +878,8 @@ inline void getConfig()
    if (LEDenabled == false) {
       MSG_PRINT(F(";LED=0"));
    }
-   if (musterDec.MfiltEnabled == true) {
-      MSG_PRINT(F(";Mfilt=1"));
+   if (musterDec.MuNoOverflow == true) {
+      MSG_PRINT(F(";MuNoOverflow=1"));
    }
    MSG_PRINT(F(";Mdebug="));
    MSG_PRINT(musterDec.MdebEnabled, DEC);
@@ -922,9 +922,12 @@ inline void configCMD()
   else if (cmdstring.charAt(2) == 'L') {  //LED
 	bptr=&LEDenabled;
   }
-  else if (cmdstring.charAt(2) == 'F') {  // message filter (reserviert)
-	bptr=&musterDec.MfiltEnabled;
+  else if (cmdstring.charAt(2) == 'O') {  //
+	bptr=&musterDec.MuNoOverflow;
   }
+//  else if (cmdstring.charAt(2) == 'F') {  // message filter (reserviert)
+//	bptr=&musterDec.MfiltEnabled;
+//  }
 
   if (cmdstring.charAt(1) == 'E') {   // Enable
 	*bptr=true;
@@ -934,7 +937,7 @@ inline void configCMD()
   } else {
 	return;
   }
-  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled, musterDec.MfiltEnabled);
+  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled, musterDec.MuNoOverflow);
 }
 
 inline void configSET()
@@ -997,7 +1000,9 @@ void serialEvent()
     if (cmdstring.length() > maxCmdString)
     {
 	cmdstring = "";				// todo die restlichen Zeichen ignorieren
-	MSG_PRINTLN(F("cmd to long!"));
+	MSG_PRINT(F("cmd to long! (max "));
+	MSG_PRINT(maxCmdString);
+	MSG_PRINTLN(F(")"));
     }
   }
 }
@@ -1110,24 +1115,24 @@ inline void changeReceiver() {
 
 //================================= EEProm commands ======================================
 
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t deb, int8_t led, int8_t filt)
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t deb, int8_t led, int8_t overfl)
 {
 	mu=mu<<1;
 	mc=mc<<2;
 	red=red<<3;
 	deb=deb<<4;
 	led=led<<5;
-	filt=filt<<6;
-	int8_t dat =  ms | mu | mc | red | deb | led | filt | 0x80;
+	overfl=overfl<<6;
+	int8_t dat =  ms | mu | mc | red | deb | led | overfl | 0x80;
     EEPROM.write(addr_features,dat);
 }
 
 void callGetFunctions(void)
 {
-	 getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MfiltEnabled);
+	 getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &musterDec.MdebEnabled, &LEDenabled, &musterDec.MuNoOverflow);
 }
 
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *filt)
+void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, bool *overfl)
 {
     int8_t high;
     int8_t dat = EEPROM.read(addr_features);
@@ -1138,7 +1143,7 @@ void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, b
     *red=bool (dat &(1<<3));
     *deb=bool (dat &(1<<4));
     *led=bool (dat &(1<<5));
-    *filt=bool (dat &(1<<6));
+    *overfl=bool (dat &(1<<6));
     
     MdebFifoLimit = EEPROM.read(CSetAddr[0]);
     musterDec.MsMoveCountmax = EEPROM.read(CSetAddr[2]);
@@ -1152,7 +1157,7 @@ void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, b
 
 void initEEPROMconfig(void)
 {
-	EEPROM.write(addr_features, 0xBF);    	// Init EEPROM with all flags enabled, except filt
+	EEPROM.write(addr_features, 0xBF);    	// Init EEPROM with all flags enabled, except MuNoOverflow
 	EEPROM.write(CSetAddr[0], CSetDef[0]);	// fifolimit
 	EEPROM.write(CSetAddr[1], CSetDef[1]);	// mcmbl
 	EEPROM.write(CSetAddr[2], CSetDef[2]);	// mscnt
