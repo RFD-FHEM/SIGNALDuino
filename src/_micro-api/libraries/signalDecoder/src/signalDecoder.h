@@ -79,6 +79,7 @@ public:
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MuMoveCount = 0;
+																		 MuOverflCount = 0;
 																	   };
 
 	void reset();
@@ -94,11 +95,13 @@ public:
 	bool MCenabled;
 	bool MSenabled;
 	bool MredEnabled;                       // 1 = compress printMsgRaw
+	bool MuNoOverflow;
 	bool MdebEnabled;                       // 1 = print message debug info  enabled
-	bool MfiltEnabled;        // fuer Nachrichten Filter reserviert
+	//bool MfiltEnabled;        // fuer Nachrichten Filter reserviert
 	uint8_t MsMoveCountmax;
 	uint8_t MsMoveCount;
 	uint8_t MuMoveCount;
+	uint8_t MuOverflCount;
 	uint16_t MuSplitThresh;
 	bool printMsgSuccess;
 	
