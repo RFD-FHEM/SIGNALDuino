@@ -563,7 +563,8 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					}
 					if ((mstart & 1) == 1) {  // ungerade
 						mstart--;
-						(message.getByte(mstart/2,&n) & 15) | 128;    // high nibble = 8 als Kennzeichen für ungeraden mstart
+						message.getByte(mstart/2,&n);
+						n = (n & 15) | 128;             // high nibble = 8 als Kennzeichen fuer ungeraden mstart
 						MSG_WRITE(n);
  						mstart += 2;
 					}
@@ -924,10 +925,10 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					uint8_t n;
 
 					if ((mend & 1) == 1) {   // ungerade
-						MSG_PRINT("D");
+						MSG_PRINT("d");
 					}
 					else {
-						MSG_PRINT("d");
+						MSG_PRINT("D");
 					}
 
 					for (uint8_t i = 0; i < mend; i=i+2) {					

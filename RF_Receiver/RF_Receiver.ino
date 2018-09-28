@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2.1-rc3"
+#define PROGVERS               "3.3.2.1-rc4"
 #define VERSION_1               0x33
 #define VERSION_2               0x21
 
