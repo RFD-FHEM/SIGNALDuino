@@ -440,7 +440,6 @@ void SignalDetectorClass::processMessage()
 					}
 
 					uint8_t n;
-
 					if ((mend & 1) == 1) {   // ungerade
 						SDC_PRINT("D");
 					}
@@ -449,7 +448,10 @@ void SignalDetectorClass::processMessage()
 					}
 					if ((mstart & 1) == 1) {  // ungerade
 						mstart--;
-						(message.getByte(mstart/2,&n) & 15) | 128;    // high nibble = 8 als Kennzeichen für ungeraden mstart
+						
+						message.getByte(mstart / 2, &n);
+						n = (n & 15) | 128;             // high nibble = 8 als Kennzeichen für ungeraden mstart
+
 						SDC_WRITE(n);
  						mstart += 2;
 					}

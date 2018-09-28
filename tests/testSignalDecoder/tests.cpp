@@ -845,6 +845,49 @@ namespace arduino {
 			ASSERT_FALSE(state);
 		  }
 
+
+		  TEST_F(Tests, msNCWS_redu)
+		  {
+			  ooDecode.MredEnabled = true;
+			  int pData[] = {
+	  -9200,481,200,-400,-1938,-3886
+			  };
+
+			  uint8_t s_Stream[] = {
+				  1,0,1,4,1,5,1,4,1,5,1,5,1,5,1,5,1,5,1,5,1,4,1,5,1,4,1,5,1,4,1,4,1,4,1,4,1,4,1,4,1,4,1,5,1,5,1,4,1,4,1,4,1,5,1,4,1,4,1,4,1,4,1,5,1,5,1,5,1,5,1,4,1,4,
+			  };
+
+			  uint16_t len = sizeof(s_Stream) / sizeof(s_Stream[0]);
+
+			  uint16_t i = 0;
+			  bool decoded;
+			  for (uint8_t j = 1, i = 5; j < 5; j++)
+			  {
+				  for (; i < len; i++)
+				  {
+					  state = ooDecode.decode(&pData[s_Stream[i]]);
+					  if (state)
+						  decoded = true;
+				  }
+				  if (j < 2) {
+					  ASSERT_EQ(ooDecode.patternLen, 3);
+					  ASSERT_FALSE(state);
+				  }
+				  i = 0;
+			  }
+			  std::string base = "d"; // mend is equal
+			  base += 129; //  Appends char 129 which is 1 + mstart unequal 128
+
+			  // Only first two chars are checked
+			  ASSERT_STREQ(outputStr.substr(outputStr.find_first_of('d') , 2).c_str(), base.c_str());
+			  ASSERT_FALSE(state);
+			  
+
+			  // Todo convert the received chars to readable signaldata and compare results
+		  }
+
+
+
 		  TEST_F(Tests, muTX3)
 		  {
 			bool state;
@@ -1293,6 +1336,10 @@ namespace arduino {
 			ASSERT_FALSE(state);
 
 		}
+
+
+
+
 
 	  //--------------------------------------------------------------------------------------------------
 	  /*
