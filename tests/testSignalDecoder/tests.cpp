@@ -881,7 +881,8 @@ namespace arduino {
 			  // Only first two chars are checked
 			  ASSERT_STREQ(outputStr.substr(outputStr.find_first_of('d') , 2).c_str(), base.c_str());
 			  ASSERT_FALSE(state);
-			  
+			  ooDecode.MredEnabled = false;
+
 
 			  // Todo convert the received chars to readable signaldata and compare results
 		  }
