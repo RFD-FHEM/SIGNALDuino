@@ -192,14 +192,17 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 void setup() {
-
+	bool resetflag;
 	Serial.begin(BAUDRATE);
+	if (MCUSR & (1 << WDRF)) {
+		resetflag = true;
+	}
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
+		wdt_reset();
 	}
-	if (MCUSR & (1 << WDRF)) {
+	if (resetflag)
 		DBG_PRINTLN("Watchdog caused a reset");
-	}
 	/*
 	if (MCUSR & (1 << BORF)) {
 		DBG_PRINTLN("brownout caused a reset");
