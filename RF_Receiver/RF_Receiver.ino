@@ -95,13 +95,38 @@
 #define FIFO_LENGTH			   50 //150
 //#define DEBUG				   1
 
+// EEProm Address
+#define EE_MAGIC_OFFSET      0
+#define addr_features        0xff
 
+
+
+// Predeclation
+void serialEvent();
+void cronjob();
+int freeRam();
+void HandleLongCommand();
+//bool command_available = false;
+unsigned long getUptime();
+void enDisPrint(bool enDis);
+void configSET();
+void getFunctions(bool *ms, bool *mu, bool *mc);
+void initEEPROM(void);
+void changeReceiver();
+uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
+
+
+
+//Includes
 #include <avr/wdt.h>
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
 #include "TimerOne.h"  // Timer for LED Blinking
+#include "commands.h"
+#include "functions.h"
 
 #include "SimpleFIFO.h"
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
@@ -111,9 +136,8 @@ SignalDetectorClass musterDec;
 #include <EEPROM.h>
 #include "cc1101.h"
 
-#define pulseMin  90
 volatile bool blinkLED = false;
-String cmdstring = "";
+//String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 char IB_1[10]; // Input Buffer one - capture commands
@@ -161,36 +185,7 @@ int16_t freeMem2=0;  // available ram calculation #2
 #endif
 
 
-// EEProm Address
-#define EE_MAGIC_OFFSET      0
-#define addr_features        0xff
 
-
-void handleInterrupt();
-void enableReceive();
-void disableReceive();
-void serialEvent();
-void cronjob();
-int freeRam();
-void changeReciver();
-void changeFilter();
-void HandleCommand();
-void HandleShortCommand();
-bool command_available=false;
-unsigned long getUptime();
-void getConfig();
-void enDisPrint(bool enDis);
-void getPing();
-void configCMD();
-void configSET();
-void storeFunctions(const int8_t ms=1, int8_t mu=1, int8_t mc=1);
-void getFunctions(bool *ms,bool *mu,bool *mc);
-void initEEPROM(void);
-void changeReceiver();
-uint8_t cmdstringPos2int(uint8_t pos);
-void printHex2(const byte hex);
-uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 void setup() {
@@ -256,7 +251,7 @@ void setup() {
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
 	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
-	cmdstring.reserve(40);
+	//cmdstring.reserve(40);
 
 	musterDec.setStreamCallback(&writeCallback);
 
@@ -267,7 +262,10 @@ void setup() {
 	else {
 		DBG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
 	}
+	MSG_PRINTER.setTimeout(400);
+
 }
+
 
 void cronjob() {
 	static uint8_t cnt = 0;
@@ -303,12 +301,6 @@ void loop() {
 #ifdef __AVR_ATmega32U4__	
 	serialEvent();
 #endif
-	if (command_available) {
-		command_available=false;
-		HandleCommand();
-		if (!command_available) { cmdstring = ""; }
-		blinkLED=true;
-	}
 	wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
@@ -322,46 +314,7 @@ void loop() {
 
 
 
-//========================= Pulseauswertung ================================================
-void handleInterrupt() {
-  cli();
-  const unsigned long Time=micros();
-  //const bool state = digitalRead(PIN_RECEIVE);
-  const unsigned long  duration = Time - lastTime;
-  lastTime = Time;
-  if (duration >= pulseMin) {//kleinste zulaessige Pulslaenge
-	int sDuration;
-    if (duration < maxPulse) {//groesste zulaessige Pulslaenge, max = 32000
-      sDuration = int(duration); //das wirft bereits hier unnoetige Nullen raus und vergroessert den Wertebereich
-    }else {
-      sDuration = maxPulse; // Maximalwert set to maxPulse defined in lib.
-    }
-    if (isHigh(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafuer gilt die gemessene Dauer.
-      sDuration=-sDuration;
-    }
-	//MSG_PRINTLN(sDuration);
-    FiFo.enqueue(sDuration);
-    //++fifocnt;
-  } // else => trash
-  sei();
-}
 
-void enableReceive() {
-	attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE), handleInterrupt, CHANGE);
-   #ifdef CMP_CC1101
-   if (hasCC1101) cc1101::setReceiveMode();
-   #endif
-}
-
-void disableReceive() {
-  detachInterrupt(digitalPinToInterrupt(PIN_RECEIVE));
-
-  #ifdef CMP_CC1101
-  if (hasCC1101) cc1101::setIdleMode();
-  #endif
-  FiFo.flush();
-
-}
 
 //============================== Write callback =========================================
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
@@ -379,16 +332,16 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 }
 
 //================================= RAW Send ======================================
-void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *buckets, String *source=&cmdstring)
+void send_raw(const char *startpos,const char *endpos,const int16_t *buckets)
 {
 	uint8_t index=0;
 	unsigned long stoptime=micros();
 	bool isLow;
 	uint16_t dur;
-	for (uint16_t i=startpos;i<=endpos;i++ )
+	for (char *i = (char*)startpos;i<=endpos;i++ )
 	{
 		//DBG_PRINT(cmdstring.substring(i,i+1));
-		index = source->charAt(i) - '0';
+		index = *i - '0';
 		//DBG_PRINT(index);
 		isLow=buckets[index] >> 15;
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
@@ -410,18 +363,14 @@ void send_raw(const uint8_t startpos,const uint16_t endpos,const int16_t *bucket
 
 
 
-void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
+void send_mc(const char *startpos,const char *endpos, const int16_t clock )
 {
 	int8_t b;
-	char c;
-	//digitalHigh(PIN_SEND);
-	//delay(1);
 	uint8_t bit;
 
 	unsigned long stoptime =micros();
-	for (uint8_t i = startpos; i <= endpos; i++) {
-		c = cmdstring.charAt(i);
-		b = ((byte)c) - (c <= '9' ? 0x30 : 0x37);
+	for (char *i = (char*)startpos; i <= endpos; i++) {
+		b = ((byte)*i) - (*i <= '9' ? 0x30 : 0x37);
 
 		for (bit = 0x8; bit>0; bit >>= 1) {
 			for (byte i = 0; i <= 1; i++) {
@@ -430,9 +379,9 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 				else
 					digitalHigh(PIN_SEND);
 				
-					stoptime += clock;
-					while (stoptime > micros())
-						yield();
+				stoptime += clock;
+				while (stoptime > micros())
+					yield();
 			}
 			
 		}
@@ -442,7 +391,7 @@ void send_mc(const uint8_t startpos,const uint8_t endpos, const int16_t clock)
 }
 
 
-
+/*
 bool split_cmdpart(int16_t *startpos, String *msg_part)
 {
 	int16_t endpos=0;
@@ -454,6 +403,9 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 	*startpos=endpos+1;    // Set startpos to endpos to extract next part
 	return true;
 }
+*/
+
+
 // SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;
 // SC;R=4;SM;C=400;D=FFFFFFFF;SR;P0=-400;P1=400;D=101;SM;D=AB6180;SR;D=101;
 // SR;R=3;P0=1230;P1=-3120;P2=-400;P3=-900;D=030301010101010202020202020101010102020202010101010202010120202;
@@ -463,8 +415,8 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 struct s_sendcmd {
 	int16_t sendclock=0;
 	uint8_t type;
-	uint8_t datastart=0;
-	uint16_t dataend=0;
+	char * datastart;
+	char * dataend;
 	int16_t buckets[6];
 	uint8_t repeats=1;
 } ;
@@ -474,15 +426,29 @@ void send_cmd()
 	#define combined 0
 	#define manchester 1
 	#define raw 2
+	disableReceive();
 
-	String msg_part;
-	msg_part.reserve(30);
+	//Wait until command is in Buffer or Buffer is full
+	/*while (MSG_PRINTER.available())
+	{
+		IB_1[idx] = (char)MSG_PRINTER.read();
+
+		wdt_reset();
+		switch (IB_1[idx])
+		{
+			case '\n':
+			case '\r':
+			case '\0':
+			case '#':
+				break;
+		
+		}
+	}
+	*/
+
 	uint8_t repeats=1;  // Default is always one iteration so repeat is 1 if not set
-	//uint8_t type;
 	int16_t start_pos=0;
-	//int16_t buckets[6]={};
 	uint8_t counter=0;
-	//uint16_t sendclock;
 	bool extraDelay = true;
 
 	s_sendcmd command[5];
@@ -491,75 +457,71 @@ void send_cmd()
 	uint8_t ccReg[4];
 	uint8_t val;
 
-	disableReceive();
 
 	uint8_t cmdNo=255;
 
-
-	while (split_cmdpart(&start_pos,&msg_part))
+	char *bptr = IB_1;
+	
+	char buf[64]; // Second Buffer 64 Bytes
+	char *msg_beginptr;
+	char *msg_endptr=buf;
+	do 
 	{
-		DBG_PRINTLN(msg_part);
-		if (msg_part.charAt(0) == 'S')
+
+		//if (cmdNo == 255)  msg_part = IB_1;
+		
+
+		DBG_PRINTLN(msg_beginptr);
+		if (msg_beginptr[0] == 'S')
 		{
-			if (msg_part.charAt(1) == 'C')  // send combined informatio flag
+			if (msg_beginptr[1] == 'C')  // send combined information flag
 			{
-				//type=combined;
-				//cmdNo=255;
 				cmdNo++;
-				//command[cmdNo].repeats = 0;
 				command[cmdNo].type = combined;
 				extraDelay = false;
 			}
-			else if (msg_part.charAt(1) == 'M') // send manchester
+			else if (msg_beginptr[1] == 'M') // send manchester
 			{
-				//type=manchester;
 				cmdNo++;
-				//command[cmdNo].repeats = 0;
 				command[cmdNo].type=manchester;
 				DBG_PRINTLN("Adding manchester");
 
 			}
-			else if (msg_part.charAt(1) == 'R') // send raw
+			else if (msg_beginptr[1] == 'R') // send raw
 			{
-				//type=raw;
 				cmdNo++;
-				//command[cmdNo].repeats = 0;
 				command[cmdNo].type=raw;
 				DBG_PRINTLN("Adding raw");
 				extraDelay = false;
 			}
+			if (cmdNo == 0) {
+				msg_endptr = buf; // rearrange to beginning of buf
+			}
 		}
-		else if (msg_part.charAt(0) == 'P' && msg_part.charAt(2) == '=') // Do some basic detection if data matches what we expect
+		else if (msg_beginptr[0] == 'P' && msg_beginptr[2] == '=') // Do some basic detection if data matches what we expect
 		{
-			counter = msg_part.substring(1,2).toInt(); // extract the pattern number
-			//buckets[counter]=  msg_part.substring(3).toInt();
-			command[cmdNo].buckets[counter]=msg_part.substring(3).toInt();
+			counter = msg_beginptr[1] - '0'; // Convert to dec value
+			command[cmdNo].buckets[counter]= strtol(&msg_beginptr[3], &msg_endptr, 10);
 			DBG_PRINTLN("Adding bucket");
 
-		} else if(msg_part.charAt(0) == 'R' && msg_part.charAt(1) == '=') {
-			command[cmdNo].repeats = msg_part.substring(2).toInt();
+		} else if(msg_beginptr[0] == 'R' && msg_beginptr[1] == '=') {
+			command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);  
 			DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
-
-
-		} else if (msg_part.charAt(0) == 'D') {
-			command[cmdNo].datastart = start_pos - msg_part.length()+1;
-			command[cmdNo].dataend = start_pos-2;
+		} else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
+			command[cmdNo].datastart = msg_beginptr+2;
+			command[cmdNo].dataend = msg_endptr = strchr(msg_beginptr, (int)';');
 			DBG_PRINT("locating data start:");
 			DBG_PRINT(command[cmdNo].datastart);
 			DBG_PRINT(" end:");
 			DBG_PRINTLN(command[cmdNo].dataend);
-			//if (type==raw) send_raw(&msg_part,buckets);
-			//if (type==manchester) send_mc(&msg_part,sendclock);
-			//digitalWrite(PIN_SEND, LOW); // turn off transmitter
-			//digitalLow(PIN_SEND);
-		} else if(msg_part.charAt(0) == 'C' && msg_part.charAt(1) == '=')
+		} else if(msg_beginptr[0] == 'C' && msg_beginptr[1] == '=')
 		{
 			//sendclock = msg_part.substring(2).toInt();
-			command[cmdNo].sendclock = msg_part.substring(2).toInt();
+			command[cmdNo].sendclock = strtoul(&msg_beginptr[2], &msg_endptr, 10);
 			DBG_PRINTLN("adding sendclock");
-		} else if(msg_part.charAt(0) == 'F' && msg_part.charAt(1) == '=')
+		} else if(msg_beginptr[0] == 'F' && msg_beginptr[1] == '=')
 		{
-			ccParamAnz = msg_part.length() / 2 - 1;
+			ccParamAnz = strlen(msg_beginptr) / 2 - 1;
 			
 			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 				uint8_t hex;
@@ -567,21 +529,32 @@ void send_cmd()
 				for (uint8_t i=0;i<ccParamAnz;i++)
 				{
 					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
-					hex = (uint8_t)msg_part.charAt(2 + i*2);
+					hex = (uint8_t)msg_beginptr[2 + i*2];
 					val = cc1101::hex2int(hex) * 16;
-					hex = (uint8_t)msg_part.charAt(3 + i*2);
+					hex = (uint8_t)msg_beginptr[3 + i*2];
 					val = cc1101::hex2int(hex) + val;
 					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
-					printHex2(val);
+					cc1101::printHex2(val);
+					msg_endptr = msg_beginptr + (3 + i * 2) + 1;
 				}
 				DBG_PRINTLN("");
 			}
 		}
-	}
+		if (msg_endptr == msg_beginptr)
+		{
+			// EOM detected
+		} else {
+			//msg_part = strtok(NULL, ";");
+			msg_beginptr = msg_endptr;
+			msg_endptr = msg_beginptr + Serial.readBytesUntil((const char)";", msg_endptr, msg_endptr - buf);
+			break; // break the loop now
+		}
+	} while (msg_beginptr != NULL);
 
 	#ifdef CMP_CC1101
 	if (hasCC1101) cc1101::setTransmitMode();	
 	#endif
+	MSG_PRINT(IB_1); // echo command
 
 
 	if (command[0].type == combined && command[0].repeats > 0) {
@@ -612,14 +585,14 @@ void send_cmd()
 		for (uint8_t i=0;i<ccParamAnz;i++)
 		{
 			val = ccReg[i];
-			printHex2(val);
+			cc1101::printHex2(val);
 			cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
 		}
 		DBG_PRINTLN("");
 	}
-
-	MSG_PRINTLN(cmdstring); // echo
+	MSG_PRINTLN(buf); // echo data of command
 	musterDec.reset();
+	FiFo.flush();
 	enableReceive();	// enable the receiver
 }
 
@@ -630,159 +603,18 @@ void send_cmd()
 //================================= Kommandos ======================================
 void IT_CMDs();
 
-void HandleShortCommand()
+
+void HandleLongCommand()
 {
-	#define  cmd_Version 'V'
-	#define  cmd_freeRam 'R'
-	#define  cmd_uptime 't'
-	#define  cmd_changeReceiver 'X'
-	#define  cmd_help '?'
-	#define  cmd_ping 'P'
-	#define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
-	#define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
-	#define  cmd_patable 'x' 
-	#define  cmd_write 'W'      // write EEPROM und write CC1101 register
-	#define  cmd_read  'r'      // read EEPROM
-	#define  cmd_space ' '
-	#define  cmd_send 'S'
+	// Try so avoid blocking as long as possible and use internal Buffer
 
-	switch (IB_1[0])
-	{
-		case cmd_help :
-			MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
-			MSG_PRINT(cmd_Version); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_freeRam); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_uptime); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_changeReceiver); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_send); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_ping); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_config); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_read); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_write); MSG_PRINT(cmd_space);
-			if (hasCC1101) {
-				MSG_PRINT(cmd_patable); MSG_PRINT(cmd_space);
-				MSG_PRINT(cmd_ccFactoryReset); MSG_PRINT(cmd_space);
-			}
-			MSG_PRINTLN("");
-			break;
-		case cmd_ping:
-			getPing();
-		case cmd_Version: 
-			MSG_PRINT("V " PROGVERS " SIGNALduino ");
-			if (hasCC1101) {
-				MSG_PRINT(F("cc1101 "));
-#ifdef PIN_MARK433
-				MSG_PRINT("(");
-				MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
-				MSG_PRINT(F("Mhz)"));
-#endif
-			}
-			MSG_PRINTLN(" - compiled at " __DATE__ " " __TIME__)
-			break;
-		case cmd_freeRam :
-			MSG_PRINTLN(freeRam());
-			break;
-		case cmd_uptime :
-			MSG_PRINTLN(getUptime());
-			break;
-		case cmd_ccFactoryReset :
-			if (hasCC1101) {
-				cc1101::ccFactoryReset();
-				cc1101::CCinit();
-			}
-			break;
-		case cmd_changeReceiver : 
-			changeReceiver();
-			break;
-		case cmd_config :
-			switch (IB_1[1])
-			{
-				case 'G': 
-					getConfig(); 
-					break;
-				case 'E' : 
-				case 'D' : 
-					configCMD();
-					break;
-				case 'S' : 
-					configSET();
-					break;
-				default:
-					if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
-						uint8_t val = (uint8_t)strtol(IB_[1], NULL, 16);
-						cc1101::readCCreg(val);
-					}
-			}
-			break;
-		case cmd_patable :
-			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
-				uint8_t val = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
-				cc1101::writeCCpatable(val);
-				MSG_PRINT(F("Write "));
-				char b[3];
-				sprintf(b, "%2X", val);
-				MSG_PRINT(b);
-				MSG_PRINTLN(F(" to PATABLE done"));
-			}
-			
-		case cmd_read :
-				// R<adr>  read EEPROM
-				if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) { 
-					uint8_t val = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
-					MSG_PRINT(F("EEPROM "));
-					
-					char b[3];
-					sprintf(b, "%2X", val);
-					MSG_PRINT(b);
-
-					if (IB_1[3] == 'n') {
-						MSG_PRINT(F(" :"));
-						for (uint8_t i = 0; i < 16; i++) {
-							val = EEPROM.read(reg + i);  //Todo: feststellen woher der Wert reg kommt
-							sprintf(b, " %2X", val);
-							MSG_PRINT(b);
-					   	}
-					}
-					else {
-						MSG_PRINT(F(" = "));
-						printHex2(EEPROM.read(reg)); //Todo: feststellen woher der Wert reg kommt
-					}
-					MSG_PRINTLN("");
-				}
-				break;
-		case cmd_write :
-			if (IB_[1] == 'S' && IB_[2] == '3')
-			{
-				cc1101::commandStrobes();
-			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
-				uint8_t reg = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
-				uint8_t val = (uint8_t)strtol((const char*)IB_1[3], NULL, 16);
-				EEPROM.write(reg, val);
-				if (hasCC1101) {
-					cc1101::writeCCreg(reg, val);
-				}
-			}
-			break;
-		default :
-			MSG_PRINTLN(F("Unsupported command"));
-
-	}
-}
-
-void HandleCommand()
-{
-  uint8_t reg;
-  uint8_t val;
-  
-  #define  cmd_space ' '
   #define  cmd_send 'S'
 
- if (cmdstring.charAt(0) == cmd_send) {
-  	if (musterDec.getState() != searching )
+ if (IB_1[0] == cmd_send) {
+  	if (musterDec.getState() == searching || MSG_PRINTER.available() == SERIAL_RX_BUFFER_SIZE/2)
 	{
-		command_available=true;
-	} else {
 		send_cmd(); // Part of Send
+	} else {
 	}
 
   } else {
@@ -792,68 +624,6 @@ void HandleCommand()
 }
 
 
-uint8_t cmdstringPos2int(uint8_t pos) {
-		uint8_t val;
-		uint8_t hex;
-  
-       hex = (uint8_t)cmdstring.charAt(pos);
-       val = cc1101::hex2int(hex) * 16;
-       hex = (uint8_t)cmdstring.charAt(pos+1);
-       val = cc1101::hex2int(hex) + val;
-       return val;
-}
-
-
-inline void getConfig()
-{
-   MSG_PRINT(F("MS="));
-   MSG_PRINT(musterDec.MSenabled,DEC);
-   MSG_PRINT(F(";MU="));
-   MSG_PRINT(musterDec.MUenabled, DEC);
-   MSG_PRINT(F(";MC="));
-   MSG_PRINT(musterDec.MCenabled, DEC);
-   MSG_PRINT(F(";Mred="));
-   MSG_PRINTLN(musterDec.MredEnabled, DEC);
-}
-
-
-inline void configCMD()
-{
-  bool *bptr;
-
-  if (cmdstring.charAt(2) == 'S') {  	  //MS
-	bptr=&musterDec.MSenabled;
-  }
-  else if (cmdstring.charAt(2) == 'U') {  //MU
-	bptr=&musterDec.MUenabled;
-  }
-  else if (cmdstring.charAt(2) == 'C') {  //MC
-	bptr=&musterDec.MCenabled;
-  }
-  else if (cmdstring.charAt(2) == 'R') {  //Mreduce
-	  bptr = &musterDec.MredEnabled;
-  }
-
-  if (cmdstring.charAt(1) == 'E') {   // Enable
-	*bptr=true;
-  }
-  else if (cmdstring.charAt(1) == 'D') {  // Disable
-	*bptr=false;
-  } else {
-	return;
-  }
-  storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
-}
-
-inline void configSET()
-{ 
-	//MSG_PRINT(cmdstring.substring(2, 8));
-	if (cmdstring.substring(2,8) == "mcmbl=")    // mc min bit len
-	{	
-		musterDec.mcMinBitLen = cmdstring.substring(8).toInt(); 
-		MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
-	}
-}
 
 
 void serialEvent()
@@ -863,7 +633,7 @@ void serialEvent()
 	{
 		if (idx == 10) {
 			// Short buffer is now full
-						
+			HandleLongCommand();
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
@@ -873,12 +643,13 @@ void serialEvent()
 				case '\r':
 				case '\0':
 				case '#':
-					//command_available=true;
 					wdt_reset();
-					HandleShortCommand();  // Short command received and can be processed now
+					commands::HandleShortCommand();  // Short command received and can be processed now
 					idx = 0;
 					return;
-				break;
+				case ';':
+					send_cmd();
+					break;
 			}
 			idx++;
 		}
@@ -887,150 +658,14 @@ void serialEvent()
 
 
 int freeRam () {
-#ifdef CMP_MEMDBG
-
- check_mem();
-
- MSG_PRINT("\nheapptr=[0x"); MSG_PRINT( (int) heapptr, HEX); MSG_PRINT("] (growing upward, "); MSG_PRINT( (int) heapptr, DEC); MSG_PRINT(" decimal)");
-
- MSG_PRINT("\nstackptr=[0x"); MSG_PRINT( (int) stackptr, HEX); MSG_PRINT("] (growing downward, "); MSG_PRINT( (int) stackptr, DEC); MSG_PRINT(" decimal)");
-
- MSG_PRINT("\ndifference should be positive: diff=stackptr-heapptr, diff=[0x");
- diff=stackptr-heapptr;
- MSG_PRINT( (int) diff, HEX); MSG_PRINT("] (which is ["); MSG_PRINT( (int) diff, DEC); MSG_PRINT("] (bytes decimal)");
-
-
- MSG_PRINT("\n\nLOOP END: get_free_memory() reports [");
- MSG_PRINT( get_free_memory() );
- MSG_PRINT("] (bytes) which must be > 0 for no heap/stack collision");
-
-
- // ---------------- Print memory profile -----------------
- MSG_PRINT("\n\n__data_start=[0x"); MSG_PRINT( (int) &__data_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__data_start, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__data_end=[0x"); MSG_PRINT((int) &__data_end, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__data_end, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__bss_start=[0x"); MSG_PRINT((int) & __bss_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__bss_start, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__bss_end=[0x"); MSG_PRINT( (int) &__bss_end, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__bss_end, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__heap_start=[0x"); MSG_PRINT( (int) &__heap_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__heap_start, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__malloc_heap_start=[0x"); MSG_PRINT( (int) __malloc_heap_start, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) __malloc_heap_start, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__malloc_margin=[0x"); MSG_PRINT( (int) &__malloc_margin, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) &__malloc_margin, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\n__brkval=[0x"); MSG_PRINT( (int) __brkval, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) __brkval, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\nSP=[0x"); MSG_PRINT( (int) SP, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) SP, DEC); MSG_PRINT("] bytes decimal");
-
- MSG_PRINT("\nRAMEND=[0x"); MSG_PRINT( (int) RAMEND, HEX ); MSG_PRINT("] which is ["); MSG_PRINT( (int) RAMEND, DEC); MSG_PRINT("] bytes decimal");
-
- // summaries:
- ramSize   = (int) RAMEND       - (int) &__data_start;
- dataSize  = (int) &__data_end  - (int) &__data_start;
- bssSize   = (int) &__bss_end   - (int) &__bss_start;
- heapSize  = (int) __brkval     - (int) &__heap_start;
- stackSize = (int) RAMEND       - (int) SP;
- freeMem1  = (int) SP           - (int) __brkval;
- freeMem2  = ramSize - stackSize - heapSize - bssSize - dataSize;
- MSG_PRINT("\n--- section size summaries ---");
- MSG_PRINT("\nram   size=["); MSG_PRINT( ramSize, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\n.data size=["); MSG_PRINT( dataSize, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\n.bss  size=["); MSG_PRINT( bssSize, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\nheap  size=["); MSG_PRINT( heapSize, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\nstack size=["); MSG_PRINT( stackSize, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\nfree size1=["); MSG_PRINT( freeMem1, DEC ); MSG_PRINT("] bytes decimal");
- MSG_PRINT("\nfree size2=["); MSG_PRINT( freeMem2, DEC ); MSG_PRINT("] bytes decimal");
-#else
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-#endif // CMP_MEMDBG
 
  }
 
-inline unsigned long getUptime()
-{
-	unsigned long now = millis();
-	static uint16_t times_rolled = 0;
-	static unsigned long last = 0;
-	// If this run is less than the last the counter rolled
-	unsigned long seconds = now / 1000;
-	if (now < last) {
-		times_rolled++;
-	}
-	last = now;
-	return (0xFFFFFFFF / 1000) * times_rolled + (now / 1000);
-}
-
-inline void getPing()
-{
-	MSG_PRINTLN("OK");
-	delayMicroseconds(500);
-}
-
-inline void changeReceiver() {
-  if (cmdstring.charAt(1) == 'Q')
-  {
-  	disableReceive();
-  }
-  if (cmdstring.charAt(1) == 'E')
-  {
-  	enableReceive();
-  }
-}
-
-  void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
-    if (hex < 16) {
-      MSG_PRINT("0");
-    }
-    MSG_PRINT(hex, HEX);
-  }
 
 
-
-//================================= EEProm commands ======================================
-
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red)
-{
-	mu=mu<<1;
-	mc=mc<<2;
-	red = red << 3;
-
-	int8_t dat = ms | mu | mc | red;
-	EEPROM.write(addr_features,dat);
-}
-
-void getFunctions(bool *ms,bool *mu,bool *mc, bool *red)
-{
-    int8_t dat = EEPROM.read(addr_features);
-
-    *ms=bool (dat &(1<<0));
-    *mu=bool (dat &(1<<1));
-    *mc=bool (dat &(1<<2));
-	*red = bool(dat &(1 << 3));
-
-
-}
-
-void initEEPROM(void) {
-
-  if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET+1) == VERSION_2) {
-    DBG_PRINTLN("Reading values fom eeprom");
-  } else {
-    storeFunctions(1, 1, 1,1);    // Init EEPROM with all flags enabled
-    //hier fehlt evtl ein getFunctions()
-    MSG_PRINTLN(F("Init eeprom to defaults after flash"));
-    EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
-    EEPROM.write(EE_MAGIC_OFFSET+1, VERSION_2);
-    #ifdef CMP_CC1101
-       cc1101::ccFactoryReset();
-    #endif
-  }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled,&musterDec.MredEnabled);
-
-}
 
 
 

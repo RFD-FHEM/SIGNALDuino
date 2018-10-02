@@ -12,7 +12,7 @@
 #include "output.h"
 
 
-extern String cmdstring;
+extern char IB_1[10];
 
 
 
@@ -148,17 +148,11 @@ namespace cc1101 {
 		// printf ("%d\n",$hex) ??
 	}
 
-	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
-		if (hex < 16) {
-			MSG_PRINT("0");
-		}
-		// char hexstr[2] = {0};
-		//sprintf(hexstr, "%02X", hex);
-
-		MSG_PRINT(hex, HEX);
-
-
-	}
+	inline void printHex2(const char hex) {   
+		char b[3];
+		sprintf(b, "%2X", hex);
+		MSG_PRINT(b);
+	 }
 
 
 	uint8_t sendSPI(const uint8_t val) {				 // send byte via SPI
@@ -229,9 +223,8 @@ namespace cc1101 {
     uint8_t hex;
     uint8_t n;
 
-       if (cmdstring.charAt(3) == 'n' && isHexadecimalDigit(cmdstring.charAt(4))) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
-           hex = (uint8_t)cmdstring.charAt(4);
-           n = hex2int(hex);
+       if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
+           n = (uint8_t)strtol((const char*)IB_1[4], NULL, 16);
            if (reg < 0x2F) {
               MSG_PRINT("C");
               printHex2(reg);
@@ -284,14 +277,13 @@ namespace cc1101 {
   }
 
   void commandStrobes(void) {
-    uint8_t hex;
     uint8_t reg;
     uint8_t val;
     uint8_t val1;
   
-    if (isHexadecimalDigit(cmdstring.charAt(3))) {
-        hex = (uint8_t)cmdstring.charAt(3);
-        reg = hex2int(hex) + 0x30;
+    if (isHexadecimalDigit(IB_1[3])) {
+		reg = (uint8_t)strtol((const char*)IB_1[3], NULL, 16);
+
         if (reg < 0x3e) {
              val = cmdStrobe(reg);
              delay(1);
