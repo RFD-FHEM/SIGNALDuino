@@ -6,7 +6,7 @@
 *   while only PT2262 type-signals for Intertechno devices are implemented in the sketch,
 *   there is an option to send almost any data over a send raw interface
 *   2014-2015  N.Butzek, S.Butzek
-*   2016-2017 S.Butzek
+*   2016-2018 S.Butzek
 
 *   This software focuses on remote sensors like weather sensors (temperature,
 *   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
@@ -35,8 +35,6 @@
 //#define ARDUINO_ATMEGA328P_MINICUL 1
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
 //#define OTHER_BOARD_WITH_CC1101  1
-
-//#define CMP_MEMDBG 1
 
 // #todo: header file für die Boards anlegen
 #ifdef OTHER_BOARD_WITH_CC1101
@@ -142,47 +140,6 @@ volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 char IB_1[10]; // Input Buffer one - capture commands
 
-#ifdef CMP_MEMDBG
-
-extern unsigned int __data_start;
-extern unsigned int __data_end;
-extern unsigned int __bss_start;
-extern unsigned int __bss_end;
-extern unsigned int __heap_start;
-extern void *__brkval;
-uint8_t *heapptr, *stackptr;
-uint16_t diff=0;
-void check_mem() {
- stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
- heapptr = stackptr;                     // save value of heap pointer
- free(stackptr);      // free up the memory again (sets stackptr to 0)
- stackptr =  (uint8_t *)(SP);           // save value of stack pointer
-}
-//extern int __bss_end;
-//extern void *__brkval;
-
-int get_free_memory()
-{
- int free_memory;
-
- if((int)__brkval == 0)
-    free_memory = ((int)&free_memory) - ((int)&__bss_end);
- else
-   free_memory = ((int)&free_memory) - ((int)__brkval);
-
- return free_memory;
-}
-
-
-int16_t ramSize=0;   // total amount of ram available for partitioning
-int16_t dataSize=0;  // partition size for .data section
-int16_t bssSize=0;   // partition size for .bss section
-int16_t heapSize=0;  // partition size for current snapshot of the heap section
-int16_t stackSize=0; // partition size for current snapshot of the stack section
-int16_t freeMem1=0;  // available ram calculation #1
-int16_t freeMem2=0;  // available ram calculation #2
-
-#endif
 
 
 
@@ -462,8 +419,8 @@ void send_cmd()
 
 	char *bptr = IB_1;
 	
-	char buf[64]; // Second Buffer 64 Bytes
-	char *msg_beginptr;
+	char buf[128]; // Second Buffer 64 Bytes
+	char *msg_beginptr=IB_1;
 	char *msg_endptr=buf;
 	do 
 	{
@@ -543,11 +500,12 @@ void send_cmd()
 		if (msg_endptr == msg_beginptr)
 		{
 			// EOM detected
+			break; // break the loop now
+
 		} else {
 			//msg_part = strtok(NULL, ";");
 			msg_beginptr = msg_endptr;
-			msg_endptr = msg_beginptr + Serial.readBytesUntil((const char)";", msg_endptr, msg_endptr - buf);
-			break; // break the loop now
+			msg_endptr = msg_beginptr + Serial.readBytesUntil((const char)";", msg_endptr, buf+128-msg_endptr);
 		}
 	} while (msg_beginptr != NULL);
 
