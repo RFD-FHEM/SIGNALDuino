@@ -38,7 +38,7 @@ before_deploy:
   - git fetch --tags --force;
   - git rev-parse -q --verify "refs/tags/$GIT_TAG" || 
        { git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER" ; 
-  -  git push -q https://$GH_API_KEY:x-oauth-basic@github.com/RFD-FHEM/SIGNALDuino --tags;
+         git push -q https://$GH_API_KEY:x-oauth-basic@github.com/RFD-FHEM/SIGNALDuino --tags;
        };
   - ls -R;
   - chmod +x ./deploy.sh;

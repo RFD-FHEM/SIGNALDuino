@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
  
-if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIC_BRANCH" = "dev-r33_cc1101" ]]
+if [[ ${TRAVIS_TAG} =~ ^release.*$  || $TRAVIS_TAG =~ ^R\d\.\d.*$ && "$TRAVIS_BRANCH" = "dev-r33_cc1101" ]]
   then
     curl --location "https://github.com/tfausak/github-release/releases/download/1.1.4/github-release-1.1.4-$TRAVIS_OS_NAME.gz" > github-release.gz
     gunzip github-release.gz
