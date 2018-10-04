@@ -96,7 +96,6 @@
 //#define DEBUG				   1
 
 
-#include <avr/wdt.h>
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
@@ -192,38 +191,13 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 void setup() {
-	bool resetflag;
 	Serial.begin(BAUDRATE);
-	if (MCUSR & (1 << WDRF)) {
-		resetflag = true;
-	}
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for native USB
-		wdt_reset();
-	}
-	if (resetflag)
-		DBG_PRINTLN("Watchdog caused a reset");
-	/*
-	if (MCUSR & (1 << BORF)) {
-		DBG_PRINTLN("brownout caused a reset");
-	}
-	if (MCUSR & (1 << EXTRF)) {
-		DBG_PRINTLN("external reset occured");
-	}
-	if (MCUSR & (1 << PORF)) {
-		DBG_PRINTLN("power on reset occured");
-	}
-	*/
-	wdt_reset();
-
-	wdt_enable(WDTO_2S);  	// Enable Watchdog
 
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
 	
-	wdt_reset();
 
 	#ifdef CMP_CC1101
 	cc1101::setup();
@@ -307,7 +281,6 @@ void loop() {
 		if (!command_available) { cmdstring = ""; }
 		blinkLED=true;
 	}
-	wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
 		aktVal=FiFo.dequeue();
