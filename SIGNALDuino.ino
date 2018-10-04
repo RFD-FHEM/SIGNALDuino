@@ -89,10 +89,11 @@
 #endif
 
 
-#define BAUDRATE               57600 // 500000 //57600
+#define BAUDRATE               115200 // 500000 //57600
 #define FIFO_LENGTH			   50 //150
 //#define DEBUG				   1
 
+// EEProm Address
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
 #define addr_features        0xff
@@ -144,40 +145,20 @@ char IB_1[10]; // Input Buffer one - capture commands
 
 
 
-
 void setup() {
-	bool resetflag;
 	Serial.begin(BAUDRATE);
-	if (MCUSR & (1 << WDRF)) {
-		resetflag = true;
-	}
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
-		wdt_reset();
 	}
-	if (resetflag)
-		DBG_PRINTLN("Watchdog caused a reset");
-	/*
-	if (MCUSR & (1 << BORF)) {
-		DBG_PRINTLN("brownout caused a reset");
-	}
-	if (MCUSR & (1 << EXTRF)) {
-		DBG_PRINTLN("external reset occured");
-	}
-	if (MCUSR & (1 << PORF)) {
-		DBG_PRINTLN("power on reset occured");
-	}
-	*/
-	wdt_reset();
 
-	wdt_enable(WDTO_2S);  	// Enable Watchdog
 
+	
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
 	
-	wdt_reset();
+	//wdt_reset();
 
 	#ifdef CMP_CC1101
 	cc1101::setup();
@@ -220,7 +201,6 @@ void setup() {
 		DBG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
 	}
 	MSG_PRINTER.setTimeout(400);
-
 }
 
 
@@ -260,7 +240,6 @@ void loop() {
 #endif
 	wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
-
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
 		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
@@ -414,12 +393,11 @@ void send_cmd()
 	uint8_t ccReg[4];
 	uint8_t val;
 
-
 	uint8_t cmdNo=255;
 
 	char *bptr = IB_1;
 	
-	char buf[128]; // Second Buffer 64 Bytes
+	char buf[128] = {}; // Second Buffer 64 Bytes
 	char *msg_beginptr=IB_1;
 	char *msg_endptr=buf;
 	do 
@@ -466,7 +444,7 @@ void send_cmd()
 			DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
 		} else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
 			command[cmdNo].datastart = msg_beginptr+2;
-			command[cmdNo].dataend = msg_endptr = strchr(msg_beginptr, (int)';');
+			command[cmdNo].dataend = msg_endptr = strchr(msg_beginptr+3, ';')-1;
 			DBG_PRINT("locating data start:");
 			DBG_PRINT(command[cmdNo].datastart);
 			DBG_PRINT(" end:");
@@ -505,7 +483,13 @@ void send_cmd()
 		} else {
 			//msg_part = strtok(NULL, ";");
 			msg_beginptr = msg_endptr;
-			msg_endptr = msg_beginptr + Serial.readBytesUntil((const char)";", msg_endptr, buf+128-msg_endptr);
+			//MSG_PRINTER.setTimeout(1000);
+			//msg_endptr = MSG_PRINTER.readBytesUntil(';', msg_endptr, 128) + msg_beginptr ;
+			uint8_t l=0;
+			do {
+				msg_endptr += l;
+				l=MSG_PRINTER.readBytes(msg_endptr, 1);
+			} while (*msg_endptr != ';');
 		}
 	} while (msg_beginptr != NULL);
 
@@ -569,10 +553,11 @@ void HandleLongCommand()
   #define  cmd_send 'S'
 
  if (IB_1[0] == cmd_send) {
-  	if (musterDec.getState() == searching || MSG_PRINTER.available() == SERIAL_RX_BUFFER_SIZE/2)
+  	if (musterDec.getState() == searching || MSG_PRINTER.available() >= SERIAL_RX_BUFFER_SIZE/2)
 	{
 		send_cmd(); // Part of Send
 	} else {
+
 	}
 
   } else {
