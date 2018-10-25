@@ -59,7 +59,7 @@
 
 
 
-#define PROGVERS               "3.3.1-RC8"
+#define PROGVERS               "3.3.1-RC9"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
@@ -459,7 +459,7 @@ void send_cmd()
 	s_sendcmd command[5];
 
 	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
-	uint8_t ccReg[4];
+	uint8_t ccReg[6];
 	uint8_t val;
 
 	disableReceive();
