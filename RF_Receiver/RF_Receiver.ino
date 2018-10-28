@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2.1-rc4"
+#define PROGVERS               "3.3.2.1-rc5"
 #define VERSION_1               0x33
 #define VERSION_2               0x21
 
@@ -529,6 +529,7 @@ void send_cmd()
 	bool extraDelay = false;
 
 	s_sendcmd command[maxSendCmd];
+	command[0].datastart = 0;
 
 	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
 	uint8_t val;
@@ -636,7 +637,7 @@ void send_cmd()
 		}
 	}
 
-	if (startdata == -1)
+	if (startdata == -1 || command[0].datastart == 0)
 	{
 		MSG_PRINT(F("send failed"));
 	} else
