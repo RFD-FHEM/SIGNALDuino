@@ -268,13 +268,14 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 }
 
 //================================= RAW Send ======================================
-void send_raw(const char *startpos,const char *endpos,const int16_t *buckets)
+void send_raw( char *startpos, char *endpos,const int16_t *buckets)
 {
 	uint8_t index=0;
 	unsigned long stoptime=micros();
 	bool isLow;
 	uint16_t dur;
-	for (char *i = (char*)startpos;i<=endpos;i++ )
+	
+	for (char *i = startpos; i < endpos;i++ )
 	{
 		//DBG_PRINT(cmdstring.substring(i,i+1));
 		index = *i - '0';
@@ -305,7 +306,7 @@ void send_mc(const char *startpos,const char *endpos, const int16_t clock )
 	uint8_t bit;
 
 	unsigned long stoptime =micros();
-	for (char *i = (char*)startpos; i <= endpos; i++) {
+	for (char *i = (char*)startpos; i < endpos; i++) {
 		b = ((byte)*i) - (*i <= '9' ? 0x30 : 0x37);
 
 		for (bit = 0x8; bit>0; bit >>= 1) {
@@ -351,8 +352,8 @@ bool split_cmdpart(int16_t *startpos, String *msg_part)
 struct s_sendcmd {
 	int16_t sendclock=0;
 	uint8_t type;
-	char * datastart;
-	char * dataend;
+	char    *datastart;
+	char    *dataend;
 	int16_t buckets[6];
 	uint8_t repeats=1;
 } ;
@@ -395,9 +396,9 @@ void send_cmd()
 
 	uint8_t cmdNo=255;
 
-	char *bptr = IB_1;
+	//char *bptr = IB_1;
 	
-	char buf[128] = {}; // Second Buffer 64 Bytes
+	char buf[128] = {}; // Second Buffer 128 Bytes
 	char *msg_beginptr=IB_1;
 	char *msg_endptr=buf;
 	do 
@@ -406,7 +407,7 @@ void send_cmd()
 		//if (cmdNo == 255)  msg_part = IB_1;
 		
 
-		DBG_PRINTLN(msg_beginptr);
+		DBG_PRINT(msg_beginptr);
 		if (msg_beginptr[0] == 'S')
 		{
 			if (msg_beginptr[1] == 'C')  // send combined information flag
@@ -430,6 +431,8 @@ void send_cmd()
 				extraDelay = false;
 			}
 			if (cmdNo == 0) {
+				DBG_PRINTLN("rearrange beginptr");
+
 				msg_endptr = buf; // rearrange to beginning of buf
 			}
 		}
@@ -438,13 +441,13 @@ void send_cmd()
 			counter = msg_beginptr[1] - '0'; // Convert to dec value
 			command[cmdNo].buckets[counter]= strtol(&msg_beginptr[3], &msg_endptr, 10);
 			DBG_PRINTLN("Adding bucket");
-
 		} else if(msg_beginptr[0] == 'R' && msg_beginptr[1] == '=') {
 			command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);  
 			DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
 		} else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
 			command[cmdNo].datastart = msg_beginptr+2;
-			command[cmdNo].dataend = msg_endptr = strchr(msg_beginptr+3, ';')-1;
+			command[cmdNo].dataend =  msg_endptr = (char*)  memchr(msg_beginptr + 3, ';', buf + 127 - msg_beginptr + 3);
+			//if (command[cmdNo].dataend != NULL) command[cmdNo].dataend= command[cmdNo].dataend-1;
 			DBG_PRINT("locating data start:");
 			DBG_PRINT(command[cmdNo].datastart);
 			DBG_PRINT(" end:");
@@ -477,19 +480,25 @@ void send_cmd()
 		}
 		if (msg_endptr == msg_beginptr)
 		{
-			// EOM detected
+			DBG_PRINTLN("break loop");
 			break; // break the loop now
 
-		} else {
-			//msg_part = strtok(NULL, ";");
+		}
+		else {
+			if (msg_endptr != buf)
+				msg_endptr++;
 			msg_beginptr = msg_endptr;
 			//MSG_PRINTER.setTimeout(1000);
 			//msg_endptr = MSG_PRINTER.readBytesUntil(';', msg_endptr, 128) + msg_beginptr ;
-			uint8_t l=0;
+			uint8_t l = 0;
 			do {
 				msg_endptr += l;
-				l=MSG_PRINTER.readBytes(msg_endptr, 1);
-			} while (*msg_endptr != ';');
+				l = MSG_PRINTER.readBytes(msg_endptr, 1);
+				if (l == 0) {
+					DBG_PRINTLN("TOUT");  break;
+				}
+			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n');
+			
 		}
 	} while (msg_beginptr != NULL);
 
@@ -504,12 +513,12 @@ void send_cmd()
 	}
 	for (uint8_t i = 0;i < repeats; i++)
 	{
-		DBG_PRINT("repeat "); DBG_PRINT(i); DBG_PRINT("/"); DBG_PRINT(repeats);
+		DBG_PRINT("repeat "); DBG_PRINT(i); DBG_PRINT("/"); DBG_PRINT(repeats-1);
 		
 		for (uint8_t c = 0;c <= cmdNo ;c++)
 		{
-			DBG_PRINT(" cmd "); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
-			DBG_PRINT(" reps "); DBG_PRINT(command[c].repeats);
+			DBG_PRINT(" cmd "); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINTLN(cmdNo);
+			DBG_PRINT(" reps "); DBG_PRINTLN(command[c].repeats);
 
 			if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
 			else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
@@ -532,6 +541,7 @@ void send_cmd()
 		}
 		DBG_PRINTLN("");
 	}
+	DBG_PRINT(IB_1);
 	MSG_PRINTLN(buf); // echo data of command
 	musterDec.reset();
 	FiFo.flush();
@@ -591,7 +601,11 @@ void serialEvent()
 					idx = 0;
 					return;
 				case ';':
+					DBG_PRINT("send cmd detected ");
+					DBG_PRINTLN(idx);
+
 					send_cmd();
+					idx =  255; // increments to 1
 					break;
 			}
 			idx++;
