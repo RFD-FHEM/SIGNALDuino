@@ -11,7 +11,7 @@ env:
   - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
 
 script:
-  - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" | xargs cp -aR -t $PWD/;
+  - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" -not -name "examples" | xargs cp -aR -t $PWD;
   - mkdir $PWD/release;
   - chmod +x ./build.sh;
   - ./build.sh;
@@ -33,7 +33,7 @@ install:
 before_deploy:
   - git config --global user.email "builds@travis-ci.com";
   - git config --global user.name "Travis CI";
-  - export GIT_TAG=`grep "#define PROGVERS" $PWD/RF_Receiver/RF_Receiver.ino  | cut -d\" -f2`;
+  - export GIT_TAG=`grep "#define PROGVERS" $PWD/SIGNALduino.ino  | cut -d\" -f2`;
   - git fetch --tags --force;
   - git rev-parse -q --verify "refs/tags/$GIT_TAG" || 
        { git tag $GIT_TAG -a -m "Generated tag from TravisCI for build $TRAVIS_BUILD_NUMBER" ; 
