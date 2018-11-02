@@ -21,11 +21,12 @@
   (((P)>=0&&(P)<8)?&PIND:(((P)>7&&(P)<14)?&PINB:&PINC))
 #define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
 #endif
+
 #if defined(WIN32) || defined(__linux__)
 #define digitalLow(P) pinMode(P,LOW)
 #define digitalHigh(P) pinMode(P,HIGH)
 
-#elif
+#else
 #define pinMask(P)((uint8_t)(1<<pinIndex(P)))
 #define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
 #define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
