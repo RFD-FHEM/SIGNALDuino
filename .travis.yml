@@ -15,9 +15,9 @@ script:
   - chmod +x ./build.sh;
   - ./build.sh;
 before_install:
-  - mkdir $PWD/SIGNALDuinold
-  - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" -not -name "examples" | xargs cp -a -t $PWD/SIGNALDuino;
-  - find $PWD -maxdepth 1 -name "*.h" -or -name "*.cpp" -or -name "*.ino"  | xargs cp -a -t $PWD/SIGNALDuino
+  - mkdir $PWD/SIGNALDuino
+  - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" -not -name "examples" | xargs cp -a -t $PWD/SIGNALDuino/;
+  - find $PWD -maxdepth 1 -name "*.h" -or -name "*.cpp" -or -name "*.ino"  | xargs cp -a -t $PWD/SIGNALDuino/
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
 install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz;   
