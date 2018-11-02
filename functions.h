@@ -16,7 +16,7 @@
 extern volatile unsigned long lastTime;
 extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 extern SignalDetectorClass musterDec;
-
+extern bool hasCC1101;
 #define pulseMin  90
 
 //========================= Pulseauswertung ================================================
