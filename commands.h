@@ -8,10 +8,12 @@
 //	#include "WProgram.h"
 #endif
 
+
 #include <EEPROM.h>
 #include "output.h"
 #include "cc1101.h"
 #include "functions.h"
+#include "signalDecoder.h"
 
 extern char IB_1[10];
 extern bool hasCC1101;
