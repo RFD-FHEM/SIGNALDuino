@@ -325,7 +325,9 @@ void loop() {
 		command_available=false;
 		HandleCommand();
 		if (!command_available) { cmdstring = ""; }
+		if (LEDenabled) {
 		  blinkLED=true;
+		}
 	}
 #ifdef WATCHDOG
 	wdt_reset();
