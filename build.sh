@@ -37,6 +37,6 @@ fi
 
 
 echo "Compile now for ${BOARD} with ${RECEIVER}"
-arduino -v --verbose-build --verify $PWD/SIGNALDuino.ino 2>&1
+arduino -v --verbose-build --verify $PWD/SIGNALDuino/SIGNALDuino.ino 2>&1
 echo "Compile ${BOARD} ${RECEIVER} finshed"
 mv $PWD/release/SIGNALDuino.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
