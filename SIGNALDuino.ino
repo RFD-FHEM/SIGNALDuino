@@ -89,7 +89,7 @@
 #endif
 
 
-#define BAUDRATE               115200 // 500000 //57600
+#define BAUDRATE               57600 // 500000 //57600
 #define FIFO_LENGTH			   50 //150
 //#define DEBUG				   1
 
@@ -340,8 +340,8 @@ void serialEvent()
 					DBG_PRINTLN(idx);
 
 					send_cmd();
-					idx =  255; // increments to 1
-					break;
+					idx =  0; // increments to 1
+					return; //Exit function
 			}
 			idx++;
 		}
