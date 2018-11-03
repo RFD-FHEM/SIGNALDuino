@@ -142,8 +142,9 @@ void send_cmd()
 			}
 			if (cmdNo == 0) {
 				DBG_PRINTLN("rearrange beginptr");
-
+				MSG_PRINT(IB_1); // echo command
 				msg_endptr = buf; // rearrange to beginning of buf
+				msg_beginptr = nullptr;
 			}
 		}
 		else if (msg_beginptr[0] == 'P' && msg_beginptr[2] == '=') // Do some basic detection if data matches what we expect
@@ -151,10 +152,21 @@ void send_cmd()
 			counter = msg_beginptr[1] - '0'; // Convert to dec value
 			command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
 			DBG_PRINTLN("Adding bucket");
+			if (cmdNo == 0) {
+				MSG_PRINT(msg_beginptr);
+				msg_endptr = buf; // rearrange to beginning of buf
+				msg_beginptr = nullptr;
+			}
 		}
 		else if (msg_beginptr[0] == 'R' && msg_beginptr[1] == '=') {
 			command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);
 			DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
+			if (cmdNo == 0) {
+				MSG_PRINT(msg_beginptr);
+				msg_endptr = buf; // rearrange to beginning of buf
+				msg_beginptr = nullptr;
+
+			}
 		}
 		else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
 			command[cmdNo].datastart = msg_beginptr + 2;
@@ -219,7 +231,6 @@ void send_cmd()
 #ifdef CMP_CC1101
 	if (hasCC1101) cc1101::setTransmitMode();
 #endif
-	MSG_PRINT(IB_1); // echo command
 
 
 	if (command[0].type == combined && command[0].repeats > 0) {
