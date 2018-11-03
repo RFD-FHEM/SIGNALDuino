@@ -94,24 +94,6 @@ void send_cmd()
 #define raw 2
 	disableReceive();
 
-	//Wait until command is in Buffer or Buffer is full
-	/*while (MSG_PRINTER.available())
-	{
-		IB_1[idx] = (char)MSG_PRINTER.read();
-
-		wdt_reset();
-		switch (IB_1[idx])
-		{
-			case '\n':
-			case '\r':
-			case '\0':
-			case '#':
-				break;
-
-		}
-	}
-	*/
-
 	uint8_t repeats = 1;  // Default is always one iteration so repeat is 1 if not set
 	int16_t start_pos = 0;
 	uint8_t counter = 0;
@@ -125,9 +107,8 @@ void send_cmd()
 
 	uint8_t cmdNo = 255;
 
-	//char *bptr = IB_1;
 
-	char buf[128] = {}; // Second Buffer 128 Bytes
+	char buf[256] = {}; // Second Buffer 256 Bytes
 	char *msg_beginptr = IB_1;
 	char *msg_endptr = buf;
 	do
@@ -177,7 +158,7 @@ void send_cmd()
 		}
 		else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
 			command[cmdNo].datastart = msg_beginptr + 2;
-			command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 3, ';', buf + 127 - msg_beginptr + 3);
+			command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 3, ';', buf + 255 - msg_beginptr + 3);
 			//if (command[cmdNo].dataend != NULL) command[cmdNo].dataend= command[cmdNo].dataend-1;
 			DBG_PRINT("locating data start:");
 			DBG_PRINT(command[cmdNo].datastart);
