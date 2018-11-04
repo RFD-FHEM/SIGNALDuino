@@ -104,7 +104,7 @@ namespace commands {
 		//MSG_PRINT(cmdstring.substring(2, 8));
 		if (strstr(&IB_1[2],"mcmbl="))   // mc min bit len
 		{
-			musterDec.mcMinBitLen = strtol(&IB_1[8], NULL,10);
+			musterDec.mcMinBitLen = strtol(IB_1+8, NULL,10);
 			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
 		}
 	}
@@ -188,19 +188,19 @@ namespace commands {
 				configSET();
 				break;
 			default:
-				if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
-					uint8_t val = (uint8_t)strtol(IB_1[1], NULL, 16);
+				if (isxdigit(IB_1[1]) && isxdigit(IB_1[2]) && hasCC1101) {
+					uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 					cc1101::readCCreg(val);
 				}
 			}
 			break;
 		case cmd_patable:
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
-				uint8_t val = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
+				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
 				MSG_PRINT(F("Write "));
 				char b[3];
-				sprintf(b, "%2X", val);
+				sprintf(b, "%02X", val);
 				MSG_PRINT(b);
 				MSG_PRINTLN(F(" to PATABLE done"));
 			}
@@ -208,7 +208,7 @@ namespace commands {
 		case cmd_read:
 			// R<adr>  read EEPROM
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
-				const uint8_t reg = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
+				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				MSG_PRINT(F("EEPROM "));
 
 				char b[3];
@@ -219,14 +219,14 @@ namespace commands {
 					MSG_PRINT(F(" :"));
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
-						sprintf(b, " %2X", val);
+						sprintf(b, " %02X", val);
 						MSG_PRINT(b);
 					}
 				}
 				else {
 					MSG_PRINT(F(" = "));
 					const uint8_t val = EEPROM.read(reg);
-					sprintf(b, " %2X", val);
+					sprintf(b, " %02X", val);
 					MSG_PRINT(b);
 					printHex2(EEPROM.read(reg));
 				}
@@ -239,8 +239,8 @@ namespace commands {
 				cc1101::commandStrobes();
 			}
 			else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
-				uint8_t reg = (uint8_t)strtol((const char*)IB_1[1], NULL, 16);
-				uint8_t val = (uint8_t)strtol((const char*)IB_1[3], NULL, 16);
+				uint8_t reg = (uint8_t)strtol(IB_1+1, NULL, 16);
+				uint8_t val = (uint8_t)strtol(IB_1+3, NULL, 16);
 				EEPROM.write(reg, val);
 				if (hasCC1101) {
 					cc1101::writeCCreg(reg, val);

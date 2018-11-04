@@ -148,9 +148,9 @@ namespace cc1101 {
 		// printf ("%d\n",$hex) ??
 	}
 
-	inline void printHex2(const char hex) {   
+	 inline void printHex2(const char hex) {   
 		char b[3];
-		sprintf(b, "%2X", hex);
+		sprintf(b, "%02X", hex);
 		MSG_PRINT(b);
 	 }
 
@@ -220,22 +220,21 @@ namespace cc1101 {
 
   void readCCreg(const uint8_t reg) {   // read CC11001 register
     uint8_t var;
-    uint8_t hex;
     uint8_t n;
+	char b[11];
 
        if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
-           n = (uint8_t)strtol((const char*)IB_1[4], NULL, 16);
+           n = (uint8_t)strtol((const char*)IB_1+4, NULL, 16);
            if (reg < 0x2F) {
-              MSG_PRINT("C");
-              printHex2(reg);
-              MSG_PRINT("n");
               n += 2;
-              printHex2(n);
-              MSG_PRINT("=");
-              for (uint8_t i = 0; i < n; i++) {
-                 var = readReg(reg + i, CC1101_CONFIG);
-                 printHex2(var);
-              }
+			  sprintf(b, "C%02Xn%i=", reg,n);
+			  MSG_PRINT(b);
+
+              for (uint8_t i = reg; i < reg+n; i++) {
+                 var = readReg(i, CC1101_CONFIG);
+				 sprintf(b, "%02X", var);
+				 MSG_PRINT(b);
+			  }
               MSG_PRINTLN("");
            }
        }
@@ -247,11 +246,8 @@ namespace cc1101 {
           else {
              var = readReg(reg, CC1101_STATUS);
           }
-          MSG_PRINT("C");
-          printHex2(reg);
-          MSG_PRINT(" = ");
-          printHex2(var);
-          MSG_PRINTLN("");
+		  sprintf(b, "C%02X = %02X=", reg, var);
+		  MSG_PRINTLN(b);
        }
        else if (reg == 0x3E) {                   // patable
           MSG_PRINT(F("C3E = "));
@@ -263,14 +259,13 @@ namespace cc1101 {
              if (i > 0) {
                MSG_PRINT(" ");
              }
-             MSG_PRINT(F("ccreg "));
-             printHex2(i);
-             MSG_PRINT(F(": "));
+			 sprintf(b, "ccreg %02X: ", i);
+			 MSG_PRINT(b);
            }
            var = readReg(i, CC1101_CONFIG);
-           printHex2(var);
-           MSG_PRINT(" ");
-         }
+		   sprintf(b, "ccreg %02X: ", var);
+		   MSG_PRINT(b);
+		 }
          MSG_PRINTLN("");
        }
      }
