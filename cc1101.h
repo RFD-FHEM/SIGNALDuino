@@ -200,9 +200,11 @@ namespace cc1101 {
 		}
 		cc1101_Deselect();
 
+		char b[4];
+
 		for (uint8_t i = 0; i < 8; i++) {
-			printHex2(PatableArray[i]);
-			MSG_PRINT(" ");
+			sprintf_P(b,PSTR(" %02X"), PatableArray[i]);
+			MSG_PRINT(b);
 		}
 		MSG_PRINTLN("");
 	}
@@ -227,7 +229,7 @@ namespace cc1101 {
            n = (uint8_t)strtol((const char*)IB_1+4, NULL, 16);
            if (reg < 0x2F) {
               n += 2;
-			  sprintf(b, "C%02Xn%i=", reg,n);
+			  sprintf(b, "C%02Xn%02X=", reg,n);
 			  MSG_PRINT(b);
 
               for (uint8_t i = reg; i < reg+n; i++) {
@@ -250,7 +252,7 @@ namespace cc1101 {
 		  MSG_PRINTLN(b);
        }
        else if (reg == 0x3E) {                   // patable
-          MSG_PRINT(F("C3E = "));
+          MSG_PRINT(F("C3E ="));
           readPatable();
        }
        else if (reg == 0x99) {                   // alle register
