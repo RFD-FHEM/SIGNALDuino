@@ -248,7 +248,7 @@ namespace cc1101 {
           else {
              var = readReg(reg, CC1101_STATUS);
           }
-		  sprintf(b, "C%02X = %02X=", reg, var);
+		  sprintf_P(b, PSTR("C%02X = %02X"), reg, var);
 		  MSG_PRINTLN(b);
        }
        else if (reg == 0x3E) {                   // patable
@@ -261,11 +261,11 @@ namespace cc1101 {
              if (i > 0) {
                MSG_PRINT(" ");
              }
-			 sprintf(b, "ccreg %02X: ", i);
+			 sprintf_P(b, PSTR("ccreg %02X: "), i);
 			 MSG_PRINT(b);
            }
            var = readReg(i, CC1101_CONFIG);
-		   sprintf(b, "ccreg %02X: ", var);
+		   sprintf_P(b, PSTR("%02X "), var);
 		   MSG_PRINT(b);
 		 }
          MSG_PRINTLN("");
