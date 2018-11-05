@@ -240,7 +240,7 @@ namespace commands {
 			}
 			else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
 				char d[3];
-				strncpy(d, IB_1, 2);
+				strncpy(d, IB_1+1, 2);
 				uint8_t reg = (uint8_t)strtol(d, NULL, 16);
 				uint8_t val = (uint8_t)strtol(IB_1+3, NULL, 16);
 				EEPROM.write(reg, val);

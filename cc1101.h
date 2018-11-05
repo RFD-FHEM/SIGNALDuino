@@ -279,7 +279,7 @@ namespace cc1101 {
     uint8_t val1;
   
     if (isHexadecimalDigit(IB_1[3])) {
-		reg = (uint8_t)strtol((const char*)IB_1[3], NULL, 16);
+		reg = (uint8_t)strtol(IB_1+4, NULL, 16);
 
         if (reg < 0x3e) {
              val = cmdStrobe(reg);
