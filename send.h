@@ -78,6 +78,8 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 // SM;C=400;D=AAAAFFFF;
 // SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
 
+// SC;R=6;SR;P0=-2560;P1=2560;P3=-640;D=10101010101010113;SM;C=645;D=A1E7E7D6F88D88;F=10AB85550A;   # SOMFY
+
 struct s_sendcmd {
 	int16_t sendclock = 0;
 	uint8_t type;
@@ -102,7 +104,7 @@ void send_cmd()
 	s_sendcmd command[5];
 
 	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
-	uint8_t ccReg[4];
+	uint8_t ccReg[6];
 	uint8_t val;
 
 	uint8_t cmdNo = 255;
@@ -117,7 +119,7 @@ void send_cmd()
 		//if (cmdNo == 255)  msg_part = IB_1;
 
 
-		DBG_PRINT(msg_beginptr);
+		//DBG_PRINT(msg_beginptr);
 		if (msg_beginptr[0] == 'S')
 		{
 			if (msg_beginptr[1] == 'C')  // send combined information flag
@@ -185,21 +187,20 @@ void send_cmd()
 		}
 		else if (msg_beginptr[0] == 'F' && msg_beginptr[1] == '=')
 		{
-			ccParamAnz = strlen(msg_beginptr) / 2 - 1;
+			ccParamAnz = (msg_endptr - msg_beginptr-1)/2;
 
 			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
-				uint8_t hex;
-				DBG_PRINTLN("write new ccreg  ");
+				//uint8_t hex;
+				DBG_PRINT("write new ccregs #");			DBG_PRINTLN(ccParamAnz); 
+				char b[3];
+				b[2] = '\0';
 				for (uint8_t i = 0; i < ccParamAnz; i++)
 				{
 					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
-					hex = (uint8_t)msg_beginptr[2 + i * 2];
-					val = cc1101::hex2int(hex) * 16;
-					hex = (uint8_t)msg_beginptr[3 + i * 2];
-					val = cc1101::hex2int(hex) + val;
+					memcpy(b, msg_beginptr+2+(i*2), 2);
+					val = strtol(b, nullptr, 16);
 					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
-					cc1101::printHex2(val);
-					msg_endptr = msg_beginptr + (3 + i * 2) + 1;
+					DBG_PRINT(b);
 				}
 				DBG_PRINTLN("");
 			}
@@ -242,7 +243,7 @@ void send_cmd()
 
 		for (uint8_t c = 0; c <= cmdNo; c++)
 		{
-			DBG_PRINT(" cmd "); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINTLN(cmdNo);
+			DBG_PRINT(" cmd "); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
 			DBG_PRINT(" reps "); DBG_PRINTLN(command[c].repeats);
 
 			if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
@@ -258,11 +259,13 @@ void send_cmd()
 
 	if (ccParamAnz > 0) {
 		DBG_PRINT("ccreg write back ");
+		//char b[3];
 		for (uint8_t i = 0; i < ccParamAnz; i++)
 		{
-			val = ccReg[i];
-			cc1101::printHex2(val);
-			cc1101::writeReg(0x0d + i, val);    // gemerkte Registerwerte zurueckschreiben
+			//val = ccReg[i];
+			//sprintf_P(b,PSTR("%02X"), val);
+			cc1101::writeReg(0x0d + i, ccReg[i]);    // gemerkte Registerwerte zurueckschreiben
+			//MSG_PRINT(b);
 		}
 		DBG_PRINTLN("");
 	}
