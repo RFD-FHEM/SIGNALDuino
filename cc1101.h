@@ -279,21 +279,15 @@ namespace cc1101 {
     uint8_t val1;
   
     if (isHexadecimalDigit(IB_1[3])) {
-		reg = (uint8_t)strtol(IB_1+4, NULL, 16);
+		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16);
 
         if (reg < 0x3e) {
              val = cmdStrobe(reg);
              delay(1);
              val1 = cmdStrobe(0x3D);        //  No operation. May be used to get access to the chip status byte.
-             MSG_PRINT(F("cmdStrobeReg "));
-             printHex2(reg);
-             MSG_PRINT(F(" chipStatus "));
-             val = val >> 4;
-             MSG_PRINT(val, HEX);
-             MSG_PRINT(F(" delay1 "));
-             val = val1 >> 4;
-             MSG_PRINT(val, HEX);
-             MSG_PRINTLN("");
+			 char b[41];
+			 sprintf_P(b, PSTR("cmdStrobeReg %02X chipStatus %02X delay1 %02X"), reg, val >> 4, val1 >> 4);
+             MSG_PRINTLN(b);
          }
      }
   }
@@ -303,10 +297,9 @@ namespace cc1101 {
 
     if (reg > 1 && reg < 0x40) {
            writeReg(reg-2, var);
-           MSG_PRINT("W");
-           printHex2(reg);
-           printHex2(var);
-           MSG_PRINTLN("");
+		   char b[6];
+		   sprintf_P(b, PSTR("W%02X%02X"), reg,var);
+		   MSG_PRINTLN(b);
     }
   }
 

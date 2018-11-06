@@ -23,7 +23,6 @@ extern volatile bool blinkLED;
 namespace commands {
 
 
-
 	inline void getPing()
 	{
 		MSG_PRINTLN("OK");
@@ -239,10 +238,14 @@ namespace commands {
 				cc1101::commandStrobes();
 			}
 			else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
-				char d[3];
-				strncpy(d, IB_1+1, 2);
-				uint8_t reg = (uint8_t)strtol(d, NULL, 16);
-				uint8_t val = (uint8_t)strtol(IB_1+3, NULL, 16);
+				char b[3];
+				b[2] = '\0';
+
+				memcpy(b, &IB_1[1], 2);
+				uint8_t reg = strtol(b, nullptr, 16);
+				memcpy(b, &IB_1[3], 2);
+				uint8_t val = strtol(b, nullptr, 16);
+
 				EEPROM.write(reg, val);
 				if (hasCC1101) {
 					cc1101::writeCCreg(reg, val);
