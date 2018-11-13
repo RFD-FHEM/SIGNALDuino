@@ -110,9 +110,10 @@ void send_cmd()
 	uint8_t cmdNo = 255;
 
 
-	char buf[256] = {}; // Second Buffer 256 Bytes
+	char buf[256] = {}; // Second Buffer 256 Bytes 0-255
 	char *msg_beginptr = IB_1;
 	char *msg_endptr = buf;
+	uint8_t buffer_left = 255;
 	do
 	{
 
@@ -126,21 +127,21 @@ void send_cmd()
 			{
 				cmdNo++;
 				command[cmdNo].type = combined;
-				extraDelay = false;
+extraDelay = false;
 			}
 			else if (msg_beginptr[1] == 'M') // send manchester
 			{
-				cmdNo++;
-				command[cmdNo].type = manchester;
-				DBG_PRINTLN("Adding manchester");
+			cmdNo++;
+			command[cmdNo].type = manchester;
+			DBG_PRINTLN("Adding manchester");
 
 			}
 			else if (msg_beginptr[1] == 'R') // send raw
 			{
-				cmdNo++;
-				command[cmdNo].type = raw;
-				DBG_PRINTLN("Adding raw");
-				extraDelay = false;
+			cmdNo++;
+			command[cmdNo].type = raw;
+			DBG_PRINTLN("Adding raw");
+			extraDelay = false;
 			}
 			if (cmdNo == 0) {
 				DBG_PRINTLN("rearrange beginptr");
@@ -151,59 +152,61 @@ void send_cmd()
 		}
 		else if (msg_beginptr[0] == 'P' && msg_beginptr[2] == '=') // Do some basic detection if data matches what we expect
 		{
-			counter = msg_beginptr[1] - '0'; // Convert to dec value
-			command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
-			DBG_PRINTLN("Adding bucket");
-			if (cmdNo == 0) {
-				MSG_PRINT(msg_beginptr);
-				msg_endptr = buf; // rearrange to beginning of buf
-				msg_beginptr = nullptr;
-			}
+		counter = msg_beginptr[1] - '0'; // Convert to dec value
+		command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
+		//*(msg_endptr + 1) = '\0';
+		DBG_PRINTLN("Adding bucket");
+		if (cmdNo == 0) {
+			MSG_PRINT(msg_beginptr);
+			msg_endptr = buf; // rearrange to beginning of buf
+			msg_beginptr = nullptr;
+		}
 		}
 		else if (msg_beginptr[0] == 'R' && msg_beginptr[1] == '=') {
-			command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);
-			DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
-			if (cmdNo == 0) {
-				MSG_PRINT(msg_beginptr);
-				msg_endptr = buf; // rearrange to beginning of buf
-				msg_beginptr = nullptr;
+		command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);
+		//*(msg_endptr + 1) = '\0';
+		DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
+		if (cmdNo == 0) {
+			MSG_PRINT(msg_beginptr);
+			msg_endptr = buf; // rearrange to beginning of buf
+			msg_beginptr = nullptr;
 
-			}
+		}
 		}
 		else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
-			command[cmdNo].datastart = msg_beginptr + 2;
-			command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 3, ';', buf + 255 - msg_beginptr + 3);
-			//if (command[cmdNo].dataend != NULL) command[cmdNo].dataend= command[cmdNo].dataend-1;
-			DBG_PRINT("locating data start:");
-			DBG_PRINT(command[cmdNo].datastart);
-			DBG_PRINT(" end:");
-			DBG_PRINTLN(command[cmdNo].dataend);
+		command[cmdNo].datastart = msg_beginptr + 2;
+		command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 3, ';', buf + 255 - msg_beginptr + 3);
+		//if (command[cmdNo].dataend != NULL) command[cmdNo].dataend= command[cmdNo].dataend-1;
+		DBG_PRINT("locating data start:");
+		DBG_PRINT(command[cmdNo].datastart);
+		DBG_PRINT(" end:");
+		DBG_PRINTLN(command[cmdNo].dataend);
 		}
 		else if (msg_beginptr[0] == 'C' && msg_beginptr[1] == '=')
 		{
-			//sendclock = msg_part.substring(2).toInt();
-			command[cmdNo].sendclock = strtoul(&msg_beginptr[2], &msg_endptr, 10);
-			DBG_PRINTLN("adding sendclock");
+		//sendclock = msg_part.substring(2).toInt();
+		command[cmdNo].sendclock = strtoul(&msg_beginptr[2], &msg_endptr, 10);
+		DBG_PRINTLN("adding sendclock");
 		}
 		else if (msg_beginptr[0] == 'F' && msg_beginptr[1] == '=')
 		{
-			ccParamAnz = (msg_endptr - msg_beginptr-1)/2;
+		ccParamAnz = (msg_endptr - msg_beginptr - 1) / 2;
 
-			if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
-				//uint8_t hex;
-				DBG_PRINT("write new ccregs #");			DBG_PRINTLN(ccParamAnz); 
-				char b[3];
-				b[2] = '\0';
-				for (uint8_t i = 0; i < ccParamAnz; i++)
-				{
-					ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
-					memcpy(b, msg_beginptr+2+(i*2), 2);
-					val = strtol(b, nullptr, 16);
-					cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
-					DBG_PRINT(b);
-				}
-				DBG_PRINTLN("");
+		if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
+			//uint8_t hex;
+			DBG_PRINT("write new ccregs #");			DBG_PRINTLN(ccParamAnz);
+			char b[3];
+			b[2] = '\0';
+			for (uint8_t i = 0; i < ccParamAnz; i++)
+			{
+				ccReg[i] = cc1101::readReg(0x0d + i, 0x80);    // alte Registerwerte merken
+				memcpy(b, msg_beginptr + 2 + (i * 2), 2);
+				val = strtol(b, nullptr, 16);
+				cc1101::writeReg(0x0d + i, val);            // neue Registerwerte schreiben
+				DBG_PRINT(b);
 			}
+			DBG_PRINTLN("");
+		}
 		}
 		if (msg_endptr == msg_beginptr)
 		{
@@ -220,11 +223,20 @@ void send_cmd()
 			uint8_t l = 0;
 			do {
 				msg_endptr += l;
+				buffer_left -= l;
 				l = MSG_PRINTER.readBytes(msg_endptr, 1);
 				if (l == 0) {
 					DBG_PRINTLN("TOUT");  break;
 				}
-			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n');
+			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
+			if (buffer_left == 0)
+			{
+				delayMicroseconds(300);
+				MSG_PRINTER.readBytesUntil('\n', buf, 255);
+				MSG_PRINTLN(F("send cmd to long"));
+				return;
+			}
+			*(msg_endptr + 1) = '\0'; // Nullterminate the string
 
 		}
 	} while (msg_beginptr != NULL);

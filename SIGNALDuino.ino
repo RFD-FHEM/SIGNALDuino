@@ -57,7 +57,7 @@
 
 
 
-#define PROGVERS               "3.3.1-RC8"
+#define PROGVERS               "3.3.1-RC9"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
@@ -321,10 +321,15 @@ void serialEvent()
 	{
 		if (idx == 10) {
 			// Short buffer is now full
-			HandleLongCommand();
+			//HandleLongCommand();
+			MSG_PRINT("Command buffer error: ");
+			MSG_PRINTLN(IB_1);
+			idx = 0;
+			return;
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
+			//MSG_PRINT(IB_1[idx]);
 			switch (IB_1[idx])
 			{
 				case '\n':
@@ -332,9 +337,10 @@ void serialEvent()
 				case '\0':
 				case '#':
 					wdt_reset();
+					//MSG_PRINTLN("HandleShortCommand");
 					commands::HandleShortCommand();  // Short command received and can be processed now
 					idx = 0;
-					return;
+					return; //Exit function
 				case ';':
 					DBG_PRINT("send cmd detected ");
 					DBG_PRINTLN(idx);

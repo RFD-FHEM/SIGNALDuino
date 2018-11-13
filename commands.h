@@ -253,7 +253,7 @@ namespace commands {
 			}
 			break;
 		default:
-			MSG_PRINTLN(F("Unsupported command"));
+			MSG_PRINTLN(F("Unsupported short command"));
 			return;
 		}
 		blinkLED = true;
