@@ -1049,7 +1049,7 @@ bool SignalDetectorClass::getSync()
 			if ((pattern[p] < 0) &&
 				(syncabs < syncMaxMicros && syncabs / pattern[clock] <= syncMaxFact) &&
 				(syncabs > syncMinFact*pattern[clock]) &&
-				(histo[p] < messageLen*0.08) && (histo[p] >= 1)
+				(histo[p] < messageLen*0.08) && (histo[p] > 1)
 				)
 			{
 
