@@ -15,7 +15,7 @@
 #include "functions.h"
 #include "signalDecoder.h"
 
-extern char IB_1[10];
+extern char IB_1[14];
 extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
@@ -101,9 +101,9 @@ namespace commands {
 	inline void configSET()
 	{
 		//MSG_PRINT(cmdstring.substring(2, 8));
-		if (strstr(&IB_1[2],"mcmbl="))   // mc min bit len
+		if (strstr(&IB_1[2],"mcmbl=") != NULL)   // mc min bit len
 		{
-			musterDec.mcMinBitLen = strtol(IB_1+8, NULL,10);
+			musterDec.mcMinBitLen = strtol(&IB_1[8], NULL,10);
 			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
 		}
 	}

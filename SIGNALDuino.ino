@@ -138,7 +138,7 @@ volatile bool blinkLED = false;
 //String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
-char IB_1[10]; // Input Buffer one - capture commands
+char IB_1[14]; // Input Buffer one - capture commands
 
 
 
@@ -284,9 +284,9 @@ void serialEvent()
 	static uint8_t idx = 0;
 	while (MSG_PRINTER.available())
 	{
-		if (idx == 10) {
+		if (idx == 14) {
 			// Short buffer is now full
-			MSG_PRINT("Command buffer error: ");
+			MSG_PRINT("Command to long: ");
 			MSG_PRINTLN(IB_1);
 			idx = 0;
 			return;

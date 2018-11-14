@@ -12,7 +12,7 @@
 #include "output.h"
 
 
-extern char IB_1[10];
+extern char IB_1[14];
 
 
 

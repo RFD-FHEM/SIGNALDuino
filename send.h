@@ -10,6 +10,8 @@
 #endif
 
 extern bool hasCC1101;
+extern char IB_1[14];
+
 //================================= RAW Send ======================================
 void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 {
