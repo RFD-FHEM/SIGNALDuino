@@ -90,7 +90,7 @@
 
 
 #define BAUDRATE               57600 // 500000 //57600
-#define FIFO_LENGTH			   50 //150
+#define FIFO_LENGTH			   90 //150
 //#define DEBUG				   1
 
 // EEProm Address
@@ -104,7 +104,6 @@
 void serialEvent();
 void cronjob();
 int freeRam();
-void HandleLongCommand();
 //bool command_available = false;
 unsigned long getUptime();
 void enDisPrint(bool enDis);
@@ -268,48 +267,14 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 }
 
 
-/*
-bool split_cmdpart(int16_t *startpos, String *msg_part)
-{
-	int16_t endpos=0;
-	//startpos=cmdstring.indexOf(";",startpos);   			 // search first  ";"
-	endpos=cmdstring.indexOf(";",*startpos);     			 // search next   ";"
-
-	if (endpos ==-1 || *startpos== -1) return false;
-	*msg_part = cmdstring.substring(*startpos,endpos);
-	*startpos=endpos+1;    // Set startpos to endpos to extract next part
-	return true;
-}
-*/
 
 
 
 
 
 
-//================================= Kommandos ======================================
-void IT_CMDs();
+//================================= Serielle verarbeitung ======================================
 
-
-void HandleLongCommand()
-{
-	// Try so avoid blocking as long as possible and use internal Buffer
-
-  #define  cmd_send 'S'
-
- if (IB_1[0] == cmd_send) {
-  	if (musterDec.getState() == searching || MSG_PRINTER.available() >= SERIAL_RX_BUFFER_SIZE/2)
-	{
-		send_cmd(); // Part of Send
-	} else {
-
-	}
-
-  } else {
-         MSG_PRINTLN(F("Unsupported command"));
-  }
-  
-}
 
 
 
@@ -321,7 +286,6 @@ void serialEvent()
 	{
 		if (idx == 10) {
 			// Short buffer is now full
-			//HandleLongCommand();
 			MSG_PRINT("Command buffer error: ");
 			MSG_PRINTLN(IB_1);
 			idx = 0;
@@ -329,7 +293,6 @@ void serialEvent()
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
-			//MSG_PRINT(IB_1[idx]);
 			switch (IB_1[idx])
 			{
 				case '\n':
@@ -337,14 +300,12 @@ void serialEvent()
 				case '\0':
 				case '#':
 					wdt_reset();
-					//MSG_PRINTLN("HandleShortCommand");
 					commands::HandleShortCommand();  // Short command received and can be processed now
 					idx = 0;
 					return; //Exit function
 				case ';':
 					DBG_PRINT("send cmd detected ");
 					DBG_PRINTLN(idx);
-
 					send_cmd();
 					idx =  0; // increments to 1
 					return; //Exit function
