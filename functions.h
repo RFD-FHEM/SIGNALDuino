@@ -23,7 +23,6 @@ extern bool hasCC1101;
 void handleInterrupt() {
 	cli();
 	const unsigned long Time = micros();
-	//const bool state = digitalRead(PIN_RECEIVE);
 	const unsigned long  duration = Time - lastTime;
 	lastTime = Time;
 	if (duration >= pulseMin) {//kleinste zulaessige Pulslaenge
@@ -37,9 +36,7 @@ void handleInterrupt() {
 		if (isHigh(PIN_RECEIVE)) { // Wenn jetzt high ist, dann muss vorher low gewesen sein, und dafuer gilt die gemessene Dauer.
 			sDuration = -sDuration;
 		}
-		//MSG_PRINTLN(sDuration);
 		FiFo.enqueue(sDuration);
-		//++fifocnt;
 	} // else => trash
 	sei();
 }
