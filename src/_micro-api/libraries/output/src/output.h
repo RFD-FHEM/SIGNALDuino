@@ -22,6 +22,11 @@
 #define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
 #endif
 
+#if defined(WIN32) || defined(__linux__)
+#define digitalLow(P) pinMode(P,LOW)
+#define digitalHigh(P) pinMode(P,HIGH)
+
+#else
 #define pinMask(P)((uint8_t)(1<<pinIndex(P)))
 #define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
 #define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
@@ -32,6 +37,7 @@
 #define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
 #define digitalState(P)((uint8_t)isHigh(P))
 
+#endif
 //#define DEBUG
 
 

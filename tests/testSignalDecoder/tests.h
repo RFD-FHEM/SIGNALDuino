@@ -2,6 +2,10 @@
 
 #include <gtest/gtest.h>
 #include "signalDecoder.h"
+//#include "send.h"
+
+
+
 
 namespace arduino {
 	namespace test
@@ -22,7 +26,7 @@ namespace arduino {
 		bool state;
 
 		bool DigitalSimulate(const int pulse);
-		bool import_sigdata(std::string *cmdstring, const bool raw = false);
+		bool import_sigdata(std::string *cmdstring, const bool raw_mode = false);
 		bool import_mcdata(std::string *cmdstring, const uint8_t startpos, const uint8_t endpos, const int16_t clock);
 		std::string geFullMCString();
 

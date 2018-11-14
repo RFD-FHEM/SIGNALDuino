@@ -88,7 +88,7 @@ namespace arduino {
 			return state;
 		}
 
-		bool Tests::import_sigdata(std::string *cmdstring, const bool raw)
+		bool Tests::import_sigdata(std::string *cmdstring, const bool raw_mode)
 		{
 
 			std::string msg_part;
@@ -106,7 +106,7 @@ namespace arduino {
 				{
 					uint8_t counter = atoi(cmdstring->substr(startpos + 1, startpos + 2).c_str()); // extract the pattern number
 					buckets[counter] = atoi(cmdstring->substr(startpos + 3, endpos).c_str());
-					if (raw)
+					if (raw_mode)
 					{
 						ooDecode.pattern[counter] = buckets[counter];
 					}
@@ -119,7 +119,7 @@ namespace arduino {
 						const int8_t ipulse = atoi(&cpulse);
 
 						//state = DigitalSimulate(buckets[cmdstring->substring(i, i + 1).toInt()]);
-						if (!raw) {
+						if (!raw_mode) {
 							state = ooDecode.decode(&buckets[ipulse]);
 
 							//Serial.println(buckets[ipulse]);

@@ -12,7 +12,7 @@
 #include "output.h"
 
 
-extern String cmdstring;
+extern char IB_1[14];
 
 
 
@@ -140,25 +140,6 @@ namespace cc1101 {
 		0x00, // 28 RCCTRL0
 	};
   
-	byte hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
-		if (hex >= '0' && hex <= '9') hex = hex - '0';
-		else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
-		else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
-		return hex;
-		// printf ("%d\n",$hex) ??
-	}
-
-	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
-		if (hex < 16) {
-			MSG_PRINT("0");
-		}
-		// char hexstr[2] = {0};
-		//sprintf(hexstr, "%02X", hex);
-
-		MSG_PRINT(hex, HEX);
-
-
-	}
 
 
 	uint8_t sendSPI(const uint8_t val) {				 // send byte via SPI
@@ -206,9 +187,11 @@ namespace cc1101 {
 		}
 		cc1101_Deselect();
 
+		char b[4];
+
 		for (uint8_t i = 0; i < 8; i++) {
-			printHex2(PatableArray[i]);
-			MSG_PRINT(" ");
+			sprintf_P(b,PSTR(" %02X"), PatableArray[i]);
+			MSG_PRINT(b);
 		}
 		MSG_PRINTLN("");
 	}
@@ -226,23 +209,21 @@ namespace cc1101 {
 
   void readCCreg(const uint8_t reg) {   // read CC11001 register
     uint8_t var;
-    uint8_t hex;
     uint8_t n;
+	char b[11];
 
-       if (cmdstring.charAt(3) == 'n' && isHexadecimalDigit(cmdstring.charAt(4))) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
-           hex = (uint8_t)cmdstring.charAt(4);
-           n = hex2int(hex);
+       if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
+           n = (uint8_t)strtol((const char*)IB_1+4, NULL, 16);
            if (reg < 0x2F) {
-              MSG_PRINT("C");
-              printHex2(reg);
-              MSG_PRINT("n");
               n += 2;
-              printHex2(n);
-              MSG_PRINT("=");
-              for (uint8_t i = 0; i < n; i++) {
-                 var = readReg(reg + i, CC1101_CONFIG);
-                 printHex2(var);
-              }
+			  sprintf(b, "C%02Xn%02X=", reg,n);
+			  MSG_PRINT(b);
+
+              for (uint8_t i = reg; i < reg+n; i++) {
+                 var = readReg(i, CC1101_CONFIG);
+				 sprintf(b, "%02X", var);
+				 MSG_PRINT(b);
+			  }
               MSG_PRINTLN("");
            }
        }
@@ -254,14 +235,11 @@ namespace cc1101 {
           else {
              var = readReg(reg, CC1101_STATUS);
           }
-          MSG_PRINT("C");
-          printHex2(reg);
-          MSG_PRINT(" = ");
-          printHex2(var);
-          MSG_PRINTLN("");
+		  sprintf_P(b, PSTR("C%02X = %02X"), reg, var);
+		  MSG_PRINTLN(b);
        }
        else if (reg == 0x3E) {                   // patable
-          MSG_PRINT(F("C3E = "));
+          MSG_PRINT(F("C3E ="));
           readPatable();
        }
        else if (reg == 0x99) {                   // alle register
@@ -270,41 +248,33 @@ namespace cc1101 {
              if (i > 0) {
                MSG_PRINT(" ");
              }
-             MSG_PRINT(F("ccreg "));
-             printHex2(i);
-             MSG_PRINT(F(": "));
+			 sprintf_P(b, PSTR("ccreg %02X: "), i);
+			 MSG_PRINT(b);
            }
            var = readReg(i, CC1101_CONFIG);
-           printHex2(var);
-           MSG_PRINT(" ");
-         }
+		   sprintf_P(b, PSTR("%02X "), var);
+		   MSG_PRINT(b);
+		 }
          MSG_PRINTLN("");
        }
      }
   }
 
   void commandStrobes(void) {
-    uint8_t hex;
     uint8_t reg;
     uint8_t val;
     uint8_t val1;
   
-    if (isHexadecimalDigit(cmdstring.charAt(3))) {
-        hex = (uint8_t)cmdstring.charAt(3);
-        reg = hex2int(hex) + 0x30;
+    if (isHexadecimalDigit(IB_1[3])) {
+		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16);
+
         if (reg < 0x3e) {
              val = cmdStrobe(reg);
              delay(1);
              val1 = cmdStrobe(0x3D);        //  No operation. May be used to get access to the chip status byte.
-             MSG_PRINT(F("cmdStrobeReg "));
-             printHex2(reg);
-             MSG_PRINT(F(" chipStatus "));
-             val = val >> 4;
-             MSG_PRINT(val, HEX);
-             MSG_PRINT(F(" delay1 "));
-             val = val1 >> 4;
-             MSG_PRINT(val, HEX);
-             MSG_PRINTLN("");
+			 char b[41];
+			 sprintf_P(b, PSTR("cmdStrobeReg %02X chipStatus %02X delay1 %02X"), reg, val >> 4, val1 >> 4);
+             MSG_PRINTLN(b);
          }
      }
   }
@@ -314,10 +284,9 @@ namespace cc1101 {
 
     if (reg > 1 && reg < 0x40) {
            writeReg(reg-2, var);
-           MSG_PRINT("W");
-           printHex2(reg);
-           printHex2(var);
-           MSG_PRINTLN("");
+		   char b[6];
+		   sprintf_P(b, PSTR("W%02X%02X"), reg,var);
+		   MSG_PRINTLN(b);
     }
   }
 
@@ -380,23 +349,10 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		#ifdef PIN_MARK433
 		pinAsInputPullUp(PIN_MARK433);
 		#endif
-		//// Änderungsbeginn  ---> 
 
-
-		SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-		/*
-		SPCR = ((1 << SPE) |               		// SPI Enable
-		(0 << SPIE) |              		// SPI Interupt Enable
-		(0 << DORD) |              		// Data Order (0:MSB first / 1:LSB first)
-		(1 << MSTR) |              		// Master/Slave select
-		(0 << SPR1) | (0 << SPR0) |   		// SPI Clock Rate
-		(0 << CPOL) |             		// Clock Polarity (0:SCK low / 1:SCK hi when idle)
-		(0 << CPHA));             		// Clock Phase (0:leading / 1:trailing edge sampling)
-
-		SPSR = (1 << SPI2X);             		// Double Clock Rate
-		*/
-		pinAsInput(PIN_SEND);				// gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-		digitalHigh(csPin);                 // SPI init
+		SPCR = _BV(SPE) | _BV(MSTR);			    // SPI speed = CLK/4
+		pinAsInput(PIN_SEND);						// gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+		digitalHigh(csPin);							// SPI init
 		digitalHigh(sckPin);
 		digitalLow(mosiPin);
 	}
