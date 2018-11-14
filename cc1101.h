@@ -140,19 +140,6 @@ namespace cc1101 {
 		0x00, // 28 RCCTRL0
 	};
   
-	byte hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
-		if (hex >= '0' && hex <= '9') hex = hex - '0';
-		else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
-		else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
-		return hex;
-		// printf ("%d\n",$hex) ??
-	}
-
-	 inline void printHex2(const char hex) {   
-		char b[3];
-		sprintf(b, "%02X", hex);
-		MSG_PRINT(b);
-	 }
 
 
 	uint8_t sendSPI(const uint8_t val) {				 // send byte via SPI
@@ -362,23 +349,10 @@ void writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa
 		#ifdef PIN_MARK433
 		pinAsInputPullUp(PIN_MARK433);
 		#endif
-		//// Änderungsbeginn  ---> 
 
-
-		SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-		/*
-		SPCR = ((1 << SPE) |               		// SPI Enable
-		(0 << SPIE) |              		// SPI Interupt Enable
-		(0 << DORD) |              		// Data Order (0:MSB first / 1:LSB first)
-		(1 << MSTR) |              		// Master/Slave select
-		(0 << SPR1) | (0 << SPR0) |   		// SPI Clock Rate
-		(0 << CPOL) |             		// Clock Polarity (0:SCK low / 1:SCK hi when idle)
-		(0 << CPHA));             		// Clock Phase (0:leading / 1:trailing edge sampling)
-
-		SPSR = (1 << SPI2X);             		// Double Clock Rate
-		*/
-		pinAsInput(PIN_SEND);				// gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-		digitalHigh(csPin);                 // SPI init
+		SPCR = _BV(SPE) | _BV(MSTR);			    // SPI speed = CLK/4
+		pinAsInput(PIN_SEND);						// gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+		digitalHigh(csPin);							// SPI init
 		digitalHigh(sckPin);
 		digitalLow(mosiPin);
 	}
