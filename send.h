@@ -231,6 +231,11 @@ extraDelay = false;
 					DBG_PRINTLN("TOUT");  break;
 				}
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
+			if (l == 0)
+			{
+				MSG_PRINTLN(F("send cmd corrupt"));
+				return;
+			}
 			if (buffer_left == 0)
 			{
 				delayMicroseconds(300);
