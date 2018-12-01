@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2.1-rc5"
+#define PROGVERS               "3.3.2.1-rc6"
 #define VERSION_1               0x33
 #define VERSION_2               0x21
 
@@ -83,7 +83,7 @@
 
 
 #define BAUDRATE               57600
-#define FIFO_LENGTH            130      // 50
+#define FIFO_LENGTH            140      // 50
 
 //#define WATCHDOG	1 // Der Watchdog ist in der Entwicklungs und Testphase deaktiviert. Es muss auch ohne Watchdog stabil funktionieren.
 //#define DEBUGSENDCMD  1
@@ -108,7 +108,7 @@ SignalDetectorClass musterDec;
 #include "cc1101.h"
 
 #define pulseMin  90
-#define maxCmdString 350 // 250
+#define maxCmdString 350  //350 // 250
 #define maxSendPattern 8
 #define mcMinBitLenDef   17
 volatile bool blinkLED = false;
@@ -120,10 +120,10 @@ bool hasCC1101 = false;
 bool LEDenabled = true;
 uint8_t MdebFifoLimit = 120;
 
-#define CSetAnz 4
-const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muthresh", "L"};
-const uint8_t CSetAddr[] = {  0xf0,     0xf1,    0xf2,     0xf3,   0xf4};
-const uint8_t CSetDef[] =  {    120,       0,       4,     0x1f,   0x40};
+#define CSetAnz 5
+const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muoverflmax", "muthresh", "L"};
+const uint8_t CSetAddr[] = {  0xf0,     0xf1,    0xf2,   0xf5,            0xf3,   0xf4};
+const uint8_t CSetDef[] =  {    120,       0,       4,     3,             0x1f,   0x40};
 
 #ifdef CMP_MEMDBG
 
@@ -333,6 +333,7 @@ void loop() {
 	wdt_reset();
 #endif
 	musterDec.printMsgSuccess = false;
+	musterDec.NoMsgEnd = false;
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 
 		aktVal=FiFo.dequeue();
@@ -340,8 +341,18 @@ void loop() {
 		if (musterDec.MdebEnabled && musterDec.printMsgSuccess) {
 			fifoCount = FiFo.count();
 			if (fifoCount > MdebFifoLimit) {
-				MSG_PRINT(F("MD="));
-				MSG_PRINTLN(fifoCount, DEC);
+				if (musterDec.NoMsgEnd) {
+					if (musterDec.MredEnabled) {
+						MSG_PRINT(F("F"));
+						MSG_PRINT(fifoCount, HEX);
+						MSG_PRINT(F(";"));
+					}
+				}
+				else {
+					MSG_PRINT(F("MF="));
+					MSG_PRINT(fifoCount, DEC);
+					MSG_PRINTLN("");
+				}
 			}
 		}
 		if (musterDec.printMsgSuccess && LEDenabled) {
@@ -668,8 +679,8 @@ void send_cmd()
 			//if (extraDelay) delay(1);
 		}
 
-		MSG_PRINT(cmdstring); // echo
 #ifndef SENDTODECODER
+		MSG_PRINT(cmdstring); // echo
 		if (ccParamAnz > 0) {
 			MSG_PRINT(F("ccreg write back "));
 			for (uint8_t i=0;i<ccParamAnz;i++)
@@ -684,8 +695,8 @@ void send_cmd()
 	}
 #ifndef SENDTODECODER
 	enableReceive();	// enable the receiver
-#endif
 	MSG_PRINTLN("");
+#endif
 }
 
 
@@ -721,8 +732,9 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_help) {
     if (cmdstring.charAt(1) == 'S') {
 	for (uint8_t i = 0; i < CSetAnz; i++) {
+	    MSG_PRINT(F("CS"));
 	    MSG_PRINT(CSetCmd[i]);
-	    MSG_PRINT(" ");
+	    MSG_PRINT(F("= "));
         }
 	MSG_PRINTLN("");
     } else {
@@ -888,8 +900,14 @@ inline void getConfig()
    MSG_PRINT(musterDec.MdebEnabled, DEC);
    MSG_PRINT(F("_MScnt="));
    MSG_PRINT(musterDec.MsMoveCountmax, DEC);
-   MSG_PRINT(F(";MuSplitThresh="));
-   MSG_PRINT(musterDec.MuSplitThresh, DEC);
+   if (musterDec.MuNoOverflow == true) {
+      MSG_PRINT(F(";MuOverflMax="));
+      MSG_PRINT(musterDec.MuOverflMax, DEC);
+   }
+   else {
+      MSG_PRINT(F(";MuSplitThresh="));
+      MSG_PRINT(musterDec.MuSplitThresh, DEC);
+   }
    if (musterDec.mcMinBitLen != mcMinBitLenDef) {
       MSG_PRINT(F(";mcMinBitLen="));
       MSG_PRINT(musterDec.mcMinBitLen, DEC);
@@ -897,10 +915,11 @@ inline void getConfig()
    if (musterDec.MdebEnabled) {
       MSG_PRINT(F(";MdebFifoLimit="));
       MSG_PRINT(MdebFifoLimit, DEC);
+      MSG_PRINT(F("/"));
+      MSG_PRINT(FIFO_LENGTH, DEC);
    }
    MSG_PRINTLN("");
 }
-
 
 
 inline void configCMD()
@@ -952,7 +971,7 @@ inline void configSET()
 		if (cmdstring.substring(2, i) == CSetCmd[n]) {
 			MSG_PRINT(CSetCmd[n]);
 			MSG_PRINT("=");
-			if (n != 3) {
+			if (n != CSetAnz-1) {
 				val = cmdstring.substring(i+1).toInt();
 				MSG_PRINTLN(val);
 				EEPROM.write(CSetAddr[n], val);
@@ -971,7 +990,10 @@ inline void configSET()
 	else if (n == 2) {			// mscnt
 		musterDec.MsMoveCountmax = val;
 	}
-	else if (n == 3) {			// muthresh
+	else if (n == 3) {			// MuOverflMax
+		musterDec.MuOverflMax = val;
+	}
+	else if (n == CSetAnz-1) {			// muthresh
 		musterDec.MuSplitThresh = cmdstring.substring(i+1).toInt();
 		val = (musterDec.MuSplitThresh>>8) & 0xFF;
 		EEPROM.write(CSetAddr[n], val);			// high
@@ -1150,8 +1172,9 @@ void getFunctions(bool *ms,bool *mu,bool *mc, bool *red, bool *deb, bool *led, b
     
     MdebFifoLimit = EEPROM.read(CSetAddr[0]);
     musterDec.MsMoveCountmax = EEPROM.read(CSetAddr[2]);
-    high = EEPROM.read(CSetAddr[3]);
-    musterDec.MuSplitThresh = EEPROM.read(CSetAddr[4]) + ((high << 8) & 0xFF00);
+    musterDec.MuOverflMax = EEPROM.read(CSetAddr[3]);
+    high = EEPROM.read(CSetAddr[CSetAnz-1]);
+    musterDec.MuSplitThresh = EEPROM.read(CSetAddr[CSetAnz]) + ((high << 8) & 0xFF00);
     musterDec.mcMinBitLen = EEPROM.read(CSetAddr[1]);
     if (musterDec.mcMinBitLen == 0) {
         musterDec.mcMinBitLen = mcMinBitLenDef;
@@ -1164,8 +1187,9 @@ void initEEPROMconfig(void)
 	EEPROM.write(CSetAddr[0], CSetDef[0]);	// fifolimit
 	EEPROM.write(CSetAddr[1], CSetDef[1]);	// mcmbl
 	EEPROM.write(CSetAddr[2], CSetDef[2]);	// mscnt
-	EEPROM.write(CSetAddr[3], CSetDef[3]);	// muthresh high
-	EEPROM.write(CSetAddr[4], CSetDef[4]);	// muthresh low
+	EEPROM.write(CSetAddr[3], CSetDef[3]);	// MuOverflMax
+	EEPROM.write(CSetAddr[4], CSetDef[4]);	// muthresh high
+	EEPROM.write(CSetAddr[5], CSetDef[5]);	// muthresh low
 	MSG_PRINTLN(F("Init eeprom to defaults"));
 }
 
