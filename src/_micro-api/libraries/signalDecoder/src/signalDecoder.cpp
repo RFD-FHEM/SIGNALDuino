@@ -183,6 +183,7 @@ inline void SignalDetectorClass::doDetect()
 		
 		MsMoveCount = 0;
 		MuMoveCount = 0;
+		MuOverflCount = 0;
 		addPattern();
 	}
 	else {  					// valid
@@ -230,6 +231,7 @@ inline void SignalDetectorClass::doDetect()
 					}
 					MsMoveCount = 0;
 					MuMoveCount = 0;
+					MuOverflCount = 0;
 					printMsgSuccess = saveMsgSuccess;
 					//printOut();
 					calcHisto();
@@ -837,7 +839,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				bool m_endfound = false;
 				
 				bool isMuRepeat = false;
-				if (MuSplitThresh > 0) {
+				if (MuSplitThresh > 0 && MuNoOverflow == 0) {
 					if (mstart > 0) {	// wurde in isManchester der mstart veraendert und calcHisto ausgefuehrt?
 						calcHisto();
 						mstart = 0;
@@ -880,7 +882,21 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					calcHisto(0, mend);	// Recalc histogram due to shortened message
 				}
 				
-				if (MredEnabled) {
+				if (MuOverflCount <= MuOverflMax) {
+				  if (m_overflow && MuNoOverflow && MuOverflCount != MuOverflMax) {
+				    NoMsgEnd = true;
+				  }
+				  else {
+				    NoMsgEnd = false;	 
+				  }
+				  /*MSG_PRINT("overfl=");
+				  MSG_PRINT(m_overflow, DEC);
+				  MSG_PRINT(" overcnt=");
+				  MSG_PRINT(MuOverflCount, DEC);
+				  MSG_PRINT(" NoMsgEnd=");
+				  MSG_PRINTLN(NoMsgEnd, DEC);*/
+				  
+				  if (MredEnabled) {
 					int patternInt;
 					uint8_t patternLow;
 					uint8_t patternIdx;
@@ -918,10 +934,6 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					  MSG_PRINT("R");  MSG_PRINT(rssiValue, HEX);  MSG_PRINT(SERIAL_DELIMITER);
 					#endif	
 				    }
-				    else {
-					MSG_PRINT(MSG_START);  MSG_PRINT("Mo");  MSG_PRINT(SERIAL_DELIMITER);
-				    }
-					
 					uint8_t n;
 
 					if ((mend & 1) == 1) {   // ungerade
@@ -931,14 +943,14 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 						MSG_PRINT("D");
 					}
 
-					for (uint8_t i = 0; i < mend; i=i+2) {					
+					for (uint8_t i = 0; i < mend; i=i+2) {
 						message.getByte(i/2,&n);
 						MSG_WRITE(n);
 					}
 
-					MSG_PRINT(SERIAL_DELIMITER);			
-				}
-				else {
+					MSG_PRINT(SERIAL_DELIMITER);
+				  }
+				  else {
 				    if (MuOverflCount == 0) {
 					MSG_PRINT(MSG_START); MSG_PRINT("MU");  MSG_PRINT(SERIAL_DELIMITER);
 
@@ -950,17 +962,22 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					MSG_PRINT("CP="); MSG_PRINT(clock);     MSG_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 					#ifdef CMP_CC1101
 					  MSG_PRINT("R=");  MSG_PRINT(rssiValue); MSG_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
-				        #endif
-				    }
-				    else {
-					MSG_PRINT(MSG_START);  MSG_PRINT("MO");  MSG_PRINT(SERIAL_DELIMITER);
-				    }
+					#endif
+					
 					MSG_PRINT("D=");
+				    }
 					for (uint8_t i = 0; i < mend; ++i)
 					{
 						MSG_PRINT(message[i]);
 					}
-					MSG_PRINT(SERIAL_DELIMITER);
+					
+					if (!NoMsgEnd) {
+						MSG_PRINT(SERIAL_DELIMITER);
+					}
+				  }
+				}
+				else {
+					NoMsgEnd = true;
 				}
 				
 				m_truncated = false;
@@ -969,20 +986,20 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				
 				if (m_overflow) {
 					if (!m_endfound && MuNoOverflow) {
-						MSG_PRINT("o");
-						MSG_PRINT(MuOverflCount);
+						if (MuOverflCount == MuOverflMax) {
+							MSG_PRINT("o");
+							MSG_PRINT(MuOverflCount);
+							MSG_PRINT(SERIAL_DELIMITER);
+						}
 						MuOverflCount++;
 						bufferMove(mend);
 					}
 					else {
 						MSG_PRINT("O");
+						MSG_PRINT(SERIAL_DELIMITER);
 					}
-					MSG_PRINT(SERIAL_DELIMITER);
 				}
-				else if (MuOverflCount > 0) {
-					MuOverflCount = 0;
-				}
-				if (MdebEnabled) {
+				if (MdebEnabled && !m_overflow && !NoMsgEnd) {
 					if (p_valid == 0) {					// Nachrichtenende erkannt
 						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
 					} else if (p_valid == 2) {				// Patternpuffer overflow
@@ -1006,7 +1023,13 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					}
 				}
 				
-				MSG_PRINT(MSG_END);  MSG_PRINT("\n");
+				if (!NoMsgEnd) {
+					MSG_PRINT(MSG_END);  MSG_PRINT("\n");
+				}
+				
+				if (m_overflow == 0) {
+					MuOverflCount = 0;
+				}
 				//if (m_endfound) {
 				//  MSG_PRINT(F("MUend="));
 				//  MSG_PRINTLN(mend);

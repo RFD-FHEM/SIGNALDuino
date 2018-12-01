@@ -102,7 +102,9 @@ public:
 	uint8_t MsMoveCount;
 	uint8_t MuMoveCount;
 	uint8_t MuOverflCount;
+	uint8_t MuOverflMax;
 	uint16_t MuSplitThresh;
+	bool NoMsgEnd;
 	bool printMsgSuccess;
 	
 	uint8_t histo[maxNumPattern];
