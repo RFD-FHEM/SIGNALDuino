@@ -53,7 +53,7 @@
 
 
 #define PROGNAME               "RF_RECEIVER"
-#define PROGVERS               "3.3.2.1-rc6"
+#define PROGVERS               "3.3.2.1-rc7"
 #define VERSION_1               0x33
 #define VERSION_2               0x21
 
@@ -121,9 +121,17 @@ bool LEDenabled = true;
 uint8_t MdebFifoLimit = 120;
 
 #define CSetAnz 5
-const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muoverflmax", "muthresh", "L"};
+//const char *CSetCmd[] = {"fifolimit", "mcmbl", "mscnt", "muoverflmax", "muthresh", "L"};
 const uint8_t CSetAddr[] = {  0xf0,     0xf1,    0xf2,   0xf5,            0xf3,   0xf4};
 const uint8_t CSetDef[] =  {    120,       0,       4,     3,             0x1f,   0x40};
+
+const char string_0[] PROGMEM = "fifolimit";
+const char string_1[] PROGMEM = "mcmbl";
+const char string_2[] PROGMEM = "mscnt";
+const char string_3[] PROGMEM = "muoverflmax";
+const char string_4[] PROGMEM = "muthresh";
+
+const char * const CSetCmd[] PROGMEM = { string_0, string_1, string_2, string_3, string_4 };
 
 #ifdef CMP_MEMDBG
 
@@ -708,6 +716,7 @@ void HandleCommand()
 {
   uint8_t reg;
   uint8_t val;
+  char buffer[12];
   
   #define  cmd_Version 'V'
   #define  cmd_freeRam 'R'
@@ -715,7 +724,7 @@ void HandleCommand()
   #define  cmd_changeReceiver 'X'
   #define  cmd_space ' '
   #define  cmd_help '?'
-  #define  cmd_changeFilter 'F'
+//#define  cmd_changeFilter 'F'
   #define  cmd_send 'S'
   #define  cmd_ping 'P'
   #define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
@@ -732,33 +741,24 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_help) {
     if (cmdstring.charAt(1) == 'S') {
 	for (uint8_t i = 0; i < CSetAnz; i++) {
+	    strcpy_P(buffer, (char*)pgm_read_word(&(CSetCmd[i])));
 	    MSG_PRINT(F("CS"));
-	    MSG_PRINT(CSetCmd[i]);
+	    MSG_PRINT(buffer);
+	    //MSG_PRINT(CSetCmd[i]);
 	    MSG_PRINT(F("= "));
         }
 	MSG_PRINTLN("");
     } else {
-	MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
-	MSG_PRINT(cmd_Version);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_freeRam);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_uptime);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_changeReceiver);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_changeFilter);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_send);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_ping);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_config);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_read);MSG_PRINT(cmd_space);
-	MSG_PRINT(cmd_write);MSG_PRINT(cmd_space);
+	MSG_PRINT(F("? Use one of V R t X S P C r W"));
 	if (hasCC1101) {
-		MSG_PRINT(cmd_patable);MSG_PRINT(cmd_space);
-		MSG_PRINT(cmd_ccFactoryReset);MSG_PRINT(cmd_space);
+		MSG_PRINT(F(" x e"));
 	}
 	MSG_PRINTLN("");
     }
   }
   // V: Version
   else if (cmdstring.charAt(0) == cmd_Version) {
-	  MSG_PRINT("V " PROGVERS " SIGNALduino ");
+	  MSG_PRINT(F("V " PROGVERS " SIGNALduino "));
 	  if (hasCC1101) {
 		MSG_PRINT(F("cc1101 "));
 	    #ifdef PIN_MARK433
@@ -767,7 +767,7 @@ void HandleCommand()
 	    MSG_PRINT(F("Mhz )"));
 	  #endif
       }
-	MSG_PRINTLN("- compiled at " __DATE__ " " __TIME__)
+	MSG_PRINTLN(F("- compiled at " __DATE__ " " __TIME__));
 
   }
   // R: FreeMemory
@@ -790,8 +790,8 @@ void HandleCommand()
   else if (cmdstring.charAt(0) == cmd_changeReceiver) {
     changeReceiver();
   }
-  else if (cmdstring.charAt(0) == cmd_changeFilter) {
-  }
+  //else if (cmdstring.charAt(0) == cmd_changeFilter) {
+  //}
   else if (cmdstring.charAt(0) == cmd_config) {
 	  if (cmdstring.charAt(1) == 'G') {
 		  getConfig();
@@ -800,7 +800,9 @@ void HandleCommand()
 		  configCMD();
 	  }
 	  else if (cmdstring.charAt(1) == 'S') {
-		  configSET();
+		  if (configSET() == false) {
+			unsuppCmd = true;
+		  }
 	  }
       else if (isHexadecimalDigit(cmdstring.charAt(1)) && isHexadecimalDigit(cmdstring.charAt(2)) && hasCC1101) {
 		reg = cmdstringPos2int(1);
@@ -832,7 +834,7 @@ void HandleCommand()
      if (cmdstring.charAt(3) == 'n') {
          MSG_PRINT(F(" :"));
          for (uint8_t i = 0; i < 16; i++) {
-             MSG_PRINT(" ");
+             MSG_PRINT(F(" "));
              printHex2(EEPROM.read(reg + i));
          }
      } else {
@@ -962,15 +964,20 @@ inline void configCMD()
   storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, musterDec.MdebEnabled, LEDenabled, musterDec.MuNoOverflow);
 }
 
-inline void configSET()
+inline bool configSET()
 { 
-	uint8_t i = cmdstring.indexOf("=",4);
+	char buffer[12];
+	int16_t i = cmdstring.indexOf("=",4);
 	uint8_t n = 0;
 	uint8_t val;
+	if (i < 0) {
+		return false;
+	}
 	while (n < CSetAnz) {
-		if (cmdstring.substring(2, i) == CSetCmd[n]) {
-			MSG_PRINT(CSetCmd[n]);
-			MSG_PRINT("=");
+		strcpy_P(buffer, (char*)pgm_read_word(&(CSetCmd[n])));
+		if (cmdstring.substring(2, i) == buffer) {
+			MSG_PRINT(buffer);
+			MSG_PRINT(F("="));
 			if (n != CSetAnz-1) {
 				val = cmdstring.substring(i+1).toInt();
 				MSG_PRINTLN(val);
@@ -1002,8 +1009,9 @@ inline void configSET()
 		MSG_PRINTLN(musterDec.MuSplitThresh);
 	}
 	else {
-		MSG_PRINTLN("");
+		return false;
 	}
+	return true;
 }
 
 void serialEvent()
@@ -1112,7 +1120,7 @@ inline unsigned long getUptime()
 
 inline void getPing()
 {
-	MSG_PRINTLN("OK");
+	MSG_PRINTLN(F("OK"));
 	delayMicroseconds(500);
 }
 
