@@ -256,7 +256,7 @@ namespace commands {
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
 					if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
-					val = 0x57;          // FREND1 = 0x56
+					val = 0x56;          // FREND1 = 0x56
 					} else {
 						val = 0xB6;         // FREND1 = 0xB6
 					}
