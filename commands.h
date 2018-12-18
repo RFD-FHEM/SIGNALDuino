@@ -251,7 +251,7 @@ namespace commands {
 					cc1101::writeCCreg(reg, val);
 				}
 
-				if (reg == 18) {       // bwidth 0x12
+				if (reg == 0x10+2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
 					reg = 0x21+2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
