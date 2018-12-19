@@ -57,7 +57,7 @@
 
 
 
-#define PROGVERS               "3.3.1-RC10"
+#define PROGVERS               "3.3.1-RC-X-171218"
 #define PROGNAME               "RF_RECEIVER"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
