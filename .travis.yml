@@ -68,7 +68,7 @@ jobs:
     - 
       stage: deploy
       env: 
-        - BOARD=nano
+        - BOARD=nano328
     - 
      stage: deploy
      env:
