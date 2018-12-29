@@ -12,6 +12,7 @@
 #include <EEPROM.h>
 #include "output.h"
 #include "SimpleFIFO.h"
+#include "cc1101.h"
 
 extern volatile unsigned long lastTime;
 extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
@@ -19,8 +20,12 @@ extern SignalDetectorClass musterDec;
 extern bool hasCC1101;
 #define pulseMin  90
 
+#ifndef ICACHE_RAM_ATTR
+#define ICACHE_RAM_ATTR 
+#endif
+
 //========================= Pulseauswertung ================================================
-void handleInterrupt() {
+void ICACHE_RAM_ATTR  handleInterrupt() {
 	cli();
 	const unsigned long Time = micros();
 	const unsigned long  duration = Time - lastTime;
@@ -69,6 +74,9 @@ void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red)
 
 	int8_t dat = ms | mu | mc | red;
 	EEPROM.write(addr_features, dat);
+	#ifdef ESP8266
+	EEPROM.commit();
+	#endif
 }
 
 void getFunctions(bool *ms, bool *mu, bool *mc, bool *red)
@@ -83,10 +91,13 @@ void getFunctions(bool *ms, bool *mu, bool *mc, bool *red)
 
 }
 
-void initEEPROM(void) {
-
+void initEEPROM(void) {	
+	#ifdef ESP8266
+	EEPROM.begin(512); //Max bytes of eeprom to use
+	#endif
 	if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
-		DBG_PRINTLN("Reading values fom eeprom");
+		DBG_PRINT(F("Reading values from "));	DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
+
 	}
 	else {
 		storeFunctions(1, 1, 1, 1);    // Init EEPROM with all flags enabled
@@ -97,8 +108,12 @@ void initEEPROM(void) {
 #ifdef CMP_CC1101
 		cc1101::ccFactoryReset();
 #endif
+#ifdef ESP8266
+		EEPROM.commit();
+#endif
 	}
 	getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled);
+	DBG_PRINTLN(F("done"));
 
 }
 
