@@ -1,4 +1,5 @@
 #pragma once
+
 #ifndef _COMMANDS_h
 #define _COMMANDS_h
 
@@ -8,6 +9,7 @@
 //	#include "WProgram.h"
 #endif
 
+#include "compile_config.h"
 
 #include <EEPROM.h>
 #include "output.h"
@@ -20,7 +22,12 @@ extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 
+
+
 namespace commands {
+
+
+	
 
 
 	inline void getPing()
@@ -49,13 +56,13 @@ namespace commands {
 
 	inline void getConfig()
 	{
-		MSG_PRINT(F("MS="));
+		MSG_PRINT(FPSTR(TXT_MS)); MSG_PRINT(FPSTR(TXT_EQ));
 		MSG_PRINT(musterDec.MSenabled, DEC);
-		MSG_PRINT(F(";MU="));
+		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT(FPSTR(TXT_MU)); MSG_PRINT(FPSTR(TXT_EQ));
 		MSG_PRINT(musterDec.MUenabled, DEC);
-		MSG_PRINT(F(";MC="));
+		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT(FPSTR(TXT_MC)); MSG_PRINT(FPSTR(TXT_EQ));
 		MSG_PRINT(musterDec.MCenabled, DEC);
-		MSG_PRINT(F(";Mred="));
+		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT("Mred"); MSG_PRINT(FPSTR(TXT_EQ));
 		MSG_PRINTLN(musterDec.MredEnabled, DEC);
 	}
 
@@ -129,46 +136,60 @@ namespace commands {
 		{
 		case cmd_help:
 			MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
-			MSG_PRINT(cmd_Version); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_freeRam); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_uptime); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_changeReceiver); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_send); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_ping); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_config); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_read); MSG_PRINT(cmd_space);
-			MSG_PRINT(cmd_write); MSG_PRINT(cmd_space);
+			MSG_PRINT(cmd_Version); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_freeRam); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_uptime); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_changeReceiver); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_send); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_ping); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_config); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_read); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_write); MSG_PRINT(FPSTR(TXT_BLANK));
+#ifdef CMP_CC1101
 			if (hasCC1101) {
-				MSG_PRINT(cmd_patable); MSG_PRINT(cmd_space);
-				MSG_PRINT(cmd_ccFactoryReset); MSG_PRINT(cmd_space);
+				MSG_PRINT(cmd_patable); MSG_PRINT(FPSTR(TXT_BLANK));
+				MSG_PRINT(cmd_ccFactoryReset); MSG_PRINT(FPSTR(TXT_BLANK));
 			}
+#endif
 			MSG_PRINTLN("");
 			break;
 		case cmd_ping:
 			getPing();
 		case cmd_Version:
-			MSG_PRINT("V " PROGVERS " SIGNALduino ");
+			MSG_PRINT(F("V " PROGVERS " SIGNALduino "));
+#ifdef CMP_CC1101
 			if (hasCC1101) {
-				MSG_PRINT(F("cc1101 "));
+				MSG_PRINT(FPSTR(TXT_CC1101));
+
+#endif
 #ifdef PIN_MARK433
 				MSG_PRINT("(");
 				MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
 				MSG_PRINT(F("Mhz)"));
-#endif
+#else
+	#ifdef CMP_CC1101
+
+				switch (cc1101::chipVersion()) {
+					//      case 0x08:    // CC1101_VERSION 0x31
+					case 0x18:  // CC1101_VERSION 0xF1
+
+						MSG_PRINT(FPSTR(TXT_BLANK));	MSG_PRINT(FPSTR(TXT_433)); MSG_PRINT(FPSTR(TXT_MHZ));
+						break;
+					case 0x04:  // CC1101_VERSION 0x31
+					case 0x14:  // CC1101_VERSION 0xF1
+						MSG_PRINT(FPSTR(TXT_BLANK));	MSG_PRINT(FPSTR(TXT_868)); MSG_PRINT(FPSTR(TXT_MHZ));
+						break;
+				}
 			}
-			MSG_PRINTLN(" - compiled at " __DATE__ " " __TIME__)
-				break;
+	#endif
+#endif
+			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__))
+			break;
 		case cmd_freeRam:
 			MSG_PRINTLN(freeRam());
 			break;
 		case cmd_uptime:
 			MSG_PRINTLN(getUptime());
-			break;
-		case cmd_ccFactoryReset:
-			if (hasCC1101) {
-				cc1101::ccFactoryReset();
-				cc1101::CCinit();
-			}
 			break;
 		case cmd_changeReceiver:
 			changeReceiver();
@@ -176,46 +197,57 @@ namespace commands {
 		case cmd_config:
 			switch (IB_1[1])
 			{
-			case 'G':
-				getConfig();
-				break;
-			case 'E':
-			case 'D':
-				configCMD();
-				break;
-			case 'S':
-				configSET();
-				break;
-			default:
-				if (isxdigit(IB_1[1]) && isxdigit(IB_1[2]) && hasCC1101) {
-					uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
-					cc1101::readCCreg(val);
-				}
+				case 'G':
+					getConfig();
+					break;
+				case 'E':
+				case 'D':
+					configCMD();
+					break;
+				case 'S':
+					configSET();
+					break;
+	#ifdef CMP_CC1101
+				default:
+					if (isxdigit(IB_1[1]) && isxdigit(IB_1[2]) && hasCC1101) {
+						uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
+						cc1101::readCCreg(val);
+					}
+	#endif
+			}
+			break;
+#ifdef CMP_CC1101
+		case cmd_ccFactoryReset:
+			if (hasCC1101) {
+				cc1101::ccFactoryReset();
+				cc1101::CCinit();
 			}
 			break;
 		case cmd_patable:
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
-				MSG_PRINT(F("Write "));
+				MSG_PRINT(TXT_WRITE);
 				char b[3];
 				sprintf(b, "%02X", val);
 				MSG_PRINT(b);
-				MSG_PRINTLN(F(" to PATABLE done"));
+				MSG_PRINTLN(FPSTR(TXT_TPATAB));
 			}
+			break;
 
+#endif
 		case cmd_read:
 			// R<adr>  read EEPROM
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
-				MSG_PRINT(F("EEPROM "));
+				MSG_PRINT("EEPROM ");
 
 				char b[3];
 				sprintf(b, "%2X", reg);
 				MSG_PRINT(b);
 
 				if (IB_1[3] == 'n') {
-					MSG_PRINT(F(" :"));
+					MSG_PRINT(FPSTR(" :"));
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
 						sprintf(b, " %02X", val);
@@ -223,7 +255,7 @@ namespace commands {
 					}
 				}
 				else {
-					MSG_PRINT(F(" = "));
+					MSG_PRINT(FPSTR(" = "));
 					const uint8_t val = EEPROM.read(reg);
 					sprintf(b, " %02X", val);
 					MSG_PRINT(b);
@@ -235,9 +267,10 @@ namespace commands {
 		case cmd_write:
 			if (IB_1[1] == 'S' && IB_1[2] == '3')
 			{
-				cc1101::commandStrobes();
-			}
-			else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
+				#ifdef CMP_CC1101
+					cc1101::commandStrobes();
+				#endif 
+			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
 				char b[3];
 				b[2] = '\0';
 
@@ -246,7 +279,11 @@ namespace commands {
 				memcpy(b, &IB_1[3], 2);
 				uint8_t val = strtol(b, nullptr, 16);
 
-				EEPROM.write(reg, val);
+				EEPROM.write(reg, val); //Todo prüfen ob reg hier um 1 erhöht werden muss
+				#ifdef ESP8266
+				EEPROM.commit();
+				#endif
+#ifdef CMP_CC1101
 				if (hasCC1101) {
 					cc1101::writeCCreg(reg, val);
 				}
@@ -279,11 +316,10 @@ namespace commands {
 						cc1101::writeCCreg(reg, val);
 					}
 				}
-
-			}
+#endif			}
 			break;
 		default:
-			MSG_PRINTLN(F("Unsupported short command"));
+			MSG_PRINTLN(TXT_UNSUPPORTED1);
 			return;
 		}
 		blinkLED = true;
