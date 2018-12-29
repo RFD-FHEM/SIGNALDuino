@@ -2,14 +2,14 @@
 #include "cc1101.h"
 
 
- const uint8_t cc1101::initVal[] PROGMEM =
+const uint8_t cc1101::initVal[] PROGMEM =
 {
 	// IDX NAME     RESET   COMMENT
 0x0D, // 00 IOCFG2    29     GDO2 as serial output
 0x2E, // 01 IOCFG1           Tri-State
 0x2D, // 02 IOCFG0    3F     GDO0 for input
-0x07, // 03 FIFOTHR   
-0xD3, // 04 SYNC1     
+//0x07, // 03 FIFOTHR          RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
+0x47, // 03 FIFOTHR          RX filter bandwidth = 325 kHz, FIFOTHR = 0x470xD3, // 04 SYNC1     
 0x91, // 05 SYNC0     
 0x3D, // 06 PKTLEN    0F
 0x04, // 07 PKTCTRL1  
@@ -33,12 +33,13 @@
 0x14, // 19 FOCCFG    36     
 0x6C, // 1A BSCFG
 0x07, // 1B AGCCTRL2  03     42 dB instead of 33dB
-0x00, // 1C AGCCTRL1  40     
-0x90, // 1D AGCCTRL0  91     4dB decision boundery
+//0x90, // 1D AGCCTRL0  90     4dB decision boundery
+0x91, // 1D AGCCTRL0  91     8dB decision boundery0x90, // 1D AGCCTRL0  91     4dB decision boundery
 0x87, // 1E WOREVT1
 0x6B, // 1F WOREVT0
 0xF8, // 20 WORCTRL
-0x56, // 21 FREND1
+//0x56, // 21 FREND1    56     RX filter bandwidth = 101 kHz, FREND1 = 0x56
+0xB6, // 21 FREND1    B6     RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 0x11, // 22 FREND0    16     0x11 for no PA ramping
 0xE9, // 23 FSCAL3    A9    E9 ?? 
 0x2A, // 24 FSCAL2    0A    
@@ -48,7 +49,6 @@
 0x00, // 28 RCCTRL0
 };
 
-uint8_t cc1101::revision = 0x01;
 
 
  byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
