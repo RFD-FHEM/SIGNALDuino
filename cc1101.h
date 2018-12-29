@@ -53,9 +53,8 @@ namespace cc1101 {
 	#define CC1100_IOCFG2      0x00  // GDO2 output configuration
 	#define CC1100_PKTCTRL0    0x08  // Packet config register
 
-	uint8_t revision = 0x01;
+  extern uint8_t revision;
 	extern const uint8_t initVal[];
-
 	// Status registers - newer version base on 0xF0
   #define CC1101_PARTNUM_REV01      0xF0 // Chip ID
   #define CC1101_VERSION_REV01      0xF1 // Chip ID
@@ -121,11 +120,6 @@ namespace cc1101 {
 	#endif
 #endif
 
-
-#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-  uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat ge?ert wird
-#endif
-
 	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
     #define wait_Miso_rf()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }      // wait until SPI MISO line goes low 
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
@@ -158,10 +152,14 @@ namespace cc1101 {
 	#define CC1100_STATE_TX_UNDERFLOW              0x70
 	
 
+	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+	uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat ge寤ert wird
+	#endif
+	extern const uint8_t initVal[];
 
 
   
-	//byte hex2int(byte hex);							     // convert a hexdigit to int    // Todo: printf oder scanf nutzen
+	byte hex2int(byte hex);							     // convert a hexdigit to int    // Todo: printf oder scanf nutzen
 	uint8_t sendSPI(const uint8_t val);					 // send byte via SPI
 	uint8_t cmdStrobe(const uint8_t cmd);
 	uint8_t readReg(const uint8_t regAddr, const uint8_t regType);	// read CC1101 register via SPI

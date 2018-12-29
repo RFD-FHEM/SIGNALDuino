@@ -1,8 +1,8 @@
 ﻿
 #include "cc1101.h"
 
-
-const uint8_t cc1101::initVal[] PROGMEM =
+uint8_t cc1101::revision = 0x01;
+ const uint8_t cc1101::initVal[] PROGMEM =
 {
 	// IDX NAME     RESET   COMMENT
 0x0D, // 00 IOCFG2    29     GDO2 as serial output
@@ -50,7 +50,7 @@ const uint8_t cc1101::initVal[] PROGMEM =
 };
 
 
-/*
+
  byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
 	 if (hex >= '0' && hex <= '9') hex = hex - '0';
 	 else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
@@ -58,7 +58,6 @@ const uint8_t cc1101::initVal[] PROGMEM =
 	 return hex;
 	 // printf ("%d\n",$hex) ??
  }
- */
 
 uint8_t cc1101::sendSPI(const uint8_t val) {				 // send byte via SPI
 #ifndef ESP8266
