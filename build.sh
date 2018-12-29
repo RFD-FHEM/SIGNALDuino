@@ -21,7 +21,7 @@ if [ "${RECEIVER}" = "cc1101" ]; then
 fi
 
 
-if [ "${BOARD}" = "nano" ]; then
+if [ "${BOARD}" = "nano328" ]; then
   arduino --board arduino:avr:nano:cpu=atmega328 --save-prefs 2>&1
 
 elif [ "${BOARD}" = "minicul" ]; then
