@@ -3,7 +3,7 @@ sudo: required
 env:
   matrix: 
     env: 
-      - BOARD=nano RECEIVER=cc1101
+      - BOARD=nano328 RECEIVER=cc1101
       - BOARD=radiono RECEIVER=cc1101  
       - BOARD=promini 
   global:
