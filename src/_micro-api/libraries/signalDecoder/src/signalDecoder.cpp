@@ -148,7 +148,7 @@ inline void SignalDetectorClass::doDetect()
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 //      if (messageLen == 0) valid = true;
 	if (!valid) {
-		DBG_PRINT(" not valid ");
+		//DBG_PRINT(" not valid ");
 
 		// Try output
 		processMessage();
