@@ -334,7 +334,7 @@ bool cc1101::regCheck()
 	DBG_PRINT(FPSTR(TXT_CC1101)); 
 	DBG_PRINT(F("_IOCFG2=")); DBG_PRINT(readReg(CC1100_IOCFG2, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1100_IOCFG2]);
-
+	/*
 	DBG_PRINT(FPSTR(TXT_CC1101));
 	DBG_PRINT(F("_FREQ0=")); DBG_PRINT(readReg(CC1100_FREQ0, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval FREQ0=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ0]);
@@ -358,7 +358,7 @@ bool cc1101::regCheck()
 	val = EEPROM.read(EE_CC1100_CFG+CC1100_FREQ2);
 	sprintf(b, " %d", val);
 	DBG_PRINTLN(b);
-
+	*/
 	return (readReg(CC1100_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1100_PKTCTRL0]) && (readReg(CC1100_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1100_IOCFG2]);
 }
 
