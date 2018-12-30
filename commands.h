@@ -193,9 +193,10 @@ namespace commands {
 				MSG_PRINT(")");
 	#endif
 #endif
+#ifdef CMP_CC1101
 			}
-
-			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__))
+#endif
+			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
 		case cmd_freeRam:
 			MSG_PRINTLN(freeRam());
