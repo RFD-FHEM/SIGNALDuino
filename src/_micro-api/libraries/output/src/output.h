@@ -4,12 +4,12 @@
 #define _OUTPUT_h
 
 
-#define DEBUG
-
 
 #ifdef CMP_CC1101
-static const char TXT_CCINIT[]				PROGMEM =  "CCInit " ;
+static const char TXT_CC110[]				PROGMEM = "CC110";
+static const char TXT_CCINIT[]				PROGMEM = "CCInit " ;
 static const char TXT_CC1101[]				PROGMEM = "cc1101 ";
+static const char TXT_CHIP[]				PROGMEM = "chip";
 #endif
 
 static const char TXT_RECENA[]				PROGMEM = "receiver enabled" ;

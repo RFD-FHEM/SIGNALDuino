@@ -156,30 +156,40 @@ namespace commands {
 		case cmd_ping:
 			getPing();
 		case cmd_Version:
-			MSG_PRINT(F("V " PROGVERS " SIGNALduino "));
+			MSG_PRINT(F("V " PROGVERS PROGNAME));
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
+				MSG_PRINT("(");
 
 #endif
 #ifdef PIN_MARK433
-				MSG_PRINT("(");
-				MSG_PRINT(isLow(PIN_MARK433) ? "433" : "868");
-				MSG_PRINT(F("Mhz)"));
+				MSG_PRINT(FPSTR(isLow(PIN_MARK433) ? TXT_433 : TXT_868));
+				MSG_PRINT(FPSTR(TXT_MHZ));
 #else
 	#ifdef CMP_CC1101
-
+				MSG_PRINT(FPSTR(TXT_CHIP)); MSG_PRINT(FPSTR(TXT_BLANK)); MSG_PRINT(FPSTR(TXT_CC110));
 				switch (cc1101::chipVersion()) {
-					//      case 0x08:    // CC1101_VERSION 0x31
-					case 0x18:  // CC1101_VERSION 0xF1
-
-						MSG_PRINT(FPSTR(TXT_BLANK));	MSG_PRINT(FPSTR(TXT_433)); MSG_PRINT(FPSTR(TXT_MHZ));
+					case 0x03:
+						 MSG_PRINT("0"); 
 						break;
-					case 0x04:  // CC1101_VERSION 0x31
-					case 0x14:  // CC1101_VERSION 0xF1
-						MSG_PRINT(FPSTR(TXT_BLANK));	MSG_PRINT(FPSTR(TXT_868)); MSG_PRINT(FPSTR(TXT_MHZ));
+					case 0x14:
+					case 0x04:
+						 MSG_PRINT("1");
+						break;
+					case 0x05:
+						 MSG_PRINT("0E");
+						break;
+					case 0x07:
+						 MSG_PRINT("L");
+						break;
+						break;
+					default:
+						MSG_PRINT(" unknown");
 						break;
 				}
+				MSG_PRINT(")");
+
 			}
 	#endif
 #endif

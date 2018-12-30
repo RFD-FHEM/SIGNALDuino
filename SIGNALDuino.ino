@@ -31,27 +31,18 @@
 */
 
 
-// Config flags for compiling correct options / boards Define only one
-//#define ARDUINO_ATMEGA328P_MINICUL 1
-//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-//#define OTHER_BOARD_WITH_CC1101  1
-
-// #todo: header file für die Boards anlegen
+// See config flags in compile_config.h:
 #include "compile_config.h"
 
 
 #define PROGVERS               "3.3.1-RC-X-171218"
-#define PROGNAME               "RF_RECEIVER"
+#define PROGNAME               " SIGNALduino "
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-
-
 #define BAUDRATE               57600 // 500000 //57600
 #define FIFO_LENGTH			   90 //150
-//#define DEBUG				   1
 
-// EEProm Address
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
 #define addr_features        0xff
@@ -62,13 +53,7 @@
 void serialEvent();
 void cronjob();
 int freeRam();
-//bool command_available = false;
-unsigned long getUptime();
-void enDisPrint(bool enDis);
 void configSET();
-void getFunctions(bool *ms, bool *mu, bool *mc);
-void initEEPROM(void);
-void changeReceiver();
 uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 

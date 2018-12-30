@@ -9,6 +9,7 @@
 #else
 //	#include "WProgram.h"
 #endif
+#include "compile_config.h"
 #include <EEPROM.h>
 #include "output.h"
 #include "SimpleFIFO.h"
@@ -93,14 +94,17 @@ void getFunctions(bool *ms, bool *mu, bool *mc, bool *red)
 //================================= EEProm commands ======================================
 
 void dumpEEPROM() {
-	DBG_PRINTLN(PSTR("dump EEPROM:"));// Todo: fix output
-	for (uint8_t i = 0; i < 56; i++) {
-		String temp = String(EEPROM.read(i), HEX);
-		Serial.print((temp.length() == 1 ? "0" : "") + temp + " ");
-		if ((i & 0x0F) == 0x0F)
+#ifdef debug
+	DBG_PRINTLN("dump "); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_EQ));
+	char b[4];
+	for (uint8_t i = EE_MAGIC_OFFSET; i < 56+ EE_MAGIC_OFFSET; i++) {
+		sprintf(b, "%02x ", EEPROM.read(i));
+		DBG_PRINT(b);
+			if ((i & 0x0F) == 0x0F)
 			DBG_PRINTLN("");
-}
+	}
 	DBG_PRINTLN("");
+#endif
 }
 
 
