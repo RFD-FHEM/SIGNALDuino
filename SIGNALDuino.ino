@@ -34,7 +34,7 @@
 // Config flags for compiling correct options / boards Define only one
 //#define ARDUINO_ATMEGA328P_MINICUL 1
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-//#define OTHER_BOARD_WITH_CC1101  1
+#define OTHER_BOARD_WITH_CC1101  1
 
 // #todo: header file für die Boards anlegen
 #ifdef OTHER_BOARD_WITH_CC1101
@@ -91,7 +91,7 @@
 
 #define BAUDRATE               57600 // 500000 //57600
 #define FIFO_LENGTH			   90 //150
-//#define DEBUG				   1
+#define DEBUG				   1
 
 // EEProm Address
 // EEProm Address
