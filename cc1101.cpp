@@ -265,7 +265,7 @@ void cc1101::setup()
 #ifdef PIN_MARK433
 	pinAsInputPullUp(PIN_MARK433);
 #endif
-	//// �nderungsbeginn  ---> 
+
 
 #ifndef ESP8266
 	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4

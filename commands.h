@@ -191,10 +191,10 @@ namespace commands {
 						break;
 				}
 				MSG_PRINT(")");
-
-			}
 	#endif
 #endif
+			}
+
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__))
 			break;
 		case cmd_freeRam:

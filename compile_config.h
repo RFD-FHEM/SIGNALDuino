@@ -3,14 +3,13 @@
 
 // Config flags for compiling correct options / boards Define only one!
 //#define CMP_CC1101
-#define ARDUINO_ATMEGA328P_MINICUL 1
+//#define ARDUINO_ATMEGA328P_MINICUL 1
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
 //#define OTHER_BOARD_WITH_CC1101  1
 
 
 //Enable debug option here:
 //#define DEBUG
-
 
 
 
@@ -79,10 +78,3 @@
 
 
 
-#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-	#define SS					  8  
-	#define PIN_MARK433			  4  // LOW -> 433Mhz | HIGH -> 868Mhz
-
-#elif ARDUINO_ATMEGA328P_MINICUL  // 8Mhz 
-	#define PIN_MARK433			  0
-#endif
