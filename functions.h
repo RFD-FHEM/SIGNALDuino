@@ -90,6 +90,19 @@ void getFunctions(bool *ms, bool *mu, bool *mc, bool *red)
 
 
 }
+//================================= EEProm commands ======================================
+
+void dumpEEPROM() {
+	DBG_PRINTLN(PSTR("dump EEPROM:"));// Todo: fix output
+	for (uint8_t i = 0; i < 56; i++) {
+		String temp = String(EEPROM.read(i), HEX);
+		Serial.print((temp.length() == 1 ? "0" : "") + temp + " ");
+		if ((i & 0x0F) == 0x0F)
+			DBG_PRINTLN("");
+}
+	DBG_PRINTLN("");
+}
+
 
 void initEEPROM(void) {	
 	#ifdef ESP8266
@@ -97,7 +110,6 @@ void initEEPROM(void) {
 	#endif
 	if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
 		DBG_PRINT(F("Reading values from "));	DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
-
 	}
 	else {
 		storeFunctions(1, 1, 1, 1);    // Init EEPROM with all flags enabled
@@ -114,11 +126,10 @@ void initEEPROM(void) {
 	}
 	getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled);
 	DBG_PRINTLN(F("done"));
-
+	dumpEEPROM();
 }
 
 
-//================================= EEProm commands ======================================
 
 
 inline unsigned long getUptime()
@@ -134,6 +145,7 @@ inline unsigned long getUptime()
 	last = now;
 	return (0xFFFFFFFF / 1000) * times_rolled + (now / 1000);
 }
+
 
 
 #endif
