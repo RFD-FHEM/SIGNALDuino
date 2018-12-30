@@ -90,6 +90,10 @@ static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 	#ifndef isHigh
 		#define isHigh(pin) (digitalRead(pin) == HIGH)
 	#endif
+	#ifndef isLow
+		#define isLow(pin) (digitalRead(pin) == LOW)
+	#endif
+
 #endif
 
 
