@@ -30,6 +30,9 @@ void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
 
 		while (stoptime > micros()) {
+#ifdef ESP8266
+			yield();
+#endif
 			;
 		}
 		isLow ? digitalLow(PIN_SEND) : digitalHigh(PIN_SEND);
@@ -64,7 +67,9 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 
 				stoptime += clock;
 				while (stoptime > micros())
+#ifdef ESP8266
 					yield();
+#endif
 			}
 
 		}
