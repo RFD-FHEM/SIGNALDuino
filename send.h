@@ -67,9 +67,11 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 
 				stoptime += clock;
 				while (stoptime > micros())
+				{
 #ifdef ESP8266
 					yield();
 #endif
+				}
 			}
 
 		}
@@ -239,14 +241,17 @@ extraDelay = false;
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
 			if (l == 0)
 			{
-				MSG_PRINTLN(F("send cmd corrupt"));
+				MSG_PRINT(FPSTR(TXT_SENDCMD));
+				MSG_PRINTLN(FPSTR(TXT_CORRUPT));
 				return;
 			}
 			if (buffer_left == 0)
 			{
 				delayMicroseconds(300);
 				MSG_PRINTER.readBytesUntil('\n', buf, 255);
-				MSG_PRINTLN(F("send cmd to long"));
+				MSG_PRINT(FPSTR(TXT_SENDCMD));
+				MSG_PRINTLN(FPSTR(TXT_TOLONG));
+				//MSG_PRINTLN(F("send cmd to long"));
 				return;
 			}
 			*(msg_endptr + 1) = '\0'; // Nullterminate the string
