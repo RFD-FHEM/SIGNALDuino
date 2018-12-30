@@ -9,7 +9,7 @@ uint8_t cc1101::revision = 0x01;
 0x2E, // 01 IOCFG1           Tri-State
 0x2D, // 02 IOCFG0    3F     GDO0 for input
 //0x07, // 03 FIFOTHR          RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
-0x47, // 03 FIFOTHR          RX filter bandwidth = 325 kHz, FIFOTHR = 0x470xD3, // 04 SYNC1     
+0x47, // 03 FIFOTHR          RX filter bandwidth = 325 kHz, FIFOTHR = 0x47
 0xD3, // 04 SYNC1     
 0x91, // 05 SYNC0     
 0x3D, // 06 PKTLEN    0F
