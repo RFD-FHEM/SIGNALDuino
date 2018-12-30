@@ -18,9 +18,9 @@ uint8_t cc1101::revision = 0x01;
 0x00, // 0A CHANNR   
 0x06, // 0B FSCTRL1   0F     152kHz IF Frquency
 0x00, // 0C FSCTRL0
-0x10, // 0D FREQ2     1E     Freq   #12
-0xB0, // 0E FREQ1     C4              
-0x71, // 0F FREQ0     EC     
+0x10, // 0D FREQ2     1E     Freq   #12  Reg Pos 0C
+0xB0, // 0E FREQ1     C4				 Reg Pos 0D
+0x71, // 0F FREQ0     EC				 Reg Pos 0E
 0x57, // 10 MDMCFG4   8C     bWidth 325kHz
 0xC4, // 11 MDMCFG3   22     DataRate
 0x30, // 12 MDMCFG2   02     Modulation: ASK
@@ -277,7 +277,7 @@ void cc1101::setup()
 	SPI.setClockDivider(SPI_CLOCK_DIV4);
 #endif
 	pinAsInput(PIN_RECEIVE);    // gdo2
-	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+	pinAsInput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
 }
 
 uint8_t cc1101::getRevision() 
@@ -322,13 +322,40 @@ void cc1101::setTransmitMode()
 
 bool cc1101::regCheck()
 {
+	char b[3];
+	uint8_t val;
+
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("PKTCTRL0=")); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));
-	DBG_PRINT(F(" vs EEPROM PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1100_PKTCTRL0]);
+	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1100_PKTCTRL0]);
 
 	DBG_PRINT(FPSTR(TXT_CC1101)); 
 	DBG_PRINT(F("_IOCFG2=")); DBG_PRINT(readReg(CC1100_IOCFG2, CC1101_CONFIG));
-	DBG_PRINT(F(" vs EEPROM IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1100_IOCFG2]);
+	DBG_PRINT(F(" vs initval IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1100_IOCFG2]);
+
+	DBG_PRINT(FPSTR(TXT_CC1101));
+	DBG_PRINT(F("_FREQ0=")); DBG_PRINT(readReg(CC1100_FREQ0, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ0=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ0]);
+	DBG_PRINT(F(" vs EEPROM FREQ0"));
+	val = EEPROM.read(EE_CC1100_CFG + CC1100_FREQ0);
+	sprintf(b, " %d", val);
+	DBG_PRINTLN(b);
+
+	DBG_PRINT(FPSTR(TXT_CC1101));
+	DBG_PRINT(F("_FREQ1=")); DBG_PRINT(readReg(CC1100_FREQ1, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ1=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ1]);
+	DBG_PRINT(F(" vs EEPROM FREQ1="));
+	val = EEPROM.read(EE_CC1100_CFG + CC1100_FREQ1);
+	sprintf(b, " %d", val);
+	DBG_PRINTLN(b);
+
+	DBG_PRINT(FPSTR(TXT_CC1101));
+	DBG_PRINT(F("_FREQ2=")); DBG_PRINT(readReg(CC1100_FREQ2, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ2=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ2]);
+	DBG_PRINT(F(" vs EEPROM FREQ2=")); 
+	val = EEPROM.read(EE_CC1100_CFG+CC1100_FREQ2);
+	sprintf(b, " %d", val);
+	DBG_PRINTLN(b);
 
 	return (readReg(CC1100_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1100_PKTCTRL0]) && (readReg(CC1100_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1100_IOCFG2]);
 }
