@@ -36,7 +36,7 @@ uint8_t cc1101::revision = 0x01;
 0x07, // 1B AGCCTRL2  03     42 dB instead of 33dB
 0x00, // 1C AGCCTRL1  40     
 //0x90, // 1D AGCCTRL0  90     4dB decision boundery
-0x91, // 1D AGCCTRL0  91     8dB decision boundery0x90, // 1D AGCCTRL0  91     4dB decision boundery
+0x91, // 1D AGCCTRL0  91     8dB decision boundery
 0x87, // 1E WOREVT1
 0x6B, // 1F WOREVT0
 0xF8, // 20 WORCTRL
