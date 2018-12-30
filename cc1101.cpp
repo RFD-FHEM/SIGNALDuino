@@ -18,8 +18,8 @@ uint8_t cc1101::revision = 0x01;
 0x00, // 0A CHANNR   
 0x06, // 0B FSCTRL1   0F     152kHz IF Frquency
 0x00, // 0C FSCTRL0
-0x10, // 0D FREQ2     1E     Freq
-0xB0, // 0E FREQ1     C4     
+0x10, // 0D FREQ2     1E     Freq   #12
+0xB0, // 0E FREQ1     C4              
 0x71, // 0F FREQ0     EC     
 0x57, // 10 MDMCFG4   8C     bWidth 325kHz
 0xC4, // 11 MDMCFG3   22     DataRate
@@ -338,6 +338,7 @@ bool cc1101::regCheck()
 void cc1101::ccFactoryReset() {
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {
 		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
+		DBG_PRINT(".");
 	}
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
