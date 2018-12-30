@@ -281,7 +281,7 @@ namespace commands {
 			{
 				#ifdef CMP_CC1101
 				cc1101::commandStrobes();
-				#endif 
+				#endif
 			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
 				char b[3];
 				b[2] = '\0';
@@ -332,8 +332,8 @@ namespace commands {
 						cc1101::writeCCreg(reg, val);
 					}
 				}
-			}
 #endif
+			}
 #ifdef ESP8266
 			EEPROM.commit();
 #endif
