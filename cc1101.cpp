@@ -10,6 +10,7 @@ uint8_t cc1101::revision = 0x01;
 0x2D, // 02 IOCFG0    3F     GDO0 for input
 //0x07, // 03 FIFOTHR          RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
 0x47, // 03 FIFOTHR          RX filter bandwidth = 325 kHz, FIFOTHR = 0x470xD3, // 04 SYNC1     
+0xD3, // 04 SYNC1     
 0x91, // 05 SYNC0     
 0x3D, // 06 PKTLEN    0F
 0x04, // 07 PKTCTRL1  
@@ -33,6 +34,7 @@ uint8_t cc1101::revision = 0x01;
 0x14, // 19 FOCCFG    36     
 0x6C, // 1A BSCFG
 0x07, // 1B AGCCTRL2  03     42 dB instead of 33dB
+0x00, // 1C AGCCTRL1  40     
 //0x90, // 1D AGCCTRL0  90     4dB decision boundery
 0x91, // 1D AGCCTRL0  91     8dB decision boundery0x90, // 1D AGCCTRL0  91     4dB decision boundery
 0x87, // 1E WOREVT1
