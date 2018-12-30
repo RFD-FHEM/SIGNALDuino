@@ -280,43 +280,47 @@ namespace commands {
 				uint8_t val = strtol(b, nullptr, 16);
 
 				EEPROM.write(reg, val); //Todo prüfen ob reg hier um 1 erhöht werden muss
-				#ifdef ESP8266
-				EEPROM.commit();
-				#endif
+
 #ifdef CMP_CC1101
 				if (hasCC1101) {
 					cc1101::writeCCreg(reg, val);
 				}
 
-				if (reg == 0x10+2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
-					reg = 0x21+2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
+				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
+					reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
 					if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
-					val = 0x56;          // FREND1 = 0x56
-					} else {
+						val = 0x56;          // FREND1 = 0x56
+					}
+					else {
 						val = 0xB6;         // FREND1 = 0xB6
 					}
-					EEPROM.write(reg, val);  
+					EEPROM.write(reg, val);
 					if (hasCC1101) {
 						cc1101::writeCCreg(reg, val);
 					}
-					reg = 0x03+2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
+					reg = 0x03 + 2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
 					memcpy(b, &IB_1[3], 2);
 					val = strtol(b, nullptr, 16);
 					// RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
 					// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
 					if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
 						val = 0x47;          // FIFOTHR = 0x47
-					} else {
+					}
+					else {
 						val = 0x07;           // FIFOTHR = 0x07
 					}
-					EEPROM.write(reg, val);  
+					EEPROM.write(reg, val);
 					if (hasCC1101) {
 						cc1101::writeCCreg(reg, val);
 					}
 				}
-#endif			}
+			}
+#endif
+#ifdef ESP8266
+			EEPROM.commit();
+#endif
 			break;
 		default:
 			MSG_PRINTLN(TXT_UNSUPPORTED1);
