@@ -131,6 +131,7 @@ namespace commands {
 		#define  cmd_read  'r'      // read EEPROM
 		#define  cmd_space ' '
 		#define  cmd_send 'S'
+		#define  cmd_status 's'
 
 		switch (IB_1[0])
 		{
@@ -145,6 +146,7 @@ namespace commands {
 			MSG_PRINT(cmd_config); MSG_PRINT(FPSTR(TXT_BLANK));
 			MSG_PRINT(cmd_read); MSG_PRINT(FPSTR(TXT_BLANK));
 			MSG_PRINT(cmd_write); MSG_PRINT(FPSTR(TXT_BLANK));
+			MSG_PRINT(cmd_status); MSG_PRINT(FPSTR(TXT_BLANK));
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(cmd_patable); MSG_PRINT(FPSTR(TXT_BLANK));
@@ -335,7 +337,21 @@ namespace commands {
 #ifdef ESP8266
 			EEPROM.commit();
 #endif
-			break;
+		break;
+		case cmd_status:
+#ifdef CMP_CC1101
+			if (hasCC1101 && !cc1101::regCheck())
+			{
+				MSG_PRINT(FPSTR(TXT_CC1101));
+				MSG_PRINT(FPSTR(TXT_DOFRESET));
+				MSG_PRINTLN(FPSTR(TXT_COMMAND));
+			}
+			else
+			{
+				MSG_PRINTLN("OK");
+			}
+#endif
+		break;
 		default:
 			MSG_PRINTLN(TXT_UNSUPPORTED1);
 			return;
