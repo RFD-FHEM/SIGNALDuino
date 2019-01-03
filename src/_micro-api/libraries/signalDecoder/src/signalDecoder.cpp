@@ -782,8 +782,8 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
 				}
 
-				// Special Debug
 #if  !defined(__linux__)  // Bad hack to prevent output during unit test
+				// Special Debug
 				uint8_t specialbyte = 0;
 				if (message.getByte(message.bytecount-1,&specialbyte));
 				{
@@ -796,9 +796,9 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT(SERIAL_DELIMITER);
 				}
 				/// Special Debug
-				SDC_WRITE(MSG_END);  				
-				SDC_WRITE(char(0xA));
 #endif
+				SDC_WRITE(MSG_END);
+				SDC_WRITE(char(0xA));
 				
 				m_truncated = false;
 				success = true;
