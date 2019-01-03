@@ -465,9 +465,13 @@ void SignalDetectorClass::processMessage()
 					n = sprintf(buf, ";C%X;S%X;R%X;", clock, sync, rssiValue);
 					SDC_WRITE((const uint8_t *)buf, n);
 					*/
-					n = sprintf(buf, ";C%X;S%X;R%X;", clock, sync, rssiValue);
+					n = sprintf(buf, ";C%X;S%X;", clock, sync);
 					SDC_WRITE((const uint8_t *)buf, n);
-
+					if (_rssiCallback != NULL)
+					{
+						n = sprintf(buf, "R%X;", rssiValue);
+						SDC_WRITE((const uint8_t *)buf, n);
+					}
 			    }
 				else {
 					SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER);		
@@ -493,9 +497,13 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("SP="); SDC_PRINT(itoa(sync, buf, 10));      SDC_PRINT(SERIAL_DELIMITER);     // SyncPulse
 					SDC_PRINT("R=");  SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
 					*/
-					n = sprintf(buf, ";CP=%i;SP=%i;R=%i;", clock, sync, rssiValue);
+					n = sprintf(buf, ";CP=%i;SP=%i;", clock, sync);
 					SDC_WRITE((const uint8_t *)buf, n);
-
+					if (_rssiCallback != NULL)
+					{
+						n = sprintf(buf, "R=%i;", rssiValue);
+						SDC_WRITE((const uint8_t *)buf, n);
+					}
 				}
 
 				if (m_overflow) {
@@ -640,9 +648,13 @@ void SignalDetectorClass::processMessage()
 						*/
 						SDC_PRINT("D=");  mcdecoder->printMessageHexStr();
 
-						n = sprintf(buf, ";C=%i;L=%i;R=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount, rssiValue);
+						n = sprintf(buf, ";C=%i;L=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount);
 						SDC_WRITE((const uint8_t *)buf, n);
-						/*
+						if (_rssiCallback != NULL)
+						{
+							n = sprintf(buf, "R=%i;", rssiValue);
+							SDC_WRITE((const uint8_t *)buf, n);
+						}						/*
 						SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("C="); SDC_PRINT(mcdecoder->clock); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
@@ -747,7 +759,7 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t i = 0; i < messageLen; ++i) 
 					{
-						sprintf(buf, "%d", message[i]);
+						sprintf(buf, "%d", message[i]); 
 						SDC_PRINT(buf);
 					}
 					//String postamble;
@@ -756,15 +768,34 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("CP="); SDC_PRINT(clock);     SDC_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					*/
-					n = sprintf(buf, ";CP=%i;R=%i;", clock, rssiValue);
+					n = sprintf(buf, ";CP=%i;", clock);
 					SDC_WRITE((const uint8_t *)buf, n);
-
+					if (_rssiCallback != NULL)
+					{
+						n = sprintf(buf, "R=%i;", rssiValue);
+						SDC_WRITE((const uint8_t *)buf, n);
+					}
 				}
 
 
 				if (m_overflow) {
 					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
 				}
+
+				// Special Debug
+
+				uint8_t specialbyte = 0;
+				if (message.getByte(message.bytecount-1,&specialbyte));
+				{
+					SDC_WRITE(specialbyte);
+					SDC_PRINT(SERIAL_DELIMITER);
+				}
+				if (message.getByte(message.bytecount, &specialbyte));
+				{
+					SDC_WRITE(specialbyte);
+					SDC_PRINT(SERIAL_DELIMITER);
+				}
+				/// Special Debug
 				SDC_WRITE(MSG_END);  				
 				SDC_WRITE(char(0xA));
 
