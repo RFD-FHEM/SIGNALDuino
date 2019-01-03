@@ -783,7 +783,7 @@ void SignalDetectorClass::processMessage()
 				}
 
 				// Special Debug
-
+#if  !defined(__linux__)  // Bad hack to prevent output during unit test
 				uint8_t specialbyte = 0;
 				if (message.getByte(message.bytecount-1,&specialbyte));
 				{
@@ -798,7 +798,7 @@ void SignalDetectorClass::processMessage()
 				/// Special Debug
 				SDC_WRITE(MSG_END);  				
 				SDC_WRITE(char(0xA));
-
+#endif
 				
 				m_truncated = false;
 				success = true;
