@@ -58,7 +58,7 @@ deploy:
      #condition: "$TRAVIS_EVENT_TYPE = cron"
      #condition: $TRAVIS_TAG =~ ^release.*$
      all_branches: true
-     condition: $TRAVIS_BRANCH =~ ^dev-r33.*
+     #condition: $TRAVIS_BRANCH =~ ^dev-r33.*
 
 jobs: 
   include: 
