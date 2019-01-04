@@ -103,7 +103,22 @@ void SignalDetectorClass::addData(const int8_t value)
 	if (message.addValue(value))
 	{
 		messageLen++;
+		if (!checkMBuffer())
+		{
+			SDC_PRINT(" addValue ->");
+			SDC_PRINT("val="); SDC_WRITE(value);
+			SDC_PRINT(" msglen="); SDC_WRITE(messageLen);
+			SDC_PRINT(" bytc="); SDC_WRITE(message.bytecount);
+			SDC_PRINT(" valc="); SDC_WRITE(message.valcount);
+			SDC_PRINT(" mTrunc="); SDC_WRITE(m_truncated);
+			SDC_PRINT(" state="); SDC_WRITE(state);
+			SDC_PRINT(" success="); SDC_WRITE(success);
+			SDC_PRINT(" fir="); SDC_WRITE(*first);
+			SDC_PRINT(" las="); SDC_WRITE(*last);
+			SDC_PRINTLN("");
+		}
 		m_truncated = false; // Clear truncated flag
+
 	}
 	else {
 		SDC_PRINT("val="); SDC_PRINT(value);
@@ -142,7 +157,6 @@ inline void SignalDetectorClass::doDetect()
 	valid = (messageLen == 0 || last == NULL || (*first ^ *last) < 0); // true if a and b have opposite signs
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
-
 
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
@@ -310,7 +324,6 @@ void SignalDetectorClass::compress_pattern()
 			}
 		}
 	}
-	/*
 	if (!checkMBuffer())
 	{
 		SDC_PRINTLN("after compress_pattern ->");
@@ -325,7 +338,6 @@ void SignalDetectorClass::compress_pattern()
 		SDC_PRINTLN(" wrong Data in Buffer");
 		printOut();
 	}
-	*/
 }
 
 void SignalDetectorClass::processMessage()
@@ -1292,7 +1304,7 @@ void ManchesterpatternDecoder::getMessageHexStr(String *message)
 #ifdef NOSTRING		
 	*mptr = '\0';
 #endif
-	return message;
+	//return message;
 	//SDC_PRINTLN();
 }
 
