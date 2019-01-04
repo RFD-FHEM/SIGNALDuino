@@ -36,9 +36,11 @@
 
 
 #define PROGVERS               "3.3.1-RC-nightly"
-#define PROGNAME               " SIGNALduino "
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
+
+#if defined(__AVR__)
+#define PROGNAME               " SIGNALduino "
 
 #define BAUDRATE               57600 // 500000 //57600
 #define FIFO_LENGTH			   90 //150
@@ -281,3 +283,4 @@ int freeRam () {
 
 
 
+#endif
