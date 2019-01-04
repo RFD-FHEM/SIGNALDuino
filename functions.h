@@ -19,14 +19,21 @@ extern volatile unsigned long lastTime;
 extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 extern SignalDetectorClass musterDec;
 extern bool hasCC1101;
+
 #define pulseMin  90
 
-#ifndef ICACHE_RAM_ATTR
+
+#ifndef ESP8266
 #define ICACHE_RAM_ATTR 
+#else
+extern os_timer_t cronTimer;
+
 #endif
 
+
 //========================= Pulseauswertung ================================================
-void ICACHE_RAM_ATTR  handleInterrupt() {
+void ICACHE_RAM_ATTR handleInterrupt() {
+
 	cli();
 	const unsigned long Time = micros();
 	const unsigned long  duration = Time - lastTime;
