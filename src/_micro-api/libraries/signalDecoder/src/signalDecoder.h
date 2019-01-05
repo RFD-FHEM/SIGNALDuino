@@ -53,10 +53,11 @@
 #else
 	//#include "WProgram.h"
 #endif
-//#define DEBUG 1
+#define DEBUG 1
 
 
 #ifndef WIFI_ESP
+
 #include "output.h"
 #else
 #include <ESP8266WiFi.h>
@@ -103,7 +104,7 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
+	SignalDetectorClass() : first(buffer), last(NULL), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MredEnabled = 1;      // 1 = compress printmsg 

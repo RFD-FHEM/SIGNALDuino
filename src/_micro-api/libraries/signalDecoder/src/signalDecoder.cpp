@@ -79,7 +79,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		if (messageLen > 0)
 			last = &pattern[message[messageLen - 1]]; //Eventuell wird last auf einen nicht mehr vorhandenen Wert gesetzt, da der Puffer komplett gelöscht wurde
 		else
-			last = NULL;
+			last = nullptr;
 	} else {
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" move error "); 	DBG_PRINT(start);
 		//printOut();
@@ -154,7 +154,7 @@ inline void SignalDetectorClass::doDetect()
 	//printOut();
 
 	bool valid;
-	valid = (messageLen == 0 || last == NULL || (*first ^ *last) < 0); // true if a and b have opposite signs
+	valid = (messageLen == 0 || last == nullptr || (*first ^ *last) < 0); // true if a and b have opposite signs
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
 
@@ -168,11 +168,17 @@ inline void SignalDetectorClass::doDetect()
 		processMessage();
 
 		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
-		if ((success == false && !mcDetected) || (messageLen > 0 && last != NULL  && (*first ^ *last) >= 0)) {
-			if ((*first ^ *last) >= 0)
+		if ((success == false && !mcDetected) || (messageLen > 0 && last != nullptr && (*first ^ *last) >= 0)) {
+			if (last != nullptr && (*first ^ *last) >= 0 ) //&& *last != 0
+			{
 				SDC_PRINT(" nv reset");
-
+				char buf[20];
+				sprintf(buf, "%d,%d,%d,%d\n", *first, *last,messageLen,message.valcount);
+				SDC_PRINT(buf);
+				printOut();
+			}
 			reset();
+			last = nullptr;
 			valid = true;
 		}
 		
@@ -262,7 +268,7 @@ bool SignalDetectorClass::decode(const int * pulse)
 	if (messageLen > 0)
 		last = &pattern[message[messageLen - 1]];
 	else
-		last = NULL;
+		last = nullptr;
 
 	*first = *pulse;
 	
@@ -802,17 +808,20 @@ void SignalDetectorClass::processMessage()
 				{
 					SDC_WRITE("CB;");
 				}
+				sprintf(buf, "%d;", (int)message.valcount - messageLen);
+				SDC_PRINT(buf);
+
 				uint8_t specialbyte = 0;
 				if (message.getByte(message.bytecount-1,&specialbyte));
 				{
 					SDC_WRITE(specialbyte);
-					SDC_PRINT(SERIAL_DELIMITER);
 				}
+				SDC_PRINT(SERIAL_DELIMITER);
 				if (message.getByte(message.bytecount, &specialbyte));
 				{
 					SDC_WRITE(specialbyte);
-					SDC_PRINT(SERIAL_DELIMITER);
 				}
+				SDC_PRINT(SERIAL_DELIMITER);
 				/// Special Debug
 #endif
 				SDC_WRITE(MSG_END);
@@ -893,7 +902,7 @@ void SignalDetectorClass::reset()
 	//SDC_PRINTLN("reset");
 	mend = 0;
 	//DBG_PRINT(":sdres:");
-	//last = NULL;
+	last = nullptr;
 	MsMoveCount = 3;
 }
 
