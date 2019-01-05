@@ -169,7 +169,8 @@ inline void SignalDetectorClass::doDetect()
 
 		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
 		if ((success == false && !mcDetected) || (messageLen > 0 && last != NULL  && (*first ^ *last) >= 0)) {
-			SDC_PRINT(" nv reset");
+			if ((*first ^ *last) >= 0)
+				SDC_PRINT(" nv reset");
 
 			reset();
 			valid = true;
