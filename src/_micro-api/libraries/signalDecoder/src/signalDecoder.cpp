@@ -796,6 +796,10 @@ void SignalDetectorClass::processMessage()
 
 #if  !defined(__linux__)  // Bad hack to prevent output during unit test
 				// Special Debug
+				if (!checkMBuffer())
+				{
+					SDC_WRITE("CB;");
+				}
 				uint8_t specialbyte = 0;
 				if (message.getByte(message.bytecount-1,&specialbyte));
 				{
