@@ -48,7 +48,7 @@ bool SignalDetectorClass::checkMBuffer()
 	for (uint8_t i = 0; i < messageLen-1; i++)
 	{
 		
-		if ( (pattern[message[i]] ^ pattern[message[i+1]]) > 0) 
+		if ( (pattern[message[i]] ^ pattern[message[i+1]]) >= 0) 
 		{
 			return false;
 		}
@@ -168,8 +168,8 @@ inline void SignalDetectorClass::doDetect()
 		processMessage();
 
 		// processMessage was not able to find anything useful in our buffer. As the pulses are not valid, we reset and start new buffering. Also a check if pattern has opposit sign is done here again to prevent failuer adding after a move
-		if ((success == false && !mcDetected) || (messageLen > 0 && last != NULL  && (*first ^ *last) > 0)) {
-			//SDC_PRINT(" nv reset");
+		if ((success == false && !mcDetected) || (messageLen > 0 && last != NULL  && (*first ^ *last) >= 0)) {
+			SDC_PRINT(" nv reset");
 
 			reset();
 			valid = true;
@@ -280,7 +280,8 @@ void SignalDetectorClass::compress_pattern()
 
 		for (uint8_t idx2 = idx + 1; idx2<patternLen; idx2++)
 		{
-			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) >> 15)
+			
+			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) < 0)
 				continue;
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
 #if DEBUGDETECT>2
