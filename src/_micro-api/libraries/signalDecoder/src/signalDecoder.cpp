@@ -753,13 +753,24 @@ void SignalDetectorClass::processMessage()
 					else {
 						SDC_PRINT("d");
 					}
-
+					/*
 					for (uint8_t i = 0; i < messageLen; i=i+2) {					
 						message.getByte(i/2,&n);
 						SDC_WRITE(n);
 					}
-					n = sprintf(buf, ";C%X;R%X;", clock, rssiValue);
+					*/
+					for (uint8_t i = 0; i <= message.bytecount; i++) {
+						message.getByte(i, &n);
+						SDC_WRITE(n);
+					}
+
+					n = sprintf(buf, ";C%X;", clock);
 					SDC_WRITE((const uint8_t *)buf, n);
+					if (_rssiCallback != NULL)
+					{
+						n = sprintf(buf, "R%;", rssiValue);
+						SDC_WRITE((const uint8_t *)buf, n);
+					}
 
 				}
 				else {
