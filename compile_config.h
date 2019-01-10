@@ -17,12 +17,7 @@
 
 /*
 
-
-
-
   Do not Change anything below this line 
-
-
 
 */
 
@@ -59,7 +54,7 @@
 		#define PIN_SEND              2   // gdo0Pin TX out
 		#define PIN_RECEIVE           3
 		#define PIN_MARK433			  A0
-	#elif ESP8266
+	#elif defined(ESP8266)
 		#define PIN_RECEIVE            5// D1
 		#define PIN_LED                16
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
