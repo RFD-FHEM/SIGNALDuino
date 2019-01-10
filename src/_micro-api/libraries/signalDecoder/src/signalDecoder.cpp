@@ -171,11 +171,13 @@ inline void SignalDetectorClass::doDetect()
 		if ((success == false && !mcDetected) || (messageLen > 0 && last != nullptr && (*first ^ *last) >= 0)) {
 			if (last != nullptr && (*first ^ *last) >= 0 ) //&& *last != 0
 			{
+				/*
 				SDC_PRINT(" nv reset");
 				char buf[20];
 				sprintf(buf, "%d,%d,%d,%d\n", *first, *last,messageLen,message.valcount);
 				SDC_PRINT(buf);
 				printOut();
+				*/
 			}
 			reset();
 			last = nullptr;
@@ -460,13 +462,13 @@ void SignalDetectorClass::processMessage()
 					}
 
 					uint8_t n;
-					if ((mend & 1) == 1) {   // ungerade
+					if ((mend & 1) == 1) {   // zwei Nibble im letzten Byte übergeben
 						SDC_PRINT("D");
 					}
 					else {
-						SDC_PRINT("d");
+						SDC_PRINT("d");     // ein Nibble im letzten Byte übergeben
 					}
-					if ((mstart & 1) == 1) {  // ungerade
+					if ((mstart & 1) == 1) {  // ungerade Startposition
 						mstart--;
 						
 						message.getByte(mstart / 2, &n);
@@ -480,11 +482,6 @@ void SignalDetectorClass::processMessage()
 						SDC_WRITE(n);
 					}
 
-					/*
-					SDC_PRINT(SERIAL_DELIMITER);
-					n = sprintf(buf, ";C%X;S%X;R%X;", clock, sync, rssiValue);
-					SDC_WRITE((const uint8_t *)buf, n);
-					*/
 					n = sprintf(buf, ";C%X;S%X;", clock, sync);
 					SDC_WRITE((const uint8_t *)buf, n);
 					if (_rssiCallback != NULL)
@@ -747,18 +744,13 @@ void SignalDetectorClass::processMessage()
 
 					uint8_t n;
 
-					if ((messageLen & 1) == 1) {   // ungerade
-						SDC_PRINT("D");
-					}
-					else {
+					if ((messageLen & 1) == 1) {  // ein Nibble im letzten Byte übergeben ungerade 
 						SDC_PRINT("d");
 					}
-					/*
-					for (uint8_t i = 0; i < messageLen; i=i+2) {					
-						message.getByte(i/2,&n);
-						SDC_WRITE(n);
+					else {
+						SDC_PRINT("D");			// zwei Nibble im letzten Byte übergeben ungerade 
 					}
-					*/
+
 					for (uint8_t i = 0; i <= message.bytecount; i++) {
 						message.getByte(i, &n);
 						SDC_WRITE(n);
@@ -768,7 +760,7 @@ void SignalDetectorClass::processMessage()
 					SDC_WRITE((const uint8_t *)buf, n);
 					if (_rssiCallback != NULL)
 					{
-						n = sprintf(buf, "R%;", rssiValue);
+						n = sprintf(buf, "R%X;", rssiValue);
 						SDC_WRITE((const uint8_t *)buf, n);
 					}
 
@@ -819,6 +811,7 @@ void SignalDetectorClass::processMessage()
 				{
 					SDC_WRITE("CB;");
 				}
+				/*
 				sprintf(buf, "%d;", (int)message.valcount - messageLen);
 				SDC_PRINT(buf);
 
@@ -834,6 +827,7 @@ void SignalDetectorClass::processMessage()
 				}
 				SDC_PRINT(SERIAL_DELIMITER);
 				/// Special Debug
+				*/
 #endif
 				SDC_WRITE(MSG_END);
 				SDC_WRITE(char(0xA));
