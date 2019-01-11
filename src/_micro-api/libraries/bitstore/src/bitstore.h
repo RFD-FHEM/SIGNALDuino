@@ -39,7 +39,7 @@ public:
 	void reset();
 	bool getByte(const uint8_t idx, uint8_t *retvalue);
 	uint8_t bytecount;  // Number of stored bytes
-	uint8_t valcount;  // Number of total values stored  --- todo uint16_t
+	uint16_t valcount;  // Number of total values stored
 	//uint8_t debug;
 	uint8_t bcnt;   // fuer debugzwecke nach public verschoben
 

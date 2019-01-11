@@ -69,7 +69,7 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		m_truncated = true; 
 		
 		//messageLen = messageLen - start;
-		messageLen = message.valcount;
+		messageLen = (uint8_t) message.valcount;
 		
 		if (messageLen > 0) {
 			//last = &pattern[message[messageLen - 1]]; //Eventuell wird last auf einen nicht mehr vorhandenen Wert gesetzt, da der Puffer komplett gelöscht wurde
@@ -136,7 +136,7 @@ inline void SignalDetectorClass::addData(const uint8_t value)
 		MSG_PRINT(F("val=")); MSG_PRINT(value);
 		MSG_PRINT(F(" bytecnt=")); MSG_PRINT(message.bytecount); 
 		MSG_PRINTLN(F(" addData overflow!!"));
-		printOut();
+		//printOut();
 	}
 	firstLast = *first;   // zum debuggen
 }
@@ -189,7 +189,7 @@ inline void SignalDetectorClass::doDetect()
 	else {  					// valid
 		if (messageLen >= maxMsgSize) {
 			processMessage(1);   // message Puffer voll aber kein message Ende
-			if (MuOverflCount == 0) {
+			if (MuOverflCount == 0 && mcDetected == false) {
 				calcHisto();
 			}
 		}
@@ -204,7 +204,7 @@ inline void SignalDetectorClass::doDetect()
 			// Upd pattern
 			updPattern(fidx);
 		}
-		else if (MuOverflCount > 0) {
+		else if (MuOverflCount > 0 || mcDetected) {
 			processMessage(2);
 		}
 		else {
@@ -418,12 +418,14 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 #if DEBUGDETECT >= 1
 		DBG_PRINTLN("msgRec:");
 #endif
+
+		state = searching;
+	  if (mcDetected == false) {
 		//if (MsMoveCount == 0 && MuMoveCount == 0) {	// bei Wiederholungen wird kein compress_pattern benoetigt
 		if (MuOverflCount == 0) {       // bei Overflow Nachrichten wird kein compress_pattern benoetigt
 			compress_pattern();
 		}
-
-		state = searching;
+		
 		if (MsMoveCount > 0) {
 			mstart = 0;
 			while (mstart < 10) {
@@ -447,6 +449,10 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 			getClock();
 		}
 		if (state == clockfound && MSenabled && mcRepeat == false) getSync();  // wenn MC Wiederholungen ausgegeben werden, wird die MS Decodierung uebersprungen
+	  }
+	  else {
+		calcHisto();
+	  }
 
 #if DEBUGDECODE >1
 		DBG_PRINT("msgRec state="); DBG_PRINTLN(state)
@@ -705,7 +711,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				if (mcDetected == false)
 				{
 					mcdecoder.reset();
-					mcdecoder.setMinBitLen(mcMinBitLen);								
+					mcdecoder.setMinBitLen(mcMinBitLen);
 				}
 #if DEBUGDETECT>3
 				MSG_PRINT("vcnt: "); MSG_PRINTLN(mcdecoder.ManchesterBits.valcount);
@@ -713,7 +719,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 #if DEBUGDECODE > 2
 				DBG_PRINTLN("");
 #endif
-				if ((mcDetected || mcdecoder.isManchester()) && mcdecoder.doDecode())	// Check if valid manchester pattern and try to decode
+				if (mcDetected || mcdecoder.isManchester())	// Check if valid manchester pattern and try to decode
 				{
 #if MCDEBUGDECODE > 1
 					MSG_PRINT(MSG_START);
@@ -753,6 +759,8 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					}
 					MSG_PRINTLN(MSG_END);
 #endif
+				  if (mcdecoder.doDecode())
+				  {
 					MSG_PRINT(MSG_START);
 					MSG_PRINT("MC");
 					MSG_PRINT(SERIAL_DELIMITER);
@@ -824,12 +832,18 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					
 					MSG_PRINT(MSG_END);
 					MSG_PRINT("\n");
-				}
-				else if (mcDetected == true && m_truncated == true) {
-
+				  }
+				  else if (mcDetected == true) { // && m_truncated == true) {
+					/* DBG_PRINT("p_valid=");
+					  DBG_PRINT(p_valid);
+					  DBG_PRINT(" m_trunc=");
+					  DBG_PRINT(m_truncated);
+					  DBG_PRINT("mlen=");
+					  DBG_PRINTLN(messageLen);
+					*/
 					success = true;   // Prevents MU Processing
+				  }
 				}
-
 			}
 			if (MUenabled && (state == clockfound || state == syncfound) && success == false && (messageLen >= minMessageLen || MuOverflCount)) {
 
@@ -837,13 +851,11 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
 				bool m_endfound = false;
-				
 				bool isMuRepeat = false;
+				
+				mstart = 0;
+				calcHisto();
 				if (MuSplitThresh > 0 && MuNoOverflow == 0) {
-					if (mstart > 0) {	// wurde in isManchester der mstart veraendert und calcHisto ausgefuehrt?
-						calcHisto();
-						mstart = 0;
-					}
 					isMuRepeat = isMuMessageRepeat();
 				}
 #ifdef DEBUGMUREPEAT
@@ -873,9 +885,6 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					}
 					else {
 						mend = messageLen;
-					}
-					if (mstart > 0) {	// wurde in isManchester der mstart veraendert und calcHisto ausgefuehrt?
-						calcHisto();
 					}
 				}
 				else {
@@ -1650,7 +1659,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 	#endif
 	while (i < pdec->messageLen-30)
 	{
-		pdec->mcValid = true;
+	  pdec->mcValid = true;
+	  if (pdec->mcDetected == false || ManchesterBits.valcount == 0)
+	  {
 		while (i < pdec->messageLen-1)
 		{
 			// Start vom MC Signal suchen, dazu long suchen. Vor dem longlow darf kein Puls groesser long sein 
@@ -1699,7 +1710,17 @@ const bool ManchesterpatternDecoder::doDecode() {
 		}
 		
 		i = mc_sync_pos; 	// recover i to sync_pos
-		mc_start_found = true;
+		//mc_start_found = true;
+	  }
+	  else {
+		i = 1;
+		bit = ManchesterBits.getValue(ManchesterBits.valcount-1);
+	/*	DBG_PRINT(" mlen=");
+		DBG_PRINT(pdec->messageLen);
+		DBG_PRINT(" vcnt=");
+		DBG_PRINTLN(ManchesterBits.valcount);
+	*/
+	  }
 		
 		// Decoding
 		while (i < pdec->messageLen)
@@ -1743,8 +1764,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 			ManchesterBits.addValue(bit);
 		}
 		
-		if (i < pdec->messageLen) i++;		// wenn Abbruch durch break
-		
 		if (ManchesterBits.valcount < minbitlen)
 		{
 			if (pdec->mcRepeat == false && i > minMessageLen)	// es ist keine Wiederholung und es wurde nach minMessageLen nichts gefunden -> weiter mit MU-Nachricht
@@ -1758,10 +1777,27 @@ const bool ManchesterpatternDecoder::doDecode() {
 			DBG_PRINTLN(i);
 #endif
 		}
-		else 
-		{
-			pdec->mend = i;
-			return true;
+		else {
+			if (pdec->m_overflow && i >= pdec->messageLen-1)
+			{
+			/*	DBG_PRINT("i=");
+				DBG_PRINT(i);
+				DBG_PRINT(" mlen=");
+				DBG_PRINT(pdec->messageLen);
+				DBG_PRINT(" vcnt=");
+				DBG_PRINTLN(ManchesterBits.valcount);
+			*/
+				pdec->mend = i;
+				pdec->mcDetected = true;
+				pdec->bufferMove(i-1);
+				
+				return false;
+			}
+			else {
+				if (i < pdec->messageLen) i++;		// wenn Abbruch durch break
+				pdec->mend = i;
+				return true;
+			}
 		}
 	}
 }
