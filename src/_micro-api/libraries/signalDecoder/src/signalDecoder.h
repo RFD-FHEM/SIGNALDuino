@@ -48,7 +48,7 @@
 #define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 6
-#define syncMaxFact 50 // 39
+#define syncMaxFact 45 // 39
 #define syncMaxMicros 17000
 #define maxPulse 32001  // Magic Pulse Length
 
@@ -75,7 +75,7 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(first + 1), message(4) { 
+	SignalDetectorClass() : first(buffer), last(NULL), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MuMoveCount = 0;

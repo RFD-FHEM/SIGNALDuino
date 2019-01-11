@@ -470,21 +470,24 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 #endif	
 			// Setup of some protocol identifiers, should be retrieved via fhem in future
 
-			mend = mstart + 2;
+			mend = mstart + 12;
+			uint8_t mstartNeu = mstart + 10;
 			bool m_endfound = false;
 
-			while (mend < (mstart + 10))	// testen ob innerhalb 10 Zeichen nach dem sync ein weiterer sync folgt, falls ja diesen als neuen mstart verwenden 
+			while (mstartNeu > mstart)	// testen ob innerhalb 10 Zeichen nach dem sync ein weiterer sync folgt, falls ja diesen als neuen mstart verwenden 
 			{
-				if (message[mend + 1] == sync && message[mend] == clock) {
+				//if (message[mend + 1] == sync && message[mend] == clock) {
+				if (message[mstartNeu + 1] == sync) {
+					if (message[mstartNeu] == clock) {
 #ifdef DEBUGDECODE
-					DBG_PRINT(F("MStart:")); DBG_PRINT(mstart);
-					DBG_PRINT(F(" new MStart:")); DBG_PRINTLN(mend);
+						DBG_PRINT(F("MStart:")); DBG_PRINT(mstart);
+						DBG_PRINT(F(" new MStart:")); DBG_PRINTLN(mstartNeu);
 #endif
-					mstart = mend;
-					mend += 2;
-					break;
+						mstart = mstartNeu;		// weiterer sync -> neuer mstart
+						break;
+					}
 				}
-				mend++;
+				mstartNeu -= 2;
 			}
 			
 			while (mend < messageLen - 1)
@@ -497,7 +500,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				mend += 2;
 			}
 
-			if (mend > messageLen || !m_endfound) mend = messageLen - 1;  // Reduce mend if we are behind messageLen
+			if (mend > messageLen-1 || !m_endfound) mend = messageLen - 1;  // Reduce mend if we are behind messageLen-1
 			
 			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
 			//if (message[messageLen-1] == 7 || mstart > 10) {
@@ -515,8 +518,8 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 			DBG_PRINT(F(" msglen=")); DBG_PRINTLN(messageLen);
 			
 #endif // DEBUGDECODE
-		    if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && (messageLen - mstart) >= minMessageLen))
-		    {
+		  if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && (messageLen - mstart) >= minMessageLen))
+		  {
 			if (m_endfound || (!m_endfound && messageLen < maxMsgSize && p_valid != 2))  // nicht ausgeben, wenn kein Ende gefunden und patternpuffer overflow
 			{
 #if DEBUGDECODE >1
@@ -526,7 +529,7 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 
 				//preamble = "";
 				//postamble = "";
-			    if (MsMoveCount < MsMoveCountmax) {
+			  if (MsMoveCount < MsMoveCountmax) {
 				/*				Output raw message Data				*/
 				if (MredEnabled) {
 					int patternInt;
@@ -613,13 +616,16 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 					MSG_PRINT("O");  MSG_PRINT(SERIAL_DELIMITER);
 				}
 				if (MdebEnabled) {
+					if (mstart > 1) {
+						MSG_PRINT("s"); MSG_PRINT(mstart); MSG_PRINT(SERIAL_DELIMITER);
+					}
 					if (p_valid == 0) {					// Nachrichtenende erkannt
 						MSG_PRINT("e"); MSG_PRINT(SERIAL_DELIMITER);
 					} else if (p_valid == 2) {				// Patternpuffer overflow
 						MSG_PRINT("p"); MSG_PRINT(SERIAL_DELIMITER);
 					}
 				}
-			    }
+			  }
 				m_truncated = false;
 				
 				if ((m_endfound || MsMoveCount > 0)) {
@@ -685,10 +691,10 @@ void SignalDetectorClass::processMessage(const uint8_t p_valid)
 				//success = true;	// don't process other message types
 			}
 			success = true;
-		    }
-		    else {		  // m_endfound && (mend - mstart) < minMessageLen)  -> weiter mit MU message verarbeitung
+		  }
+		  else {		  // m_endfound && (mend - mstart) < minMessageLen)  -> weiter mit MU message verarbeitung
 			success == false;
-		    }
+		  }
 		}
 		if (success == false && (MUenabled || MCenabled)) {
 
