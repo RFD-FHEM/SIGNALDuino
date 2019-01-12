@@ -101,7 +101,7 @@ void getFunctions(bool *ms, bool *mu, bool *mc, bool *red)
 //================================= EEProm commands ======================================
 
 void dumpEEPROM() {
-#ifdef debug
+#ifdef DEBUG
 	DBG_PRINTLN("dump "); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_EQ));
 	char b[4];
 	for (uint8_t i = EE_MAGIC_OFFSET; i < 56+ EE_MAGIC_OFFSET; i++) {
