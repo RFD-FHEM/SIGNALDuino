@@ -137,7 +137,7 @@ void send_cmd()
 			{
 				cmdNo++;
 				command[cmdNo].type = combined;
-extraDelay = false;
+				extraDelay = false;
 			}
 			else if (msg_beginptr[1] == 'M') // send manchester
 			{
