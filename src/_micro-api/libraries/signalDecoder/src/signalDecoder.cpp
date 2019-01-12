@@ -1323,9 +1323,8 @@ void ManchesterpatternDecoder::getMessageHexStr(String *message)
 	}
 #ifdef NOSTRING		
 	*mptr = '\0';
-	return mptr;
+	return message;
 #endif
-	//return message;
 	//SDC_PRINTLN();
 }
 
