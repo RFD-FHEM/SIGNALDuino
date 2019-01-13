@@ -215,7 +215,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 
 	//MSG_PRINT(*buf);
 	//MSG_WRITE(buf, len);
-	MSG_PRINTER.write(buf,len);
+	return MSG_PRINTER.write(buf,len);
 	
 	//serverClient.write("test");
 
