@@ -92,10 +92,12 @@ jobs:
        - BOARD=ESP8266
        - RECEIVER=cc1101
      script:
+           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
+           - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json"
+             --save-prefs
+           - git clone https://github.com/bblanchon/ArduinoJson /usr/local/share/arduino/libraries/ArduinoJson
            - arduino --install-boards esp8266:esp8266
            - arduino --board esp8266:esp8266:generic --save-prefs
-           - arduino --pref "compiler.warning_level=all" --save-prefs
-           - arduino --pref "build.path=$PWD/release" --save-prefs
     - 
       stage: unittest
       install: skip 
