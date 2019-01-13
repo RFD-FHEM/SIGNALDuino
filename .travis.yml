@@ -29,9 +29,6 @@ install:
   - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
-  - arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs;
-
-
 before_deploy:
   - git config --global user.email "builds@travis-ci.com";
   - git config --global user.name "Travis CI";
@@ -77,6 +74,8 @@ jobs:
      env:
       - BOARD=radino
       - RECEIVER=cc1101
+     before_script:
+           - arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs;
     - 
      stage: deploy
      env:
