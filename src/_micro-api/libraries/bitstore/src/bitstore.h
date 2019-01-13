@@ -113,7 +113,7 @@ BitStore<bufSize>::~BitStore()
 template<uint8_t bufSize>
 bool BitStore<bufSize>::addValue(byte value)
 {
-	byte crcval = value;
+	//byte crcval = value;
 
 
 	if (bcnt == 7 && valcount > 0)
@@ -215,9 +215,9 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		return true;
 	}
 	uint8_t startbyte = begin*valuelen / 8;
-	byte crcval = this->getValue(begin);
+	//byte crcval = this->getValue(begin);
 	
-	uint8_t offset = 0;
+	//uint8_t offset = 0;
 
 	/*
 	Serial.print("moveleft startbyte:"); Serial.print(startbyte, DEC); Serial.print("@valpos");  Serial.print(begin, DEC);
@@ -295,9 +295,11 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 	Serial.print("  datastore is (bin)");   Serial.print(datastore[bytecount], BIN);
 	Serial.print("  (dec)");   Serial.print(datastore[bytecount], DEC);
 	*/
+	/*
 	if (crcval != this->getValue(0)) {
 		Serial.print("  ");  Serial.print(crcval, DEC); Serial.print(" <> ");  Serial.print(this->getValue(0), DEC);
 	}
+	*/
 	/*
 	Serial.print(" bcnt: ");		 Serial.print(bcnt, DEC);
 	Serial.print(" valcount: ");     Serial.print(valcount, DEC);
