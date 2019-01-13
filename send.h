@@ -107,7 +107,7 @@ void send_cmd()
 	disableReceive();
 
 	uint8_t repeats = 1;  // Default is always one iteration so repeat is 1 if not set
-	int16_t start_pos = 0;
+	//int16_t start_pos = 0;
 	uint8_t counter = 0;
 	bool extraDelay = true;
 

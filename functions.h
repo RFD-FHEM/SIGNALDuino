@@ -149,7 +149,7 @@ inline unsigned long getUptime()
 	static uint16_t times_rolled = 0;
 	static unsigned long last = 0;
 	// If this run is less than the last the counter rolled
-	unsigned long seconds = now / 1000;
+	//unsigned long seconds = now / 1000;
 	if (now < last) {
 		times_rolled++;
 	}

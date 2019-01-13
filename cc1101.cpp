@@ -239,10 +239,11 @@ uint8_t cc1101::chipVersion() {
 bool cc1101::checkCC1101() {
 
 	uint8_t version = chipVersion();  // Version
+#ifdef DEBUG
 	uint8_t partnum = readReg((revision == 0x01 ? CC1101_PARTNUM_REV01 : CC1101_PARTNUM_REV00), CC1101_READ_SINGLE);  // Partnum
 	DBG_PRINT(FPSTR(TXT_CCREVISION));	DBG_PRINTLN("0x" + String(version, HEX));
 	DBG_PRINT(FPSTR(TXT_CCPARTNUM));	DBG_PRINTLN("0x" + String(partnum, HEX)); //TODO String Klasse entfernen
-
+#endif
 	//checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
 	if (version == 0x00 || version == 0xFF)
 	{
@@ -324,8 +325,8 @@ void cc1101::setTransmitMode()
 
 bool cc1101::regCheck()
 {
-	char b[3];
-	uint8_t val;
+	//char b[3];
+	//uint8_t val;
 
 	DBG_PRINT(FPSTR(TXT_CC1101));
 	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));

@@ -1,5 +1,4 @@
 // output.h
-
 #ifndef _OUTPUT_h
 #define _OUTPUT_h
 
@@ -12,14 +11,17 @@ static const char TXT_CC1101[]				PROGMEM = "cc1101 ";
 static const char TXT_CHIP[]				PROGMEM = "chip";
 #endif
 
+#ifdef DEBUG
+static const char TXT_CCPARTNUM[]			PROGMEM = "CCPartnum =";
+static const char TXT_EEPROM[]				PROGMEM = "EEPROM";
+#endif
+
 static const char TXT_RECENA[]				PROGMEM = "receiver enabled" ;
 static const char TXT_FOUND[]				PROGMEM = "found ";
 static const char TXT_COMMAND[]				PROGMEM = "command e";
 static const char TXT_DOFRESET[]			PROGMEM = "is not correctly set. Please do a factory reset via ";
 static const char TXT_CCREVISION[]			PROGMEM = "CCVersion =";
-static const char TXT_CCPARTNUM[]			PROGMEM = "CCPartnum =";
 static const char TXT_UNSUPPORTED1[]		PROGMEM = "Unsupported short command";
-static const char TXT_EEPROM[]				PROGMEM = "EEPROM";
 static const char TXT_MU[]					PROGMEM = "MU";
 static const char TXT_MC[]					PROGMEM = "MC";
 static const char TXT_MS[]					PROGMEM = "MS";
