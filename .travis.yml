@@ -82,21 +82,22 @@ jobs:
      env:
       - BOARD=minicul
       - RECEIVER=cc1101
-    -
+    - 
      stage: deploy
      env:
       - BOARD=promini
-
+    - 
      stage: deploy
      env:
-      - BOARD=ESP8266 
-      - RECEIVER=cc1101
+       - BOARD=ESP8266
+       - RECEIVER=cc1101
      script:
            - arduino --install-boards esp8266:esp8266
            - arduino --board esp8266:esp8266:generic --save-prefs
            - arduino --pref "compiler.warning_level=all" --save-prefs
            - arduino --pref "build.path=$PWD/release" --save-prefs
-     stage: unittest
+    - 
+      stage: unittest
       install: skip 
       before_install: skip
       before_deploy: skip
