@@ -41,18 +41,20 @@ namespace commands {
 		{
 			disableReceive();
 		}
-		if (IB_1[1] == 'E')
+		else if (IB_1[1] == 'E')
 		{
 			enableReceive();
 		}
 	}
 
+	/*
 	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
 		if (hex < 16) {
 			MSG_PRINT("0");
 		}
 		MSG_PRINT(hex, HEX);
 	}
+	*/
 
 	inline void getConfig()
 	{
