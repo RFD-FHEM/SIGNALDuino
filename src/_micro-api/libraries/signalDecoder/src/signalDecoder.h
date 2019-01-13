@@ -67,14 +67,13 @@ extern WiFiClient serverClient;
 #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
 #endif
 
-#define SDC_PRINT(...) {  write(__VA_ARGS__); }
-#define SDC_WRITE(...) {  write(__VA_ARGS__); }
-#define SDC_PRINTLN(...) {  write(__VA_ARGS__); write("\n"); }
-
+#define SDC_PRINT(...)		write(__VA_ARGS__)
+#define SDC_WRITE(b)		write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)	write(__VA_ARGS__); write(char(0xA));
 #ifndef F 
 #define F(V1) V1
 #endif
-
+ 
 #include "bitstore.h"
 #include "FastDelegate.h"
 #define maxNumPattern 8
@@ -85,10 +84,13 @@ extern WiFiClient serverClient;
 #define syncMaxMicros 17000
 #define maxPulse 32001  // Magic Pulse Length
 
+constexpr const uint8_t SERIAL_DELIMITER = 59;
+constexpr const uint8_t MSG_START = 2;
+constexpr const uint8_t MSG_END = 3;
 
-#define SERIAL_DELIMITER  char(';')
-#define MSG_START char(0x2)		// this is a non printable Char
-#define MSG_END   char(0x3)			// this is a non printable Char
+//#define SERIAL_DELIMITER  59 //char(';')
+//#define MSG_START char(0x2)		// this is a non printable Char
+//#define MSG_END   char(0x3)			// this is a non printable Char
 
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
@@ -104,12 +106,13 @@ class SignalDetectorClass
 	friend class ManchesterpatternDecoder;
 
 public:
-	SignalDetectorClass() : first(buffer), last(NULL), message(4) { 
+	SignalDetectorClass() : first(buffer), last(nullptr), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
 																		 MredEnabled = 1;      // 1 = compress printmsg 
 																		 mcdecoder = nullptr;
 																		};
+
 
 	void reset();
 	bool decode(const int* pulse);
@@ -122,6 +125,7 @@ public:
 
 
 	//private:
+
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
 	bool MCenabled;
@@ -158,8 +162,8 @@ public:
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
-	FuncRetuint8t _rssiCallback=NULL;		// Holds the pointer to a callback Function
-	Func2pRetuint8t _streamCallback=NULL;	// Holds the pointer to a callback Function
+	FuncRetuint8t _rssiCallback= nullptr;	// Holds the pointer to a callback Function
+	Func2pRetuint8t _streamCallback=nullptr;// Holds the pointer to a callback Function
 	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
 
 
@@ -178,13 +182,13 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
-	size_t write(const uint8_t *buffer, size_t size);
-	size_t write(const char *str);
-	size_t write(uint8_t b);
+	const size_t write(const uint8_t *buffer, size_t size);
+	const size_t write(const char *str);
+	const size_t write(uint8_t b);
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
-	bool checkMBuffer();
+	const bool checkMBuffer();
 
 
 };

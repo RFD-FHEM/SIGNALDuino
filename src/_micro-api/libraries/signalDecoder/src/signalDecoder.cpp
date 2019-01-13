@@ -43,7 +43,7 @@
 #endif
 
 //Helper function to check buffer for bad data
-bool SignalDetectorClass::checkMBuffer()
+const bool SignalDetectorClass::checkMBuffer()
 {
 	for (uint8_t i = 0; i < messageLen-1; i++)
 	{
@@ -102,38 +102,31 @@ void SignalDetectorClass::addData(const int8_t value)
 
 	if (message.addValue(value))
 	{
-		messageLen++;
-		if (!checkMBuffer())
-		{
-			SDC_PRINT(" addValue ->");
-			SDC_PRINT("val="); SDC_WRITE(value);
-			SDC_PRINT(" msglen="); SDC_WRITE(messageLen);
-			SDC_PRINT(" bytc="); SDC_WRITE(message.bytecount);
-			SDC_PRINT(" valc="); SDC_WRITE(message.valcount);
-			SDC_PRINT(" mTrunc="); SDC_WRITE(m_truncated);
-			SDC_PRINT(" state="); SDC_WRITE(state);
-			SDC_PRINT(" success="); SDC_WRITE(success);
-			SDC_PRINT(" fir="); SDC_WRITE(*first);
-			SDC_PRINT(" las="); SDC_WRITE(*last);
-			SDC_PRINTLN("");
-		}
+		messageLen=message.valcount;
 		m_truncated = false; // Clear truncated flag
-
-	}
-	else {
-		SDC_PRINT("val="); SDC_PRINT(value);
+		if (checkMBuffer())
+		{
+			return;
+		} else {
+			SDC_PRINT(" addValue ->");
+			SDC_PRINT(" fir="); SDC_PRINT(*first);
+			SDC_PRINT(" las="); SDC_PRINT(*last);
+		}
+	} else {
+		printOut();
+		SDC_PRINT(" addData oflow->");
 		SDC_PRINT(" mstart="); SDC_PRINT(mstart);
 		SDC_PRINT(" mend="); SDC_PRINT(mend);
-		SDC_PRINT(" msglen="); SDC_PRINT(messageLen);
-		SDC_PRINT(" bytecnt=");SDC_PRINT(message.bytecount);
-		SDC_PRINT(" valcnt="); SDC_PRINT(message.valcount);
-		SDC_PRINT(" mTrunc="); SDC_PRINT(m_truncated);
-		SDC_PRINT(" state="); SDC_PRINT(state);
-		SDC_PRINT(" success="); SDC_PRINT(success);
-
-		SDC_PRINTLN(" addData overflow!!");
-		printOut();
 	}
+	SDC_PRINT(" val="); SDC_PRINT(value);
+	SDC_PRINT(" msglen="); SDC_PRINT(messageLen);
+	SDC_PRINT(" bytc="); SDC_PRINT(message.bytecount);
+	SDC_PRINT(" valc="); SDC_PRINT(message.valcount);
+	SDC_PRINT(" mTrunc="); SDC_PRINT(m_truncated);
+	SDC_PRINT(" state="); SDC_PRINT(state);
+	SDC_PRINT(" success="); 
+	SDC_PRINTLN(success);
+
 }
 
 inline void SignalDetectorClass::addPattern()
@@ -194,7 +187,7 @@ inline void SignalDetectorClass::doDetect()
 	}
 	else if (messageLen == minMessageLen) {
 		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-		if (_rssiCallback != NULL) 
+		if (_rssiCallback != nullptr) 
 			rssiValue = _rssiCallback();
 	}
 
@@ -334,9 +327,10 @@ void SignalDetectorClass::compress_pattern()
 			}
 		}
 	}
+	/*
 	if (!checkMBuffer())
 	{
-		SDC_PRINTLN("after compress_pattern ->");
+		SDC_PRINT("after compressPattern :");
 
 		SDC_PRINT(" mstart="); SDC_PRINT(mstart);
 		SDC_PRINT(" mend="); SDC_PRINT(mend);
@@ -348,6 +342,7 @@ void SignalDetectorClass::compress_pattern()
 		SDC_PRINTLN(" wrong Data in Buffer");
 		printOut();
 	}
+	*/
 }
 
 void SignalDetectorClass::processMessage()
@@ -427,7 +422,7 @@ void SignalDetectorClass::processMessage()
 				//postamble = "";
 
 				/*				Output raw message Data				*/
-				SDC_WRITE(MSG_START);
+				SDC_PRINT(MSG_START);
 				if (MredEnabled) {
 					int patternInt;
 					uint8_t patternLow;
@@ -455,13 +450,13 @@ void SignalDetectorClass::processMessage()
 						else {
 							bitSet(patternIdx, (uint8_t)4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						SDC_WRITE(patternIdx);
-						SDC_WRITE(patternLow);
-						SDC_WRITE(highByte(patternInt) | 0x80);
+						SDC_PRINT(patternIdx);
+						SDC_PRINT(patternLow);
+						SDC_PRINT(highByte(patternInt) | 0x80);
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 
-					uint8_t n;
+					//uint8_t n;
 					if ((mend & 1) == 1) {   // zwei Nibble im letzten Byte übergeben
 						SDC_PRINT("D");
 					}
@@ -474,31 +469,31 @@ void SignalDetectorClass::processMessage()
 						message.getByte(mstart / 2, &n);
 						n = (n & 15) | 128;             // high nibble = 8 als Kennzeichen für ungeraden mstart
 
-						SDC_WRITE(n);
+						SDC_PRINT(n);
  						mstart += 2;
 					}
 					for (uint8_t i = mstart; i <= mend; i=i+2) {					
 						message.getByte(i/2,&n);
-						SDC_WRITE(n);
+						SDC_PRINT(n);
 					}
 
 					n = sprintf(buf, ";C%X;S%X;", clock, sync);
-					SDC_WRITE((const uint8_t *)buf, n);
-					if (_rssiCallback != NULL)
+					SDC_PRINT(buf);
+					if (_rssiCallback != nullptr)
 					{
 						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 					}
 			    }
 				else {
-					SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER);		
+					SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER);
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
 						
 						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
 						n = sprintf(buf, "P%i=%i;", idx,pattern[idx]);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 
 					}
 					SDC_PRINT("D=");
@@ -515,11 +510,11 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("R=");  SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
 					*/
 					n = sprintf(buf, ";CP=%i;SP=%i;", clock, sync);
-					SDC_WRITE((const uint8_t *)buf, n);
-					if (_rssiCallback != NULL)
+					SDC_PRINT(buf);
+					if (_rssiCallback != nullptr)
 					{
 						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 					}
 				}
 
@@ -536,13 +531,12 @@ void SignalDetectorClass::processMessage()
 					mstart = 0;
 					//SDC_PRINT("m"); SDC_PRINT(MsMoveCount); SDC_PRINT(SERIAL_DELIMITER);
 					n = sprintf(buf, "m%i;", MsMoveCount);
-					SDC_WRITE((const uint8_t *)buf, n);
+					SDC_PRINT(buf);
 
 				}
 				
-				SDC_WRITE(MSG_END);
-				SDC_WRITE(char(0xA));
-				
+				SDC_PRINT(MSG_END);
+				SDC_PRINT(char(0xA));
 				success = true;
 
 
@@ -653,9 +647,9 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(MSG_START);
 						SDC_PRINT("MC");
 						n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder->longlow], pattern[mcdecoder->longhigh]);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 						n = sprintf(buf, ";SL=%i;SH=%i;", pattern[mcdecoder->shortlow], pattern[mcdecoder->shorthigh]);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 
 						/*
 						SDC_PRINT("LL="); SDC_PRINT(pattern[mcdecoder->longlow]); SDC_PRINT(SERIAL_DELIMITER);
@@ -666,19 +660,19 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT("D=");  mcdecoder->printMessageHexStr();
 
 						n = sprintf(buf, ";C=%i;L=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount);
-						SDC_WRITE((const uint8_t *)buf, n);
-						if (_rssiCallback != NULL)
+						SDC_PRINT(buf);
+						if (_rssiCallback != nullptr)
 						{
 							n = sprintf(buf, "R=%i;", rssiValue);
-							SDC_WRITE((const uint8_t *)buf, n);
+							SDC_PRINT(buf);
 						}						/*
 						SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("C="); SDC_PRINT(mcdecoder->clock); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 						*/
-						SDC_WRITE(MSG_END);
-						SDC_WRITE(char(0xA));
+						SDC_PRINT(MSG_END);
+						SDC_PRINT(char(0xA));
 #ifdef DEBUGDECODE
 						DBG_PRINTLN("");
 #endif
@@ -693,7 +687,7 @@ void SignalDetectorClass::processMessage()
 						} else {
 							// message buffer is untouched till now, but we will reset the the message buffer now to preserve anything else
 							message.reset();
-							messageLen = 0;
+							messageLen = message.valcount;
 							m_truncated = true; // Preserve anything else like pattern and so on.
 						}
 					}
@@ -707,7 +701,7 @@ void SignalDetectorClass::processMessage()
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
 #endif // DEBUGDECODE
-				SDC_WRITE(MSG_START);
+				SDC_PRINT(MSG_START);
 				if (MredEnabled) {
 					int patternInt;
 					uint8_t patternLow;
@@ -736,9 +730,9 @@ void SignalDetectorClass::processMessage()
 						else {
 							bitSet(patternIdx, (uint8_t)4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						SDC_WRITE(patternIdx);
-						SDC_WRITE(patternLow);
-						SDC_WRITE(highByte(patternInt) | 0x80);
+						SDC_PRINT(patternIdx);
+						SDC_PRINT(patternLow);
+						SDC_PRINT(highByte(patternInt) | 0x80);
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 
@@ -753,15 +747,15 @@ void SignalDetectorClass::processMessage()
 
 					for (uint8_t i = 0; i <= message.bytecount; i++) {
 						message.getByte(i, &n);
-						SDC_WRITE(n);
+						SDC_PRINT(n);
 					}
 
 					n = sprintf(buf, ";C%X;", clock);
-					SDC_WRITE((const uint8_t *)buf, n);
-					if (_rssiCallback != NULL)
+					SDC_PRINT(buf);
+					if (_rssiCallback != nullptr)
 					{
 						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 					}
 
 				}
@@ -775,7 +769,7 @@ void SignalDetectorClass::processMessage()
 						if (pattern[idx] == 0 || histo[idx] == 0) continue; 
 						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
 						n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 
 					}
 					SDC_PRINT("D=");
@@ -792,11 +786,11 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					*/
 					n = sprintf(buf, ";CP=%i;", clock);
-					SDC_WRITE((const uint8_t *)buf, n);
-					if (_rssiCallback != NULL)
+					SDC_PRINT(buf);
+					if (_rssiCallback != nullptr)
 					{
 						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_WRITE((const uint8_t *)buf, n);
+						SDC_PRINT(buf);
 					}
 				}
 
@@ -809,7 +803,7 @@ void SignalDetectorClass::processMessage()
 				// Special Debug
 				if (!checkMBuffer())
 				{
-					SDC_WRITE("CB;");
+					SDC_PRINT("CB;");
 				}
 				/*
 				sprintf(buf, "%d;", (int)message.valcount - messageLen);
@@ -829,8 +823,8 @@ void SignalDetectorClass::processMessage()
 				/// Special Debug
 				*/
 #endif
-				SDC_WRITE(MSG_END);
-				SDC_WRITE(char(0xA));
+				SDC_PRINT(MSG_END);
+				SDC_PRINT(char(0xA));
 				
 				m_truncated = false;
 				success = true;
@@ -888,11 +882,11 @@ void SignalDetectorClass::processMessage()
 
 void SignalDetectorClass::reset()
 {
-	messageLen = 0;
 	patternLen = 0;
 	pattern_pos = 0;
 	message.reset();
-//	bitcnt = 0;
+	messageLen = message.valcount;
+	//	bitcnt = 0;
 	state = searching;
 	clock = sync = -1;
 	for (uint8_t i = 0; i<maxNumPattern; ++i)
@@ -927,6 +921,7 @@ const bool SignalDetectorClass::inTol(const int val, const int set, const int to
 
 void SignalDetectorClass::printOut()
 {
+#ifdef DEBUG
 	DBG_PRINTLN("");
 
 	DBG_PRINT("Sync: ");
@@ -973,23 +968,26 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT("]");
 	}
 	DBG_PRINTLN();
+#endif
 }
 
-size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
+const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
 {
-	if (_streamCallback == NULL)
+	if (_streamCallback == nullptr)
 		return 0;
 	return _streamCallback(buf, size);
 }
 
 
-size_t SignalDetectorClass::write(const char *str) {
-	if (str == NULL)
+const size_t SignalDetectorClass::write(const char *str) {
+	if (str == nullptr)
 		return 0;
 	return write((const uint8_t*)str, strlen(str));
 }
 
-inline size_t SignalDetectorClass::write(uint8_t b)
+
+
+const size_t SignalDetectorClass::write(uint8_t b)
 {
 	return write(&b, 1);
 }
