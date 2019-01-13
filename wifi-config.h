@@ -1,4 +1,4 @@
-
+#if defined (ESP32) || defined(ESP8266)
 #include <ArduinoJson.h>
 
 #ifdef ESP8266
@@ -50,3 +50,4 @@ void resetwifi() {
 	
 }
 
+#endif
