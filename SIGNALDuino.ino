@@ -62,7 +62,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 //Includes
-#include <avr/wdt.h>
+//#include <avr/wdt.h>
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
@@ -192,7 +192,7 @@ void loop() {
 #ifdef __AVR_ATmega32U4__	
 	serialEvent();
 #endif
-	wdt_reset();
+	//wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
@@ -254,7 +254,7 @@ void serialEvent()
 				case '\r':
 				case '\0':
 				case '#':
-					wdt_reset();
+					//wdt_reset();
 					commands::HandleShortCommand();  // Short command received and can be processed now
 					idx = 0;
 					return; //Exit function
