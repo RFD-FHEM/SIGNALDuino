@@ -24,7 +24,6 @@ install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz;   
   - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino;  
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino;
-  - arduino --install-library "ArduinoJson";
   - arduino --install-library "TimerOne";
   - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
@@ -90,11 +89,16 @@ jobs:
      env:
        - BOARD=ESP8266
        - RECEIVER=cc1101
+       - IDE_VERSION=1.6.13
      before_script:
            - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
-           - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json"
-             --save-prefs
-           - git clone https://github.com/bblanchon/ArduinoJson /usr/local/share/arduino/libraries/ArduinoJson
+           - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
+           - arduino --install-library "ArduinoJson:5.13.2";
+           - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
+           - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
+           - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
+           - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
+           - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate   
            - arduino --install-boards esp8266:esp8266
            - arduino --board esp8266:esp8266:generic --save-prefs
     - 
