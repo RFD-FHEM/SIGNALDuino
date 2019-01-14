@@ -805,23 +805,18 @@ void SignalDetectorClass::processMessage()
 				{
 					SDC_PRINT("CB;");
 				}
-				/*
-				sprintf(buf, "%d;", (int)message.valcount - messageLen);
-				SDC_PRINT(buf);
-
 				uint8_t specialbyte = 0;
 				if (message.getByte(message.bytecount-1,&specialbyte));
 				{
-					SDC_WRITE(specialbyte);
+					SDC_PRINT(specialbyte);
 				}
 				SDC_PRINT(SERIAL_DELIMITER);
 				if (message.getByte(message.bytecount, &specialbyte));
 				{
-					SDC_WRITE(specialbyte);
+					SDC_PRINT(specialbyte);
 				}
 				SDC_PRINT(SERIAL_DELIMITER);
 				/// Special Debug
-				*/
 #endif
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
