@@ -800,25 +800,6 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
 				}
 
-#if  !defined(__linux__)  // Bad hack to prevent output during unit test
-				// Special Debug
-				if (!checkMBuffer())
-				{
-					SDC_PRINT("CB;");
-				}
-				uint8_t specialbyte = 0;
-				if (message.getByte(message.bytecount-1,&specialbyte));
-				{
-					SDC_PRINT(specialbyte);
-				}
-				SDC_PRINT(SERIAL_DELIMITER);
-				if (message.getByte(message.bytecount, &specialbyte));
-				{
-					SDC_PRINT(specialbyte);
-				}
-				SDC_PRINT(SERIAL_DELIMITER);
-				/// Special Debug
-#endif
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
 				
