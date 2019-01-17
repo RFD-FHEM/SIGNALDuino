@@ -103,8 +103,8 @@ void SignalDetectorClass::addData(const int8_t value)
 	{
 		messageLen=message.valcount;
 		m_truncated = false; // Clear truncated flag
-
-		if (messageLen > 1 && checkMBuffer(messageLen-2))
+		return;
+/*		if (messageLen > 1 && checkMBuffer(messageLen-2))
 		{
 			return;
 		} else {
@@ -112,7 +112,7 @@ void SignalDetectorClass::addData(const int8_t value)
 			SDC_PRINT(" fir="); SDC_PRINT(*first);
 			SDC_PRINT(" las="); SDC_PRINT(*last);
 		}
-
+		*/
 	} else {
 		printOut();
 		SDC_PRINT(" addData oflow->");
@@ -535,7 +535,27 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT(buf);
 
 				}
-				
+
+#if  !defined(__linux__)  // Bad hack to prevent output during unit test
+				// Special Debug
+				if (!checkMBuffer())
+				{
+					SDC_PRINT("CB;");
+				}
+				uint8_t specialbyte = 0;
+				if (message.getByte((mend/2)-1, &specialbyte));
+				{
+					SDC_PRINT(specialbyte);
+				}
+				SDC_PRINT(SERIAL_DELIMITER);
+				if (message.getByte((mend / 2), &specialbyte));
+				{
+					SDC_PRINT(specialbyte);
+				}
+				SDC_PRINT(SERIAL_DELIMITER);
+				/// Special Debug
+#endif
+
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
 				success = true;
