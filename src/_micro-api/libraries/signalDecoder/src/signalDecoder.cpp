@@ -43,11 +43,10 @@
 #endif
 
 //Helper function to check buffer for bad data
-const bool SignalDetectorClass::checkMBuffer()
+const bool SignalDetectorClass::checkMBuffer(const uint8_t begin=0)
 {
-	for (uint8_t i = 0; i < messageLen-1; i++)
+	for (uint8_t i = begin; i < messageLen-1; i++)
 	{
-		
 		if ( (pattern[message[i]] ^ pattern[message[i+1]]) >= 0) 
 		{
 			return false;
@@ -104,7 +103,8 @@ void SignalDetectorClass::addData(const int8_t value)
 	{
 		messageLen=message.valcount;
 		m_truncated = false; // Clear truncated flag
-		if (checkMBuffer())
+
+		if (messageLen > 1 && checkMBuffer(messageLen-2))
 		{
 			return;
 		} else {
@@ -112,6 +112,7 @@ void SignalDetectorClass::addData(const int8_t value)
 			SDC_PRINT(" fir="); SDC_PRINT(*first);
 			SDC_PRINT(" las="); SDC_PRINT(*last);
 		}
+
 	} else {
 		printOut();
 		SDC_PRINT(" addData oflow->");
