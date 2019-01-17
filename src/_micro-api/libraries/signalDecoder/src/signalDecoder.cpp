@@ -43,7 +43,7 @@
 #endif
 
 //Helper function to check buffer for bad data
-const bool SignalDetectorClass::checkMBuffer(const uint8_t begin=0)
+const bool SignalDetectorClass::checkMBuffer(const uint8_t begin)
 {
 	for (uint8_t i = begin; i < messageLen-1; i++)
 	{
