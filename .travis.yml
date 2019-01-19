@@ -12,7 +12,6 @@ env:
   - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
 
 script:
-  #- find $PWD/src/_micro-api/libraries -maxdepth 5 -depth -type d -name "examples"    | xargs rm -R 
   - chmod +x ./build.sh;
   - ./build.sh;
 before_install:
@@ -28,9 +27,9 @@ install:
   - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
   - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
   - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
-  - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate   
-  - ln -s $PWD/src/_micro-api/libraries/Timerone /usr/local/share/arduino/libraries/TimerOne   
- - arduino --pref "compiler.warning_level=all" --save-prefs;
+  - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
+  - ln -s $PWD/src/_micro-api/libraries/TimeOne /usr/local/share/arduino/libraries/TimerOne
+  - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
 before_deploy:
