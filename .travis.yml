@@ -128,8 +128,6 @@ jobs:
            - ls -l
            - ./bin/TestProject 
 allow_failures: 
-after_success:
-- file $PWD/release/*
 notifications:
   email:
     on_success: change
