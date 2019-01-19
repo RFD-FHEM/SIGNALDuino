@@ -18,19 +18,19 @@ script:
 before_install:
   - mkdir $PWD/SIGNALDuino
 # - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" -not -name "examples" | xargs cp -a -t $PWD/SIGNALDuino/;
-  - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
-  - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
-  - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
-  - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
-  - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate   
   - find $PWD -maxdepth 1 -name "*.h" -or -name "*.cpp" -or -name "*.ino"  | xargs cp -a -t $PWD/SIGNALDuino/
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
 install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz;   
   - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino;  
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino;
-  - arduino --install-library "TimerOne";
-  - arduino --pref "compiler.warning_level=all" --save-prefs;
+  - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
+  - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
+  - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
+  - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
+  - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate   
+  - ln -s $PWD/src/_micro-api/libraries/Timerone /usr/local/share/arduino/libraries/TimerOne   
+ - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
 before_deploy:
