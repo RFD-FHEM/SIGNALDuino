@@ -95,7 +95,7 @@ jobs:
      env:
        - BOARD=ESP8266
        - RECEIVER=cc1101
-       - IDE_VERSION=1.8.5
+#       - IDE_VERSION=1.8.5
      before_script:
            - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
