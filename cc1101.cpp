@@ -202,7 +202,7 @@ void cc1101::commandStrobes(void) {
 
 void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC11001 register
 	if (reg > 1 && reg < 0x40) {
-		writeReg(reg - 2, var);
+		writeReg(reg - EE_CC1100_CFG, var);
 		char b[6];
 		sprintf_P(b, PSTR("W%02X%02X"), reg, var);
 		MSG_PRINTLN(b);
@@ -217,6 +217,9 @@ void cc1101::writeCCpatable(uint8_t var) {           // write 8 byte to patable 
 			EEPROM.write(EE_CC1100_PA + i, 0);
 		}
 	}
+	#ifdef ESP8266
+	EEPROM.commit();
+	#endif
 	writePatable();
 }
 

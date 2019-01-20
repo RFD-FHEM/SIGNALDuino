@@ -53,19 +53,19 @@ namespace cc1101 {
 	#define CC1100_IOCFG2      0x00  // GDO2 output configuration
 	#define CC1100_PKTCTRL0    0x08  // Packet config register
 
-  extern uint8_t revision;
+    extern uint8_t revision;
 	extern const uint8_t initVal[];
 	// Status registers - newer version base on 0xF0
-  #define CC1101_PARTNUM_REV01      0xF0 // Chip ID
-  #define CC1101_VERSION_REV01      0xF1 // Chip ID
-  #define CC1100_RSSI_REV01         0xF4 // Received signal strength indication
+	#define CC1101_PARTNUM_REV01      0xF0 // Chip ID
+	#define CC1101_VERSION_REV01      0xF1 // Chip ID
+	#define CC1100_RSSI_REV01         0xF4 // Received signal strength indication
 	#define CC1100_MARCSTATE_REV01    0xF5 // Control state machine state
 
   // Status registers - older version base on 0x30
-  #define CC1101_PARTNUM_REV00      0x30 // Chip ID
-  #define CC1101_VERSION_REV00      0x31 // Chip ID
-  #define CC1100_RSSI_REV00         0x34 // Received signal strength indication
-  #define CC1100_MARCSTATE_REV00    0x35 // Control state machine state
+	#define CC1101_PARTNUM_REV00      0x30 // Chip ID
+	#define CC1101_VERSION_REV00      0x31 // Chip ID
+	#define CC1100_RSSI_REV00         0x34 // Received signal strength indication
+	#define CC1100_MARCSTATE_REV00    0x35 // Control state machine state
 	 
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset

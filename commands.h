@@ -242,7 +242,7 @@ namespace commands {
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
-				MSG_PRINT(TXT_WRITE);
+				MSG_PRINT(FPSTR(TXT_WRITE));
 				char b[3];
 				sprintf(b, "%02X", val);
 				MSG_PRINT(b);
