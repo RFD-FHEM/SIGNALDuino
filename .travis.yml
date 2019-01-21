@@ -29,6 +29,7 @@ install:
   - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
   - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
   - ln -s $PWD/src/_micro-api/libraries/TimerOne /usr/local/share/arduino/libraries/TimerOne
+  - ln -s $PWD/src/_micro-api/libraries/WIFIManager /usr/local/share/arduino/libraries/WIFIManager
   - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
@@ -97,7 +98,7 @@ jobs:
        - RECEIVER=cc1101
 #       - IDE_VERSION=1.8.5
      before_script:
-           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
+#           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
            - arduino --install-library "ArduinoJson:5.13.2";
            - arduino --install-boards esp8266:esp8266:2.4.2
