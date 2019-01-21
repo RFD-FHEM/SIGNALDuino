@@ -30,6 +30,7 @@ install:
   - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
   - ln -s $PWD/src/_micro-api/libraries/TimerOne /usr/local/share/arduino/libraries/TimerOne
   - ln -s $PWD/src/_micro-api/libraries/WIFIManager /usr/local/share/arduino/libraries/WIFIManager
+  - ln -s $PWD/src/_micro-api/libraries/ArduinoJson /usr/local/share/arduino/libraries/ArduinoJson
   - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
@@ -100,7 +101,7 @@ jobs:
      before_script:
 #           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
-           - arduino --install-library "ArduinoJson:5.13.2";
+#           - arduino --install-library "ArduinoJson:5.13.2";
            - arduino --install-boards esp8266:esp8266:2.4.2
            - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
      after_success:
