@@ -28,11 +28,10 @@ void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 		//DBG_PRINT(index);
 		isLow = buckets[index] >> 15;
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
-
-		while (stoptime > micros()) {
 #ifdef ESP8266
-			yield();
+		yield();
 #endif
+		while (stoptime > micros()) {
 			;
 		}
 		isLow ? digitalLow(PIN_SEND) : digitalHigh(PIN_SEND);
