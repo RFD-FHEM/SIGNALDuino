@@ -2,7 +2,7 @@
 #include "compile_config.h"
 
 #define PROGNAME               " SIGNALESP "
-#define PROGVERS               "3.3.1-rc6"
+#define PROGVERS               "3.3.1-RC-nightly"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 #define BAUDRATE               115200
@@ -522,6 +522,7 @@ void serialEvent()
 			case ';':
 				DBG_PRINT("send cmd detected ");
 				DBG_PRINTLN(idx);
+				IB_1[idx + 1] = '\0';
 				send_cmd();
 				idx = 0; // increments to 1
 				return; //Exit function
