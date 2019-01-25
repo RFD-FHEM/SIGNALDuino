@@ -40,12 +40,12 @@ extern "C" {
 #include <ESP8266WiFi.h>
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
-#include <ArduinoJson.h>     //Local WebServer used to serve the configuration portal
+#include "ArduinoJson.h"     //Local WebServer used to serve the configuration portal
 
 
-#include <output.h>
-#include <bitstore.h>  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
-#include <SimpleFIFO.h>
+#include "output.h"
+#include "bitstore.h"  // Die wird aus irgend einem Grund zum Compilieren benoetigt.
+#include "SimpleFIFO.h"
 
 #ifdef CMP_CC1101
 #include "cc1101.h"
@@ -53,14 +53,14 @@ extern "C" {
 #endif
 
 SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
-#include <signalDecoder.h>
+#include "signalDecoder.h"
 #include "commands.h"
 #include "functions.h"
 #include "send.h"
-#include <FastDelegate.h> 
+#include "FastDelegate.h" 
 #define WIFI_MANAGER_OVERRIDE_STRINGS
 #include "wifi-config.h"
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
 
 WiFiServer Server(23);  //  port 23 = telnet
