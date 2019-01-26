@@ -1,5 +1,4 @@
 #if defined (ESP32) || defined(ESP8266)
-#include <ArduinoJson.h>
 
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
@@ -9,8 +8,10 @@
 #include <esp_wifi.h>  
 #endif 
 
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager
+#include "ArduinoJson.h"
+#include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
+extern WiFiManager wifiManager;
 
 
 //default custom static IP
@@ -39,7 +40,6 @@ void saveConfigCallback() {
 
 
 void resetwifi() {
-	WiFiManager wifiManager;
 	wifiManager.resetSettings();
 #ifdef esp8266
 	ESP.reset();
