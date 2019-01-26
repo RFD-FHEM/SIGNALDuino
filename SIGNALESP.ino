@@ -363,6 +363,9 @@ void setup() {
 //	wifiManager.startConfigPortal();
 	wifiManager.startWebPortal();
 	os_timer_arm(&cronTimer, 31, true);
+	pinAsOutput(PIN_SEND);
+	os_timer_disarm(&blinksos);
+	digitalLow(PIN_LED);
 }
 
 void ICACHE_RAM_ATTR cronjob(void *pArg) {
