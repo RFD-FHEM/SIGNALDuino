@@ -3,8 +3,8 @@
 
 #define PROGNAME               " SIGNALESP "
 #define PROGVERS               "3.3.1-RC-nightly"
-#define VERSION_1               0x33
-#define VERSION_2               0x1d
+#define VERSION_1              0x33
+#define VERSION_2              0x1d
 #define BAUDRATE               115200
 #define FIFO_LENGTH			   200
 
@@ -237,7 +237,7 @@ void setup() {
 	//wifiManager.setSaveConfigCallback(saveConfigCallback);
 	//wifiManager.setBreakAfterConfig(true); // Exit the config portal even if there is a wrong config
 
-	bool wps_successfull=false;
+	//bool wps_successfull=false;
 	Serial.println("Starting config portal with SSID: NodeDuinoConfig");
 	/*
 	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
@@ -443,9 +443,9 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 		if ((len == 1 && *buf == char(0xA)) || (writeBufferCurrent == writeBufferSize))
 		{
 			size_t byteswritten = 0;
-			if (serverClient && serverClient.connected())
-				byteswritten = serverClient.write((const uint8_t*)writeBuffer, writeBufferCurrent);
-			//byteswritten = serverClient.write(&writeBuffer[0], writeBufferCurrent);
+			if (serverClient && serverClient.connected()) {
+				byteswritten = serverClient.write(writeBuffer, writeBufferCurrent);
+			}
 
 			if (byteswritten < writeBufferCurrent) {
 				memmove(writeBuffer, writeBuffer + byteswritten, writeBufferCurrent - byteswritten);
@@ -456,9 +456,12 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 			}
 			result += byteswritten;
 		}
-		len = len - copy;
-
 		// buffer full
+		len = len - copy;
+		if (len > 0)
+		{
+			memmove((void*)buf, buf + copy, len);
+		}
 	}
 	return len;
 #else
