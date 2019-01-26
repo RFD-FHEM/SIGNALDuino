@@ -65,9 +65,16 @@
 	    #define PIN_RECEIVE           2
 	#endif
 #else
-	#define PIN_RECEIVE            2
-	#define PIN_LED                13 // Message-LED
-	#define PIN_SEND               11
+	#ifdef ESP8266
+		#define PIN_RECEIVE            5// D1
+		#define PIN_LED                16
+		#define PIN_SEND               4// D2  // gdo0Pin TX out
+		#define ETHERNET_PRINT
+	#else
+		#define PIN_RECEIVE            2
+		#define PIN_LED                13 // Message-LED
+		#define PIN_SEND               11
+	#endif
 #endif
 
 
