@@ -7,7 +7,6 @@ env:
       - BOARD=radiono RECEIVER=cc1101  
       - BOARD=promini 
       - BOARD=ESP8266 RECEIVER=cc1101
-      - BOARD=ESP8266
   global:
   - IDE_VERSION=1.8.8
   - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
@@ -103,6 +102,16 @@ jobs:
 #           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
 #           - arduino --install-library "ArduinoJson:5.13.2";
+           - arduino --install-boards esp8266:esp8266:2.4.2
+           - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=ESP8266
+     before_script:
+           - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
            - arduino --install-boards esp8266:esp8266:2.4.2
            - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
      after_success:
