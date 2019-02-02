@@ -18,6 +18,7 @@ done
 
 if [ "${RECEIVER}" = "cc1101" ]; then
   echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
+  find ~/.arduino15/packages/ -type f  -name platform.txt | xargs dirname | xargs -I{} bash -c 'echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > $1/platform.local.txt' -- {}
 fi
 
 
