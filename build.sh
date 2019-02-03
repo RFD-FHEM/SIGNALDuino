@@ -18,6 +18,7 @@ done
 
 if [ "${RECEIVER}" = "cc1101" ]; then
   echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > /usr/local/share/arduino/hardware/arduino/avr/platform.local.txt
+  find ~/.arduino15/packages/ -type f  -name platform.txt | xargs dirname | xargs -I{} bash -c 'echo "compiler.cpp.extra_flags=-DOTHER_BOARD_WITH_CC1101=1" > $1/platform.local.txt' -- {}
 fi
 
 
@@ -39,4 +40,3 @@ fi
 echo "Compile now for ${BOARD} with ${RECEIVER}"
 arduino -v --verbose-build --verify $PWD/SIGNALDuino/SIGNALDuino.ino 2>&1
 echo "Compile ${BOARD} ${RECEIVER} finshed"
-mv $PWD/release/SIGNALDuino.ino.hex $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex

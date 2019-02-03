@@ -1,9 +1,48 @@
 // output.h
-
 #ifndef _OUTPUT_h
 #define _OUTPUT_h
 
+
+
+#ifdef CMP_CC1101
+static const char TXT_CC110[]				PROGMEM = "CC110";
+static const char TXT_CCINIT[]				PROGMEM = "CCInit " ;
+static const char TXT_CC1101[]				PROGMEM = "cc1101 ";
+static const char TXT_CHIP[]				PROGMEM = "chip";
+#endif
+
+#ifdef DEBUG
+static const char TXT_CCPARTNUM[]			PROGMEM = "CCPartnum =";
+static const char TXT_EEPROM[]				PROGMEM = "EEPROM";
+#endif
+
+static const char TXT_RECENA[]				PROGMEM = "receiver enabled" ;
+static const char TXT_FOUND[]				PROGMEM = "found ";
+static const char TXT_COMMAND[]				PROGMEM = "command e";
+static const char TXT_DOFRESET[]			PROGMEM = "is not correctly set. Please do a factory reset via ";
+static const char TXT_CCREVISION[]			PROGMEM = "CCVersion =";
+static const char TXT_UNSUPPORTED1[]		PROGMEM = "Unsupported short command";
+static const char TXT_MU[]					PROGMEM = "MU";
+static const char TXT_MC[]					PROGMEM = "MC";
+static const char TXT_MS[]					PROGMEM = "MS";
+static const char TXT_EQ[]					PROGMEM = "=";
+static const char TXT_FSEP[]				PROGMEM = ";";
+static const char TXT_433[]					PROGMEM = "433 ";
+static const char TXT_868[]					PROGMEM = "868 ";
+static const char TXT_MHZ[]					PROGMEM = "Mhz ";
+static const char TXT_WRITE[]				PROGMEM = "write ";
+static const char TXT_READ[]				PROGMEM = "read ";
+static const char TXT_BLANK[]				PROGMEM = " ";
+static const char TXT_DOT[]					PROGMEM = ".";
+static const char TXT_SENDCMD[]				PROGMEM = "send cmd ";
+static const char TXT_TOLONG[]				PROGMEM = "to long ";
+static const char TXT_CORRUPT[]				PROGMEM = "corrupt";
+static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
+
+
 #ifndef ESP8266
+	#define FPSTR(s) ((__FlashStringHelper*)(s))
+
 	#ifdef ARDUINO_RADINOCC1101
 		#define portOfPin(P) \
 		((((P) >= 0 && (P) <= 4) || (P) == 6 || (P) == 12 || (P) == 24 || (P) == 25 || (P) == 29) ? &PORTD : (((P) == 5 || (P) == 13) ? &PORTC : (((P) >= 18 && (P) <= 23)) ? &PORTF : (((P) == 7) ? &PORTE : &PORTB)))
@@ -53,9 +92,12 @@
 	#ifndef isHigh
 		#define isHigh(pin) (digitalRead(pin) == HIGH)
 	#endif
+	#ifndef isLow
+		#define isLow(pin) (digitalRead(pin) == LOW)
+	#endif
+
 #endif
 
-//#define DEBUG
 
 
 #if defined(ARDUINO) && ARDUINO >= 100

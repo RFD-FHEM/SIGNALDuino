@@ -31,69 +31,20 @@
 */
 
 
-// Config flags for compiling correct options / boards Define only one
-//#define ARDUINO_ATMEGA328P_MINICUL 1
-//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-#define OTHER_BOARD_WITH_CC1101  1
-
-// #todo: header file für die Boards anlegen
-#ifdef OTHER_BOARD_WITH_CC1101
-	#define CMP_CC1101     
-#endif
-#ifdef ARDUINO_ATMEGA328P_MINICUL
-	#define CMP_CC1101     
-#endif
-
-// Get compatibility with arduino ide and visualmicro
-#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-#define ARDUINO_RADINOCC1101
-#endif
-
-#ifdef ARDUINO_RADINOCC1101
-	#define CMP_CC1101     
-#endif
+// See config flags in compile_config.h:
+#include "compile_config.h"
 
 
-
-
-
-#define PROGVERS               "3.3.1-RC-X-171218"
-#define PROGNAME               "RF_RECEIVER"
+#define PROGVERS               "3.3.1-RC-nightly"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-
-
-#ifdef CMP_CC1101
-	#ifdef ARDUINO_RADINOCC1101
-		#define PIN_LED               13
-		#define PIN_SEND              9   // gdo0Pin TX out
-		#define PIN_RECEIVE				   7
-		#define digitalPinToInterrupt(p) ((p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : NOT_AN_INTERRUPT)))))
-		#define PIN_MARK433			  4
-		#define SS					  8  
-	#elif ARDUINO_ATMEGA328P_MINICUL  // 8Mhz 
-		#define PIN_LED               4
-		#define PIN_SEND              2   // gdo0Pin TX out
-		#define PIN_RECEIVE           3
-		#define PIN_MARK433			  A0
-	#else 
-		#define PIN_LED               9
-		#define PIN_SEND              3   // gdo0Pin TX out
-	    #define PIN_RECEIVE           2
-	#endif
-#else
-	#define PIN_RECEIVE            2
-	#define PIN_LED                13 // Message-LED
-	#define PIN_SEND               11
-#endif
-
+#if defined(__AVR__)
+#define PROGNAME               " SIGNALduino "
 
 #define BAUDRATE               57600 // 500000 //57600
 #define FIFO_LENGTH			   90 //150
-#define DEBUG				   1
 
-// EEProm Address
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
 #define addr_features        0xff
@@ -104,20 +55,14 @@
 void serialEvent();
 void cronjob();
 int freeRam();
-//bool command_available = false;
-unsigned long getUptime();
-void enDisPrint(bool enDis);
 void configSET();
-void getFunctions(bool *ms, bool *mu, bool *mc);
-void initEEPROM(void);
-void changeReceiver();
 uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 
 //Includes
-#include <avr/wdt.h>
+//#include <avr/wdt.h>
 #include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
@@ -164,14 +109,17 @@ void setup() {
 	#endif
   	initEEPROM();
 	#ifdef CMP_CC1101
-	DBG_PRINT(F("CCInit "));
+	DBG_PRINT(FPSTR(TXT_CCINIT));
 
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 	
+
+
 	if (hasCC1101)
 	{
-		DBG_PRINTLN("CC1101 found");
+		//DBG_PRINTLN("CC1101 found");
+		DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
 		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
 	} else {
 		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
@@ -179,7 +127,7 @@ void setup() {
 	#endif 
 
 	pinAsOutput(PIN_SEND);
-	DBG_PRINTLN("Starting timerjob");
+	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
 	Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
@@ -192,13 +140,20 @@ void setup() {
 
 	musterDec.setStreamCallback(&writeCallback);
 
+
+#ifdef CMP_CC1101
 	if (!hasCC1101 || cc1101::regCheck()) {
+#endif
 		enableReceive();
-		DBG_PRINTLN(F("receiver enabled"));
+		DBG_PRINT(FPSTR(TXT_RECENA));
+#ifdef CMP_CC1101
 	}
 	else {
-		DBG_PRINTLN(F("cc1101 is not correctly set. Please do a factory reset via command e"));
+		DBG_PRINT(FPSTR(TXT_CC1101));
+		DBG_PRINT(FPSTR(TXT_DOFRESET));
+		DBG_PRINTLN(FPSTR(TXT_COMMAND));
 	}
+#endif
 	MSG_PRINTER.setTimeout(400);
 }
 
@@ -237,7 +192,7 @@ void loop() {
 #ifdef __AVR_ATmega32U4__	
 	serialEvent();
 #endif
-	wdt_reset();
+	//wdt_reset();
 	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 		aktVal=FiFo.dequeue();
 		state = musterDec.decode(&aktVal); 
@@ -260,7 +215,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
 
 	//MSG_PRINT(*buf);
 	//MSG_WRITE(buf, len);
-	MSG_PRINTER.write(buf,len);
+	return MSG_PRINTER.write(buf,len);
 	
 	//serverClient.write("test");
 
@@ -299,7 +254,7 @@ void serialEvent()
 				case '\r':
 				case '\0':
 				case '#':
-					wdt_reset();
+					//wdt_reset();
 					commands::HandleShortCommand();  // Short command received and can be processed now
 					idx = 0;
 					return; //Exit function
@@ -328,3 +283,4 @@ int freeRam () {
 
 
 
+#endif

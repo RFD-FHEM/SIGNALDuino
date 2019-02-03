@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 
   int wResult = RUN_ALL_TESTS(); //Find and run all tests
 
-  system("pause");
+   //system("pause");
 
   return wResult; // returns 0 if all the tests are successful, or 1 otherwise
 

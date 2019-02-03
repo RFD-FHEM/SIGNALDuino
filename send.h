@@ -8,6 +8,7 @@
 #else
 //	#include "WProgram.h"
 #endif
+#include "compile_config.h"
 
 extern bool hasCC1101;
 extern char IB_1[14];
@@ -27,7 +28,9 @@ void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 		//DBG_PRINT(index);
 		isLow = buckets[index] >> 15;
 		dur = abs(buckets[index]); 		//isLow ? dur = abs(buckets[index]) : dur = abs(buckets[index]);
-
+#ifdef ESP8266
+		yield();
+#endif
 		while (stoptime > micros()) {
 			;
 		}
@@ -63,7 +66,11 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 
 				stoptime += clock;
 				while (stoptime > micros())
+				{
+#ifdef ESP8266
 					yield();
+#endif
+				}
 			}
 
 		}
@@ -99,7 +106,7 @@ void send_cmd()
 	disableReceive();
 
 	uint8_t repeats = 1;  // Default is always one iteration so repeat is 1 if not set
-	int16_t start_pos = 0;
+	//int16_t start_pos = 0;
 	uint8_t counter = 0;
 	bool extraDelay = true;
 
@@ -129,7 +136,7 @@ void send_cmd()
 			{
 				cmdNo++;
 				command[cmdNo].type = combined;
-extraDelay = false;
+				extraDelay = false;
 			}
 			else if (msg_beginptr[1] == 'M') // send manchester
 			{
@@ -233,14 +240,17 @@ extraDelay = false;
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
 			if (l == 0)
 			{
-				MSG_PRINTLN(F("send cmd corrupt"));
+				MSG_PRINT(FPSTR(TXT_SENDCMD));
+				MSG_PRINTLN(FPSTR(TXT_CORRUPT));
 				return;
 			}
 			if (buffer_left == 0)
 			{
 				delayMicroseconds(300);
 				MSG_PRINTER.readBytesUntil('\n', buf, 255);
-				MSG_PRINTLN(F("send cmd to long"));
+				MSG_PRINT(FPSTR(TXT_SENDCMD));
+				MSG_PRINTLN(FPSTR(TXT_TOLONG));
+				//MSG_PRINTLN(F("send cmd to long"));
 				return;
 			}
 			*(msg_endptr + 1) = '\0'; // Nullterminate the string
