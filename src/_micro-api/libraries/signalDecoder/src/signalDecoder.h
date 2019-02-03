@@ -80,7 +80,7 @@ extern WiFiClient serverClient;
 #define maxMsgSize 254
 #define minMessageLen 40
 #define syncMinFact 6
-#define syncMaxFact 39
+#define syncMaxFact 44
 #define syncMaxMicros 17000
 #define maxPulse 32001  // Magic Pulse Length
 

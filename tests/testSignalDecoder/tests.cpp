@@ -887,6 +887,40 @@ namespace arduino {
 			  // Todo convert the received chars to readable signaldata and compare results
 		  }
 
+		  TEST_F(Tests, msITV1)
+		  {
+			  bool state;
+			  int pData[] = {
+				  142,-446,-1056,972,-10304,250,-340
+			  };
+
+			  uint8_t s_Stream[] = {
+				  5,4,5,2,3,6,5,2,3,6,5,2,5,2,5,2,3,6,5,2,3,6,5,2,5,2,5,2,3,6,5,2,3,6,5,2,3,6,5,2,3,6,5,2,5,2,5,2,3,6
+			  };
+
+			  uint16_t len = sizeof(s_Stream) / sizeof(s_Stream[0]);
+
+			  uint16_t i = 0;
+			  bool decoded;
+			  for (uint8_t j = 1, i = 5; j < 7; j++)
+			  {
+				  for (; i < len; i++)
+				  {
+					  state = ooDecode.decode(&pData[s_Stream[i]]);
+					  if (state)
+						  decoded = true;
+				  }
+				  if (j < 2) {
+					  ASSERT_EQ(ooDecode.patternLen, 4);
+					  ASSERT_FALSE(state);
+				  }
+				  i = 0;
+			  }
+			  //std::cout << outputStr.c_str();
+			  std::string base = "MS;P0=-340;P1=250;P2=-1056;P3=972;P4=-10304;D=14123012301212123012301212123012301230123012121230;CP=1;SP=4;O;m2;";
+			  ASSERT_STREQ(outputStr.substr(outputStr.find_first_of(MSG_START) + 1, outputStr.find_first_of(MSG_END) - outputStr.find_first_of(MSG_START) - 1).c_str(), base.c_str());
+			  ASSERT_FALSE(state);
+		  }
 
 
 		  TEST_F(Tests, muTX3)
