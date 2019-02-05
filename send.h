@@ -89,12 +89,13 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 
 // SC;R=6;SR;P0=-2560;P1=2560;P3=-640;D=10101010101010113;SM;C=645;D=A1E7E7D6F88D88;F=10AB85550A;   # SOMFY
 
+#define maxNumPattern 8
 struct s_sendcmd {
 	int16_t sendclock = 0;
 	uint8_t type;
 	char    *datastart;
 	char    *dataend;
-	int16_t buckets[6];
+	int16_t buckets[maxNumPattern];
 	uint8_t repeats = 1;
 };
 
@@ -161,15 +162,17 @@ void send_cmd()
 		}
 		else if (msg_beginptr[0] == 'P' && msg_beginptr[2] == '=') // Do some basic detection if data matches what we expect
 		{
-		counter = msg_beginptr[1] - '0'; // Convert to dec value
-		command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
-		//*(msg_endptr + 1) = '\0';
-		DBG_PRINTLN("Adding bucket");
-		if (cmdNo == 0) {
-			MSG_PRINT(msg_beginptr);
-			msg_endptr = buf; // rearrange to beginning of buf
-			msg_beginptr = nullptr;
-		}
+			counter = msg_beginptr[1] - '0'; // Convert to dec value
+			if (counter < maxNumPattern) {
+				command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
+				//*(msg_endptr + 1) = '\0';
+				DBG_PRINTLN("Adding bucket");
+				if (cmdNo == 0) {
+					MSG_PRINT(msg_beginptr);
+					msg_endptr = buf; // rearrange to beginning of buf
+					msg_beginptr = nullptr;
+				}
+			}
 		}
 		else if (msg_beginptr[0] == 'R' && msg_beginptr[1] == '=') {
 		command[cmdNo].repeats = strtoul(&msg_beginptr[2], &msg_endptr, 10);
