@@ -400,9 +400,7 @@ void SignalDetectorClass::processMessage()
 			}
 			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
-
 			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
-
 
 #if DEBUGDECODE > 1
 			DBG_PRINT("Index: ");
@@ -533,10 +531,9 @@ void SignalDetectorClass::processMessage()
 					//SDC_PRINT("m"); SDC_PRINT(MsMoveCount); SDC_PRINT(SERIAL_DELIMITER);
 					n = sprintf(buf, "m%i;", MsMoveCount);
 					SDC_PRINT(buf);
-
 				}
 
-#if  !defined(__linux__)  // Bad hack to prevent output during unit test
+#if  !defined(__linux__) && !defined(_WIN32)  // Bad hack to prevent output during unit test
 				// Special Debug
 				if (!checkMBuffer())
 				{
@@ -555,13 +552,9 @@ void SignalDetectorClass::processMessage()
 				SDC_PRINT(SERIAL_DELIMITER);
 				/// Special Debug
 #endif
-
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
 				success = true;
-
-
-
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{

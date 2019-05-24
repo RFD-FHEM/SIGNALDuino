@@ -1371,10 +1371,140 @@ namespace arduino {
 			ASSERT_FALSE(state);
 
 		}
+		
+		TEST_F(Tests, msHeidemann)
+		{
+			unsigned int DMSG = 0x610;
+			unsigned int lastDMSG = DMSG + 2;
+			std::string bstr;
 
+			// Nachrichten senden
+			for (DMSG; DMSG <= lastDMSG; DMSG++)
+			{
+				//Wiederholungen
+				for (byte Repeat = 0; Repeat < 5; Repeat++)
+				{
+					// Start sequenz
+					DigitalSimulate(-5000);
+					DigitalSimulate(330);
 
+					// 12 Bits senden
+					unsigned int msg = DMSG;
+					for (unsigned int i = 0; i < 12; ++i)
+					{
+						unsigned long long bit = msg & 1;
+						if (bit == 1)
+						{
+							DigitalSimulate(-330);
+							DigitalSimulate(660);
 
+						}
+						else //zero
+						{
+							DigitalSimulate(-660);
+							DigitalSimulate(330);
+						}
+						msg >>= 1;
+					}
+					if (Repeat < 2) {
+						ASSERT_FALSE(state);
+					}
 
+				}
+				DigitalSimulate(-32001); // Pause zwischen Wiederholungen
+				DigitalSimulate(0); // Letzten Pulse (Pause) hier enden lassen
+
+				switch (DMSG)
+				{
+				case 0x610:                                            // 0 0 0 0 1 0 0 0 0 1 1 0
+					bstr = "MS;P0=-5000;P1=330;P2=-660;P3=-330;P4=660;D=10121212121342121212134342;CP=1;SP=0;m2;";
+					break;
+				case 0x611:                                            // 1 0 0 0 1 0 0 0 0 1 1 0
+					bstr = "MS;P0=-5000;P1=330;P2=-660;P3=-330;P4=660;D=10121212121342121212134342;CP=1;SP=0;m1;";
+					break;                                          
+				case 0x612:                                            // 0 1 0 0 1 0 0 0 0 1 1 0
+					bstr = "MS;P0=-5000;P1=330;P2=-330;P3=660;P4=-660;D=10123414141234141414123234;CP=1;SP=0;m1;";
+					break;
+
+				}
+				int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+				int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+				std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+
+				//printf("%i - %s\n", DMSG, Message.c_str());
+				ASSERT_STREQ(Message.c_str(), bstr.c_str());
+
+				outputStr = "";
+			}
+		}
+		
+
+		TEST_F(Tests, muHeidemann)
+		{
+			unsigned int DMSG = 0x610;
+			unsigned int lastDMSG = DMSG + 2;
+			std::string bstr;
+
+			ooDecode.MSenabled = false;
+			// Nachrichten senden
+			for (DMSG; DMSG <= lastDMSG; DMSG++)
+			{
+				//Wiederholungen
+				for (byte Repeat = 0; Repeat < 5; Repeat++)
+				{
+					// Start sequenz
+					DigitalSimulate(-5000);
+					DigitalSimulate(330);
+
+					// 12 Bits senden
+					unsigned int msg = DMSG;
+					for (unsigned int i = 0; i < 12; ++i)
+					{
+						unsigned long long bit = msg & 1;
+						//printf("%i ", bit);
+						if (bit == 1) {
+							DigitalSimulate(-330);
+							DigitalSimulate(660);
+						} else //zero
+						{
+							DigitalSimulate(-660);
+							DigitalSimulate(330);
+						}
+						msg >>= 1;
+					}
+					//printf("\n");
+
+					if (Repeat < 2) {
+						ASSERT_FALSE(state);
+					}
+					
+				}
+				DigitalSimulate(-32001); // Pause zwischen Wiederholungen
+				DigitalSimulate(0); // Letzten Pulse (Pause) hier enden lassen
+
+				switch (DMSG)
+				{
+					case 0x610 :                                            // 0 0 0 0 1 0 0 0 0 1 1 0
+						bstr = "MU;P0=-5000;P1=330;P2=-660;P3=-330;P4=660;D=0121212121342121212134342101212121213421212121343421012121212134212121213434210121212121342121212134342101212121213421212121343421;CP=1;";
+						break;
+					case 0x611:                                            // 1 0 0 0 1 0 0 0 0 1 1 0
+						bstr = "MU;P0=-5000;P1=330;P2=-330;P3=660;P4=-660;D=0123414141234141414123234101234141412341414141232341012341414123414141412323410123414141234141414123234101234141412341414141232341;CP=1;";
+						break;                                          //  0123414141234141414123234101234141412341414141232341012341414123414141412323410123414141234141414123234101234141412341414141232341
+					case 0x612:                                            // 0 1 0 0 1 0 0 0 0 1 1 0
+						bstr = "MU;P0=-5000;P1=330;P2=-660;P3=-330;P4=660;D=0121342121342121212134342101213421213421212121343421012134212134212121213434210121342121342121212134342101213421213421212121343421;CP=1;";
+						break;
+
+				}
+				int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+				int msgEndPos =  outputStr.find_first_of(MSG_END, msgStartPos);
+				std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+
+				//printf("%i - %s\n", DMSG, Message.c_str());
+				ASSERT_STREQ(Message.c_str(), bstr.c_str());
+
+				outputStr = "";
+			}
+		}
 
 	  //--------------------------------------------------------------------------------------------------
 	  /*
