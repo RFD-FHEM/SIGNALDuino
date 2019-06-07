@@ -113,10 +113,13 @@ namespace arduino {
 
 				}
 				else if (cmdstring->at(startpos) == 'D') {
+					char cpulse[2];
 					for (int i = startpos + 2; i < endpos; i++)
 					{
-						const char cpulse = cmdstring->at(i);
-						const int8_t ipulse = atoi(&cpulse);
+
+						cpulse[0] = cmdstring->at(i);
+						cpulse[1] = '\0';
+						const int ipulse = atoi(cpulse);
 
 						//state = DigitalSimulate(buckets[cmdstring->substring(i, i + 1).toInt()]);
 						if (!raw_mode) {
