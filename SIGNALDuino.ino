@@ -35,7 +35,7 @@
 #include "compile_config.h"
 
 
-#define PROGVERS               "3.3.1-RC-nightly"
+#define PROGVERS               "3.3.1-experimental"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 

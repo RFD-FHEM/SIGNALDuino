@@ -410,13 +410,17 @@ void SignalDetectorClass::processMessage()
 			DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
 			DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
 #endif // DEBUGDECODE
+			if (m_endfound && (mend - mstart) < minMessageLen) {
+				state = clockfound; // step back back to clockfound state, because it is to short for our ms signals
+				goto MUOutput;
+			}
 			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
 			{
+
 #ifdef DEBUGDECODE
 				SDC_PRINTLN("Filter Match: ");;
 #endif
-
-
+		
 				//preamble = "";
 				//postamble = "";
 
@@ -587,6 +591,7 @@ void SignalDetectorClass::processMessage()
 				success = true;	// don't process other message types
 			}
 		}
+MUOutput:
 		if (success == false && (MUenabled || MCenabled)) {
 
 #if DEBUGDECODE >0

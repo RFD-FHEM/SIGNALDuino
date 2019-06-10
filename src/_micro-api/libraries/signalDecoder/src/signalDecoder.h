@@ -78,7 +78,7 @@ extern WiFiClient serverClient;
 #include "FastDelegate.h"
 #define maxNumPattern 8
 #define maxMsgSize 254
-#define minMessageLen 25
+#define minMessageLen 40
 #define syncMinFact 6
 #define syncMaxFact 44
 #define syncMaxMicros 17000
