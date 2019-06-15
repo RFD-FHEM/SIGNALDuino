@@ -1441,6 +1441,26 @@ namespace arduino {
 			}
 		}
 		
+		TEST_F(Tests, msS522)
+		{
+			//S522  temperature : 24.0  batteryState : RSSI : -58.5
+
+			std::string dstr = "MS;P1=-8055;P2=488;P3=-2049;P4=-3956;D=2121232324232323232323242323242323242323232424242324242323232323232323232323232324242324;";
+
+			for (int i = 0; i < 3; i++)
+			{
+				state = import_sigdata(&dstr);
+				//if (i==2) 			ASSERT_TRUE(state);
+
+			}
+			int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+			int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+			std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+			std::string bstr = "MS;P1=-8055;P2=488;P3=-2049;P4=-3956;D=21232324232323232323242323242323242323232424242324242323232323232323232323232324242324;CP=2;SP=1;R=31;O;m2;";
+			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
+		}
+
+
 
 		TEST_F(Tests, muHeidemann)
 		{

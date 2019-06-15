@@ -387,11 +387,16 @@ void SignalDetectorClass::processMessage()
 
 			mend = mstart + 2;   // GGf. kann man die Mindestlaenge von x Signalen vorspringen
 			bool m_endfound = false;
-
+			bool syncend = false;
 			//uint8_t repeat;
 			while (mend < messageLen - 1)
 			{
-				if (message[mend + 1] == sync && message[mend] == clock) {
+				
+				if (!syncend && message[mend + 1] != sync)
+				{
+					syncend = true; // skip as long as there are sync pulses at start
+					//mstart = mend;
+				} else if (syncend && message[mend + 1] == sync && message[mend] == clock) {
 					mend -= 1;					// Previus signal is last from message
 					m_endfound = true;
 					break;
