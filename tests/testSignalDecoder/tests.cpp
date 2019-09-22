@@ -1400,7 +1400,6 @@ namespace arduino {
 						{
 							DigitalSimulate(-330);
 							DigitalSimulate(660);
-
 						}
 						else //zero
 						{
@@ -1412,7 +1411,6 @@ namespace arduino {
 					if (Repeat < 2) {
 						ASSERT_FALSE(state);
 					}
-
 				}
 				DigitalSimulate(-32001); // Pause zwischen Wiederholungen
 				DigitalSimulate(0); // Letzten Pulse (Pause) hier enden lassen
@@ -1428,7 +1426,6 @@ namespace arduino {
 				case 0x612:                                            // 0 1 0 0 1 0 0 0 0 1 1 0
 					bstr = "MS;P0=-5000;P1=330;P2=-330;P3=660;P4=-660;D=10123414141234141414123234;CP=1;SP=0;m1;";
 					break;
-
 				}
 				int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
 				int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
@@ -1478,7 +1475,6 @@ namespace arduino {
 					// Start sequenz
 					DigitalSimulate(-5000);
 					DigitalSimulate(330);
-
 					// 12 Bits senden
 					unsigned int msg = DMSG;
 					for (unsigned int i = 0; i < 12; ++i)
@@ -1496,7 +1492,6 @@ namespace arduino {
 						msg >>= 1;
 					}
 					//printf("\n");
-
 					if (Repeat < 2) {
 						ASSERT_FALSE(state);
 					}
@@ -1516,7 +1511,6 @@ namespace arduino {
 					case 0x612:                                            // 0 1 0 0 1 0 0 0 0 1 1 0
 						bstr = "MU;P0=-5000;P1=330;P2=-660;P3=-330;P4=660;D=0121342121342121212134342101213421213421212121343421012134212134212121213434210121342121342121212134342101213421213421212121343421;CP=1;";
 						break;
-
 				}
 				int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
 				int msgEndPos =  outputStr.find_first_of(MSG_END, msgStartPos);
