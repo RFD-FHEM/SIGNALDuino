@@ -1,4 +1,4 @@
-[submodule "tests/win32arduino"]
+[submodule "win32arduino"]
 	path = tests/win32arduino
 	url = https://github.com/end2endzone/win32Arduino.git
 [submodule "src/_micro-api/libraries/WIFIManager"]

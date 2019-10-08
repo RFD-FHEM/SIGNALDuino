@@ -387,11 +387,16 @@ void SignalDetectorClass::processMessage()
 
 			mend = mstart + 2;   // GGf. kann man die Mindestlaenge von x Signalen vorspringen
 			bool m_endfound = false;
-
+			bool syncend = false;
 			//uint8_t repeat;
 			while (mend < messageLen - 1)
 			{
-				if (message[mend + 1] == sync && message[mend] == clock) {
+				
+				if (!syncend && message[mend + 1] != sync)
+				{
+					syncend = true; // skip as long as there are sync pulses at start
+					//mstart = mend;
+				} else if (syncend && message[mend + 1] == sync && message[mend] == clock) {
 					mend -= 1;					// Previus signal is last from message
 					m_endfound = true;
 					break;
@@ -400,9 +405,7 @@ void SignalDetectorClass::processMessage()
 			}
 			if (mend > messageLen) mend = messageLen;  // Reduce mend if we are behind messageLen
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
-
 			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
-
 
 #if DEBUGDECODE > 1
 			DBG_PRINT("Index: ");
@@ -412,13 +415,17 @@ void SignalDetectorClass::processMessage()
 			DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
 			DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
 #endif // DEBUGDECODE
+			if (m_endfound && (mend - mstart) < minMessageLen) {
+				state = clockfound; // step back back to clockfound state, because it is to short for our ms signals
+				goto MUOutput;
+			}
 			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
 			{
+
 #ifdef DEBUGDECODE
 				SDC_PRINTLN("Filter Match: ");;
 #endif
-
-
+		
 				//preamble = "";
 				//postamble = "";
 
@@ -533,10 +540,9 @@ void SignalDetectorClass::processMessage()
 					//SDC_PRINT("m"); SDC_PRINT(MsMoveCount); SDC_PRINT(SERIAL_DELIMITER);
 					n = sprintf(buf, "m%i;", MsMoveCount);
 					SDC_PRINT(buf);
-
 				}
 
-#if  !defined(__linux__)  // Bad hack to prevent output during unit test
+#if  !defined(__linux__) && !defined(_WIN32)  // Bad hack to prevent output during unit test
 				// Special Debug
 				if (!checkMBuffer())
 				{
@@ -555,13 +561,9 @@ void SignalDetectorClass::processMessage()
 				SDC_PRINT(SERIAL_DELIMITER);
 				/// Special Debug
 #endif
-
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
 				success = true;
-
-
-
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
@@ -594,6 +596,7 @@ void SignalDetectorClass::processMessage()
 				success = true;	// don't process other message types
 			}
 		}
+MUOutput:
 		if (success == false && (MUenabled || MCenabled)) {
 
 #if DEBUGDECODE >0
