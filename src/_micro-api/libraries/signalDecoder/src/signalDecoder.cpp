@@ -541,26 +541,6 @@ void SignalDetectorClass::processMessage()
 					n = sprintf(buf, "m%i;", MsMoveCount);
 					SDC_PRINT(buf);
 				}
-
-#if  !defined(__linux__) && !defined(_WIN32)  // Bad hack to prevent output during unit test
-				// Special Debug
-				if (!checkMBuffer())
-				{
-					SDC_PRINT("CB;");
-				}
-				uint8_t specialbyte = 0;
-				if (message.getByte((mend/2)-1, &specialbyte));
-				{
-					SDC_PRINT(specialbyte);
-				}
-				SDC_PRINT(SERIAL_DELIMITER);
-				if (message.getByte((mend / 2), &specialbyte));
-				{
-					SDC_PRINT(specialbyte);
-				}
-				SDC_PRINT(SERIAL_DELIMITER);
-				/// Special Debug
-#endif
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
 				success = true;
