@@ -72,7 +72,7 @@ endif()
 #link libraries
 if (COVERAGE)
 	target_link_libraries(TestProject PRIVATE win32arduino rapidassist ${PTHREAD_LIBRARIES} ${GTEST_LIBRARIES} --coverage)
-else
+else()
 	target_link_libraries(TestProject PRIVATE win32arduino rapidassist ${PTHREAD_LIBRARIES} ${GTEST_LIBRARIES})
 endif()
 
