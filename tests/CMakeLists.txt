@@ -5,6 +5,13 @@ message("PROJECT_SOURCE_DIR: ${PROJECT_SOURCE_DIR}")
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(   LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_CXX_STANDARD 11)
+##############################################################################################################################################
+# Code coverage
+##############################################################################################################################################
+SET(COVERAGE OFF CACHE BOOL "Coverage")
+if (COVERAGE)
+    target_compile_options(TestProject PRIVATE --coverage)
+endif()
 
 ##############################################################################################################################################
 # Dependencies
@@ -63,5 +70,11 @@ if(NOT WIN32)
 endif()
 
 #link libraries
-target_link_libraries(TestProject PRIVATE win32arduino rapidassist ${PTHREAD_LIBRARIES} ${GTEST_LIBRARIES} )
+if (COVERAGE)
+	target_link_libraries(TestProject PRIVATE win32arduino rapidassist ${PTHREAD_LIBRARIES} ${GTEST_LIBRARIES} --coverage)
+else
+	target_link_libraries(TestProject PRIVATE win32arduino rapidassist ${PTHREAD_LIBRARIES} ${GTEST_LIBRARIES} )
+
+endif()
+
 
