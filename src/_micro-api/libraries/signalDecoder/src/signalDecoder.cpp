@@ -740,8 +740,6 @@ MUOutput:
 						SDC_PRINT(SERIAL_DELIMITER);
 					}
 
-					uint8_t n;
-
 					if ((messageLen & 1) == 1) {  // ein Nibble im letzten Byte übergeben ungerade 
 						SDC_PRINT("d");
 					}
@@ -1012,7 +1010,7 @@ void SignalDetectorClass::calcHisto(const uint8_t startpos, uint8_t endpos)
 	*/
 	uint16_t bstartpos = startpos *4/8;
 	uint16_t bendpos = endpos*4 / 8;
-	uint8_t bval;
+	uint8_t bval=0;
 	if (startpos % 2 == 1)  // ungerade
 	{
 		message.getByte(bstartpos, &bval);
@@ -1439,7 +1437,7 @@ void ManchesterpatternDecoder::getMessageLenStr(String* str)
 
 unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 
-	uint8_t c;
+	uint8_t c = 0;
 	ManchesterBits.getByte(idx,&c);
 	return  c;
 }
@@ -1587,7 +1585,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 							//i--; // Process short later again, do not remove it
 							pdec->state = mcdecoding; // Try to prevent other processing
 						}
-						else if (pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (mpiPlusOne == longhigh || mpiPlusOne == shorthigh)
+						else if ((pdec->pattern[mpi] < pdec->pattern[longlow] && i < pdec->messageLen - 1 && (mpiPlusOne == longhigh || mpiPlusOne == shorthigh))
 							|| (i<pdec->messageLen - 2 && isShort(mpi) && pdec->pattern[mpiPlusOne] < pdec->pattern[longlow] && (isLong(pdec->message[i + 2]) || isShort(pdec->message[i + 3])) && i++)
 							)
 						{
