@@ -560,6 +560,16 @@ namespace fastdelegate {
 	   // support static_cast between void * and function pointers.
 
 	class DelegateMemento {
+	public:
+#if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
+		DelegateMemento() : m_pthis(0), m_pFunction(0), m_pStaticFunction(0) {};
+		void clear() {
+			m_pthis = 0; m_pFunction = 0; m_pStaticFunction = 0;
+		}
+#else
+		DelegateMemento() : m_pthis(0), m_pFunction(0) {};
+		void clear() { m_pthis = 0; m_pFunction = 0; }
+#endif
 	protected:
 		// the data is protected, not private, because many
 		// compilers have problems with template friends.
@@ -572,16 +582,6 @@ namespace fastdelegate {
 		GenericFuncPtr m_pStaticFunction;
 #endif
 
-	public:
-#if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
-		DelegateMemento() : m_pthis(0), m_pFunction(0), m_pStaticFunction(0) {};
-		void clear() {
-			m_pthis = 0; m_pFunction = 0; m_pStaticFunction = 0;
-		}
-#else
-		DelegateMemento() : m_pthis(0), m_pFunction(0) {};
-		void clear() { m_pthis = 0; m_pFunction = 0; }
-#endif
 	public:
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
 		inline bool IsEqual(const DelegateMemento &x) const {
@@ -634,7 +634,7 @@ namespace fastdelegate {
 			return right.IsLess(*this);
 		}
 		DelegateMemento(const DelegateMemento &right) :
-			m_pFunction(right.m_pFunction), m_pthis(right.m_pthis)
+			m_pthis(right.m_pthis), m_pFunction(right.m_pFunction)
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
 			, m_pStaticFunction(right.m_pStaticFunction)
 #endif

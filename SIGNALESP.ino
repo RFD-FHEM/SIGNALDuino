@@ -1,4 +1,4 @@
-#ifdef ESP8266
+#if defined (ESP32) || defined(ESP8266)
 #include "compile_config.h"
 
 #define PROGNAME               " SIGNALESP "
@@ -30,17 +30,21 @@ uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be re
 size_t writeCallback(const uint8_t *buf, uint8_t len);
 void ICACHE_RAM_ATTR sosBlink(void *pArg);
 
+#if defined(ESP8266)
 extern "C" {
 #include "user_interface.h"
 }
-
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
+#endif
+#if defined(ESP32)
+#endif
 
 #include <FS.h>   
 #include <EEPROM.h>
-#include <ESP8266WiFi.h>
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
 #include "ArduinoJson.h"     //Local WebServer used to serve the configuration portal
+#include "esp_task_wdt.h"
 
 
 #include "output.h"
@@ -81,9 +85,13 @@ volatile unsigned long lastTime = micros();
 #define digitalState(P)((uint8_t)isHigh(P))
 */
 
+#ifdef ESP32
+hw_timer_t * cronTimer;
+hw_timer_t * blinksos;
+#elif defined(ESP8266)
 os_timer_t cronTimer;
 os_timer_t blinksos;
-
+#endif
 
 bool hasCC1101 = false;
 char IB_1[14]; // Input Buffer one - capture commands
@@ -121,8 +129,14 @@ void setup() {
 
 
 	//ESP.wdtEnable(2000);
+
+#ifdef ESP32
+// Todo: use esp_timer_create ...
+#elif defined(ESP8266)
 	os_timer_setfn(&blinksos, &sosBlink, (void *)boot_sequence);
 	os_timer_arm(&blinksos, 300, true);
+#endif
+
 //	WiFi.setAutoConnect(false);
 	WiFi.mode(WIFI_STA);
 
@@ -338,9 +352,13 @@ void setup() {
 
 	Server.setNoDelay(true);
 	Server.begin();  // telnet server
-
+#ifdef ESP32
+// Todo: use esp_timer_create ...
+#elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
 	os_timer_setfn(&cronTimer, &cronjob, 0);
+#endif
+
 
 	musterDec.setStreamCallback(writeCallback);
 #ifdef CMP_CC1101
@@ -362,9 +380,13 @@ void setup() {
 	wifiManager.setConfigPortalBlocking( false);
 //	wifiManager.startConfigPortal();
 	wifiManager.startWebPortal();
+#ifdef ESP32
+	// Todo: use esp_timer_create ...
+#elif defined(ESP8266)
 	os_timer_arm(&cronTimer, 31, true);
-	pinAsOutput(PIN_SEND);
 	os_timer_disarm(&blinksos);
+#endif
+	pinAsOutput(PIN_SEND);
 	digitalLow(PIN_LED);
 }
 
@@ -374,9 +396,13 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 	static uint8_t cnt = 0;
 
 	const unsigned long  duration = micros() - lastTime;
-
+#ifdef ESP32
+	// Todo: use esp_timer_create ...
+#elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
-	os_timer_arm(&cronTimer, (maxPulse-duration+1000)/1000, true);
+	os_timer_arm(&cronTimer, (maxPulse - duration + 1000) / 1000, true);
+#endif
+
 
 	if (duration > maxPulse) { //Auf Maximalwert pruefen.
 		int sDuration = maxPulse;
@@ -521,7 +547,12 @@ void serialEvent()
 			case '\r':
 			case '\0':
 			case '#':
+#ifdef ESP32
+				esp_task_wdt_reset();
+				yield();
+#elif defined(ESP8266)
 				wdt_reset();
+#endif
 				commands::HandleShortCommand();  // Short command received and can be processed now
 				idx = 0;
 				return; //Exit function
@@ -541,7 +572,11 @@ void serialEvent()
 
 
 int freeRam() {
+#ifdef ESP32
+	return ESP.getFreeHeap();
+#elif defined(ESP8266)
 	return system_get_free_heap_size();
+#endif
 }
 
 
