@@ -38,6 +38,7 @@ extern "C" {
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
 #endif
 #if defined(ESP32)
+#include "esp_timer.h"
 #endif
 
 #include <FS.h>   
@@ -86,8 +87,10 @@ volatile unsigned long lastTime = micros();
 */
 
 #ifdef ESP32
-hw_timer_t * cronTimer;
-hw_timer_t * blinksos;
+esp_timer_create_args_t cronTimer_args;
+esp_timer_create_args_t blinksos_args;
+esp_timer_handle_t cronTimer_handle;
+esp_timer_handle_t blinksos_handle;
 #elif defined(ESP8266)
 os_timer_t cronTimer;
 os_timer_t blinksos;
@@ -131,7 +134,12 @@ void setup() {
 	//ESP.wdtEnable(2000);
 
 #ifdef ESP32
-// Todo: use esp_timer_create ...
+	blinksos_args.callback = sosBlink;
+	blinksos_args.dispatch_method = ESP_TIMER_TASK;
+	blinksos_args.name = "blinkSOS";
+	blinksos_args.arg = (void *)boot_sequence;
+	esp_timer_create(&blinksos_args, &blinksos_handle);
+	esp_timer_start_periodic(blinksos_handle, 300);
 #elif defined(ESP8266)
 	os_timer_setfn(&blinksos, &sosBlink, (void *)boot_sequence);
 	os_timer_arm(&blinksos, 300, true);
@@ -353,7 +361,11 @@ void setup() {
 	Server.setNoDelay(true);
 	Server.begin();  // telnet server
 #ifdef ESP32
-// Todo: use esp_timer_create ...
+	esp_timer_stop(cronTimer_handle);
+	cronTimer_args.callback = cronjob;
+	cronTimer_args.name = "cronTimer";
+	cronTimer_args.dispatch_method = ESP_TIMER_TASK;
+	esp_timer_create(&cronTimer_args, &cronTimer_handle);
 #elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
 	os_timer_setfn(&cronTimer, &cronjob, 0);
@@ -381,7 +393,8 @@ void setup() {
 //	wifiManager.startConfigPortal();
 	wifiManager.startWebPortal();
 #ifdef ESP32
-	// Todo: use esp_timer_create ...
+	esp_timer_start_periodic(cronTimer_handle, 31);
+	esp_timer_stop(blinksos_handle);
 #elif defined(ESP8266)
 	os_timer_arm(&cronTimer, 31, true);
 	os_timer_disarm(&blinksos);
@@ -397,7 +410,9 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 
 	const unsigned long  duration = micros() - lastTime;
 #ifdef ESP32
-	// Todo: use esp_timer_create ...
+	esp_timer_stop(cronTimer_handle);
+	esp_timer_start_periodic(cronTimer_handle, (maxPulse - duration + 1000) / 1000);
+
 #elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
 	os_timer_arm(&cronTimer, (maxPulse - duration + 1000) / 1000, true);

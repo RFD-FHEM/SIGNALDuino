@@ -62,7 +62,7 @@ uint8_t cc1101::revision = 0x01;
  }
 
 uint8_t cc1101::sendSPI(const uint8_t val) {				 // send byte via SPI
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 	 SPDR = val;                                      // transfer byte via SPI
 	 while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
 	 return SPDR;
@@ -259,7 +259,7 @@ bool cc1101::checkCC1101() {
 
 void cc1101::setup()
 {
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 	pinAsOutput(sckPin);
 	pinAsOutput(mosiPin);
 	pinAsInput(misoPin);
@@ -271,7 +271,7 @@ void cc1101::setup()
 #endif
 
 
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
 	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
 	digitalHigh(csPin);                 // SPI init
 	digitalHigh(sckPin);

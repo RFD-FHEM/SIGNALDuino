@@ -40,7 +40,8 @@ static const char TXT_CORRUPT[]				PROGMEM = "corrupt";
 static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 
 
-#ifndef ESP8266
+#if !defined(ESP8266) && !defined(ESP32)
+	
 	#define FPSTR(s) ((__FlashStringHelper*)(s))
 
 	#ifdef ARDUINO_RADINOCC1101
@@ -65,7 +66,6 @@ static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 	#if defined(WIN32) || defined(__linux__)
 		#define digitalLow(P) pinMode(P,LOW)
 		#define digitalHigh(P) pinMode(P,HIGH)
-
 	#else
 		#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
 		#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
@@ -77,7 +77,6 @@ static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 		#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
 		#define digitalState(P)((uint8_t)isHigh(P))
 	#endif
-
 #else
 	#define pinAsInput(pin) pinMode(pin, INPUT)
 	#define pinAsOutput(pin) pinMode(pin, OUTPUT)
