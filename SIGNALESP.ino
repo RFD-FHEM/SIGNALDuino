@@ -39,13 +39,13 @@ extern "C" {
 #endif
 #if defined(ESP32)
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 #endif
 
 #include <FS.h>   
 #include <EEPROM.h>
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include "ArduinoJson.h"     //Local WebServer used to serve the configuration portal
-#include "esp_task_wdt.h"
 
 
 #include "output.h"
