@@ -135,6 +135,21 @@ WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 void setup() {
 	char cfg_ipmode[7] = "dhcp";
 
+#ifdef ESP8266
+	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
+	{
+		Server.stop();
+		Server.begin();  // start telnet server
+	});
+#else if defined(ESP32)
+	// TODO: Check why this can't be compiled
+	/*
+	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
+		Serial.print("WiFi lost connection. Reason: ");
+		Serial.println(info.d;
+	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+	*/
+#endif
 
 	//ESP.wdtEnable(2000);
 
@@ -404,21 +419,6 @@ void setup() {
 #endif
 	pinAsOutput(PIN_SEND);
 	digitalLow(PIN_LED);
-#ifdef ESP8266
-	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
-	{
-		Server.stop();
-		Server.begin();  // start telnet server
-	});
-#else if defined(ESP32)
-	// TODO: Check why this can't be compiled
-	/*
-	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
-		Serial.print("WiFi lost connection. Reason: ");
-		Serial.println(info.d;
-	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-	*/
-#endif
 }
 
 void ICACHE_RAM_ATTR cronjob(void *pArg) {
