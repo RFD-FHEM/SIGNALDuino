@@ -13,6 +13,7 @@
  *  or send a letter to Creative Commons, 171 Second Street, Suite 300, San Francisco, California, 94105, USA.
  *
  */
+#if defined(__AVR__) || (defined(__arm__) && defined(CORE_TEENSY))
 
 #include "TimerOne.h"
 
@@ -21,6 +22,7 @@ TimerOne Timer1;              // preinstatiate
 unsigned short TimerOne::pwmPeriod = 0;
 unsigned char TimerOne::clockSelectBits = 0;
 void (*TimerOne::isrCallback)() = NULL;
+#endif
 
 // interrupt service routine that wraps a user defined function supplied by attachInterrupt
 #if defined(__AVR__)

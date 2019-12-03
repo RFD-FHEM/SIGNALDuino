@@ -1,11 +1,14 @@
-# SIGNALDuino uC v3.3-0 
-
-System to receive digital signals and provide them to other systems pro demodulatiob. Currently tested with 433 MHZ, but not limited to that frequency or media.
+# SIGNALDuino uC v3.3.1  with cc1101 support 
+[![Build Status](https://travis-ci.org/RFD-FHEM/SIGNALDuino.svg?branch=master)](https://travis-ci.org/RFD-FHEM/SIGNALDuino)
 
 ### Getting started
 
 
-Just clone the repo and open the project file with Visual Studio and the Visual Micro addon. (sorry, but this works only for windows)
+System to receive digital signals and provide them to other systems pro demodulatiob. Currently tested with 433 MHZ, but not limited to that frequency or media.
+
+
+Just clone the repo and open the project file with visualstudio. (only available for windows)
+You can also open it with the Arduino IDE. 
 Compile it and have fun.
 If you are using the Arduino IDE, you have to copy all the libs into your sketch folder and alter some includes.
 
@@ -16,9 +19,17 @@ You find more Information here:
 http://www.fhemwiki.de/wiki/SIGNALDuino
 
 
+
 ### Tested microcontrollers
 
 * Aduino Nano
+* RadinoCC1101
+* ESP8266
+
+### ESP32 Notes
+
+If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished. Contributors are welcome. If you have mane errors from fastDelegate.h try adding this compiler flag:
+ -Wno-unused-local-typedef
 
 ### Signal from my device ist not detected
 

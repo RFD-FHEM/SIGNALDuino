@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef SimpleFIFO_h
 #define SimpleFIFO_h
 #include <Arduino.h>
