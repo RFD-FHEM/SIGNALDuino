@@ -2,7 +2,7 @@
 #include "compile_config.h"
 
 #define PROGNAME               " SIGNALESP "
-#define PROGVERS               "3.3.1-experimental"
+#define PROGVERS               "3.4.0-dev"
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
@@ -40,6 +40,8 @@ extern "C" {
 #if defined(ESP32)
 #include "esp_timer.h"
 #include "esp_task_wdt.h"
+#include <WiFi.h>
+#include <WiFiType.h>
 #endif
 
 #include <FS.h>   
@@ -126,6 +128,9 @@ void ICACHE_RAM_ATTR sosBlink (void *pArg) {
 
 
 WiFiManager wifiManager;
+#ifdef ESP8266
+WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
+#endif
 
 void setup() {
 	char cfg_ipmode[7] = "dhcp";
@@ -358,8 +363,6 @@ void setup() {
 	}
 	*/
 
-	Server.setNoDelay(true);
-	Server.begin();  // telnet server
 #ifdef ESP32
 	esp_timer_stop(cronTimer_handle);
 	cronTimer_args.callback = cronjob;
@@ -371,7 +374,7 @@ void setup() {
 	os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-
+	Server.setNoDelay(true);
 	musterDec.setStreamCallback(writeCallback);
 #ifdef CMP_CC1101
 	if (!hasCC1101 || cc1101::regCheck()) {
@@ -401,6 +404,21 @@ void setup() {
 #endif
 	pinAsOutput(PIN_SEND);
 	digitalLow(PIN_LED);
+#ifdef ESP8266
+	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
+	{
+		Server.stop();
+		Server.begin();  // start telnet server
+	});
+#else if defined(ESP32)
+	// TODO: Check why this can't be compiled
+	/*
+	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
+		Serial.print("WiFi lost connection. Reason: ");
+		Serial.println(info.d;
+	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+	*/
+#endif
 }
 
 void ICACHE_RAM_ATTR cronjob(void *pArg) {
@@ -443,6 +461,7 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 
 
 void loop() {
+
 	wifiManager.process();
 	
 	static int aktVal = 0;
