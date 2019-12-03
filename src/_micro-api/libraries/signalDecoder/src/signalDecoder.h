@@ -135,7 +135,6 @@ public:
 	
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
-	BitStore<maxMsgSize/2> message;       // A store using 4 bit for every value stored. 
 	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
 
 	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
@@ -152,6 +151,7 @@ public:
 	int buffer[2];                          // Internal buffer to store two pules length
 	int* first;                             // Pointer to first buffer entry
 	int* last;                              // Pointer to last buffer entry
+	BitStore<maxMsgSize / 2> message;       // A store using 4 bit for every value stored. 
 	float tolFact;                          //
 	int pattern[maxNumPattern];				// 1d array to store the pattern
 	uint8_t patternLen;                     // counter for length of pattern
@@ -224,8 +224,8 @@ public:
 	SignalDetectorClass *pdec;
 	int8_t longlow;
 	int8_t longhigh;
-	int8_t shortlow;
 	int8_t shorthigh;
+	int8_t shortlow;
 	int clock; // Manchester calculated clock		
 	int8_t minbitlen;
 

@@ -71,7 +71,7 @@
 
 // Uncomment the next line to allow function declarator syntax.
 // It is automatically enabled for those compilers where it is known to work.
-//#define FASTDELEGATE_ALLOW_FUNCTION_TYPE_SYNTAX
+// #define FASTDELEGATE_ALLOW_FUNCTION_TYPE_SYNTAX
 
 ////////////////////////////////////////////////////////////////////////////////
 //						Compiler identification for workarounds
@@ -171,19 +171,19 @@ namespace fastdelegate {
 			OutputClass out;
 			InputClass in;
 		};
-
 		template <class OutputClass, class InputClass>
 		inline OutputClass horrible_cast(const InputClass input) {
 			horrible_union<OutputClass, InputClass> u;
 			// Cause a compile-time error if in, out and u are not the same size.
 			// If the compile fails here, it means the compiler has peculiar
 			// unions which would prevent the cast from working.
+#ifndef ESP32
 			typedef int ERROR_CantUseHorrible_cast[sizeof(InputClass) == sizeof(u)
 				&& sizeof(InputClass) == sizeof(OutputClass) ? 1 : -1];
+#endif		
 			u.in = input;
 			return u.out;
 		}
-
 		////////////////////////////////////////////////////////////////////////////////
 		//						Workarounds
 		//
@@ -295,11 +295,12 @@ namespace fastdelegate {
 				GenericMemFuncType &bound_func) {
 				// Unsupported member function type -- force a compile failure.
 				// (it's illegal to have a array with negative size).
+#ifndef ESP32
 				typedef char ERROR_Unsupported_member_function_pointer_on_this_compiler[N - 100];
+#endif
 				return 0;
 			}
 		};
-
 		// For compilers where all member func ptrs are the same size, everything goes here.
 		// For non-standard compilers, only single_inheritance classes go here.
 		template <>
@@ -560,6 +561,16 @@ namespace fastdelegate {
 	   // support static_cast between void * and function pointers.
 
 	class DelegateMemento {
+	public:
+#if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
+		DelegateMemento() : m_pthis(0), m_pFunction(0), m_pStaticFunction(0) {};
+		void clear() {
+			m_pthis = 0; m_pFunction = 0; m_pStaticFunction = 0;
+		}
+#else
+		DelegateMemento() : m_pthis(0), m_pFunction(0) {};
+		void clear() { m_pthis = 0; m_pFunction = 0; }
+#endif
 	protected:
 		// the data is protected, not private, because many
 		// compilers have problems with template friends.
@@ -572,16 +583,6 @@ namespace fastdelegate {
 		GenericFuncPtr m_pStaticFunction;
 #endif
 
-	public:
-#if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
-		DelegateMemento() : m_pthis(0), m_pFunction(0), m_pStaticFunction(0) {};
-		void clear() {
-			m_pthis = 0; m_pFunction = 0; m_pStaticFunction = 0;
-		}
-#else
-		DelegateMemento() : m_pthis(0), m_pFunction(0) {};
-		void clear() { m_pthis = 0; m_pFunction = 0; }
-#endif
 	public:
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
 		inline bool IsEqual(const DelegateMemento &x) const {
@@ -634,7 +635,7 @@ namespace fastdelegate {
 			return right.IsLess(*this);
 		}
 		DelegateMemento(const DelegateMemento &right) :
-			m_pFunction(right.m_pFunction), m_pthis(right.m_pthis)
+			m_pthis(right.m_pthis), m_pFunction(right.m_pFunction)
 #if !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)
 			, m_pStaticFunction(right.m_pStaticFunction)
 #endif
@@ -787,7 +788,9 @@ namespace fastdelegate {
 				// Ensure that there's a compilation failure if function pointers
 				// and data pointers have different sizes.
 				// If you get this error, you need to #undef FASTDELEGATE_USESTATICFUNCTIONHACK.
+#ifndef ESP32
 				typedef int ERROR_CantUseEvilMethod[sizeof(GenericClass *) == sizeof(function_to_bind) ? 1 : -1];
+#endif
 				m_pthis = horrible_cast<GenericClass *>(function_to_bind);
 				// MSVC, SunC++ and DMC accept the following (non-standard) code:
 				//		m_pthis = static_cast<GenericClass *>(static_cast<void *>(function_to_bind));
@@ -802,7 +805,9 @@ namespace fastdelegate {
 				// Ensure that there's a compilation failure if function pointers
 				// and data pointers have different sizes.
 				// If you get this error, you need to #undef FASTDELEGATE_USESTATICFUNCTIONHACK.
+#ifndef ESP32
 				typedef int ERROR_CantUseEvilMethod[sizeof(UnvoidStaticFuncPtr) == sizeof(this) ? 1 : -1];
+#endif
 				return horrible_cast<UnvoidStaticFuncPtr>(this);
 			}
 #endif // !defined(FASTDELEGATE_USESTATICFUNCTIONHACK)

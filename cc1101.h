@@ -17,8 +17,8 @@ extern char IB_1[14];
 
 
 
-#ifdef ESP8266
-	#include <SPI.h>
+#if defined(ESP8266) || defined(ESP32)
+#include <SPI.h>
 #endif
 namespace cc1101 {
 	/*
@@ -104,7 +104,7 @@ namespace cc1101 {
   , MarcStateTxFifoUnerflow = 0x16u
   };
   
-#ifdef ESP8266
+#if defined(ESP8266) || defined(ESP32)
 	#define pinAsInput(pin) pinMode(pin, INPUT)
 	#define pinAsOutput(pin) pinMode(pin, OUTPUT)
 	#define pinAsInputPullUp(pin) pinMode(pin, INPUT_PULLUP)
