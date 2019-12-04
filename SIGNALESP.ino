@@ -135,10 +135,11 @@ WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 void setup() {
 	char cfg_ipmode[7] = "dhcp";
 
+	Server.setNoDelay(true);
 #ifdef ESP8266
 	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
 	{
-		Server.stop();
+		//Server.stop();
 		Server.begin();  // start telnet server
 	});
 #else if defined(ESP32)
@@ -150,6 +151,7 @@ void setup() {
 	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 	*/
 #endif
+
 
 	//ESP.wdtEnable(2000);
 
@@ -389,7 +391,6 @@ void setup() {
 	os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-	Server.setNoDelay(true);
 	musterDec.setStreamCallback(writeCallback);
 #ifdef CMP_CC1101
 	if (!hasCC1101 || cc1101::regCheck()) {
