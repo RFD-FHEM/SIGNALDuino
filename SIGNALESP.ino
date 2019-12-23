@@ -39,6 +39,8 @@ extern "C" {
 #if defined(ESP32)
 #include "esp_timer.h"
 #include "esp_task_wdt.h"
+#include <WiFi.h>
+#include <WiFiType.h>
 #endif
 
 #include <FS.h>   
@@ -125,9 +127,29 @@ void ICACHE_RAM_ATTR sosBlink (void *pArg) {
 
 
 WiFiManager wifiManager;
+#ifdef ESP8266
+WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
+#endif
 
 void setup() {
 	char cfg_ipmode[7] = "dhcp";
+
+	Server.setNoDelay(true);
+#ifdef ESP8266
+	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
+	{
+		//Server.stop();
+		Server.begin();  // start telnet server
+	});
+#else if defined(ESP32)
+	// TODO: Check why this can't be compiled
+	/*
+	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
+		Serial.print("WiFi lost connection. Reason: ");
+		Serial.println(info.d;
+	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+	*/
+#endif
 
 
 	//ESP.wdtEnable(2000);
@@ -357,8 +379,6 @@ void setup() {
 	}
 	*/
 
-	Server.setNoDelay(true);
-	Server.begin();  // telnet server
 #ifdef ESP32
 	esp_timer_stop(cronTimer_handle);
 	cronTimer_args.callback = cronjob;
@@ -369,7 +389,6 @@ void setup() {
 	os_timer_disarm(&cronTimer);
 	os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
-
 
 	musterDec.setStreamCallback(writeCallback);
 #ifdef CMP_CC1101
@@ -442,6 +461,7 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 
 
 void loop() {
+
 	wifiManager.process();
 	
 	static int aktVal = 0;
