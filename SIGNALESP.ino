@@ -2,7 +2,6 @@
 #include "compile_config.h"
 
 #define PROGNAME               " SIGNALESP "
-#define PROGVERS               "3.4.0-dev"
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
@@ -27,7 +26,7 @@ inline void ethernetEvent();
 //void getFunctions(bool *ms, bool *mu, bool *mc);
 //void initEEPROM(void);
 uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
-size_t writeCallback(const uint8_t *buf, uint8_t len);
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 void ICACHE_RAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
@@ -488,7 +487,7 @@ const size_t writeBufferSize = 128;
 size_t writeBufferCurrent = 0;
 uint8_t writeBuffer[writeBufferSize];
 #endif;
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
+size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
 	if (!serverClient || !serverClient.connected())
