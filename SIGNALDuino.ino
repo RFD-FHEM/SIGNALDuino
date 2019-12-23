@@ -207,7 +207,7 @@ void loop() {
 
 
 //============================== Write callback =========================================
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
+size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 	while (!MSG_PRINTER.availableForWrite() )
 		yield();
