@@ -159,6 +159,7 @@ namespace commands {
 			break;
 		case cmd_ping:
 			getPing();
+			break;
 		case cmd_Version:
 			MSG_PRINT(F("V " PROGVERS PROGNAME));
 #ifdef CMP_CC1101
