@@ -103,7 +103,7 @@ void cc1101::readPatable(void) {
 
 	cc1101_Select();                                // select CC1101
 	wait_Miso();                                    // wait until MISO goes low
-	sendSPI(CC1100_PATABLE | CC1100_READ_BURST);    // send register address
+	sendSPI(CC1101_PATABLE | CC1101_READ_BURST);    // send register address
 	for (uint8_t i = 0; i < 8; i++) {
 		PatableArray[i] = sendSPI(0x00);        // read result
 	}
@@ -120,15 +120,15 @@ void cc1101::readPatable(void) {
 void cc1101::writePatable(void) {
 	cc1101_Select();                                // select CC1101
 	wait_Miso();                                    // wait until MISO goes low
-	sendSPI(CC1100_PATABLE | CC1100_WRITE_BURST);   // send register address
+	sendSPI(CC1101_PATABLE | CC1101_WRITE_BURST);   // send register address
 	for (uint8_t i = 0; i < 8; i++) {
-		sendSPI(EEPROM.read(EE_CC1100_PA + i));                     // send value
+		sendSPI(EEPROM.read(EE_CC1101_PA + i));                     // send value
 	}
 	cc1101_Deselect();
 }
 
 
-void cc1101::readCCreg(const uint8_t reg) {   // read CC11001 register
+void cc1101::readCCreg(const uint8_t reg) {   // read CC1101 register
 	uint8_t var;
 	uint8_t n;
 	char b[11];
@@ -200,9 +200,9 @@ void cc1101::commandStrobes(void) {
 	}
 }
 
-void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC11001 register
+void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC1101 register
 	if (reg > 1 && reg < 0x40) {
-		writeReg(reg - EE_CC1100_CFG, var);
+		writeReg(reg - EE_CC1101_CFG, var);
 		char b[6];
 		sprintf_P(b, PSTR("W%02X%02X"), reg, var);
 		MSG_PRINTLN(b);
@@ -211,10 +211,10 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC11001 register
 void cc1101::writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa ramping)
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
-			EEPROM.write(EE_CC1100_PA + i, var);
+			EEPROM.write(EE_CC1101_PA + i, var);
 		}
 		else {
-			EEPROM.write(EE_CC1100_PA + i, 0);
+			EEPROM.write(EE_CC1101_PA + i, 0);
 		}
 	}
 	#ifdef ESP8266
@@ -291,17 +291,17 @@ uint8_t cc1101::getRevision()
 
 
 uint8_t cc1101::getRSSI() {
-	return readReg((revision == 0x01 ? CC1100_RSSI_REV01 : CC1100_RSSI_REV00), CC1101_STATUS);
+	return readReg((revision == 0x01 ? CC1101_RSSI_REV01 : CC1101_RSSI_REV00), CC1101_STATUS);
 }
 
 void cc1101::setIdleMode()
 {
-	cmdStrobe(CC1100_SIDLE);                             // Idle mode
+	cmdStrobe(CC1101_SIDLE);                             // Idle mode
 	delay(1);
 }
 
 uint8_t cc1101::currentMode() {
-	return readReg((revision == 0x01 ? CC1100_MARCSTATE_REV01 : CC1100_MARCSTATE_REV00), CC1100_READ_BURST);
+	return readReg((revision == 0x01 ? CC1101_MARCSTATE_REV01 : CC1101_MARCSTATE_REV00), CC1101_READ_BURST);
 }
 
 void cc1101::setReceiveMode()
@@ -309,7 +309,7 @@ void cc1101::setReceiveMode()
 	setIdleMode();
 	uint8_t maxloop = 0xff;
 
-	while (maxloop-- && (cmdStrobe(CC1100_SRX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_RX) // RX enable
+	while (maxloop-- && (cmdStrobe(CC1101_SRX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_RX) // RX enable
 		delay(1);
 	if (maxloop == 0)		DBG_PRINTLN("CC1101: Setting RX failed");
 	pinAsInput(PIN_SEND);
@@ -317,10 +317,10 @@ void cc1101::setReceiveMode()
 
 void cc1101::setTransmitMode()
 {
-	cmdStrobe(CC1100_SFTX);   // wird dies benoetigt? Wir verwenden kein FIFO
+	cmdStrobe(CC1101_SFTX);   // wird dies benoetigt? Wir verwenden kein FIFO
 	setIdleMode();
 	uint8_t maxloop = 0xff;
-	while (maxloop-- && (cmdStrobe(CC1100_STX) & CC1100_STATUS_STATE_BM) != CC1100_STATE_TX)  // TX enable
+	while (maxloop-- && (cmdStrobe(CC1101_STX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_TX)  // TX enable
 		delay(1);
 	if (maxloop == 0) DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
 	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
@@ -334,53 +334,53 @@ bool cc1101::regCheck()
 	//uint8_t val;
 
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1100_PKTCTRL0, CC1101_CONFIG));
-	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1100_PKTCTRL0]);
+	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1101_PKTCTRL0, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1101_PKTCTRL0]);
 
 	DBG_PRINT(FPSTR(TXT_CC1101)); 
-	DBG_PRINT(F("_IOCFG2=")); DBG_PRINT(readReg(CC1100_IOCFG2, CC1101_CONFIG));
-	DBG_PRINT(F(" vs initval IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1100_IOCFG2]);
+	DBG_PRINT(F("_IOCFG2=")); DBG_PRINT(readReg(CC1101_IOCFG2, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1101_IOCFG2]);
 	/*
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("_FREQ0=")); DBG_PRINT(readReg(CC1100_FREQ0, CC1101_CONFIG));
-	DBG_PRINT(F(" vs initval FREQ0=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ0]);
+	DBG_PRINT(F("_FREQ0=")); DBG_PRINT(readReg(CC1101_FREQ0, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ0=")); DBG_PRINT(cc1101::initVal[CC1101_FREQ0]);
 	DBG_PRINT(F(" vs EEPROM FREQ0"));
-	val = EEPROM.read(EE_CC1100_CFG + CC1100_FREQ0);
+	val = EEPROM.read(EE_CC1101_CFG + CC1101_FREQ0);
 	sprintf(b, " %d", val);
 	DBG_PRINTLN(b);
 
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("_FREQ1=")); DBG_PRINT(readReg(CC1100_FREQ1, CC1101_CONFIG));
-	DBG_PRINT(F(" vs initval FREQ1=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ1]);
+	DBG_PRINT(F("_FREQ1=")); DBG_PRINT(readReg(CC1101_FREQ1, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ1=")); DBG_PRINT(cc1101::initVal[CC1101_FREQ1]);
 	DBG_PRINT(F(" vs EEPROM FREQ1="));
-	val = EEPROM.read(EE_CC1100_CFG + CC1100_FREQ1);
+	val = EEPROM.read(EE_CC1101_CFG + CC1101_FREQ1);
 	sprintf(b, " %d", val);
 	DBG_PRINTLN(b);
 
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("_FREQ2=")); DBG_PRINT(readReg(CC1100_FREQ2, CC1101_CONFIG));
-	DBG_PRINT(F(" vs initval FREQ2=")); DBG_PRINT(cc1101::initVal[CC1100_FREQ2]);
+	DBG_PRINT(F("_FREQ2=")); DBG_PRINT(readReg(CC1101_FREQ2, CC1101_CONFIG));
+	DBG_PRINT(F(" vs initval FREQ2=")); DBG_PRINT(cc1101::initVal[CC1101_FREQ2]);
 	DBG_PRINT(F(" vs EEPROM FREQ2=")); 
-	val = EEPROM.read(EE_CC1100_CFG+CC1100_FREQ2);
+	val = EEPROM.read(EE_CC1101_CFG+CC1101_FREQ2);
 	sprintf(b, " %d", val);
 	DBG_PRINTLN(b);
 	*/
-	return (readReg(CC1100_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1100_PKTCTRL0]) && (readReg(CC1100_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1100_IOCFG2]);
+	return (readReg(CC1101_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1101_PKTCTRL0]) && (readReg(CC1101_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1101_IOCFG2]);
 }
 
 
 
 void cc1101::ccFactoryReset() {
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {
-		EEPROM.write(EE_CC1100_CFG + i, pgm_read_byte(&initVal[i]));
+		EEPROM.write(EE_CC1101_CFG + i, pgm_read_byte(&initVal[i]));
 		DBG_PRINT(".");
 	}
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
-			EEPROM.write(EE_CC1100_PA + i, PATABLE_DEFAULT);
+			EEPROM.write(EE_CC1101_PA + i, PATABLE_DEFAULT);
 		}
 		else {
-			EEPROM.write(EE_CC1100_PA + i, 0);
+			EEPROM.write(EE_CC1101_PA + i, 0);
 		}
 	}
 	#ifdef ESP8266
@@ -411,9 +411,9 @@ void cc1101::CCinit(void) {  // initialize CC1101
 	cc1101_Select();
 	DBG_PRINT(FPSTR(TXT_EEPROM)); 	DBG_PRINT(FPSTR(TXT_BLANK));	DBG_PRINT(FPSTR(TXT_READ));
 
-	sendSPI(CC1100_WRITE_BURST);
-	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {              // write EEPROM value to cc11001
-		sendSPI(EEPROM.read(EE_CC1100_CFG + i));
+	sendSPI(CC1101_WRITE_BURST);
+	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {              // write EEPROM value to cc1101
+		sendSPI(EEPROM.read(EE_CC1101_CFG + i));
 		DBG_PRINT(".");
 
 	}

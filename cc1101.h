@@ -39,43 +39,43 @@ namespace cc1101 {
 	#define sckPin  SCK    // SCLK out	
 
 			
-	#define CC1100_WRITE_BURST    0x40
+	#define CC1101_WRITE_BURST    0x40
 	#define CC1101_WRITE_SINGLE   0x00
-	#define CC1100_READ_BURST     0xC0
+	#define CC1101_READ_BURST     0xC0
 	#define CC1101_READ_SINGLE    0x80
 	#define CC1101_CONFIG         CC1101_READ_SINGLE
-	#define CC1101_STATUS         CC1100_READ_BURST
+	#define CC1101_STATUS         CC1101_READ_BURST
 	
-	#define CC1100_FREQ2       0x0D  // Frequency control word, high byte
-	#define CC1100_FREQ1       0x0E  // Frequency control word, middle byte
-	#define CC1100_FREQ0       0x0F  // Frequency control word, low byte
-	#define CC1100_PATABLE     0x3E  // 8 byte memory
-	#define CC1100_IOCFG2      0x00  // GDO2 output configuration
-	#define CC1100_PKTCTRL0    0x08  // Packet config register
+	#define CC1101_FREQ2       0x0D  // Frequency control word, high byte
+	#define CC1101_FREQ1       0x0E  // Frequency control word, middle byte
+	#define CC1101_FREQ0       0x0F  // Frequency control word, low byte
+	#define CC1101_PATABLE     0x3E  // 8 byte memory
+	#define CC1101_IOCFG2      0x00  // GDO2 output configuration
+	#define CC1101_PKTCTRL0    0x08  // Packet config register
 
     extern uint8_t revision;
 	extern const uint8_t initVal[];
 	// Status registers - newer version base on 0xF0
 	#define CC1101_PARTNUM_REV01      0xF0 // Chip ID
 	#define CC1101_VERSION_REV01      0xF1 // Chip ID
-	#define CC1100_RSSI_REV01         0xF4 // Received signal strength indication
-	#define CC1100_MARCSTATE_REV01    0xF5 // Control state machine state
+	#define CC1101_RSSI_REV01         0xF4 // Received signal strength indication
+	#define CC1101_MARCSTATE_REV01    0xF5 // Control state machine state
 
   // Status registers - older version base on 0x30
 	#define CC1101_PARTNUM_REV00      0x30 // Chip ID
 	#define CC1101_VERSION_REV00      0x31 // Chip ID
-	#define CC1100_RSSI_REV00         0x34 // Received signal strength indication
-	#define CC1100_MARCSTATE_REV00    0x35 // Control state machine state
+	#define CC1101_RSSI_REV00         0x34 // Received signal strength indication
+	#define CC1101_MARCSTATE_REV00    0x35 // Control state machine state
 	 
 	// Strobe commands
 	#define CC1101_SRES     0x30  // reset
-	#define CC1100_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
-	#define CC1100_SCAL     0x33  // Calibrate frequency synthesizer and turn it off
-	#define CC1100_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
-	#define CC1100_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
-	#define CC1100_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
-	#define CC1100_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
-	#define CC1100_SFTX     0x3B  // Flush the TX FIFO buffer.
+	#define CC1101_SFSTXON  0x31  // Enable and calibrate frequency synthesizer (if MCSM0.FS_AUTOCAL=1).
+	#define CC1101_SCAL     0x33  // Calibrate frequency synthesizer and turn it off
+	#define CC1101_SRX      0x34  // Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1
+	#define CC1101_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
+	#define CC1101_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
+	#define CC1101_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
+	#define CC1101_SFTX     0x3B  // Flush the TX FIFO buffer.
 	#define CC1101_SNOP 	  0x3D	// 
 
   enum CC1101_MarcState {
@@ -125,10 +125,10 @@ namespace cc1101 {
 	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin) 
 	
-	#define EE_CC1100_CFG        2
-	#define EE_CC1100_CFG_SIZE   0x29
-	#define EE_CC1100_PA         0x30  //  (EE_CC1100_CFG+EE_CC1100_CFG_SIZE)  // 2C
-	#define EE_CC1100_PA_SIZE    8
+	#define EE_CC1101_CFG        2
+	#define EE_CC1101_CFG_SIZE   0x29
+	#define EE_CC1101_PA         0x30  //  (EE_CC1101_CFG+EE_CC1101_CFG_SIZE)  // 2C
+	#define EE_CC1101_PA_SIZE    8
 	
 	#define PATABLE_DEFAULT      0x84   // 5 dB default value for factory reset
 
@@ -137,19 +137,19 @@ namespace cc1101 {
 	//------------------------------------------------------------------------------
 
 	// Bit fields in the chip status byte
-	#define CC1100_STATUS_CHIP_RDYn_BM             0x80
-	#define CC1100_STATUS_STATE_BM                 0x70
-	#define CC1100_STATUS_FIFO_BYTES_AVAILABLE_BM  0x0F
+	#define CC1101_STATUS_CHIP_RDYn_BM             0x80
+	#define CC1101_STATUS_STATE_BM                 0x70
+	#define CC1101_STATUS_FIFO_BYTES_AVAILABLE_BM  0x0F
 
 	// Chip states
-	#define CC1100_STATE_IDLE                      0x00
-	#define CC1100_STATE_RX                        0x10
-	#define CC1100_STATE_TX                        0x20
-	#define CC1100_STATE_FSTXON                    0x30
-	#define CC1100_STATE_CALIBRATE                 0x40
-	#define CC1100_STATE_SETTLING                  0x50
-	#define CC1100_STATE_RX_OVERFLOW               0x60
-	#define CC1100_STATE_TX_UNDERFLOW              0x70
+	#define CC1101_STATE_IDLE                      0x00
+	#define CC1101_STATE_RX                        0x10
+	#define CC1101_STATE_TX                        0x20
+	#define CC1101_STATE_FSTXON                    0x30
+	#define CC1101_STATE_CALIBRATE                 0x40
+	#define CC1101_STATE_SETTLING                  0x50
+	#define CC1101_STATE_RX_OVERFLOW               0x60
+	#define CC1101_STATE_TX_UNDERFLOW              0x70
 	
 
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
@@ -166,9 +166,9 @@ namespace cc1101 {
 	void writeReg(const uint8_t regAddr, const uint8_t val);		// write single register into the CC1101 IC via SPI
 	void readPatable(void);
 	void writePatable(void);
-	void readCCreg(const uint8_t reg);								// read CC11001 register
+	void readCCreg(const uint8_t reg);								// read CC1101 register
 	void commandStrobes(void);
-	void writeCCreg(uint8_t reg, uint8_t var);						// write CC11001 register
+	void writeCCreg(uint8_t reg, uint8_t var);						// write CC1101 register
 	void writeCCpatable(uint8_t var);								// write 8 byte to patable (kein pa ramping)
 	void ccFactoryReset();
 
