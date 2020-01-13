@@ -435,7 +435,11 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 		//os_timer_disarm(&cronTimer);
 		//os_timer_arm(&cronTimer, 20, true);
 	}
+#ifdef PIN_LED_INVERSE	
+	digitalWrite(PIN_LED, !blinkLED);
+#else
 	digitalWrite(PIN_LED, blinkLED);
+#endif
 	blinkLED = false;
 
 	sei();
