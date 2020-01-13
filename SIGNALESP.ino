@@ -409,13 +409,17 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
 	static uint8_t cnt = 0;
 
 	const unsigned long  duration = micros() - lastTime;
+	long timerTime = maxPulse - duration + 1000;
+	if (timerTime < 1000)
+	    timerTime=1000;
+    
 #ifdef ESP32
 	esp_timer_stop(cronTimer_handle);
-	esp_timer_start_periodic(cronTimer_handle, (maxPulse - duration + 1000) / 1000);
+	esp_timer_start_periodic(cronTimer_handle, timerTime / 1000);
 
 #elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
-	os_timer_arm(&cronTimer, (maxPulse - duration + 1000) / 1000, true);
+	os_timer_arm(&cronTimer, timerTime / 1000, true);
 #endif
 
 
