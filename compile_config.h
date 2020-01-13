@@ -59,6 +59,7 @@
 		#define PIN_LED                16
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
+//		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
 	#else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out
@@ -70,6 +71,7 @@
 		#define PIN_LED                16
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
+//		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
 	#else
 		#define PIN_RECEIVE            2
 		#define PIN_LED                13 // Message-LED

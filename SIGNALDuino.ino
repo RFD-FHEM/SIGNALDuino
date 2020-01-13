@@ -175,7 +175,11 @@ void cronjob() {
 	 } else if (duration > 10000) {
 		Timer1.setPeriod(maxPulse-duration+16);
 	 }
+#ifdef PIN_LED_INVERSE	
+	 digitalWrite(PIN_LED, !blinkLED);
+#else
 	 digitalWrite(PIN_LED, blinkLED);
+#endif
 	 blinkLED = false;
 
 	 sei();
