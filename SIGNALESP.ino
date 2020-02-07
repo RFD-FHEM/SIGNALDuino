@@ -1,6 +1,7 @@
 #if defined (ESP32) || defined(ESP8266)
 #include "compile_config.h"
 
+#define PROGVERS               "3.4.0-dev"
 #define PROGNAME               " SIGNALESP "
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
@@ -153,7 +154,6 @@ void setup() {
 
 
 	//ESP.wdtEnable(2000);
-
 #ifdef ESP32
 	blinksos_args.callback = sosBlink;
 	blinksos_args.dispatch_method = ESP_TIMER_TASK;
@@ -202,6 +202,7 @@ void setup() {
 #endif 
 
 	wifiManager.setShowStaticFields(true);
+	wifiManager.setCountry("US");
 
 /*
 		1. starts a config portal in access point mode (timeout 60 seconds)

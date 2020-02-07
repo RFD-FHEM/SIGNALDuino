@@ -161,7 +161,9 @@ namespace commands {
 			getPing();
 			break;
 		case cmd_Version:
-			MSG_PRINT(F("V " PROGVERS PROGNAME));
+			MSG_PRINT("V ");
+			MSG_PRINT(PROGVERS);
+			MSG_PRINT(PROGNAME);
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
@@ -200,7 +202,9 @@ namespace commands {
 #ifdef CMP_CC1101
 			}
 #endif
-			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
+			//MSG_PRINTLN(" - compiled at " __DATE__ " " __TIME__);
+			
+			MSG_PRINTLN("");
 			break;
 		case cmd_freeRam:
 			MSG_PRINTLN(freeRam());
