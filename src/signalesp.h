@@ -1,6 +1,5 @@
 #if defined (ESP32) || defined(ESP8266)
 #include "compile_config.h"
-
 #define PROGVERS               "3.4.0-dev"
 #define PROGNAME               " SIGNALESP "
 #define VERSION_1              0x33
