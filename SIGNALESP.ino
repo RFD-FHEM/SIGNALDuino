@@ -2,6 +2,7 @@
 #include "compile_config.h"
 
 #define PROGNAME               " SIGNALESP "
+#define PROGVERS               "3.4.0-dev _200113"
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
@@ -66,7 +67,7 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 #include "FastDelegate.h" 
 #define WIFI_MANAGER_OVERRIDE_STRINGS
 #include "wifi-config.h"
-#include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
+#include "WiFiManager.h"          // https://github.com/tzapu/WiFiManager -> Branch: https://github.com/tzapu/WiFiManager/tree/development
 
 
 WiFiServer Server(23);  //  port 23 = telnet
