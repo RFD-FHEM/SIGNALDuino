@@ -135,13 +135,13 @@ void setup() {
 	char cfg_ipmode[7] = "dhcp";
 
 	Server.setNoDelay(true);
-#ifdef ESP8266
+#if defined(ESP8266)
 	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
 	{
 		//Server.stop();
 		Server.begin();  // start telnet server
 	});
-#else if defined(ESP32)
+#elif defined(ESP32)
 	// TODO: Check why this can't be compiled
 	/*
 	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
@@ -494,7 +494,7 @@ void loop() {
 const size_t writeBufferSize = 128;
 size_t writeBufferCurrent = 0;
 uint8_t writeBuffer[writeBufferSize];
-#endif;
+#endif
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
@@ -583,19 +583,21 @@ void serialEvent()
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
+			DBG_PRINT(IB_1[idx]);
 			switch (IB_1[idx])
 			{
 			case '\n':
 			case '\r':
 			case '\0':
 			case '#':
-#ifdef ESP32
+#if defined(ESP32)
 				esp_task_wdt_reset();
 				yield();
 #elif defined(ESP8266)
 				wdt_reset();
 #endif
-				commands::HandleShortCommand();  // Short command received and can be processed now
+				if (idx > 0)
+					commands::HandleShortCommand();  // Short command received and can be processed now
 				idx = 0;
 				return; //Exit function
 			case ';':
