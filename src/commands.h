@@ -161,9 +161,7 @@ namespace commands {
 			getPing();
 			break;
 		case cmd_Version:
-			MSG_PRINT("V ");
-			MSG_PRINT(PROGVERS);
-			MSG_PRINT(PROGNAME);
+			MSG_PRINT(F("V " PROGVERS PROGNAME));
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
@@ -202,9 +200,7 @@ namespace commands {
 #ifdef CMP_CC1101
 			}
 #endif
-			//MSG_PRINTLN(" - compiled at " __DATE__ " " __TIME__);
-			
-			MSG_PRINTLN("");
+			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
 		case cmd_freeRam:
 			MSG_PRINTLN(freeRam());
@@ -300,7 +296,7 @@ namespace commands {
 				memcpy(b, &IB_1[3], 2);
 				uint8_t val = strtol(b, nullptr, 16);
 
-				EEPROM.write(reg, val); //Todo prüfen ob reg hier um 1 erhöht werden muss
+				EEPROM.write(reg, val); //Todo prï¿½fen ob reg hier um 1 erhï¿½ht werden muss
 				DBG_PRINT(reg);
 				DBG_PRINT("=");
 
@@ -362,7 +358,7 @@ namespace commands {
 #endif
 		break;
 		default:
-			MSG_PRINTLN(TXT_UNSUPPORTED1);
+			MSG_PRINTLN(FPSTR(TXT_UNSUPPORTED1));
 			return;
 		}
 		blinkLED = true;
