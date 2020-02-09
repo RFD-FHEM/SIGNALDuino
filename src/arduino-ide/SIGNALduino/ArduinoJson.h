@@ -1,1 +1,1 @@
-../../_micro-api/libraries/AeduinoJson/src/ArduinoJson.h
+../../_micro-api/libraries/ArduinoJson/src/ArduinoJson.h
