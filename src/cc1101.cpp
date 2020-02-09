@@ -204,7 +204,8 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC1101 register
 	if (reg > 1 && reg < 0x40) {
 		writeReg(reg - EE_CC1101_CFG, var);
 		char b[6];
-		sprintf_P(b, PSTR("W%02X%02X"), reg, var);
+		// sprintf_P(b, PSTR("W%02X%02X"), reg, var);
+		sprintf(b,"W%02X%02X",reg,var);
 		MSG_PRINTLN(b);
 	}
 }

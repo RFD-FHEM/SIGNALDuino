@@ -1,5 +1,4 @@
 #pragma once
-
-
-void setup();
-void loop();
+#include <Arduino.h>
+#include "signalduino.h"
+#include "signalesp.h"
