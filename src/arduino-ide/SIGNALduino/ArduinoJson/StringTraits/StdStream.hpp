@@ -1,1 +1,1 @@
-Z:/Benutzer/Sven/Documents/RFD-FHEM/SIGNALDuino/src/_micro-api/libraries/ArduinoJson/src/ArduinoJson/StringTraits/StdStream.hpp
+../../../../_micro-api/libraries/ArduinoJson/src/ArduinoJson/StringTraits/StdStream.hpp

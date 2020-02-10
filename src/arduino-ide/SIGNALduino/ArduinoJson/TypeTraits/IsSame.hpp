@@ -1,1 +1,1 @@
-Z:/Benutzer/Sven/Documents/RFD-FHEM/SIGNALDuino/src/_micro-api/libraries/ArduinoJson/src/ArduinoJson/TypeTraits/IsSame.hpp
+../../../../_micro-api/libraries/ArduinoJson/src/ArduinoJson/TypeTraits/IsSame.hpp

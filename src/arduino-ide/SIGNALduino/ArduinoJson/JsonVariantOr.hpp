@@ -1,1 +1,1 @@
-Z:/Benutzer/Sven/Documents/RFD-FHEM/SIGNALDuino/src/_micro-api/libraries/ArduinoJson/src/ArduinoJson/JsonVariantOr.hpp
+../../../_micro-api/libraries/ArduinoJson/src/ArduinoJson/JsonVariantOr.hpp
