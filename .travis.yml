@@ -102,8 +102,8 @@ jobs:
 #           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
 #           - arduino --install-library "ArduinoJson:5.13.2";
-           - arduino --install-boards esp8266:esp8266:2.4.2
-           - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
+           - arduino --install-boards esp8266:esp8266:2.6.3
+           - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Seria,lvl=COREl --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
@@ -113,7 +113,7 @@ jobs:
      before_script:
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
            - arduino --install-boards esp8266:esp8266:2.6.3
-           - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
+           - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Seria,lvl=COREl --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
