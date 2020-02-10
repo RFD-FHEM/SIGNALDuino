@@ -38,7 +38,7 @@ fi
 
 
 echo "Compile now for ${BOARD} with ${RECEIVER}"
-arduino -v --verbose-build --verify $PWD/SIGNALDuino/SIGNALDuino.ino 2>&1
+arduino -v --verbose-build --verify $PWD/SIGNALDuino/src/arduino-ide/SIGNALDuinoSIGNALDuino.ino 2>&1
 ARDUINO_RETURN_CODE=$?
 echo "Compile ${BOARD} ${RECEIVER} finshed"
 exit $ARDUINO_RETURN_CODE
