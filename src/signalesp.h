@@ -13,9 +13,9 @@
 #define WIFI_MANAGER_OVERRIDE_STRINGS
 
 // EEProm Addresscommands
-#define EE_MAGIC_OFFSET      0
-#define addr_features        0xff
-#define MAX_SRV_CLIENTS 2
+#define EE_MAGIC_OFFSET      	0
+#define addr_features        	0xff
+#define MAX_SRV_CLIENTS 		2
 
 #include "compile_config.h"
 
@@ -606,7 +606,8 @@ void serialEvent()
 				DBG_PRINT("send cmd detected ");
 				DBG_PRINTLN(idx);
 				IB_1[idx + 1] = '\0';
-				send_cmd();
+				if (idx > 0)
+					send_cmd();
 				idx = 0; // increments to 1
 				return; //Exit function
 			}
