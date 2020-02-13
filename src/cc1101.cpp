@@ -2,7 +2,7 @@
 #include "cc1101.h"
 
 uint8_t cc1101::revision = 0x01;
- const uint8_t cc1101::initVal[] PROGMEM =
+const uint8_t cc1101::initVal[] PROGMEM =
 {
 	// IDX NAME     RESET   COMMENT
 0x0D, // 00 IOCFG2    29     GDO2 as serial output
@@ -411,12 +411,13 @@ void cc1101::CCinit(void) {  // initialize CC1101
 
 	cc1101_Select();
 	DBG_PRINT(FPSTR(TXT_EEPROM)); 	DBG_PRINT(FPSTR(TXT_BLANK));	DBG_PRINT(FPSTR(TXT_READ));
+  	wait_Miso();                          // Wait until MISO goes low
 
-	sendSPI(CC1101_WRITE_BURST);
+	sendSPI(0x00 | CC1101_WRITE_BURST);
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {              // write EEPROM value to cc1101
 		sendSPI(EEPROM.read(EE_CC1101_CFG + i));
 		DBG_PRINT(".");
-
+		
 	}
 	cc1101_Deselect();
 	delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
