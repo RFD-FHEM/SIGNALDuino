@@ -238,6 +238,7 @@ namespace commands {
 			if (hasCC1101) {
 				cc1101::ccFactoryReset();
 				cc1101::CCinit();
+				dumpEEPROM();
 			}
 			break;
 		case cmd_patable:

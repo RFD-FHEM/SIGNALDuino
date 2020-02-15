@@ -134,14 +134,14 @@ WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 #endif
 
 void setup() {
-	char cfg_ipmode[7] = "dhcp";
-
+	//char cfg_ipmode[7] = "dhcp";
 	Server.setNoDelay(true);
 #if defined(ESP8266)
 	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
 	{
 		//Server.stop();
 		Server.begin();  // start telnet server
+		Server.setNoDelay(true);
 	});
 #elif defined(ESP32)
 	// TODO: Check why this can't be compiled
@@ -557,16 +557,26 @@ inline void ethernetEvent()
 {
 	//check if there are any new clients
 	if (Server.hasClient()) {
+		
 		if (!serverClient || !serverClient.connected()) {
 			if (serverClient) serverClient.stop();
 			serverClient = Server.available();
+			serverClient.flush();
 			DBG_PRINTLN("New client: ");
 			DBG_PRINTLN(serverClient.remoteIP());
-			return;
+		} else {
+			WiFiClient rejectClient = Server.available();
+            rejectClient.stop();
+			DBG_PRINTLN("Reject new Client: ");
+			DBG_PRINTLN(rejectClient.remoteIP());
 		}
-		//no free/disconnected spot so reject
-//		WiFiClient newClient = Server.available();
-//		newClient.stop();
+	}
+
+	if(serverClient && !serverClient.connected())
+	{
+		DBG_PRINTLN("Client disconnected: ");
+		DBG_PRINTLN(serverClient.remoteIP());
+		serverClient.stop();
 	}
 	//yield();
 }
@@ -574,7 +584,7 @@ inline void ethernetEvent()
 void serialEvent()
 {
 	static uint8_t idx = 0;
-	while (MSG_PRINTER.available())
+	while (MSG_PRINTER.connected() > 0 && MSG_PRINTER.available())
 	{
 		if (idx == 14) {
 			// Short buffer is now full
@@ -585,7 +595,9 @@ void serialEvent()
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
+			DBG_PRINTLN(idx);
 			DBG_PRINT(IB_1[idx]);
+
 			switch (IB_1[idx])
 			{
 			case '\n':
@@ -598,8 +610,10 @@ void serialEvent()
 #elif defined(ESP8266)
 				wdt_reset();
 #endif
-				if (idx > 0)
+				if (idx > 0) {
+					DBG_PRINT("HSC");
 					commands::HandleShortCommand();  // Short command received and can be processed now
+}
 				idx = 0;
 				return; //Exit function
 			case ';':
