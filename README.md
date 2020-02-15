@@ -1,4 +1,4 @@
-# SIGNALDuino uC v3.3.1  with cc1101 support 
+# SIGNALDuino uC v3.4.0-development  with cc1101 support 
 [![Build Status](https://travis-ci.org/RFD-FHEM/SIGNALDuino.svg?branch=master)](https://travis-ci.org/RFD-FHEM/SIGNALDuino)
 
 ### Getting started
@@ -58,5 +58,3 @@ First, sorry. This software is not perfect.
 5. Commit your changes (git commit -am "<some description>")
 6 .Push to a developer branch (git push dev-<xyz >my_branch)
 7. Open a Pull Request, put some useful informations there, what your extension does and why we should add it, reference to the open issues which are fixed whith this pull requet.
-
-
