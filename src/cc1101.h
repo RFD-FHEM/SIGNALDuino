@@ -155,7 +155,6 @@ namespace cc1101 {
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	//uint8_t RADINOVARIANT = 0;            // Standardwert welcher je radinoVarinat ge寤ert wird
 	#endif
-	extern const uint8_t initVal[];
 
 
   

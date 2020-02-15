@@ -74,7 +74,11 @@ SimpleFIFO<T,rawSize>::SimpleFIFO() : size(rawSize) {
 	flush();
 }
 template<typename T, int rawSize>
-bool SimpleFIFO<T,rawSize>::enqueue( T element ) {
+#if defined(ESP32) || defined(ESP8266)
+bool ICACHE_RAM_ATTR SimpleFIFO<T,rawSize>::enqueue( T element ) {
+#else
+bool  SimpleFIFO<T,rawSize>::enqueue( T element ) {
+#endif
 	if ( count() >= rawSize ) { return false; }
 	numberOfElements++;
 	nextIn %= size;
