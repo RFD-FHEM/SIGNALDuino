@@ -155,7 +155,7 @@ void send_cmd()
 			}
 			if (cmdNo == 0) {
 				DBG_PRINTLN("rearrange beginptr");
-				MSG_PRINT(IB_1); // echo command
+				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
 				msg_endptr = buf; // rearrange to beginning of buf
 				msg_beginptr = nullptr;
 			}
@@ -256,6 +256,10 @@ void send_cmd()
 				//MSG_PRINTLN(F("send cmd to long"));
 				return;
 			}
+			if (msg_endptr[0] == '\n') { // End of command
+				break;
+			}
+
 			*(msg_endptr + 1) = '\0'; // Nullterminate the string
 
 		}
