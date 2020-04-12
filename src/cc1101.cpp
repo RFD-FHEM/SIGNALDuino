@@ -1,4 +1,4 @@
-﻿
+﻿#ifdef CMP_CC1101
 #include "cc1101.h"
 
 uint8_t cc1101::revision = 0x01;
@@ -241,7 +241,7 @@ uint8_t cc1101::chipVersion() {
 }
 
 bool cc1101::checkCC1101() {
-
+#ifdef CMP_CC1101
 	uint8_t version = chipVersion();  // Version
 #ifdef DEBUG
 	uint8_t partnum = readReg((revision == 0x01 ? CC1101_PARTNUM_REV01 : CC1101_PARTNUM_REV00), CC1101_READ_SINGLE);  // Partnum
@@ -254,6 +254,7 @@ bool cc1101::checkCC1101() {
 		DBG_PRINT(F("no "));  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));//  F("no CC11xx found!"));
 		return false;  // Todo: power down SPI etc
 	}
+#endif // CMP_CC1101
 	return true;
 }
 
@@ -333,7 +334,7 @@ bool cc1101::regCheck()
 {
 	//char b[3];
 	//uint8_t val;
-
+	
 	DBG_PRINT(FPSTR(TXT_CC1101));
 	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1101_PKTCTRL0, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1101_PKTCTRL0]);
@@ -428,3 +429,4 @@ void cc1101::CCinit(void) {  // initialize CC1101
 	delay(1);
 	setReceiveMode();
 }
+#endif

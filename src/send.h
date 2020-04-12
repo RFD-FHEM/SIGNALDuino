@@ -203,7 +203,7 @@ void send_cmd()
 		else if (msg_beginptr[0] == 'F' && msg_beginptr[1] == '=')
 		{
 		ccParamAnz = (msg_endptr - msg_beginptr - 1) / 2;
-
+#ifdef CMP_CC1101
 		if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 			//uint8_t hex;
 			DBG_PRINT("write new ccregs #");			DBG_PRINTLN(ccParamAnz);
@@ -219,6 +219,7 @@ void send_cmd()
 			}
 			DBG_PRINTLN("");
 		}
+#endif
 		}
 		if (msg_endptr == msg_beginptr)
 		{
@@ -300,7 +301,9 @@ void send_cmd()
 		{
 			//val = ccReg[i];
 			//sprintf_P(b,PSTR("%02X"), val);
+#ifdef CMP_CC1101
 			cc1101::writeReg(0x0d + i, ccReg[i]);    // gemerkte Registerwerte zurueckschreiben
+#endif
 			//MSG_PRINT(b);
 		}
 		DBG_PRINTLN("");

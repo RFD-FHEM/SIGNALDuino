@@ -200,6 +200,9 @@ namespace commands {
 #ifdef CMP_CC1101
 			}
 #endif
+#ifdef DEBUG
+			MSG_PRINT(F(" DBG "));
+#endif			
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
 		case cmd_freeRam:
