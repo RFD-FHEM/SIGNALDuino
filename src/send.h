@@ -254,7 +254,6 @@ void send_cmd()
 				MSG_PRINTER.readBytesUntil('\n', buf, 255);
 				MSG_PRINT(FPSTR(TXT_SENDCMD));
 				MSG_PRINTLN(FPSTR(TXT_TOLONG));
-				//MSG_PRINTLN(F("send cmd to long"));
 				return;
 			}
 			if (msg_endptr[0] == '\n') { // End of command
