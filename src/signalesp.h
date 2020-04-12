@@ -2,8 +2,8 @@
 
 #if defined (ESP32) || defined(ESP8266)
 #include "compile_config.h"
-#define PROGVERS               "3.4.0-dev+20200216"
-#define PROGNAME               " SIGNALESP "
+// #define PROGVERS               "3.4.0-dev+20200216"
+#define PROGNAME               " SIGNALESP " 
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
@@ -135,7 +135,7 @@ WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 
 void setup() {
 	//char cfg_ipmode[7] = "dhcp";
-	Server.setNoDelay(true);
+	//Server.setNoDelay(true);
 #if defined(ESP8266)
 	gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
 	{
@@ -203,7 +203,7 @@ void setup() {
 #endif 
 
 	wifiManager.setShowStaticFields(true);
-	wifiManager.setCountry("US");
+	// wifiManager.setCountry("US");
 
 /*
 		1. starts a config portal in access point mode (timeout 60 seconds)
@@ -214,9 +214,9 @@ void setup() {
 		ip configuration can be switched between static and dhcp mode
 */
 	IPAddress _ip, _gw, _sn;
-
+/*
 	DBG_PRINTLN("mounting FS...");
-	/*
+	
 	if (SPIFFS.begin()) {
 		DBG_PRINTLN("mounted file system");
 		if (SPIFFS.exists("/config.json")) {
@@ -562,23 +562,22 @@ inline void ethernetEvent()
 			if (serverClient) serverClient.stop();
 			serverClient = Server.available();
 			serverClient.flush();
-			DBG_PRINTLN("New client: ");
-			DBG_PRINTLN(serverClient.remoteIP());
+			//DBG_PRINTLN("New client: ");
+			//DBG_PRINTLN(serverClient.remoteIP());
 		} else {
 			WiFiClient rejectClient = Server.available();
             rejectClient.stop();
-			DBG_PRINTLN("Reject new Client: ");
-			DBG_PRINTLN(rejectClient.remoteIP());
+			//DBG_PRINTLN("Reject new Client: ");
+			//DBG_PRINTLN(rejectClient.remoteIP());
 		}
 	}
 
 	if(serverClient && !serverClient.connected())
 	{
-		DBG_PRINTLN("Client disconnected: ");
-		DBG_PRINTLN(serverClient.remoteIP());
+		//DBG_PRINTLN("Client disconnected: ");
+		//DBG_PRINTLN(serverClient.remoteIP());
 		serverClient.stop();
 	}
-	//yield();
 }
 
 void serialEvent()
@@ -595,8 +594,8 @@ void serialEvent()
 		}
 		else {
 			IB_1[idx] = (char)MSG_PRINTER.read();
-			DBG_PRINTLN(idx);
-			DBG_PRINT(IB_1[idx]);
+			// DBG_PRINTLN(idx);
+			// DBG_PRINT(IB_1[idx]);
 
 			switch (IB_1[idx])
 			{
@@ -611,14 +610,14 @@ void serialEvent()
 				wdt_reset();
 #endif
 				if (idx > 0) {
-					DBG_PRINT("HSC");
+					// DBG_PRINT("HSC");
 					commands::HandleShortCommand();  // Short command received and can be processed now
-}
+				}
 				idx = 0;
 				return; //Exit function
 			case ';':
 				DBG_PRINT("send cmd detected ");
-				DBG_PRINTLN(idx);
+				// DBG_PRINTLN(idx);
 				IB_1[idx + 1] = '\0';
 				if (idx > 0)
 					send_cmd();
@@ -639,17 +638,5 @@ int freeRam() {
 	return system_get_free_heap_size();
 #endif
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 #endif
