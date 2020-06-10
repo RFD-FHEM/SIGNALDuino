@@ -1,4 +1,4 @@
-﻿#ifdef CMP_CC1101
+#ifdef CMP_CC1101
 #include "cc1101.h"
 
 uint8_t cc1101::revision = 0x01;
