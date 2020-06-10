@@ -114,9 +114,10 @@ void send_cmd()
 	s_sendcmd command[5];
 
 	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
+#ifdef CMP_CC1101
 	uint8_t ccReg[6];
+#endif
 	uint8_t val;
-
 	uint8_t cmdNo = 255;
 
 

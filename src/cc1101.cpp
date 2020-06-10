@@ -1,5 +1,4 @@
-﻿#ifdef CMP_CC1101
-#include "cc1101.h"
+﻿#include "cc1101.h"
 
 uint8_t cc1101::revision = 0x01;
 const uint8_t cc1101::initVal[] PROGMEM =
@@ -324,9 +323,10 @@ void cc1101::setTransmitMode()
 	uint8_t maxloop = 0xff;
 	while (maxloop-- && (cmdStrobe(CC1101_STX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_TX)  // TX enable
 		delay(1);
+#ifdef CMP_CC1101
 	if (maxloop == 0) DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
+#endif
 	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
-
 }
 
 
@@ -429,4 +429,3 @@ void cc1101::CCinit(void) {  // initialize CC1101
 	delay(1);
 	setReceiveMode();
 }
-#endif
