@@ -334,7 +334,7 @@ bool cc1101::regCheck()
 {
 	//char b[3];
 	//uint8_t val;
-	
+#ifdef CMP_CC1101
 	DBG_PRINT(FPSTR(TXT_CC1101));
 	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1101_PKTCTRL0, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1101_PKTCTRL0]);
@@ -368,6 +368,7 @@ bool cc1101::regCheck()
 	DBG_PRINTLN(b);
 	*/
 	return (readReg(CC1101_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1101_PKTCTRL0]) && (readReg(CC1101_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1101_IOCFG2]);
+ #endif
 }
 
 
@@ -392,7 +393,7 @@ void cc1101::ccFactoryReset() {
 }
 
 void cc1101::CCinit(void) {  // initialize CC1101
-	
+#ifdef CMP_CC1101
 	DBG_PRINT(FPSTR(TXT_CCINIT)); 
 
 	cc1101_Deselect();                                  // some deselect and selects to init the cc1101
@@ -428,4 +429,6 @@ void cc1101::CCinit(void) {  // initialize CC1101
 
 	delay(1);
 	setReceiveMode();
+
+#endif
 }
