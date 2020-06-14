@@ -144,14 +144,14 @@ void setup() {
 		Server.setNoDelay(true);
 	});
 
-	// ToDo, needed ??? no ESP32 - @Dattel
+	// added @Dattel
 	disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
 	{
 		Server.stop();
 		Serial.print("WiFi lost connection. Reason: ");
-		//Serial.println(event); // no compiled if this lines set
+		Serial.println(event.reason);
 	});
-	// ToDo END, needed ???
+	// added @Dattel - END
 
 #elif defined(ESP32)
 	WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {

@@ -2,10 +2,11 @@
 
 
 // Config flags for compiling correct options / boards Define only one!
+// nothing define                                                // boards without CC1101 (example, ESP8266, ESP32, nano)
 //#define CMP_CC1101
-//#define ARDUINO_ATMEGA328P_MINICUL 1
-//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-//#define OTHER_BOARD_WITH_CC1101  1
+//#define ARDUINO_ATMEGA328P_MINICUL 1                           // minicul with CC1101
+//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;  // radino with CC1101
+//#define OTHER_BOARD_WITH_CC1101  1                             // boards with CC1101 (example, ESP8266, ESP32 ...)
 
 
 //Enable debug option here:
@@ -90,7 +91,4 @@
 		#define PIN_SEND               11
 	#endif
 #endif
-
-
-
 
