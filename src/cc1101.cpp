@@ -368,7 +368,9 @@ bool cc1101::regCheck()
 	DBG_PRINTLN(b);
 	*/
 	return (readReg(CC1101_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1101_PKTCTRL0]) && (readReg(CC1101_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1101_IOCFG2]);
- #endif
+ #else
+  return ("");
+#endif
 }
 
 
