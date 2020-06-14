@@ -13,8 +13,6 @@
 
 
 
-
-
 /*
 
   Do not Change anything below this line 
@@ -22,10 +20,10 @@
 */
 
 #ifdef OTHER_BOARD_WITH_CC1101
-#define CMP_CC1101     
+#define CMP_CC1101
 #endif
 #ifdef ARDUINO_ATMEGA328P_MINICUL
-#define CMP_CC1101     
+#define CMP_CC1101
 #endif
 
 // Get compatibility with arduino ide and visualmicro
@@ -38,6 +36,10 @@
 #endif
 
 #ifdef ESP8266
+
+#endif
+
+#ifdef ESP32
 
 #endif
 
@@ -60,6 +62,11 @@
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
 //		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
+	#elif defined(ESP32)
+		#define PIN_RECEIVE            5 // D5
+		#define PIN_LED                2 // D2
+		#define PIN_SEND               4 // D4  // gdo0Pin TX out
+		#define ETHERNET_PRINT
 	#else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out
@@ -72,6 +79,11 @@
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
 //		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
+	#elif defined(ESP32)
+		#define PIN_RECEIVE            5 // D5
+		#define PIN_LED                2 // D2
+		#define PIN_SEND               4 // D4  // gdo0Pin TX out
+		#define ETHERNET_PRINT
 	#else
 		#define PIN_RECEIVE            2
 		#define PIN_LED                13 // Message-LED
