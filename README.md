@@ -22,13 +22,14 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 
 ### Tested microcontrollers
 
-* Aduino Nano
+* Arduino Nano
 * RadinoCC1101
 * ESP8266
+* ESP32 (ESP32-WROOM-32 / ESP32-WROOM-32D)
 
 ### ESP32 Notes
 
-If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished. Contributors are welcome. If you have mane errors from fastDelegate.h try adding this compiler flag:
+If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished tested with all variants from ESP32. Contributors are welcome. If you have mane errors from fastDelegate.h try adding this compiler flag:
  -Wno-unused-local-typedef
 
 ### Signal from my device ist not detected
