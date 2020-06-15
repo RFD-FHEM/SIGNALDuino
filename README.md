@@ -23,9 +23,9 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 ### Tested microcontrollers
 
 * Arduino Nano
-* RadinoCC1101
-* ESP8266
 * ESP32 (ESP32-WROOM-32 / ESP32-WROOM-32D)
+* ESP8266
+* RadinoCC1101
 
 ### ESP32 Notes
 
