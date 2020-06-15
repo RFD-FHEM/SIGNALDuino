@@ -1,5 +1,5 @@
 /*
-*   RF_RECEIVER v3.3.1 for Arduino
+*   RF_RECEIVER v3.4.0 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
 *
 *   The Sketch can also encode and send data via a transmitter,
@@ -35,7 +35,7 @@
 #include "compile_config.h"
 
 
-#define PROGVERS               "3.4.0-dev+20200611"
+#define PROGVERS               "3.4.0-dev_20200615"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 

@@ -23,11 +23,15 @@ extern bool hasCC1101;
 #define pulseMin  90
 
 
-#ifndef ESP8266
-#define ICACHE_RAM_ATTR 
+#if !defined(ESP8266) && !defined(ESP32)
+	#define ICACHE_RAM_ATTR 
 #else
-extern os_timer_t cronTimer;
-
+	#ifdef ESP8266
+		extern os_timer_t cronTimer;
+	#endif
+	#ifdef ESP32
+		extern esp_timer_handle_t cronTimer;
+	#endif
 #endif
 
 
@@ -82,7 +86,7 @@ void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red)
 
 	int8_t dat = ms | mu | mc | red;
 	EEPROM.write(addr_features, dat);
-	#ifdef ESP8266
+	#if defined(ESP8266) || defined(ESP32)
 	EEPROM.commit();
 	#endif
 }
@@ -116,24 +120,24 @@ void dumpEEPROM() {
 
 
 void initEEPROM(void) {	
-	#ifdef ESP8266
+	#if defined(ESP8266) || defined(ESP32)
 	EEPROM.begin(512); //Max bytes of eeprom to use
 	#endif
 	if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
 		DBG_PRINT(F("Reading values from "));	DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
-	}
-	else {
+	} else {
 		storeFunctions(1, 1, 1, 1);    // Init EEPROM with all flags enabled
 		//hier fehlt evtl ein getFunctions()
 		MSG_PRINTLN(F("Init eeprom to defaults after flash"));
 		EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
 		EEPROM.write(EE_MAGIC_OFFSET + 1, VERSION_2);
-#ifdef CMP_CC1101
-		cc1101::ccFactoryReset();
-#endif
-#ifdef ESP8266
-		EEPROM.commit();
-#endif
+		#ifdef CMP_CC1101
+			cc1101::ccFactoryReset();
+		#endif
+
+		#if defined(ESP8266) || defined(ESP32)
+			EEPROM.commit();
+		#endif
 	}
 	getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled);
 	DBG_PRINTLN(F("done"));

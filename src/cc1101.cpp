@@ -217,7 +217,7 @@ void cc1101::writeCCpatable(uint8_t var) {           // write 8 byte to patable 
 			EEPROM.write(EE_CC1101_PA + i, 0);
 		}
 	}
-	#ifdef ESP8266
+	#if defined(ESP8266) || defined(ESP32)
 	EEPROM.commit();
 	#endif
 	writePatable();
@@ -388,7 +388,7 @@ void cc1101::ccFactoryReset() {
 			EEPROM.write(EE_CC1101_PA + i, 0);
 		}
 	}
-	#ifdef ESP8266
+	#if defined(ESP8266) || defined(ESP32)
 	EEPROM.commit();
 	#endif
 	MSG_PRINTLN("ccFactoryReset done");
