@@ -395,7 +395,6 @@ void setup() {
 	*/
 
 #ifdef ESP32
-	//esp_timer_stop(cronTimer_handle); // ToDo, with cc1101 reset loop
 	cronTimer_args.callback = cronjob;
 	cronTimer_args.name = "cronTimer";
 	cronTimer_args.dispatch_method = ESP_TIMER_TASK;
