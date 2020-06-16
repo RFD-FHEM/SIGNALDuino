@@ -181,15 +181,14 @@ namespace commands {
 						break;
 					case 0x14:
 					case 0x04:
-					case 0x17
 						 MSG_PRINT("1");
 						break;
 					case 0x05:
 						 MSG_PRINT("0E");
 						break;
 					case 0x07:
+ 					case 0x17:
 						 MSG_PRINT("L");
-						break;
 						break;
 					default:
 						MSG_PRINT(" unknown");
