@@ -143,14 +143,27 @@ void setup() {
 		Server.begin();  // start telnet server
 		Server.setNoDelay(true);
 	});
-#elif defined(ESP32)
-	// TODO: Check why this can't be compiled
-	/*
-	WiFiEventId_t eventID = WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t    info) {
+
+	// added @Dattel #130
+	disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
+	{
+		Server.stop();
 		Serial.print("WiFi lost connection. Reason: ");
-		Serial.println(info.d;
+		Serial.println(event.reason);
+	});
+	// added @Dattel #130 - END
+
+#elif defined(ESP32)
+	WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+		Server.begin();  // start telnet server
+		Server.setNoDelay(true);
+	}, WiFiEvent_t::SYSTEM_EVENT_STA_CONNECTED);
+
+	WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
+		Server.stop();  // end telnet server
+		Serial.print("WiFi lost connection. Reason: ");
+		Serial.println(info.sta_er_fail_reason);
 	}, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
-	*/
 #endif
 
 
@@ -161,7 +174,7 @@ void setup() {
 	blinksos_args.name = "blinkSOS";
 	blinksos_args.arg = (void *)boot_sequence;
 	esp_timer_create(&blinksos_args, &blinksos_handle);
-	esp_timer_start_periodic(blinksos_handle, 300);
+	esp_timer_start_periodic(blinksos_handle, 300000);
 #elif defined(ESP8266)
 	os_timer_setfn(&blinksos, &sosBlink, (void *)boot_sequence);
 	os_timer_arm(&blinksos, 300, true);
@@ -382,7 +395,6 @@ void setup() {
 	*/
 
 #ifdef ESP32
-	esp_timer_stop(cronTimer_handle);
 	cronTimer_args.callback = cronjob;
 	cronTimer_args.name = "cronTimer";
 	cronTimer_args.dispatch_method = ESP_TIMER_TASK;
@@ -413,7 +425,7 @@ void setup() {
 //	wifiManager.startConfigPortal();
 	wifiManager.startWebPortal();
 #ifdef ESP32
-	esp_timer_start_periodic(cronTimer_handle, 31);
+	esp_timer_start_periodic(cronTimer_handle, 31000);
 	esp_timer_stop(blinksos_handle);
 #elif defined(ESP8266)
 	os_timer_arm(&cronTimer, 31, true);
@@ -435,8 +447,7 @@ void ICACHE_RAM_ATTR cronjob(void *pArg) {
     
 #ifdef ESP32
 	esp_timer_stop(cronTimer_handle);
-	esp_timer_start_periodic(cronTimer_handle, timerTime / 1000);
-
+	esp_timer_start_periodic(cronTimer_handle, timerTime);
 #elif defined(ESP8266)
 	os_timer_disarm(&cronTimer);
 	os_timer_arm(&cronTimer, timerTime / 1000, true);

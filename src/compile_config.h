@@ -2,16 +2,15 @@
 
 
 // Config flags for compiling correct options / boards Define only one!
+// nothing define                                                // boards without CC1101 (example, ESP8266, ESP32, nano)
 //#define CMP_CC1101
-//#define ARDUINO_ATMEGA328P_MINICUL 1
-//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;
-//#define OTHER_BOARD_WITH_CC1101  1
+//#define ARDUINO_ATMEGA328P_MINICUL 1                           // minicul with CC1101
+//#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;  // radino with CC1101
+//#define OTHER_BOARD_WITH_CC1101  1                             // boards with CC1101 (example, ESP8266, ESP32 ...)
 
 
 //Enable debug option here:
 //#define DEBUG
-
-
 
 
 
@@ -22,10 +21,10 @@
 */
 
 #ifdef OTHER_BOARD_WITH_CC1101
-#define CMP_CC1101     
+#define CMP_CC1101
 #endif
 #ifdef ARDUINO_ATMEGA328P_MINICUL
-#define CMP_CC1101     
+#define CMP_CC1101
 #endif
 
 // Get compatibility with arduino ide and visualmicro
@@ -38,6 +37,10 @@
 #endif
 
 #ifdef ESP8266
+
+#endif
+
+#ifdef ESP32
 
 #endif
 
@@ -60,6 +63,11 @@
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
 //		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
+	#elif defined(ESP32)
+		#define PIN_RECEIVE            16 // D16 | G16 (depending on type / clone / seller)
+		#define PIN_LED                2  // D2  | G2 (depending on type / clone / seller)
+		#define PIN_SEND               4  // D4  | G4 (depending on type / clone / seller) // gdo0Pin TX out
+		#define ETHERNET_PRINT
 	#else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out
@@ -72,13 +80,15 @@
 		#define PIN_SEND               4// D2  // gdo0Pin TX out
 		#define ETHERNET_PRINT
 //		#define PIN_LED_INVERSE       // use this setting for the LED_BUILTIN on WEMOS boards
+	#elif defined(ESP32)
+		#define PIN_RECEIVE            16 // D16 | G16 (depending on type / clone / seller)
+		#define PIN_LED                2  // D2  | G2 (depending on type / clone / seller)
+		#define PIN_SEND               4  // D4  | G4 (depending on type / clone / seller) // gdo0Pin TX out
+		#define ETHERNET_PRINT
 	#else
 		#define PIN_RECEIVE            2
 		#define PIN_LED                13 // Message-LED
 		#define PIN_SEND               11
 	#endif
 #endif
-
-
-
 

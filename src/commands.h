@@ -343,7 +343,7 @@ namespace commands {
 				}
 #endif
 			}
-#ifdef ESP8266
+#if defined(ESP32) || defined(ESP8266)
 			EEPROM.commit();
 #endif
 		break;
