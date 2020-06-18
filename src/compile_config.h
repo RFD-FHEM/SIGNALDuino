@@ -7,7 +7,7 @@
 //#define ARDUINO_ATMEGA328P_MINICUL 1                           // minicul with CC1101
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;  // radino with CC1101
 //#define OTHER_BOARD_WITH_CC1101  1                             // boards with CC1101 (example, ESP8266, ESP32 ...)
-
+//#define MAPLE_SDUINO 1
 
 //Enable debug option here:
 //#define DEBUG
@@ -36,6 +36,11 @@
 #define CMP_CC1101     
 #endif
 
+#ifdef MAPLE_SDUINO
+#define MAPLE_Mini
+#define CMP_CC1101
+#endif
+				   
 #ifdef ESP8266
 
 #endif
@@ -68,6 +73,11 @@
 		#define PIN_LED                2  // D2  | G2 (depending on type / clone / seller)
 		#define PIN_SEND               4  // D4  | G4 (depending on type / clone / seller) // gdo0Pin TX out
 		#define ETHERNET_PRINT
+	#elif MAPLE_SDUINO
+		#define PIN_LED              33
+		#define PIN_SEND             17   // gdo0 Pin TX out
+	    #define PIN_RECEIVE          18   // gdo2
+		#define PIN_WIZ_RST          27
 	#else 
 		#define PIN_LED               9
 		#define PIN_SEND              3   // gdo0Pin TX out

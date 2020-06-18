@@ -67,7 +67,18 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
-#include "TimerOne.h"  // Timer for LED Blinking
+
+#ifdef MAPLE_Mini
+  #include <malloc.h>
+  extern char _estack;
+  extern char _Min_Stack_Size;
+  static char *ramend = &_estack;
+  static char *minSP = (char*)(ramend - &_Min_Stack_Size);
+  extern "C" char *sbrk(int i);
+#else
+  #include "TimerOne.h"  // Timer for LED Blinking
+#endif
+
 #include "commands.h"
 #include "functions.h"
 #include "send.h"

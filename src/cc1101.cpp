@@ -61,12 +61,16 @@ const uint8_t cc1101::initVal[] PROGMEM =
  }
 
 uint8_t cc1101::sendSPI(const uint8_t val) {				 // send byte via SPI
-#if !defined(ESP8266) && !defined(ESP32)
+#if !defined(ESP8266) && !defined(ESP32) && !defined(MAPLE_Mini)
 	 SPDR = val;                                      // transfer byte via SPI
 	 while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
 	 return SPDR;
 #else
+	 #ifndef MAPLE_Mini
 	 return SPI.transfer(val);
+	 #else
+	 return SPI.transfer(val);
+	 #endif
 #endif
  }
 
@@ -265,7 +269,9 @@ void cc1101::setup()
 	pinAsOutput(mosiPin);
 	pinAsInput(misoPin);
 #endif
+	#ifndef MAPLE_Mini
 	pinAsOutput(csPin);                    // set pins for SPI communication
+	#endif
 
 #ifdef PIN_MARK433
 	pinAsInputPullUp(PIN_MARK433);
@@ -273,10 +279,24 @@ void cc1101::setup()
 
 
 #if !defined(ESP8266) && !defined(ESP32)
-	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-	digitalHigh(csPin);                 // SPI init
-	digitalHigh(sckPin);
-	digitalLow(mosiPin);
+	#if defined(MAPLE_Mini)
+		// Setup SPI 2
+		SPI_2.begin();	//Initialize the SPI_2 port.
+		SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+		pinAsOutput(radioCsPin[0]);
+		digitalHigh(radioCsPin[0]);
+		pinAsOutput(radioCsPin[1]);
+		digitalHigh(radioCsPin[1]);
+		pinAsOutput(radioCsPin[2]);
+		digitalHigh(radioCsPin[2]);
+		pinAsOutput(radioCsPin[3]);
+		digitalHigh(radioCsPin[3]);
+	#else	
+		SPCR = _BV(SPE) | _BV(MSTR);        // SPI speed = CLK/4
+		digitalHigh(csPin);                 // SPI init
+		digitalHigh(sckPin);
+		digitalLow(mosiPin);
+	#endif
 #else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
