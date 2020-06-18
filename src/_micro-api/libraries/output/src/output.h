@@ -40,7 +40,7 @@ static const char TXT_CORRUPT[]				PROGMEM = "corrupt";
 static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 
 
-#if !defined(ESP8266) && !defined(ESP32)
+#if !defined(ESP8266) && !defined(ESP32) && !defined(MAPLE_Mini)
 	
 	#define FPSTR(s) ((__FlashStringHelper*)(s))
 
