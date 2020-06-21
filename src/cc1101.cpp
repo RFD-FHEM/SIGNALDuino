@@ -1,5 +1,13 @@
 ﻿#include "cc1101.h"
 
+#ifdef MAPLE_SDUINO
+	 #define mosiPin 28   // MOSI out
+	 #define misoPin 29   // MISO in
+	 #define sckPin  30   // SCLK out
+
+	 SPIClass SPI_2(mosiPin, misoPin, sckPin);
+#endif
+
 uint8_t cc1101::revision = 0x01;
 const uint8_t cc1101::initVal[] PROGMEM =
 {
@@ -66,11 +74,11 @@ uint8_t cc1101::sendSPI(const uint8_t val) {				 // send byte via SPI
 	 while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
 	 return SPDR;
 #else
-	 #ifndef MAPLE_Mini
+   #ifdef MAPLE_Mini
+      return SPI_2.transfer(val);
+   #else
 	 return SPI.transfer(val);
-	 #else
-	 return SPI.transfer(val);
-	 #endif
+   #endif
 #endif
  }
 
@@ -269,20 +277,26 @@ void cc1101::setup()
 	pinAsOutput(mosiPin);
 	pinAsInput(misoPin);
 #endif
-	#ifndef MAPLE_Mini
+
+#ifndef MAPLE_Mini
 	pinAsOutput(csPin);                    // set pins for SPI communication
-	#endif
+#endif
 
 #ifdef PIN_MARK433
 	pinAsInputPullUp(PIN_MARK433);
 #endif
 
 
-#if !defined(ESP8266) && !defined(ESP32)
-	#if defined(MAPLE_Mini)
+#if !defined(ESP8266) && !defined(ESP32) && !defined(MAPLE_Mini)
+	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
+	digitalHigh(csPin);                 // SPI init
+	digitalHigh(sckPin);
+	digitalLow(mosiPin);
+#elif defined(MAPLE_Mini)
 		// Setup SPI 2
 		SPI_2.begin();	//Initialize the SPI_2 port.
 		SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+
 		pinAsOutput(radioCsPin[0]);
 		digitalHigh(radioCsPin[0]);
 		pinAsOutput(radioCsPin[1]);
@@ -292,12 +306,6 @@ void cc1101::setup()
 		pinAsOutput(radioCsPin[3]);
 		digitalHigh(radioCsPin[3]);
 	#else	
-		SPCR = _BV(SPE) | _BV(MSTR);        // SPI speed = CLK/4
-		digitalHigh(csPin);                 // SPI init
-		digitalHigh(sckPin);
-		digitalLow(mosiPin);
-	#endif
-#else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
 	SPI.begin();
@@ -305,6 +313,11 @@ void cc1101::setup()
 #endif
 	pinAsInput(PIN_RECEIVE);    // gdo2
 	pinAsInput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+
+#ifndef MAPLE_Mini
+  digitalHigh(sckPin);
+  digitalLow(mosiPin);
+#endif  
 }
 
 uint8_t cc1101::getRevision() 

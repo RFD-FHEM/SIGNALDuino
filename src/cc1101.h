@@ -15,7 +15,10 @@
 
 extern char IB_1[14];
 
-extern uint8_t radionr;
+// only MAPLE_Mini
+#ifdef MAPLE_Mini
+  extern uint8_t radionr;
+#endif
 
 
 #if defined(ESP8266) || defined(ESP32) || defined(MAPLE_Mini)
@@ -33,15 +36,7 @@ namespace cc1101 {
 				
 	*/
 						
-	#ifdef MAPLE_Mini
-	#define mosiPin 28   // MOSI out
-	#define misoPin 29   // MISO in
-	#define sckPin  30   // SCLK out
-	
-	/* UB
- 		SPIClass SPI_2(mosiPin, misoPin, sckPin);
-    */
-	SPIClass SPI_2(SPI_2);
+#ifdef MAPLE_SDUINO
 	const uint8_t radioCsPin[] = {31, 12, 15, 3};
 	#else
 	#define csPin	SS	   // CSN  out
@@ -134,13 +129,13 @@ namespace cc1101 {
 	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
     #define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }      // wait until SPI MISO line goes low 
 
-	#ifndef MAPLE_Mini
-	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
-	#define cc1101_Deselect() digitalHigh(csPin) 
-	#else
+#ifdef MAPLE_Mini
 	#define cc1101_Select()   digitalLow(radioCsPin[radionr])          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(radioCsPin[radionr])
-	#endif
+#else
+#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
+#define cc1101_Deselect() digitalHigh(csPin)
+#endif
 
 	#define EE_CC1101_CFG        2
 	#define EE_CC1101_CFG_SIZE   0x29

@@ -39,11 +39,18 @@
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-#if defined(__AVR__)
-#define PROGNAME               " SIGNALduino "
+#if !defined(__AVR__) // MR how is right????
 
-#define BAUDRATE               57600 // 500000 //57600
-#define FIFO_LENGTH			   90 //150
+#define PROGNAME               " SIGNALduino_STM "
+
+#ifdef MAPLE_Mini
+  #define BAUDRATE               115200
+  #define FIFO_LENGTH            170
+  #define defSelRadio 1  // B
+  const uint8_t pinReceive[] = {11, 18, 16, 14};
+  uint8_t radionr = defSelRadio;
+  uint8_t radio_bank[4];
+#endif
 
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
@@ -67,7 +74,16 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
-#include "TimerOne.h"  // Timer for LED Blinking
+
+#ifdef MAPLE_Mini
+  #include <malloc.h>
+  extern char _estack;
+  extern char _Min_Stack_Size;
+  static char *ramend = &_estack;
+  static char *minSP = (char*)(ramend - &_Min_Stack_Size);
+  extern "C" char *sbrk(int i);
+#endif
+
 #include "commands.h"
 #include "functions.h"
 #include "send.h"
@@ -90,18 +106,20 @@ char IB_1[14]; // Input Buffer one - capture commands
 
 
 void setup() {
+#ifdef MAPLE_Mini
+  pinAsOutput(PIN_WIZ_RST);
+#endif
+
 	Serial.begin(BAUDRATE);
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
 
-
-	
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
-	
+
 	//wdt_reset();
 
 	#ifdef CMP_CC1101
@@ -113,7 +131,7 @@ void setup() {
 
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
-	
+
 
 
 	if (hasCC1101)
@@ -122,16 +140,22 @@ void setup() {
 		DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
 		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
 	} else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
+		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback
 	}
-	#endif 
+	#endif
 
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-	Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
-	Timer1.attachInterrupt(cronjob);
+#ifdef MAPLE_Mini
+  TIM_TypeDef *Instance = TIM1;
+  HardwareTimer *MyTim = new HardwareTimer(Instance);
+  MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
+  MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
+  MyTim->attachInterrupt(cronjob);
+  MyTim->resume();
+#endif
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -158,13 +182,25 @@ void setup() {
 }
 
 
+
+#ifdef MAPLE_Mini /* MR neeed ??? */
+#if ARDUINO < 190
+void cronjob(HardwareTimer*) {
+#else
 void cronjob() {
-	static uint8_t cnt = 0;
-	cli();
+#endif
+  noInterrupts();
+#else
+void cronjob() {
+  cli();
+#endif
+
+  static uint8_t cnt = 0;  
 	const unsigned long  duration = micros() - lastTime;
 
+/* MR Timer1 failed
 	Timer1.setPeriod(32001);
-	
+*/
 	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
 		int sDuration = maxPulse;
 		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
@@ -172,39 +208,72 @@ void cronjob() {
 		}
 		FiFo.enqueue(sDuration);
 		lastTime = micros();
-	 } else if (duration > 10000) {
+	 } 
+/* MR Timer1 failed
+	 else if (duration > 10000) {
 		Timer1.setPeriod(maxPulse-duration+16);
 	 }
-#ifdef PIN_LED_INVERSE	
+  */
+  
+#ifdef PIN_LED_INVERSE
 	 digitalWrite(PIN_LED, !blinkLED);
 #else
 	 digitalWrite(PIN_LED, blinkLED);
 #endif
 	 blinkLED = false;
 
-	 sei();
-	
+#ifdef MAPLE_Mini
+  interrupts();
+#endif
+
 	 // Infrequent time uncritical jobs (~ every 2 hours)
 	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
 		 getUptime();
 }
 
 
+uint16_t getBankOffset(uint8_t tmpBank) {
+  uint16_t bankOffs;
+  if (tmpBank == 0) {
+    bankOffs = 0;
+  }
+  else {
+    bankOffs = 0x100 + ((tmpBank - 1) * 0x40);
+  }
+  return bankOffs;
+}
+
+
 void loop() {
+
 	static int aktVal=0;
 	bool state;
-#ifdef __AVR_ATmega32U4__	
-	serialEvent();
-#endif
-	//wdt_reset();
-	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
-		aktVal=FiFo.dequeue();
-		state = musterDec.decode(&aktVal); 
-		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-	}
+
+  uint8_t tmpBank;
+  uint16_t bankoff;
+
+  #ifdef MAPLE_WATCHDOG
+    IWatchdog.reload();
+  #elif WATCHDOG
+    wdt_reset();
+  #endif
+
+  for (radionr = 0; radionr < 4; radionr++) {
+    if (radio_bank[radionr] > 9) {
+      continue;
+    }
+    tmpBank = radio_bank[radionr];
+    bankoff = getBankOffset(tmpBank);
+
+	  //wdt_reset();
+	  while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
+		  aktVal=FiFo.dequeue();
+		  state = musterDec.decode(&aktVal);
+		  if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+	  }
+  }
 
  }
-
 
 
 
@@ -220,7 +289,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 	//MSG_PRINT(*buf);
 	//MSG_WRITE(buf, len);
 	return MSG_PRINTER.write(buf,len);
-	
+
 	//serverClient.write("test");
 
 }
@@ -274,14 +343,13 @@ void serialEvent()
 	}
 }
 
-
-
+/* MR not in STM ???
 int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+
  }
-
-
+*/
 
 #endif
