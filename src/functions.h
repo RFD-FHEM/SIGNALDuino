@@ -37,8 +37,11 @@ extern bool hasCC1101;
 
 //========================= Pulseauswertung ================================================
 void ICACHE_RAM_ATTR handleInterrupt() {
-
-	cli();
+#ifdef MAPLE_Mini
+  noInterrupts();
+#else
+  cli();
+#endif
 	const unsigned long Time = micros();
 	const unsigned long  duration = Time - lastTime;
 	lastTime = Time;
@@ -55,7 +58,11 @@ void ICACHE_RAM_ATTR handleInterrupt() {
 		}
 		FiFo.enqueue(sDuration);
 	} // else => trash
-	sei();
+#ifdef MAPLE_Mini
+  interrupts();
+#else
+  sei();
+#endif
 }
 
 
