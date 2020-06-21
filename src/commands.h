@@ -121,7 +121,9 @@ namespace commands {
 	void HandleShortCommand()
 	{
 		#define  cmd_Version 'V'
+  #ifndef MAPLE_Mini
 		#define  cmd_freeRam 'R'
+  #endif
 		#define  cmd_uptime 't'
 		#define  cmd_changeReceiver 'X'
 		#define  cmd_help '?'
@@ -140,7 +142,9 @@ namespace commands {
 		case cmd_help:
 			MSG_PRINT(cmd_help);	MSG_PRINT(F(" Use one of "));
 			MSG_PRINT(cmd_Version); MSG_PRINT(FPSTR(TXT_BLANK));
+  #ifndef MAPLE_Mini
 			MSG_PRINT(cmd_freeRam); MSG_PRINT(FPSTR(TXT_BLANK));
+  #endif
 			MSG_PRINT(cmd_uptime); MSG_PRINT(FPSTR(TXT_BLANK));
 			MSG_PRINT(cmd_changeReceiver); MSG_PRINT(FPSTR(TXT_BLANK));
 			MSG_PRINT(cmd_send); MSG_PRINT(FPSTR(TXT_BLANK));
@@ -205,9 +209,11 @@ namespace commands {
 #endif			
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
+  #ifndef MAPLE_Mini
 		case cmd_freeRam:
 			MSG_PRINTLN(freeRam());
 			break;
+  #endif		
 		case cmd_uptime:
 			MSG_PRINTLN(getUptime());
 			break;
