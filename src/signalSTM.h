@@ -39,7 +39,7 @@
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-#if !defined(__AVR__) && defined(MAPLE_SDUINO)
+#if !defined(__AVR__) && defined(MAPLE_Mini)
 
 #define PROGNAME               " SIGNALduino_STM "
 
