@@ -1,6 +1,6 @@
 ﻿#include "cc1101.h"
 
-#ifdef MAPLE_SDUINO
+#ifdef MAPLE_Mini
 	 #define mosiPin 28   // MOSI out
 	 #define misoPin 29   // MISO in
 	 #define sckPin  30   // SCLK out
