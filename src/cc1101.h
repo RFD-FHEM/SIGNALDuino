@@ -36,7 +36,7 @@ namespace cc1101 {
 				
 	*/
 						
-#ifdef MAPLE_SDUINO
+#ifdef MAPLE_Mini
 	const uint8_t radioCsPin[] = {31, 12, 15, 3};
 	#else
 	#define csPin	SS	   // CSN  out
