@@ -33,18 +33,18 @@ namespace cc1101 {
 	#elif ARDUINO_ATMEGA328P_MINICUL  // 8Mhz 
 	#define PIN_MARK433			  0
 	#endif
-				
+
 	*/
-						
+
 #ifdef MAPLE_Mini
 	const uint8_t radioCsPin[] = {31, 12, 15, 3};
-	#else
+#else
 	#define csPin	SS	   // CSN  out
 	#define mosiPin MOSI   // MOSI out
 	#define misoPin MISO   // MISO in
 	#define sckPin  SCK    // SCLK out	
-	#endif
-			
+#endif
+
 	#define CC1101_WRITE_BURST    0x40
 	#define CC1101_WRITE_SINGLE   0x00
 	#define CC1101_READ_BURST     0xC0
@@ -126,15 +126,15 @@ namespace cc1101 {
 	#endif
 #endif
 
-	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }      // wait until SPI MISO line goes low 
-    #define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }      // wait until SPI MISO line goes low 
+	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }           // wait until SPI MISO line goes low
+    #define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }     // wait until SPI MISO line goes low
 
 #ifdef MAPLE_Mini
 	#define cc1101_Select()   digitalLow(radioCsPin[radionr])          // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(radioCsPin[radionr])
 #else
-#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
-#define cc1101_Deselect() digitalHigh(csPin)
+	#define cc1101_Select()   digitalLow(csPin)          // select (SPI) CC1101
+	#define cc1101_Deselect() digitalHigh(csPin)
 #endif
 
 	#define EE_CC1101_CFG        2

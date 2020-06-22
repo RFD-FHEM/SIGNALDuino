@@ -148,7 +148,7 @@ void setup() {
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-#if ARDUINO < 100 // to compile with PlatformIO
+#if defined(ARDUINO) && ARDUINO >= 100 // to compile with PlatformIO
 	#ifdef MAPLE_Mini
 		TIM_TypeDef *Instance = TIM1;
 		HardwareTimer *MyTim = new HardwareTimer(Instance);
