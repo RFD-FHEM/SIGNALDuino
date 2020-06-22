@@ -36,6 +36,10 @@
 #define CMP_CC1101     
 #endif
 
+#ifdef ARDUINO_MAPLEMINI_F103CB
+#define MAPLE_SDUINO 1
+#endif
+
 #ifdef MAPLE_SDUINO
 #define MAPLE_Mini
 #define CMP_CC1101
