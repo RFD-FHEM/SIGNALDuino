@@ -148,13 +148,15 @@ void setup() {
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-#ifdef MAPLE_Mini
-  TIM_TypeDef *Instance = TIM1;
-  HardwareTimer *MyTim = new HardwareTimer(Instance);
-  MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
-  MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
-  MyTim->attachInterrupt(cronjob);
-  MyTim->resume();
+#if ARDUINO < 100 // to compile with PlatformIO
+	#ifdef MAPLE_Mini
+		TIM_TypeDef *Instance = TIM1;
+		HardwareTimer *MyTim = new HardwareTimer(Instance);
+		MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
+		MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
+		MyTim->attachInterrupt(cronjob);
+		MyTim->resume();
+	#endif
 #endif
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
