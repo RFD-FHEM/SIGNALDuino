@@ -36,7 +36,7 @@ namespace cc1101 {
 	*/
 
 #ifdef MAPLE_Mini
-	const uint8_t radioCsPin[] = {31, 12, 15, 3};
+	const uint8_t radioCsPin[] = {31, 12, 15, 3}; // PINs from Circuit board for 4 cc110x
 #else
 	#define csPin   SS     // CSN  out
 	#define mosiPin MOSI   // MOSI out
@@ -129,7 +129,7 @@ namespace cc1101 {
 	#define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }     // wait until SPI MISO line goes low
 
 #ifdef MAPLE_Mini
-	#define cc1101_Select()   digitalLow(radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, different for each bank
+	#define cc1101_Select()   digitalLow(radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
 	#define cc1101_Deselect() digitalHigh(radioCsPin[radionr])
 #else
 	#define cc1101_Select()   digitalLow(csPin)                // select (SPI) CC1101
