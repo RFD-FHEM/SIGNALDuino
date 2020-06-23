@@ -44,12 +44,12 @@
 #define PROGNAME               " SIGNALduino_STM "
 
 #ifdef MAPLE_Mini
-  #define BAUDRATE               115200
-  #define FIFO_LENGTH            170
-  #define defSelRadio 1  // B
-  const uint8_t pinReceive[] = {11, 18, 16, 14};
-  uint8_t radionr = defSelRadio;
-  uint8_t radio_bank[4];
+	#define BAUDRATE               115200
+	#define FIFO_LENGTH            170
+	#define defSelRadio 1                           // B
+	const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant from array, Circuit board for 4 cc110x
+	uint8_t radionr = defSelRadio;
+	uint8_t radio_bank[4];
 #endif
 
 // EEProm Address
@@ -107,7 +107,7 @@ char IB_1[14]; // Input Buffer one - capture commands
 
 void setup() {
 #ifdef MAPLE_Mini
-  pinAsOutput(PIN_WIZ_RST);
+	pinAsOutput(PIN_WIZ_RST);
 #endif
 
 	Serial.begin(BAUDRATE);
@@ -123,32 +123,32 @@ void setup() {
 	//wdt_reset();
 
 	#ifdef CMP_CC1101
-	cc1101::setup();
+		cc1101::setup();
 	#endif
-  	initEEPROM();
+	initEEPROM();
 	#ifdef CMP_CC1101
-	DBG_PRINT(FPSTR(TXT_CCINIT));
+		DBG_PRINT(FPSTR(TXT_CCINIT));
 
-	cc1101::CCinit();					 // CC1101 init
-	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
+		cc1101::CCinit();                   // CC1101 init
+		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
 
 
 
-	if (hasCC1101)
-	{
-		//DBG_PRINTLN("CC1101 found");
-		DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
-		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	} else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback
-	}
+		if (hasCC1101)
+		{
+			//DBG_PRINTLN("CC1101 found");
+			DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
+			musterDec.setRSSICallback(&cc1101::getRSSI);          // Provide the RSSI Callback
+		} else {
+			musterDec.setRSSICallback(&rssiCallback);             // Provide the RSSI Callback
+		}
 	#endif
 
 	pinAsOutput(PIN_SEND);
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-#if defined(ARDUINO) && ARDUINO <= 100 // to compile with PlatformIO
+#if defined(ARDUINO) && ARDUINO <= 100                            // to compile with PlatformIO
 	#ifdef MAPLE_Mini
 		TIM_TypeDef *Instance = TIM1;
 		HardwareTimer *MyTim = new HardwareTimer(Instance);
@@ -170,8 +170,8 @@ void setup() {
 #ifdef CMP_CC1101
 	if (!hasCC1101 || cc1101::regCheck()) {
 #endif
-		enableReceive();
-		DBG_PRINT(FPSTR(TXT_RECENA));
+	enableReceive();
+	DBG_PRINT(FPSTR(TXT_RECENA));
 #ifdef CMP_CC1101
 	}
 	else {
@@ -186,19 +186,19 @@ void setup() {
 
 
 #ifdef MAPLE_Mini /* MR neeed ??? */
-#if ARDUINO < 190
-void cronjob(HardwareTimer*) {
+	#if ARDUINO < 190
+		void cronjob(HardwareTimer*) {
+	#else
+		void cronjob() {
+	#endif
+	noInterrupts();
 #else
-void cronjob() {
-#endif
-  noInterrupts();
-#else
-void cronjob() {
-  cli();
+	void cronjob() {
+	cli();
 #endif
 
-  static uint8_t cnt = 0;  
-	const unsigned long  duration = micros() - lastTime;
+static uint8_t cnt = 0;  
+const unsigned long  duration = micros() - lastTime;
 
 /* MR Timer1 failed
 	Timer1.setPeriod(32001);
@@ -216,16 +216,16 @@ void cronjob() {
 		Timer1.setPeriod(maxPulse-duration+16);
 	 }
   */
-  
+
 #ifdef PIN_LED_INVERSE
-	 digitalWrite(PIN_LED, !blinkLED);
+	digitalWrite(PIN_LED, !blinkLED);
 #else
-	 digitalWrite(PIN_LED, blinkLED);
+	digitalWrite(PIN_LED, blinkLED);
 #endif
-	 blinkLED = false;
+blinkLED = false;
 
 #ifdef MAPLE_Mini
-  interrupts();
+	interrupts();
 #endif
 
 	 // Infrequent time uncritical jobs (~ every 2 hours)
@@ -235,14 +235,14 @@ void cronjob() {
 
 
 uint16_t getBankOffset(uint8_t tmpBank) {
-  uint16_t bankOffs;
-  if (tmpBank == 0) {
-    bankOffs = 0;
-  }
-  else {
-    bankOffs = 0x100 + ((tmpBank - 1) * 0x40);
-  }
-  return bankOffs;
+	uint16_t bankOffs;
+	if (tmpBank == 0) {
+		bankOffs = 0;
+	}
+	else {
+	bankOffs = 0x100 + ((tmpBank - 1) * 0x40);
+	}
+	return bankOffs;
 }
 
 
@@ -251,32 +251,30 @@ void loop() {
 	static int aktVal=0;
 	bool state;
 
-  uint8_t tmpBank;
-  uint16_t bankoff;
+	uint8_t tmpBank;
+	uint16_t bankoff;
 
-  #ifdef MAPLE_WATCHDOG
-    IWatchdog.reload();
-  #elif WATCHDOG
-    wdt_reset();
-  #endif
+	#ifdef MAPLE_WATCHDOG
+		IWatchdog.reload();
+	#elif WATCHDOG
+		wdt_reset();
+	#endif
 
-  for (radionr = 0; radionr < 4; radionr++) {
-    if (radio_bank[radionr] > 9) {
-      continue;
-    }
-    tmpBank = radio_bank[radionr];
-    bankoff = getBankOffset(tmpBank);
+	for (radionr = 0; radionr < 4; radionr++) {
+		if (radio_bank[radionr] > 9) {
+			continue;
+		}
+		tmpBank = radio_bank[radionr];
+		bankoff = getBankOffset(tmpBank);
 
-	  //wdt_reset();
-	  while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
-		  aktVal=FiFo.dequeue();
-		  state = musterDec.decode(&aktVal);
-		  if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-	  }
-  }
-
- }
-
+		//wdt_reset();
+		while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
+			aktVal=FiFo.dequeue();
+			state = musterDec.decode(&aktVal);
+			if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+		}
+	}
+}
 
 
 
@@ -293,22 +291,12 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 	return MSG_PRINTER.write(buf,len);
 
 	//serverClient.write("test");
-
 }
 
 
 
 
-
-
-
-
 //================================= Serielle verarbeitung ======================================
-
-
-
-
-
 void serialEvent()
 {
 	static uint8_t idx = 0;
