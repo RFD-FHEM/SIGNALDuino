@@ -277,14 +277,14 @@ namespace commands {
 					MSG_PRINT(" :");
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
-						sprintf(b, " %02X", val);
+						sprintf(b, "%02X", val);
 						MSG_PRINT(b);
 					}
 				}
 				else {
 					MSG_PRINT(" = ");
 					const uint8_t val = EEPROM.read(reg);
-					sprintf(b, " %02X", val);
+					sprintf(b, "%02X", val);
 					MSG_PRINT(b);
 					//printHex2(EEPROM.read(reg));
 				}
