@@ -23,9 +23,11 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 ### Tested microcontrollers
 
 * Arduino Nano
+* Arduino Pro Mini
 * ESP32 (ESP32-WROOM-32 / ESP32-WROOM-32D)
 * ESP8266
 * RadinoCC1101
+* STM32 F103CBT6 (Maple Mini, bootloader v1.0)
 
 ### ESP32 Notes
 

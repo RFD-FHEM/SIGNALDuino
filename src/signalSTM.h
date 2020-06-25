@@ -245,6 +245,7 @@ blinkLED = false;
 	/*
 		* note use now !
 		* these are preparations if the project can be expanded to 4 cc110x
+
 uint16_t getBankOffset(uint8_t tmpBank) {
 	uint16_t bankOffs;
 	if (tmpBank == 0) {
@@ -256,6 +257,7 @@ uint16_t getBankOffset(uint8_t tmpBank) {
 	return bankOffs;
 }
 
+	*/
 
 void loop() {
 
