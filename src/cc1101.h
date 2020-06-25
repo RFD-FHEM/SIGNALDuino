@@ -36,7 +36,11 @@ namespace cc1101 {
 	*/
 
 #ifdef MAPLE_Mini
-	const uint8_t radioCsPin[] = {31, 12, 15, 3}; // PINs from Circuit board for 4 cc110x
+	const uint8_t radioCsPin[] = {31, 12, 15, 3};  // PINs from Circuit board for 4 cc110x
+	#define csPin   12                             // CSN  out - SPI2 , default PIN radionbank 1 -> compatible with other project
+	#define mosiPin 28                             // MOSI out - SPI2
+	#define misoPin 29                             // MISO in  - SPI2
+	#define sckPin  30                             // SCLK out - SPI2
 #else
 	#define csPin   SS     // CSN  out
 	#define mosiPin MOSI   // MOSI out

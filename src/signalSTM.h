@@ -35,7 +35,7 @@
 #include "compile_config.h"
 
 
-#define PROGVERS               "3.4.0-dev_20200619"
+#define PROGVERS               "3.4.0-dev_20200625"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
@@ -46,7 +46,7 @@
 #ifdef MAPLE_Mini
 	#define BAUDRATE               115200
 	#define FIFO_LENGTH            170
-	#define defSelRadio 1                           // B
+	#define defSelRadio 1                           // variant from array, Circuit board for 4 cc110x - standard value 1 = B
 	const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant from array, Circuit board for 4 cc110x
 	uint8_t radionr = defSelRadio;
 	uint8_t radio_bank[4];
@@ -128,6 +128,14 @@ void setup() {
 	initEEPROM();
 	#ifdef CMP_CC1101
 		DBG_PRINT(FPSTR(TXT_CCINIT));
+	// for variant Circuit board for 4 cc110x and compatible version with 1 cc110x
+	#if defined(DEBUG) && defined (MAPLE_Mini)
+		DBG_PRINT(FPSTR(("(misoPin="))); DBG_PRINT((misoPin));
+		DBG_PRINT(FPSTR((" mosiPin="))); DBG_PRINT((mosiPin));
+		DBG_PRINT(FPSTR((" sckPin="))); DBG_PRINT((sckPin));
+		DBG_PRINT(FPSTR((" csPin="))); DBG_PRINT((csPin));
+		DBG_PRINTLN(")");
+	#endif
 
 		cc1101::CCinit();                   // CC1101 init
 		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
@@ -260,6 +268,10 @@ void loop() {
 		wdt_reset();
 	#endif
 
+	/*
+		* note use now !
+		* these are preparations if the project can be expanded to 4 cc110x
+
 	for (radionr = 0; radionr < 4; radionr++) {
 		if (radio_bank[radionr] > 9) {
 			continue;
@@ -268,12 +280,16 @@ void loop() {
 		bankoff = getBankOffset(tmpBank);
 
 		//wdt_reset();
+	*/
 		while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 			aktVal=FiFo.dequeue();
 			state = musterDec.decode(&aktVal);
 			if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 		}
+
+	/*
 	}
+	*/
 }
 
 

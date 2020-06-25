@@ -1,10 +1,6 @@
 ﻿#include "cc1101.h"
 
 #ifdef MAPLE_Mini
-	#define mosiPin 28   // MOSI out - SPI2
-	#define misoPin 29   // MISO in  - SPI2
-	#define sckPin  30   // SCLK out - SPI2
-
 	SPIClass SPI_2(mosiPin, misoPin, sckPin);
 #endif
 
