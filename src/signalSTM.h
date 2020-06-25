@@ -46,10 +46,10 @@
 #ifdef MAPLE_Mini
 	#define BAUDRATE               115200
 	#define FIFO_LENGTH            170
-	#define defSelRadio 1                           // variant from array, Circuit board for 4 cc110x - standard value 1 = B
-	const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant from array, Circuit board for 4 cc110x
-	uint8_t radionr = defSelRadio;
-	uint8_t radio_bank[4];
+	#define defSelRadio 1                           // variant -> Circuit board for 4 cc110x - standard value 1 = B
+	const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for 4 cc110x
+	uint8_t radionr = defSelRadio;                  // variant -> Circuit board for 4 cc110x
+	uint8_t radio_bank[4];                          // variant -> Circuit board for 4 cc110x
 #endif
 
 // EEProm Address
@@ -76,12 +76,12 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 #include "signalDecoder.h"
 
 #ifdef MAPLE_Mini
-  #include <malloc.h>
-  extern char _estack;
-  extern char _Min_Stack_Size;
-  static char *ramend = &_estack;
-  static char *minSP = (char*)(ramend - &_Min_Stack_Size);
-  extern "C" char *sbrk(int i);
+	#include <malloc.h>
+	extern char _estack;
+	extern char _Min_Stack_Size;
+	static char *ramend = &_estack;
+	static char *minSP = (char*)(ramend - &_Min_Stack_Size);
+	extern "C" char *sbrk(int i);
 #endif
 
 #include "commands.h"
@@ -205,7 +205,7 @@ void setup() {
 	cli();
 #endif
 
-static uint8_t cnt = 0;  
+static uint8_t cnt = 0;
 const unsigned long  duration = micros() - lastTime;
 
 /* MR Timer1 failed
@@ -218,12 +218,12 @@ const unsigned long  duration = micros() - lastTime;
 		}
 		FiFo.enqueue(sDuration);
 		lastTime = micros();
-	 } 
+	} 
 /* MR Timer1 failed
 	 else if (duration > 10000) {
 		Timer1.setPeriod(maxPulse-duration+16);
 	 }
-  */
+*/
 
 #ifdef PIN_LED_INVERSE
 	digitalWrite(PIN_LED, !blinkLED);
@@ -236,12 +236,15 @@ blinkLED = false;
 	interrupts();
 #endif
 
-	 // Infrequent time uncritical jobs (~ every 2 hours)
-	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
-		 getUptime();
+	// Infrequent time uncritical jobs (~ every 2 hours)
+	if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+		getUptime();
 }
 
 
+	/*
+		* note use now !
+		* these are preparations if the project can be expanded to 4 cc110x
 uint16_t getBankOffset(uint8_t tmpBank) {
 	uint16_t bankOffs;
 	if (tmpBank == 0) {
