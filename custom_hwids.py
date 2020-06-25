@@ -6,5 +6,5 @@ board_config = env.BoardConfig()
 # https://docs.platformio.org/en/latest/projectconf/advanced_scripting.html
 board_config.update("build.hwids", [
   ["0x0483", "0x0003"],  # 1st pair
-  ["0x0483", "0x0004"].  # 2nd pair, etc.
+  ["0x0483", "0x0004"]   # 2nd pair, etc.
 ])
