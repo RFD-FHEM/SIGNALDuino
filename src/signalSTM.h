@@ -264,19 +264,18 @@ void loop() {
 	static int aktVal=0;
 	bool state;
 
-	uint8_t tmpBank;
-	uint16_t bankoff;
-
 	#ifdef MAPLE_WATCHDOG
 		IWatchdog.reload();
 	#elif WATCHDOG
 		wdt_reset();
 	#endif
 
-	/*
-		* note use now !
-		* these are preparations if the project can be expanded to 4 cc110x
+/*
+	* note use now !
+	* these are preparations if the project can be expanded to 4 cc110x
 
+	uint8_t tmpBank;
+	uint16_t bankoff;
 	for (radionr = 0; radionr < 4; radionr++) {
 		if (radio_bank[radionr] > 9) {
 			continue;
@@ -285,16 +284,17 @@ void loop() {
 		bankoff = getBankOffset(tmpBank);
 
 		//wdt_reset();
-	*/
+*/
 		while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
 			aktVal=FiFo.dequeue();
 			state = musterDec.decode(&aktVal);
 			if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
 		}
 
-	/*
+/*
 	}
-	*/
+*/
+
 }
 
 
