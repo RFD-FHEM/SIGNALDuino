@@ -35,7 +35,7 @@
 	#define CMP_CC1101
 #endif
 
-#ifdef ARDUINO_MAPLEMINI_F103CB           // STM32 F103CBT6
+#if defined(ARDUINO_MAPLEMINI_F103CB) || defined(STM32F103xB)          // STM32 F103CBT6
 	#define MAPLE_Mini 1
 #endif
 

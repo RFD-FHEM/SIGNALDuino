@@ -352,13 +352,14 @@ void serialEvent()
 	}
 }
 
-/* MR not in STM ???
-int freeRam () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 
- }
-*/
+
+int freeRam () {
+	char *heapend = (char*)sbrk(0);
+	char * stack_ptr = (char*)__get_MSP();
+	struct mallinfo mi = mallinfo();
+	return (((stack_ptr < minSP) ? stack_ptr : minSP) - heapend + mi.fordblks);
+}
+
 
 #endif
