@@ -107,6 +107,16 @@ jobs:
     - 
      stage: deploy
      env:
+       - BOARD=ESP32
+     before_script:
+           - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" --save-prefs
+           - arduino --install-boards esp32:esp32
+           - arduino --board esp32:esp32:esp32:FlashMode=qio,FlashFreq=80 --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
        - BOARD=ESP8266
        - RECEIVER=cc1101
 #       - IDE_VERSION=1.8.5
