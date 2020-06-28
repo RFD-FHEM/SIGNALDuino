@@ -203,7 +203,7 @@ namespace commands {
 #ifdef DEBUG
 			MSG_PRINT(F(" DBG"));
 #endif
-#ifdef MAPLE_WATCHDOG
+#ifdef WATCHDOG_STM32
 	if (watchRes) {
 		MSG_PRINT(F(" wr"));
 	}

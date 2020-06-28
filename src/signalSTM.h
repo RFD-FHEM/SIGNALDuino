@@ -28,7 +28,7 @@ uint8_t radionr = defSelRadio;                  // variant -> Circuit board for 
 uint8_t radio_bank[4];                          // variant -> Circuit board for 4 cc110x
 
 
-#ifdef MAPLE_WATCHDOG
+#ifdef WATCHDOG_STM32
 	#include <IWatchdog.h>
 	bool watchRes = false;
 #endif
@@ -96,7 +96,7 @@ void setup() {
 		; // wait for serial port to connect. Needed for native USB
 	}
 
-	#ifdef MAPLE_WATCHDOG
+	#ifdef WATCHDOG_STM32
 		if (IWatchdog.isReset(true)) {
 			MSG_PRINTLN(F("Watchdog caused a reset"));
 			watchRes = true;
@@ -251,7 +251,7 @@ void loop() {
 	static int aktVal=0;
 	bool state;
 
-	#ifdef MAPLE_WATCHDOG
+	#ifdef WATCHDOG_STM32
 		IWatchdog.reload();
 	#elif WATCHDOG
 		wdt_reset();

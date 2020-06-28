@@ -12,7 +12,7 @@
 //#define DEBUG
 
 //Enable MAPLE_Mini Watchdog option here:
-//#define MAPLE_WATCHDOG
+//#define WATCHDOG_STM32
 
 /*
 
@@ -38,8 +38,8 @@
 
 #if defined(ARDUINO_MAPLEMINI_F103CB) || defined(STM32F103xB)          // STM32 F103CBT6
 	#define MAPLE_Mini 1
-	#ifdef MAPLE_WATCHDOG
-		#define MAPLE_WATCHDOG 1
+	#ifdef WATCHDOG_STM32
+		#define WATCHDOG_STM32 1
 	#endif
 #endif
 
