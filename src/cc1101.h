@@ -36,6 +36,9 @@ namespace cc1101 {
 	*/
 
 #ifdef MAPLE_Mini
+/*
+	https://forum.fhem.de/index.php/topic,106278.0.html | https://forum.fhem.de/index.php/topic,109220.0.html
+*/
 	const uint8_t radioCsPin[] = {31, 12, 15, 3};  // PINs from Circuit board for 4 cc110x
 	#define csPin   12                             // CSN  out - SPI2 , default PIN radionbank 1 -> compatible with other project
 	#define mosiPin 28                             // MOSI out - SPI2
