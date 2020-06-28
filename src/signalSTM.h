@@ -1,6 +1,14 @@
 #pragma once
 
-#if !defined(__AVR__) && defined(ARDUINO_MAPLEMINI_F103CB) || defined(STM32F103xB)
+#ifdef ARDUINO_ARCH_STM32
+/*
+
+*   notes different boards:
+*   https://github.com/firmata/arduino/blob/master/Boards.h
+*   https://danieleff.github.io/STM32GENERIC/build_macros/
+
+*/
+
 #include "compile_config.h"
 
 /*

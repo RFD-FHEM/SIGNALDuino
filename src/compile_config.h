@@ -36,7 +36,7 @@
 	#define CMP_CC1101
 #endif
 
-#if defined(ARDUINO_MAPLEMINI_F103CB) || defined(STM32F103xB)          // STM32 F103CBT6
+#ifdef ARDUINO_MAPLEMINI_F103CB           // STM32F103CBT6
 	#define MAPLE_Mini 1
 	#ifdef WATCHDOG_STM32
 		#define WATCHDOG_STM32 1
