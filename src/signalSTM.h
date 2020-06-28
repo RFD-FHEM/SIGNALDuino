@@ -10,21 +10,29 @@
 
 *   Integration for compatibility with a similar project by Ralf9
 
+*   tested hardware:
+*    - Maple Mini STM32F103CBT6
+
 */
 
-#define PROGNAME               " SIGNALduino_STM "
+#define PROGNAME               " SIGNALduino_STM32 "
 #define PROGVERS               "3.4.0-dev_20200626"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
-#ifdef MAPLE_Mini
-	#define BAUDRATE               115200
-	#define FIFO_LENGTH            170
-	#define defSelRadio 1                           // variant -> Circuit board for 4 cc110x - standard value 1 = B
-	const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for 4 cc110x
-	uint8_t radionr = defSelRadio;                  // variant -> Circuit board for 4 cc110x
-	uint8_t radio_bank[4];                          // variant -> Circuit board for 4 cc110x
+#define BAUDRATE               115200
+#define FIFO_LENGTH            170
+#define defSelRadio 1                           // variant -> Circuit board for 4 cc110x - standard value 1 = B
+const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for 4 cc110x
+uint8_t radionr = defSelRadio;                  // variant -> Circuit board for 4 cc110x
+uint8_t radio_bank[4];                          // variant -> Circuit board for 4 cc110x
+
+
+#ifdef MAPLE_WATCHDOG
+	#include <IWatchdog.h>
+	bool watchRes = false;
 #endif
+
 
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
@@ -49,14 +57,14 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 #include "bitstore.h"
 #include "signalDecoder.h"
 
-#ifdef MAPLE_Mini
-	#include <malloc.h>
-	extern char _estack;
-	extern char _Min_Stack_Size;
-	static char *ramend = &_estack;
-	static char *minSP = (char*)(ramend - &_Min_Stack_Size);
-	extern "C" char *sbrk(int i);
-#endif
+
+#include <malloc.h>
+extern char _estack;
+extern char _Min_Stack_Size;
+static char *ramend = &_estack;
+static char *minSP = (char*)(ramend - &_Min_Stack_Size);
+extern "C" char *sbrk(int i);
+
 
 #include "commands.h"
 #include "functions.h"
@@ -80,14 +88,27 @@ char IB_1[14]; // Input Buffer one - capture commands
 
 
 void setup() {
-#ifdef MAPLE_Mini
+
 	pinAsOutput(PIN_WIZ_RST);
-#endif
 
 	Serial.begin(BAUDRATE);
 	while (!Serial) {
 		; // wait for serial port to connect. Needed for native USB
 	}
+
+	#ifdef MAPLE_WATCHDOG
+		if (IWatchdog.isReset(true)) {
+			MSG_PRINTLN(F("Watchdog caused a reset"));
+			watchRes = true;
+		}
+		else {
+			watchRes = false;
+		}
+		IWatchdog.begin(20000000);	// Init the watchdog timer with 20 seconds timeout
+		if (IWatchdog.isEnabled()) {
+			MSG_PRINTLN(F("Watchdog enabled"));
+		}
+#endif
 
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
@@ -102,18 +123,17 @@ void setup() {
 	initEEPROM();
 	#ifdef CMP_CC1101
 		DBG_PRINT(FPSTR(TXT_CCINIT));
-	// for variant Circuit board for 4 cc110x and compatible version with 1 cc110x
-	#if defined(DEBUG) && defined (MAPLE_Mini)
-		DBG_PRINT(FPSTR(("(misoPin="))); DBG_PRINT((misoPin));
-		DBG_PRINT(FPSTR((" mosiPin="))); DBG_PRINT((mosiPin));
-		DBG_PRINT(FPSTR((" sckPin="))); DBG_PRINT((sckPin));
-		DBG_PRINT(FPSTR((" csPin="))); DBG_PRINT((csPin));
-		DBG_PRINTLN(")");
-	#endif
+		// for variant Circuit board for 4 cc110x and compatible version with 1 cc110x
+		#if defined(DEBUG)
+			DBG_PRINT(FPSTR(("(misoPin="))); DBG_PRINT((misoPin));
+			DBG_PRINT(FPSTR((" mosiPin="))); DBG_PRINT((mosiPin));
+			DBG_PRINT(FPSTR((" sckPin="))); DBG_PRINT((sckPin));
+			DBG_PRINT(FPSTR((" csPin="))); DBG_PRINT((csPin));
+			DBG_PRINTLN(")");
+		#endif
 
 		cc1101::CCinit();                   // CC1101 init
 		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
-
 
 
 		if (hasCC1101)
@@ -131,14 +151,12 @@ void setup() {
 	delay(50);
 
 #if defined(ARDUINO) && ARDUINO <= 100                            // to compile with PlatformIO
-	#ifdef MAPLE_Mini
-		TIM_TypeDef *Instance = TIM1;
-		HardwareTimer *MyTim = new HardwareTimer(Instance);
-		MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
-		MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
-		MyTim->attachInterrupt(cronjob);
-		MyTim->resume();
-	#endif
+	TIM_TypeDef *Instance = TIM1;
+	HardwareTimer *MyTim = new HardwareTimer(Instance);
+	MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
+	MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
+	MyTim->attachInterrupt(cronjob);
+	MyTim->resume();
 #endif
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
@@ -167,17 +185,13 @@ void setup() {
 
 
 
-#ifdef MAPLE_Mini /* MR neeed ??? */
-	#if ARDUINO < 190
-		void cronjob(HardwareTimer*) {
-	#else
-		void cronjob() {
-	#endif
-	noInterrupts();
+#if ARDUINO < 190                   /* MR neeed ??? - ToDo more information */
+	void cronjob(HardwareTimer*) {
 #else
 	void cronjob() {
-	cli();
 #endif
+noInterrupts();
+
 
 static uint8_t cnt = 0;
 const unsigned long  duration = micros() - lastTime;
@@ -206,9 +220,8 @@ const unsigned long  duration = micros() - lastTime;
 #endif
 blinkLED = false;
 
-#ifdef MAPLE_Mini
-	interrupts();
-#endif
+interrupts();
+
 
 	// Infrequent time uncritical jobs (~ every 2 hours)
 	if (cnt++ == 0)  // if cnt is 0 at start or during rollover

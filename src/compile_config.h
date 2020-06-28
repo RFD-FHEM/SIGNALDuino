@@ -11,7 +11,8 @@
 //Enable debug option here:
 //#define DEBUG
 
-
+//Enable MAPLE_Mini Watchdog option here:
+//#define MAPLE_WATCHDOG 1
 
 /*
 

@@ -27,7 +27,7 @@ extern volatile bool blinkLED;
 namespace commands {
 
 
-	
+
 
 
 	inline void getPing()
@@ -202,7 +202,12 @@ namespace commands {
 #endif
 #ifdef DEBUG
 			MSG_PRINT(F(" DBG "));
-#endif			
+#endif
+#ifdef MAPLE_WATCHDOG
+	if (watchRes) {
+		MSG_PRINT(F(" wr "));
+	}
+#endif
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
 		case cmd_freeRam:
