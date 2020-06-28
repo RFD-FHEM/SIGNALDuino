@@ -158,14 +158,12 @@ void setup() {
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-#if defined(ARDUINO) && ARDUINO <= 100                            // to compile with PlatformIO
 	TIM_TypeDef *Instance = TIM1;
 	HardwareTimer *MyTim = new HardwareTimer(Instance);
 	MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
 	MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
 	MyTim->attachInterrupt(cronjob);
 	MyTim->resume();
-#endif
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -193,10 +191,10 @@ void setup() {
 
 
 
-#if ARDUINO < 190                   /* MR neeed ??? - ToDo more information */
+#if ARDUINO < 190                   /* MR - ToDo more information - ARDUINO IDE right function, LED blink, PlatformIO error */
 	void cronjob(HardwareTimer*) {
 #else
-	void cronjob() {
+	void cronjob() {                /* MR - ToDo more information - PlatformIO nothing function, LED still */
 #endif
 noInterrupts();
 
