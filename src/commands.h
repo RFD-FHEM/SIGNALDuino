@@ -201,11 +201,11 @@ namespace commands {
 			}
 #endif
 #ifdef DEBUG
-			MSG_PRINT(F(" DBG "));
+			MSG_PRINT(F(" DBG"));
 #endif
 #ifdef MAPLE_WATCHDOG
 	if (watchRes) {
-		MSG_PRINT(F(" wr "));
+		MSG_PRINT(F(" wr"));
 	}
 #endif
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
