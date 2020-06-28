@@ -1,5 +1,8 @@
 #pragma once
 
+#if !defined(__AVR__) && defined(ARDUINO_MAPLEMINI_F103CB) || defined(STM32F103xB)
+#include "compile_config.h"
+
 /*
 
 *   developer:
@@ -8,12 +11,6 @@
 *   Integration for compatibility with a similar project by Ralf9
 
 */
-
-
-// See config flags in compile_config.h:
-#include "compile_config.h"
-
-#if !defined(__AVR__) && defined(MAPLE_Mini)
 
 #define PROGNAME               " SIGNALduino_STM "
 #define PROGVERS               "3.4.0-dev_20200626"
