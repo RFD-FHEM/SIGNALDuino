@@ -1,34 +1,11 @@
 #pragma once
 
 /*
-*   RF_RECEIVER v3.4.0 for Arduino
-*   Sketch to use an arduino as a receiver/sending device for digital signals
-*
-*   The Sketch can also encode and send data via a transmitter,
-*   while only PT2262 type-signals for Intertechno devices are implemented in the sketch,
-*   there is an option to send almost any data over a send raw interface
-*   2014-2015  N.Butzek, S.Butzek
-*   2016-2018 S.Butzek
 
-*   This software focuses on remote sensors like weather sensors (temperature,
-*   humidity Logilink, TCM, Oregon Scientific, ...), remote controlled power switches
-*   (Intertechno, TCM, ARCtech, ...) which use encoder chips like PT2262 and
-*   EV1527-type and manchester encoder to send information in the 433MHz Band.
-*   But the sketch will also work for infrared or other medias. Even other frequencys
-*   can be used
-*
-*   This program is free software: you can redistribute it and/or modify
-*   it under the terms of the GNU General Public License as published by
-*   the Free Software Foundation, either version 3 of the License, or
-*   (at your option) any later version.
-*
-*   This program is distributed in the hope that it will be useful,
-*   but WITHOUT ANY WARRANTY; without even the implied warranty of
-*   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*   GNU General Public License for more details.
-*
-*   You should have received a copy of the GNU General Public License
-*   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*   developer:
+*   2020 S.Butzek, HomeAutoUser, elektron-bbs
+
+*   Integration for compatibility with a similar project by Ralf9
 
 */
 
