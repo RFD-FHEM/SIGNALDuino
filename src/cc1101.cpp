@@ -71,7 +71,7 @@ uint8_t cc1101::sendSPI(const uint8_t val) {        // send byte via SPI
 	return SPDR;
 #else
 	#ifdef MAPLE_Mini
-		return SPI_2.transfer(val);
+		return SPI_2.transfer(val);                 // transfer use SPI2 on MAPLE_Mini board
 	#else
 		return SPI.transfer(val);
 	#endif
