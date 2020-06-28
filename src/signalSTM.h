@@ -253,8 +253,6 @@ void loop() {
 
 	#ifdef WATCHDOG_STM32
 		IWatchdog.reload();
-	#elif WATCHDOG
-		wdt_reset();
 	#endif
 
 /*
