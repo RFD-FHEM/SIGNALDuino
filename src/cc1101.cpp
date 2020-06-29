@@ -290,17 +290,23 @@ void cc1101::setup()
 	digitalLow(mosiPin);
 #elif ARDUINO_MAPLEMINI_F103CB
 	// Setup SPI 2
-	SPI_2.begin();                     //Initialize the SPI_2 port.
+	SPI_2.begin();                     // Initialize the SPI_2 port.
 	SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
 
+	/* these are preparations if the project can be expanded to 4 cc110x
 	pinAsOutput(radioCsPin[0]);
 	digitalHigh(radioCsPin[0]);
+	*/
+
 	pinAsOutput(radioCsPin[1]);
 	digitalHigh(radioCsPin[1]);
+
+	/* these are preparations if the project can be expanded to 4 cc110x
 	pinAsOutput(radioCsPin[2]);
 	digitalHigh(radioCsPin[2]);
 	pinAsOutput(radioCsPin[3]);
 	digitalHigh(radioCsPin[3]);
+	*/
 #else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
