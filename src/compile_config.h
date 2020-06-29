@@ -2,17 +2,18 @@
 
 
 // Config flags for compiling correct options / boards Define only one!
-// nothing define                                                // boards without CC1101 (example, ESP8266, ESP32, nano)
+// nothing to define                                             // boards without CC1101 (example, ESP8266, ESP32, nano)
 //#define CMP_CC1101
 //#define ARDUINO_ATMEGA328P_MINICUL 1                           // minicul with CC1101
 //#define ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101 1;  // radino with CC1101
 //#define OTHER_BOARD_WITH_CC1101  1                             // boards with CC1101 (example, ESP8266, ESP32, Maple Mini ...)
+//#define MAPLE_Mini 1									 		 // MAPLE mini Board 
 
 //Enable debug option here:
 //#define DEBUG
 
 //Enable MAPLE_Mini Watchdog option here:
-//#define WATCHDOG_STM32
+//#define WATCHDOG_STM32 1
 
 /*
 
@@ -36,12 +37,15 @@
 	#define CMP_CC1101
 #endif
 
+
 #ifdef ARDUINO_MAPLEMINI_F103CB           // STM32F103CBT6
-	#define MAPLE_Mini 1
+/*	#define MAPLE_Mini 1
 	#ifdef WATCHDOG_STM32
-		#define WATCHDOG_STM32 1
-	#endif
+//		#define WATCHDOG_STM32 1
+	#endif 
+*/
 #endif
+
 
 #ifdef ESP8266
 
@@ -64,7 +68,7 @@
 		#define PIN_SEND              2   // gdo0Pin TX out
 		#define PIN_RECEIVE           3
 		#define PIN_MARK433           A0
-	#elif MAPLE_Mini
+	#elif defined(MAPLE_Mini)
 		#define PIN_LED              33
 		#define PIN_SEND             17   // gdo0 Pin TX out
 		#define PIN_RECEIVE          18   // gdo2

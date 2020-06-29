@@ -23,22 +23,18 @@
 
 */
 
-#define PROGNAME               " SIGNALduino_STM32 "
+#define PROGNAME               " SIGNALSTM32 "
 #define PROGVERS               "3.4.0-dev_20200626"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
 #define BAUDRATE               115200
 #define FIFO_LENGTH            170
-#define defSelRadio 1                           // variant -> Circuit board for 4 cc110x - standard value 1 = B
-const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for 4 cc110x
-uint8_t radionr = defSelRadio;                  // variant -> Circuit board for 4 cc110x
-uint8_t radio_bank[4];                          // variant -> Circuit board for 4 cc110x
-
-
-#ifdef WATCHDOG_STM32
-	#include <IWatchdog.h>
-	bool watchRes = false;
+#define defSelRadio 1                           // variant -> Circuit board for four connected cc110x devices - standard value 1 = B
+const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for four connected cc110x devices
+#ifdef MAPLE_Mini
+uint8_t radionr = defSelRadio;                  // variant -> Circuit board for four connected cc110x devices
+uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices
 #endif
 
 
@@ -56,47 +52,39 @@ void configSET();
 uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
-
-
-//Includes
-//#include <avr/wdt.h>
-#include "FastDelegate.h"
-#include "output.h"
-#include "bitstore.h"
-#include "signalDecoder.h"
-
-
-#include <malloc.h>
 extern char _estack;
 extern char _Min_Stack_Size;
 static char *ramend = &_estack;
 static char *minSP = (char*)(ramend - &_Min_Stack_Size);
 extern "C" char *sbrk(int i);
 
-
+//Includes
+#ifdef WATCHDOG_STM32
+	#include <IWatchdog.h>
+	bool watchRes = false;
+#endif
+#include "FastDelegate.h"
+#include "output.h"
+#include "bitstore.h"
+#include "signalDecoder.h"
+#include <malloc.h>
 #include "commands.h"
 #include "functions.h"
 #include "send.h"
 #include "SimpleFIFO.h"
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
-
-
 #include <EEPROM.h>
 #include "cc1101.h"
 
 volatile bool blinkLED = false;
-//String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 char IB_1[14]; // Input Buffer one - capture commands
 
-
-
-
+HardwareTimer *Timer1 = new HardwareTimer(TIM1);
 
 void setup() {
-
 	pinAsOutput(PIN_WIZ_RST);
 
 	Serial.begin(BAUDRATE);
@@ -108,8 +96,7 @@ void setup() {
 		if (IWatchdog.isReset(true)) {
 			MSG_PRINTLN(F("Watchdog caused a reset"));
 			watchRes = true;
-		}
-		else {
+		} else {
 			watchRes = false;
 		}
 		IWatchdog.begin(20000000);	// Init the watchdog timer with 20 seconds timeout
@@ -118,12 +105,9 @@ void setup() {
 		}
 #endif
 
-	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
 	// CC1101
-
-	//wdt_reset();
 
 	#ifdef CMP_CC1101
 		cc1101::setup();
@@ -143,7 +127,6 @@ void setup() {
 		cc1101::CCinit();                   // CC1101 init
 		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
 
-
 		if (hasCC1101)
 		{
 			//DBG_PRINTLN("CC1101 found");
@@ -158,12 +141,10 @@ void setup() {
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
-	TIM_TypeDef *Instance = TIM1;
-	HardwareTimer *MyTim = new HardwareTimer(Instance);
-	MyTim->setMode(2, TIMER_OUTPUT_COMPARE);
-	MyTim->setOverflow(31*1000, MICROSEC_FORMAT);
-	MyTim->attachInterrupt(cronjob);
-	MyTim->resume();
+	Timer1->setMode(2, TIMER_OUTPUT_COMPARE);
+	Timer1->setOverflow(32001, MICROSEC_FORMAT);
+	Timer1->attachInterrupt(cronjob);
+	Timer1->resume();
 
 	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
 	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
@@ -190,22 +171,18 @@ void setup() {
 }
 
 
+void cronjob() {                
+	noInterrupts();
+	static uint8_t cnt = 0;
+	const unsigned long  duration = micros() - lastTime;
+	long timerTime = maxPulse - duration;
 
-#if ARDUINO < 190                   /* MR - ToDo more information - ARDUINO IDE right function, LED blink, PlatformIO error */
-	void cronjob(HardwareTimer*) {
-#else
-	void cronjob() {                /* MR - ToDo more information - PlatformIO nothing function, LED still */
-#endif
-noInterrupts();
+	if (timerTime < 1000)
+	    timerTime=1000;
 
-
-static uint8_t cnt = 0;
-const unsigned long  duration = micros() - lastTime;
-
-/* MR Timer1 failed
-	Timer1.setPeriod(32001);
-*/
-	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
+	Timer1->pause();
+	Timer1->setOverflow(timerTime, MICROSEC_FORMAT);
+	if (duration > maxPulse) { //Auf Maximalwert pruefen.
 		int sDuration = maxPulse;
 		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			sDuration = -sDuration;
@@ -213,21 +190,15 @@ const unsigned long  duration = micros() - lastTime;
 		FiFo.enqueue(sDuration);
 		lastTime = micros();
 	} 
-/* MR Timer1 failed
-	 else if (duration > 10000) {
-		Timer1.setPeriod(maxPulse-duration+16);
-	 }
-*/
 
-#ifdef PIN_LED_INVERSE
-	digitalWrite(PIN_LED, !blinkLED);
-#else
-	digitalWrite(PIN_LED, blinkLED);
-#endif
-blinkLED = false;
+	#ifdef PIN_LED_INVERSE
+		digitalWrite(PIN_LED, !blinkLED);
+	#else
+		digitalWrite(PIN_LED, blinkLED);
+	#endif
+	blinkLED = false;
 
-interrupts();
-
+	interrupts();
 
 	// Infrequent time uncritical jobs (~ every 2 hours)
 	if (cnt++ == 0)  // if cnt is 0 at start or during rollover
@@ -236,7 +207,7 @@ interrupts();
 
 
 	/*
-		* note use now !
+		* not used now !
 		* these are preparations if the project can be expanded to 4 cc110x
 
 uint16_t getBankOffset(uint8_t tmpBank) {
@@ -262,7 +233,7 @@ void loop() {
 	#endif
 
 /*
-	* note use now !
+	* not used now !
 	* these are preparations if the project can be expanded to 4 cc110x
 
 	uint8_t tmpBank;
