@@ -61,16 +61,18 @@
 		#define digitalPinToInterrupt(p) ((p) == 0 ? 2 : ((p) == 1 ? 3 : ((p) == 2 ? 1 : ((p) == 3 ? 0 : ((p) == 7 ? 4 : NOT_AN_INTERRUPT)))))
 		#define PIN_MARK433           4
 		#define SS                    8  
-	#elif ARDUINO_ATMEGA328P_MINICUL      // 8Mhz 
+	#elif ARDUINO_ATMEGA328P_MINICUL    // 8Mhz 
 		#define PIN_LED               4
 		#define PIN_SEND              2   // gdo0Pin TX out
 		#define PIN_RECEIVE           3
 		#define PIN_MARK433           A0
 	#elif defined(MAPLE_Mini)
+		const uint8_t pinReceive[] = {11, 18, 16, 14};  // compatible to variant -> Circuit board for four connected cc110x devices
+
 		#define PIN_LED              33
-		#define PIN_SEND             17   // gdo0 Pin TX out
-		#define PIN_RECEIVE          18   // gdo2
-		#define PIN_WIZ_RST          27   // for LAN
+		#define PIN_SEND             17                 // gdo0 Pin TX out
+		#define PIN_RECEIVE          pinReceive[1]      // gdo2
+		#define PIN_WIZ_RST          27                 // for LAN
 	#elif defined(ESP8266)
 		#define PIN_RECEIVE          5    // D1
 		#define PIN_LED              16

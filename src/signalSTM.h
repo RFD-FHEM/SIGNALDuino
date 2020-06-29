@@ -24,17 +24,16 @@
 */
 
 #define PROGNAME               " SIGNALSTM32 "
-#define PROGVERS               "3.4.0-dev_20200626"
 #define VERSION_1               0x33
 #define VERSION_2               0x1d
 
 #define BAUDRATE               115200
 #define FIFO_LENGTH            170
-#define defSelRadio 1                           // variant -> Circuit board for four connected cc110x devices - standard value 1 = B
-const uint8_t pinReceive[] = {11, 18, 16, 14};  // variant -> Circuit board for four connected cc110x devices
+
 #ifdef MAPLE_Mini
-uint8_t radionr = defSelRadio;                  // variant -> Circuit board for four connected cc110x devices
-uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices
+	#define defSelRadio 1                           // variant -> Circuit board for four connected cc110x devices - standard value 1 = B
+	uint8_t radionr = defSelRadio;                  // variant -> Circuit board for four connected cc110x devices
+	uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices
 #endif
 
 
