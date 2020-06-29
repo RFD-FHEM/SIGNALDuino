@@ -38,9 +38,7 @@
 
 
 #ifdef ARDUINO_MAPLEMINI_F103CB           // STM32F103CBT6
-	#define MAPLE_Mini 1
-
-	//Enable MAPLE_Mini Watchdog option here:
+	//Enable ARDUINO_MAPLEMINI_F103CB Watchdog option here:
 	//#define WATCHDOG_STM32 1
 #endif
 
@@ -66,7 +64,7 @@
 		#define PIN_SEND              2   // gdo0Pin TX out
 		#define PIN_RECEIVE           3
 		#define PIN_MARK433           A0
-	#elif defined(MAPLE_Mini)
+	#elif ARDUINO_MAPLEMINI_F103CB
 		const uint8_t pinReceive[] = {11, 18, 16, 14};  // compatible to variant -> Circuit board for four connected cc110x devices
 
 		#define PIN_LED              33
@@ -101,7 +99,7 @@
 		#define PIN_LED              2    // D2  | G2 (depending on type / clone / seller)
 		#define PIN_SEND             4    // D4  | G4 (depending on type / clone / seller) // gdo0Pin TX out
 		#define ETHERNET_PRINT
-	#elif defined(MAPLE_Mini)
+	#elif ARDUINO_MAPLEMINI_F103CB
 		#define PIN_LED              33
 		#define PIN_SEND             17   // gdo0 Pin TX out
 		#define PIN_RECEIVE          18   // gdo2

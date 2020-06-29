@@ -15,13 +15,12 @@
 
 extern char IB_1[14];
 
-// only MAPLE_Mini
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB    // only ARDUINO_MAPLEMINI_F103CB / MAPLE_Mini
 	extern uint8_t radionr;
 #endif
 
 
-#if defined(ESP8266) || defined(ESP32) || defined(MAPLE_Mini)
+#if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_MAPLEMINI_F103CB)
 #include <SPI.h>
 #endif
 namespace cc1101 {
@@ -35,7 +34,7 @@ namespace cc1101 {
 	#endif
 	*/
 
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
 /*
 	https://forum.fhem.de/index.php/topic,106278.0.html | https://forum.fhem.de/index.php/topic,109220.0.html
 */
@@ -135,7 +134,7 @@ namespace cc1101 {
 	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }           // wait until SPI MISO line goes low
 	#define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }     // wait until SPI MISO line goes low
 
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
 	#define cc1101_Select()   digitalLow(radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
 	#define cc1101_Deselect() digitalHigh(radioCsPin[radionr])
 #else

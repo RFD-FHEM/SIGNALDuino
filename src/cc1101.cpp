@@ -1,6 +1,6 @@
 ﻿#include "cc1101.h"
 
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
 	SPIClass SPI_2(mosiPin, misoPin, sckPin);
 #endif
 
@@ -65,13 +65,13 @@ byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: pri
 }
 
 uint8_t cc1101::sendSPI(const uint8_t val) {        // send byte via SPI
-#if !defined(ESP8266) && !defined(ESP32) && !defined(MAPLE_Mini)
+#if !defined(ESP8266) && !defined(ESP32) && !defined(ARDUINO_MAPLEMINI_F103CB)
 	SPDR = val;                                     // transfer byte via SPI
 	while (!(SPSR & _BV(SPIF)));                    // wait until SPI operation is terminated
 	return SPDR;
 #else
-	#ifdef MAPLE_Mini
-		return SPI_2.transfer(val);                 // transfer use SPI2 on MAPLE_Mini board
+	#ifdef ARDUINO_MAPLEMINI_F103CB
+		return SPI_2.transfer(val);                 // transfer use SPI2 on ARDUINO_MAPLEMINI_F103CB board
 	#else
 		return SPI.transfer(val);
 	#endif
@@ -274,7 +274,7 @@ void cc1101::setup()
 	pinAsInput(misoPin);
 #endif
 
-#ifndef MAPLE_Mini
+#ifndef ARDUINO_MAPLEMINI_F103CB
 	pinAsOutput(csPin);                // set pins for SPI communication
 #endif
 
@@ -283,12 +283,12 @@ void cc1101::setup()
 #endif
 
 
-#if !defined(ESP8266) && !defined(ESP32) && !defined(MAPLE_Mini)
+#if !defined(ESP8266) && !defined(ESP32) && !defined(ARDUINO_MAPLEMINI_F103CB)
 	SPCR = _BV(SPE) | _BV(MSTR);       // SPI speed = CLK/4
 	digitalHigh(csPin);                // SPI init
 	digitalHigh(sckPin);
 	digitalLow(mosiPin);
-#elif defined(MAPLE_Mini)
+#elif ARDUINO_MAPLEMINI_F103CB
 	// Setup SPI 2
 	SPI_2.begin();                     //Initialize the SPI_2 port.
 	SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
@@ -310,7 +310,7 @@ void cc1101::setup()
 pinAsInput(PIN_RECEIVE);               // gdo2
 pinAsInput(PIN_SEND);                  // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
 
-#ifndef MAPLE_Mini
+#ifndef ARDUINO_MAPLEMINI_F103CB
 	digitalHigh(sckPin);
 	digitalLow(mosiPin);
 #endif

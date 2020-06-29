@@ -30,7 +30,7 @@
 #define BAUDRATE               115200
 #define FIFO_LENGTH            170
 
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
 	#define defSelRadio 1                           // variant -> Circuit board for four connected cc110x devices - standard value 1 = B
 	uint8_t radionr = defSelRadio;                  // variant -> Circuit board for four connected cc110x devices
 	uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices

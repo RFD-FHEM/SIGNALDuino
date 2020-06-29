@@ -37,7 +37,7 @@ extern bool hasCC1101;
 
 //========================= Pulseauswertung ================================================
 void ICACHE_RAM_ATTR handleInterrupt() {
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
   noInterrupts();
 #else
   cli();
@@ -58,7 +58,7 @@ void ICACHE_RAM_ATTR handleInterrupt() {
 		}
 		FiFo.enqueue(sDuration);
 	} // else => trash
-#ifdef MAPLE_Mini
+#ifdef ARDUINO_MAPLEMINI_F103CB
   interrupts();
 #else
   sei();
