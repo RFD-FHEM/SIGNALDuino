@@ -141,6 +141,7 @@ void setup() {
 	DBG_PRINTLN(F("Starting timerjob"));
 	delay(50);
 
+	// https://github.com/stm32duino/wiki/wiki/HardwareTimer-library
 	Timer1->setMode(2, TIMER_OUTPUT_COMPARE);
 	Timer1->setOverflow(32001, MICROSEC_FORMAT);
 	Timer1->attachInterrupt(cronjob);
@@ -171,7 +172,7 @@ void setup() {
 }
 
 
-void cronjob() {                
+void cronjob() {
 	noInterrupts();
 	static uint8_t cnt = 0;
 	const unsigned long  duration = micros() - lastTime;
@@ -180,16 +181,16 @@ void cronjob() {
 	if (timerTime < 1000)
 	    timerTime=1000;
 
-	Timer1->pause();
+	// Timer1->pause();         // ToDo: Timer stopt, why ??? -> no blinkLED action
 	Timer1->setOverflow(timerTime, MICROSEC_FORMAT);
-	if (duration > maxPulse) { //Auf Maximalwert pruefen.
+	if (duration > maxPulse) {  // Auf Maximalwert pruefen.
 		int sDuration = maxPulse;
 		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
 			sDuration = -sDuration;
 		}
 		FiFo.enqueue(sDuration);
 		lastTime = micros();
-	} 
+	}
 
 	#ifdef PIN_LED_INVERSE
 		digitalWrite(PIN_LED, !blinkLED);
@@ -247,10 +248,10 @@ void loop() {
 
 		//wdt_reset();
 */
-		while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
+		while (FiFo.count()>0 ) {    // Puffer auslesen und an Dekoder uebergeben
 			aktVal=FiFo.dequeue();
 			state = musterDec.decode(&aktVal);
-			if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+			if (state) blinkLED=true;  // LED blinken, wenn Meldung dekodiert
 		}
 
 /*
