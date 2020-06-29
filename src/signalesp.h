@@ -2,20 +2,20 @@
 
 #if defined (ESP32) || defined(ESP8266)
 #include "compile_config.h"
-// #define PROGVERS               "3.4.0-dev+20200216"
-#define PROGNAME               " SIGNALESP " 
+
+#define PROGNAME               " SIGNALESP "
 #define VERSION_1              0x33
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
-#define FIFO_LENGTH			   200
+#define FIFO_LENGTH            200
 
 #define ETHERNET_PRINT
 #define WIFI_MANAGER_OVERRIDE_STRINGS
 
 // EEProm Addresscommands
-#define EE_MAGIC_OFFSET      	0
-#define addr_features        	0xff
-#define MAX_SRV_CLIENTS 		2
+#define EE_MAGIC_OFFSET        0
+#define addr_features          0xff
+#define MAX_SRV_CLIENTS        2
 
 #include "compile_config.h"
 
