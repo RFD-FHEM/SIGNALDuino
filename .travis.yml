@@ -150,7 +150,7 @@ jobs:
            # Install the latest core version
            - arduino --install-boards STM32:stm32
            # "package:arch:board" or "package:arch:board:options"
-           - arduino --board STM32:stm32:GenF1 --save-prefs
+           - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
