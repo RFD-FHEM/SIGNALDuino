@@ -145,9 +145,12 @@ jobs:
        - BOARD=MAPLEMINI_F103CB
        - RECEIVER=cc1101
      before_script:
+           # Add json packages url to the Arduino IDE
            - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
+           # Install the latest core version
            - arduino --install-boards STM32:stm32
-           - arduino --board STM32:arduino:MAPLEMINI_F103CB --save-prefs
+           #                  name:     variant    :architecture
+           - arduino --board STM32:MAPLEMINI_F103CB:arduino --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
