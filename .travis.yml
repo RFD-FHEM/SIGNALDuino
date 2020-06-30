@@ -146,7 +146,7 @@ jobs:
      before_script:
            - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
            - arduino --install-boards STM32:stm32
-           - arduino --board stm32duino:MAPLEMINI_F103CB:MAPLEMINI_F103CB --save-prefs
+           - arduino --board STM32:MAPLEMINI_F103CB:MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
