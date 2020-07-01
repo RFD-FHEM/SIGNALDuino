@@ -12,6 +12,7 @@
 
 #include <EEPROM.h>
 #include "output.h"
+#include "signalDecoder.h"
 
 extern char IB_1[14];
 
@@ -21,8 +22,9 @@ extern char IB_1[14];
 
 
 #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_MAPLEMINI_F103CB)
-#include <SPI.h>
+	#include <SPI.h>
 #endif
+
 namespace cc1101 {
 	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
@@ -68,8 +70,6 @@ namespace cc1101 {
 	extern uint8_t revision;
 	extern uint8_t ccmode;
 	extern const uint8_t initVal[];
-	extern const uint8_t MSG_START;
-	extern const uint8_t MSG_END;
 // FSK - END
 
 	// Status registers - newer version base on 0xF0
