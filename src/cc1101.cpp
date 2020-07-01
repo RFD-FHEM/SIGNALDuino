@@ -7,7 +7,7 @@
 #define ccMaxBuf 64
 uint8_t cc1101::ccmode = 0;          // MDMCFG2–Modem Configuration Bit 6:4
 uint8_t cc1101::revision = 0x01;
-uint8_t ccBuf[4][64];
+uint8_t ccBuf[4][ccMaxBuf];
 extern volatile bool blinkLED;
 
 const uint8_t cc1101::initVal[] PROGMEM =
