@@ -589,7 +589,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {
 				if (cc1101::ccmode != 2 || dup == false) {
 
 					//if (cc1101::ccmode != 9) {
-					MSG_PRINT(cc1101::MSG_START);
+					MSG_PRINT(MSG_START);
 					MSG_PRINT(F("MN;D="));
 					//}
 //          for (uint8_t i = 0; i < fifoBytes; i++) {
@@ -614,7 +614,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
 					MSG_PRINT(F(";"));
-					MSG_PRINT(cc1101::MSG_END);
+					MSG_PRINT(MSG_END);
 					MSG_PRINT("\n");
 				}
 			}
