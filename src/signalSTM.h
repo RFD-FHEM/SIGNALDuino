@@ -113,16 +113,6 @@ void setup() {
 	#endif
 	initEEPROM();
 	#ifdef CMP_CC1101
-		DBG_PRINT(FPSTR(TXT_CCINIT));
-		// for variant Circuit board for 4 cc110x and compatible version with 1 cc110x
-		#if defined(DEBUG)
-			DBG_PRINT(FPSTR(("(misoPin="))); DBG_PRINT((misoPin));
-			DBG_PRINT(FPSTR((" mosiPin="))); DBG_PRINT((mosiPin));
-			DBG_PRINT(FPSTR((" sckPin="))); DBG_PRINT((sckPin));
-			DBG_PRINT(FPSTR((" csPin="))); DBG_PRINT((csPin));
-			DBG_PRINTLN(")");
-		#endif
-
 		cc1101::CCinit();                   // CC1101 init
 		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
 
@@ -232,31 +222,15 @@ void loop() {
 		IWatchdog.reload();
 	#endif
 
-/*
-	* not used now !
-	* these are preparations if the project can be expanded to 4 cc110x
-
-	uint8_t tmpBank;
-	uint16_t bankoff;
-	for (radionr = 0; radionr < 4; radionr++) {
-		if (radio_bank[radionr] > 9) {
-			continue;
-		}
-		tmpBank = radio_bank[radionr];
-		bankoff = getBankOffset(tmpBank);
-
-		//wdt_reset();
-*/
-		while (FiFo.count()>0 ) {    // Puffer auslesen und an Dekoder uebergeben
+	if (cc1101::ccmode == 3) {                  // ASK/OOK = 3 (default)
+		while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
 			aktVal=FiFo.dequeue();
 			state = musterDec.decode(&aktVal);
-			if (state) blinkLED=true;  // LED blinken, wenn Meldung dekodiert
+			if (state) blinkLED=true;           // LED blinken, wenn Meldung dekodiert
 		}
-
-/*
+	} else {
+		cc1101::getRxFifo(0);                   // MR fraglich ???
 	}
-*/
-
 }
 
 

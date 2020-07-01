@@ -200,7 +200,6 @@ void setup() {
 	initEEPROM();
 
 #ifdef CMP_CC1101
-	DBG_PRINT(FPSTR(TXT_CCINIT));
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 
@@ -208,10 +207,10 @@ void setup() {
 	{
 		DBG_PRINT(FPSTR(TXT_CC1101));
 		DBG_PRINTLN(FPSTR(TXT_FOUND));
-		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
+		musterDec.setRSSICallback(&cc1101::getRSSI);   // Provide the RSSI Callback
 	}
 	else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
+		musterDec.setRSSICallback(&rssiCallback);      // Provide the RSSI Callback
 	}
 #endif 
 

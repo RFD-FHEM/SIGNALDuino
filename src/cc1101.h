@@ -64,8 +64,14 @@ namespace cc1101 {
 	#define CC1101_IOCFG2      0x00  // GDO2 output configuration
 	#define CC1101_PKTCTRL0    0x08  // Packet config register
 
+// FSK - new lines
 	extern uint8_t revision;
+	extern uint8_t ccmode;
 	extern const uint8_t initVal[];
+	extern const uint8_t MSG_START;
+	extern const uint8_t MSG_END;
+// FSK - END
+
 	// Status registers - newer version base on 0xF0
 	#define CC1101_PARTNUM_REV01      0xF0 // Chip ID
 	#define CC1101_VERSION_REV01      0xF1 // Chip ID
@@ -86,8 +92,11 @@ namespace cc1101 {
 	#define CC1101_STX      0x35  // In IDLE state: Enable TX. Perform calibration first if MCSM0.FS_AUTOCAL=1
 	#define CC1101_SIDLE    0x36  // Exit RX / TX, turn off frequency synthesizer
 	#define CC1101_SAFC     0x37  // Perform AFC adjustment of the frequency synthesizer
-	#define CC1101_SFTX     0x3B  // Flush the TX FIFO buffer.
-	#define CC1101_SNOP     0x3D  //
+
+	#define CC1101_SFRX     0x3A  // Flush the RX FIFO buffer | Underflow and # of bytes in TXFIFO / CC1101_TXBYTES
+	#define CC1101_SFTX     0x3B  // Flush the TX FIFO buffer | Overflow and # of bytes in RXFIFO / CC1101_RXBYTES
+	#define CC1101_SNOP     0x3D  // No operation. May be used to get access to the chip status byte.
+	#define CC1101_RXFIFO   0x3F
 
   enum CC1101_MarcState {
     MarcStateSleep          = 0x00u
@@ -135,16 +144,16 @@ namespace cc1101 {
 	#define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }     // wait until SPI MISO line goes low
 
 #ifdef ARDUINO_MAPLEMINI_F103CB
-	#define cc1101_Select()   digitalLow(radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
-	#define cc1101_Deselect() digitalHigh(radioCsPin[radionr])
+	#define cc1101_Select()   digitalLow(cc1101::radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
+	#define cc1101_Deselect() digitalHigh(cc1101::radioCsPin[radionr])
 #else
-	#define cc1101_Select()   digitalLow(csPin)                // select (SPI) CC1101
+	#define cc1101_Select()   digitalLow(csPin)                        // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin)
 #endif
 
 	#define EE_CC1101_CFG        2
 	#define EE_CC1101_CFG_SIZE   0x29
-	#define EE_CC1101_PA         0x30  //  (EE_CC1101_CFG+EE_CC1101_CFG_SIZE)  // 2C
+	#define EE_CC1101_PA         0x30   //  (EE_CC1101_CFG+EE_CC1101_CFG_SIZE)  // 2C
 	#define EE_CC1101_PA_SIZE    8
 
 	#define PATABLE_DEFAULT      0x84   // 5 dB default value for factory reset
@@ -176,31 +185,36 @@ namespace cc1101 {
 
 
 	byte hex2int(byte hex);                                         // convert a hexdigit to int    // Todo: printf oder scanf nutzen
-	uint8_t sendSPI(const uint8_t val);                             // send byte via SPI
-	uint8_t cmdStrobe(const uint8_t cmd);
-	uint8_t readReg(const uint8_t regAddr, const uint8_t regType);  // read CC1101 register via SPI
-	void writeReg(const uint8_t regAddr, const uint8_t val);        // write single register into the CC1101 IC via SPI
-	void readPatable(void);
-	void writePatable(void);
-	void readCCreg(const uint8_t reg);                              // read CC1101 register
-	void commandStrobes(void);
-	void writeCCreg(uint8_t reg, uint8_t var);                      // write CC1101 register
-	void writeCCpatable(uint8_t var);                               // write 8 byte to patable (kein pa ramping)
-	void ccFactoryReset();
-
-	uint8_t chipVersionRev();
 	uint8_t chipVersion();
-	bool checkCC1101();
-	void setup();
-	uint8_t getRevision();
-	uint8_t getRSSI();
-	void setIdleMode();
+	uint8_t chipVersionRev();
+	uint8_t cmdStrobe(const uint8_t cmd);
+	uint8_t cmdStrobeTo(const uint8_t cmd);
 	uint8_t currentMode();
-	void setReceiveMode();
-	void setTransmitMode();
+	uint8_t flushrx();
+	uint8_t getMARCSTATE();
+	uint8_t getRSSI();
+	uint8_t getRXBYTES();
+	uint8_t getRevision();
+	uint8_t readReg(const uint8_t regAddr, const uint8_t regType);  // read CC1101 register via SPI
+	uint8_t sendSPI(const uint8_t val);                             // send byte via SPI
+	uint8_t waitTo_Miso();
 
 	void CCinit(void);                                              // initialize CC1101
+	void ccFactoryReset();
+	void commandStrobes(void);
+	void getRxFifo(uint16_t Boffs);
+	void readCCreg(const uint8_t reg);                              // read CC1101 register
+	void readPatable(void);
+	void setIdleMode();
+	void setReceiveMode();
+	void setTransmitMode();
+	void setup();
+	void writeCCpatable(uint8_t var);                               // write 8 byte to patable (kein pa ramping)
+	void writeCCreg(uint8_t reg, uint8_t var);                      // write CC1101 register
+	void writePatable(void);
+	void writeReg(const uint8_t regAddr, const uint8_t val);        // write single register into the CC1101 IC via SPI
 
+	bool checkCC1101();
 	bool regCheck();
 
 }
