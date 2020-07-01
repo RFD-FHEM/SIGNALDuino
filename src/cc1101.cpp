@@ -361,8 +361,8 @@ bool readRXFIFO(uint8_t len) {
 	for (uint8_t i = 0; i < len; i++) {
 		rx = cc1101::sendSPI(0x00);                        // read result
 		if (rx != ccBuf[radionr][i]) {
-		dup = false;
-		ccBuf[radionr][i] = rx;
+			dup = false;
+			ccBuf[radionr][i] = rx;
 		}
 	}
 	cc1101_Deselect();
