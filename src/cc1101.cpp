@@ -317,7 +317,7 @@ void cc1101::setup() {
 	SPI_2.begin();                     // Initialize the SPI_2 port
 	SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
 
-	pinAsOutput(radioCsPin[1]);
+	pinAsOutput(radioCsPin[1]);        // standard value 1 = B ( only for using one cc1101 )
 	digitalHigh(radioCsPin[1]);
 #else
 	SPI.setDataMode(SPI_MODE0);
