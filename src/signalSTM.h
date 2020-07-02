@@ -229,10 +229,9 @@ void loop() {
 			if (state) blinkLED=true;           // LED blinken, wenn Meldung dekodiert
 		}
 	} else {
-		cc1101::getRxFifo(0);                   // MR fraglich ???
+		cc1101::getRxFifo(0);
 	}
 }
-
 
 
 
@@ -249,7 +248,6 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 
 	//serverClient.write("test");
 }
-
 
 
 

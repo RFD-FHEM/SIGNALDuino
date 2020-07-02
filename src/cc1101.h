@@ -66,11 +66,9 @@ namespace cc1101 {
 	#define CC1101_IOCFG2      0x00  // GDO2 output configuration
 	#define CC1101_PKTCTRL0    0x08  // Packet config register
 
-// FSK - new lines
-	extern uint8_t revision;
-	extern uint8_t ccmode;
-	extern const uint8_t initVal[];
-// FSK - END
+	extern uint8_t revision;         //xFSK
+	extern uint8_t ccmode;;          //xFSK
+	extern const uint8_t initVal[];  //xFSK
 
 	// Status registers - newer version base on 0xF0
 	#define CC1101_PARTNUM_REV01      0xF0 // Chip ID
@@ -123,7 +121,7 @@ namespace cc1101 {
   , MarcStateRxTxSwitch     = 0x15u
   , MarcStateTxFifoUnerflow = 0x16u
   };
-  
+
 #if defined(ESP8266) || defined(ESP32)
 	#define pinAsInput(pin) pinMode(pin, INPUT)
 	#define pinAsOutput(pin) pinMode(pin, OUTPUT)
@@ -158,9 +156,9 @@ namespace cc1101 {
 
 	#define PATABLE_DEFAULT      0x84   // 5 dB default value for factory reset
 
-	//------------------------------------------------------------------------------
+	//---------------------------------------------------
 	// Chip Status Byte
-	//------------------------------------------------------------------------------
+	//---------------------------------------------------
 
 	// Bit fields in the chip status byte
 	#define CC1101_STATUS_CHIP_RDYn_BM             0x80
@@ -190,10 +188,10 @@ namespace cc1101 {
 	uint8_t cmdStrobe(const uint8_t cmd);
 	uint8_t cmdStrobeTo(const uint8_t cmd);
 	uint8_t currentMode();
-	uint8_t flushrx();
-	uint8_t getMARCSTATE();
+	uint8_t flushrx();                                              // xFSK
+	uint8_t getMARCSTATE();                                         // xFSK
 	uint8_t getRSSI();
-	uint8_t getRXBYTES();
+	uint8_t getRXBYTES();                                           // xFSK
 	uint8_t getRevision();
 	uint8_t readReg(const uint8_t regAddr, const uint8_t regType);  // read CC1101 register via SPI
 	uint8_t sendSPI(const uint8_t val);                             // send byte via SPI
@@ -202,7 +200,7 @@ namespace cc1101 {
 	void CCinit(void);                                              // initialize CC1101
 	void ccFactoryReset();
 	void commandStrobes(void);
-	void getRxFifo(uint16_t Boffs);
+	void getRxFifo(uint16_t Boffs);                                 // xFSK
 	void readCCreg(const uint8_t reg);                              // read CC1101 register
 	void readPatable(void);
 	void setIdleMode();

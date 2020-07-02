@@ -489,11 +489,15 @@ void loop() {
 	serialEvent();
 	ethernetEvent();
 
-	while (FiFo.count()>0) { //Puffer auslesen und an Dekoder uebergeben
-		aktVal = FiFo.dequeue();
-		state = musterDec.decode(&aktVal);
-		if (state) blinkLED = true; //LED blinken, wenn Meldung dekodiert
-		if (FiFo.count()<120) yield();
+	if (cc1101::ccmode == 3) {                 // ASK/OOK = 3 (default)
+		while (FiFo.count()>0) {               // Puffer auslesen und an Dekoder uebergeben
+			aktVal = FiFo.dequeue();
+			state = musterDec.decode(&aktVal);
+			if (state) blinkLED = true;        // LED blinken, wenn Meldung dekodiert
+			if (FiFo.count()<120) yield();
+		}
+	} else {
+		cc1101::getRxFifo(0);
 	}
 
 }
@@ -590,6 +594,9 @@ inline void ethernetEvent()
 	}
 }
 
+
+
+//================================= Serielle verarbeitung ======================================
 void serialEvent()
 {
 	static uint8_t idx = 0;

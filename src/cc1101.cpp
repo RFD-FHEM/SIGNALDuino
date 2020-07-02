@@ -4,10 +4,10 @@
 	SPIClass SPI_2(mosiPin, misoPin, sckPin);
 #endif
 
-#define ccMaxBuf 64
+#define ccMaxBuf 64                  // for cc1101 FIFO, variable is better to revised
 uint8_t cc1101::ccmode = 0;          // MDMCFG2–Modem Configuration Bit 6:4
 uint8_t cc1101::revision = 0x01;
-uint8_t ccBuf[4][ccMaxBuf];
+uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
 extern volatile bool blinkLED;
 
 const uint8_t cc1101::initVal[] PROGMEM =
@@ -319,7 +319,6 @@ void cc1101::setup() {
 
 	pinAsOutput(radioCsPin[1]);
 	digitalHigh(radioCsPin[1]);
-
 #else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
@@ -343,16 +342,15 @@ uint8_t cc1101::getRSSI() {
 	return readReg((revision == 0x01 ? CC1101_RSSI_REV01 : CC1101_RSSI_REV00), CC1101_STATUS);
 }
 
-// FSK - new lines
-uint8_t cc1101::getMARCSTATE() {                            // Control state machine state
-	return readReg(CC1101_MARCSTATE_REV00, CC1101_STATUS);  // Pruefen ob Umwandung von uint to int den richtigen Wert zurueck gibt
+uint8_t cc1101::getMARCSTATE() {                            // xFSK, Control state machine state
+	return readReg(CC1101_MARCSTATE_REV00, CC1101_STATUS);  // xFSK, Pruefen ob Umwandung von uint to int den richtigen Wert zurueck gibt
 }
 
-uint8_t cc1101::getRXBYTES() {
+uint8_t cc1101::getRXBYTES() {                             // xFSK
 	return readReg(CC1101_SFTX,CC1101_STATUS);
 }
 
-bool readRXFIFO(uint8_t len) {
+bool readRXFIFO(uint8_t len) {                             // xFSK
 	bool dup = true;
 	uint8_t rx;
 
@@ -360,17 +358,16 @@ bool readRXFIFO(uint8_t len) {
 	cc1101::sendSPI(CC1101_RXFIFO | CC1101_READ_BURST);    // send register address
 	for (uint8_t i = 0; i < len; i++) {
 		rx = cc1101::sendSPI(0x00);                        // read result
-		if (rx != ccBuf[radionr][i]) {
+		if (rx != ccBuf[i]) {                              // if Circuit board for more cc110x -> ccBuf expand ( if (rx != ccBuf[radionr][i] ) )
 			dup = false;
-			ccBuf[radionr][i] = rx;
+			ccBuf[i] = rx;                                 // if Circuit board for more cc110x -> ccBuf expand ( if (rx != ccBuf[radionr][i] = rx ) )
 		}
 	}
 	cc1101_Deselect();
-
 	return dup;
 }
 
-uint8_t cc1101::flushrx() {                                // Flush the RX FIFO buffer
+uint8_t cc1101::flushrx() {                                // xFSK, Flush the RX FIFO buffer
 	if (cmdStrobeTo(CC1101_SIDLE) == false) {
 		return false;
 	}
@@ -378,8 +375,6 @@ uint8_t cc1101::flushrx() {                                // Flush the RX FIFO 
 	cmdStrobe(CC1101_SFRX);
 	return true;
 }
-
-// FSK - END
 
 void cc1101::setIdleMode() {
 	cmdStrobe(CC1101_SIDLE);                               // Idle mode
@@ -411,7 +406,7 @@ void cc1101::setTransmitMode()
 #ifdef CMP_CC1101
 	if (maxloop == 0) DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
 #endif
-	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
 }
 
 
@@ -531,15 +526,10 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 #endif
 }
 
-// FSK - new lines
 
-void cc1101::getRxFifo(uint16_t Boffs) {
+void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 	uint8_t fifoBytes;
 	bool dup;                                      // true bei identischen Wiederholungen bei readRXFIFO
-
-	#ifdef DEBUG
-		DBG_PRINTLN((" getRxFifo "));
-	#endif
 
 	if (isHigh(PIN_RECEIVE)) {                     // wait for CC1100_FIFOTHR given bytes to arrive in FIFO
 		#ifdef PIN_LED_INVERSE
@@ -548,12 +538,10 @@ void cc1101::getRxFifo(uint16_t Boffs) {
 			digitalWrite(PIN_LED, blinkLED);
 		#endif
 
-
 /*
  * 
  * Ralf 
  * cc1101 Mode: 0 - normal, 1 - FIFO, 2 - FIFO ohne dup, 3 - FIFO LaCrosse, 4 - UNBEKANNT ???, 9 - FIFO mit Debug Ausgaben
- * 
  * Sidey
  * cc1101 Mode: 0 - FIFO LaCrosse, 3 - normal
  * 
@@ -568,41 +556,50 @@ void cc1101::getRxFifo(uint16_t Boffs) {
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
 
-			#ifdef DEBUG
-				if (cc1101::ccmode == 0) {
-					DBG_PRINT(FPSTR(("RX(")));
-					DBG_PRINT(fifoBytes);
-					DBG_PRINTLN((") "));
+/*
+ * !!! for DEVELOPMENT and DEBUG only !!!
+ * 
+      #ifdef DEBUG
+        if (cc1101::ccmode == 0) {
+          MSG_PRINT(F("RX fifoBytes ("));
+          MSG_PRINT(fifoBytes);
+          MSG_PRINTLN((") "));
+        }
+      #endif
+ * 
+ */
 
-//          MSG_PRINT(F("RX("));
-//          MSG_PRINT(fifoBytes);
-//          MSG_PRINT(F(") "));
-				}
-			#endif
-
-			if (fifoBytes < 0x80) {         // RXoverflow?
+			if (fifoBytes < 0x80) {                // RXoverflow?
 				if (fifoBytes > ccMaxBuf) {
 					fifoBytes = ccMaxBuf;
 				}
 				dup = readRXFIFO(fifoBytes);
 				if (cc1101::ccmode != 2 || dup == false) {
 
-					//if (cc1101::ccmode != 9) {
-					MSG_PRINT(MSG_START);
-					MSG_PRINT(F("MN;D="));
-					//}
-//          for (uint8_t i = 0; i < fifoBytes; i++) {
-//            printHex2(ccBuf[radionr][i]);
-//            //MSG_PRINT(" ");
-//          }
+					if (cc1101::ccmode != 9) {
+						MSG_PRINT(MSG_START);
+						MSG_PRINT(F("MN;D="));
+					}
+					for (uint8_t i = 0; i < fifoBytes; i++) {
+						// printHex2(ccBuf[i]);
+						char b[2];
+						sprintf(b, "%02X", ccBuf[i]);
+						MSG_PRINT(b);
+					}
 
-					#ifdef DEBUG
-						//if (cc1101::ccmode == 0) {
-						DBG_PRINT(FPSTR(" ("));
-						DBG_PRINT(cc1101::getRXBYTES());
-						DBG_PRINT(FPSTR(")"));
-						//}
-					#endif
+/*
+ * !!! for DEVELOPMENT and DEBUG only !!!
+ * 
+          #ifdef DEBUG
+            if (cc1101::ccmode == 0) {
+              MSG_PRINT(F("cc1101 getRXBYTES ("));
+              MSG_PRINT(cc1101::getRXBYTES());
+              MSG_PRINTLN((")"));
+            }
+          #endif
+ * 
+ */
+
 
 //          uint8_t n = EEPROM.read(0x3D);
 //          if (n > 0) {
@@ -634,13 +631,20 @@ void cc1101::getRxFifo(uint16_t Boffs) {
       } else {
 */
 			marcstate = cc1101::getMARCSTATE();
+
+/*
+ * !!! for DEVELOPMENT and DEBUG only !!!
+ * 
 			#ifdef DEBUG
-				//if (cc1101::ccmode == 9) {
-				MSG_PRINT(F(" M"));
-				MSG_PRINTLN(marcstate);
-				//}
+				if (cc1101::ccmode == 9) {
+					MSG_PRINT(F(" M"));
+					MSG_PRINTLN(marcstate);
+				}
 			#endif
-			if (marcstate == 17 || cc1101::ccmode == 0) { // RXoverflow oder LaCrosse?
+ * 
+ */
+
+			if (marcstate == 17 || cc1101::ccmode == 0) {   // RXoverflow oder LaCrosse?
 				if (cc1101::flushrx()) {                    // Flush the RX FIFO buffer
 					cc1101::setReceiveMode();
 				}
