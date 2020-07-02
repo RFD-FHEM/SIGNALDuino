@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 *   RF_RECEIVER v3.4.0 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
