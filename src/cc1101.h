@@ -12,12 +12,12 @@
 
 #include <EEPROM.h>
 #include "output.h"
-#include "signalDecoder.h"
+#include "signalDecoder.h"         // xFSK
 
 extern char IB_1[14];
 
 #ifdef ARDUINO_MAPLEMINI_F103CB    // only ARDUINO_MAPLEMINI_F103CB / MAPLE_Mini
-	extern uint8_t radionr;
+	extern uint8_t radionr;        // xFSK - variant -> Circuit board for four connected cc110x devices
 #endif
 
 
@@ -66,9 +66,9 @@ namespace cc1101 {
 	#define CC1101_IOCFG2      0x00  // GDO2 output configuration
 	#define CC1101_PKTCTRL0    0x08  // Packet config register
 
-	extern uint8_t revision;         //xFSK
-	extern uint8_t ccmode;;          //xFSK
-	extern const uint8_t initVal[];  //xFSK
+	extern uint8_t revision;         // xFSK
+	extern uint8_t ccmode;;          // xFSK
+	extern const uint8_t initVal[];  // xFSK
 
 	// Status registers - newer version base on 0xF0
 	#define CC1101_PARTNUM_REV01      0xF0 // Chip ID
