@@ -540,10 +540,11 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 /*
  * 
- * Ralf 
- * cc1101 Mode: 0 - normal, 1 - FIFO, 2 - FIFO ohne dup, 3 - FIFO LaCrosse, 4 - UNBEKANNT ???, 9 - FIFO mit Debug Ausgaben
- * Sidey
- * cc1101 Mode: 0 - FIFO LaCrosse, 3 - normal
+ * Ralf ( mode numbering == own selection )
+ * cc1101 Mode: 0 - normal ASK/OOK, 1 - FIFO, 2 - FIFO ohne dup, 3 - FIFO LaCrosse, 4 - experimentell, 9 - FIFO mit Debug Ausgaben
+ *
+ * Sidey ( mode numbering == cc1101 data sheet setting numbering 0x12: MDMCFG2–Modem Configuration )
+ * cc1101 Mode: 0 - FIFO LaCrosse, 3 - normal ASK/OOK
  * 
 
     if (ccmode == 4) {
@@ -636,7 +637,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
  * !!! for DEVELOPMENT and DEBUG only !!!
  * 
 			#ifdef DEBUG
-				if (cc1101::ccmode == 9) {
+				if (cc1101::ccmode != 3) {
 					MSG_PRINT(F(" M"));
 					MSG_PRINTLN(marcstate);
 				}
