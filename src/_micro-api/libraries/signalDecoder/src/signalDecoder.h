@@ -43,14 +43,7 @@
 #endif
 
 #ifndef DEC
-/* UB
-no PlattformIO compatible
-#define DEC 10
-
-----
- no ERROR PlattformIO
-#define DEZ 10
-*/
+	#define DEC 10
 #endif
 
 
