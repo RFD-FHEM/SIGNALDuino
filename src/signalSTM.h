@@ -31,8 +31,12 @@
 #define FIFO_LENGTH            170
 
 #ifdef ARDUINO_MAPLEMINI_F103CB
+<<<<<<< HEAD
 	#define defSelRadio 1                           // variant -> Circuit board for four connected cc110x devices - standard value 1 = B
 	uint8_t radionr = defSelRadio;                  // variant -> Circuit board for four connected cc110x devices
+=======
+	uint8_t radionr = 1;                            // variant -> Circuit board for four connected cc110x devices - standard value 1 = B (defSelRadio)
+>>>>>>> dev-r3.5_plattformIO_TEST
 	uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices
 #endif
 
@@ -113,6 +117,7 @@ void setup() {
 	#endif
 	initEEPROM();
 	#ifdef CMP_CC1101
+<<<<<<< HEAD
 		DBG_PRINT(FPSTR(TXT_CCINIT));
 		// for variant Circuit board for 4 cc110x and compatible version with 1 cc110x
 		#if defined(DEBUG)
@@ -123,6 +128,8 @@ void setup() {
 			DBG_PRINTLN(")");
 		#endif
 
+=======
+>>>>>>> dev-r3.5_plattformIO_TEST
 		cc1101::CCinit();                   // CC1101 init
 		hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
 
@@ -232,6 +239,7 @@ void loop() {
 		IWatchdog.reload();
 	#endif
 
+<<<<<<< HEAD
 /*
 	* not used now !
 	* these are preparations if the project can be expanded to 4 cc110x
@@ -257,11 +265,25 @@ void loop() {
 	}
 */
 
+=======
+	if (cc1101::ccmode == 3) {                  // ASK/OOK = 3 (default)
+		while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
+			aktVal=FiFo.dequeue();
+			state = musterDec.decode(&aktVal);
+			if (state) blinkLED=true;           // LED blinken, wenn Meldung dekodiert
+		}
+	} else {
+		cc1101::getRxFifo(0);
+	}
+>>>>>>> dev-r3.5_plattformIO_TEST
 }
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev-r3.5_plattformIO_TEST
 //============================== Write callback =========================================
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
@@ -278,7 +300,10 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 
 
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> dev-r3.5_plattformIO_TEST
 //================================= Serielle verarbeitung ======================================
 void serialEvent()
 {

@@ -48,7 +48,7 @@ namespace commands {
 	}
 
 	/*
-	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
+	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen <<<<----- printf benoetigt mehr Speicher als diese Variante
 		if (hex < 16) {
 			MSG_PRINT("0");
 		}

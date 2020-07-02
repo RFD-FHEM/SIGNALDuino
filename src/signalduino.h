@@ -1,3 +1,5 @@
+#pragma once
+
 /*
 *   RF_RECEIVER v3.4.0 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
@@ -95,7 +97,7 @@ void setup() {
 	}
 
 
-	
+
 	//delay(2000);
 	pinAsInput(PIN_RECEIVE);
 	pinAsOutput(PIN_LED);
@@ -106,13 +108,12 @@ void setup() {
 	#ifdef CMP_CC1101
 	cc1101::setup();
 	#endif
-  	initEEPROM();
+	initEEPROM();
 	#ifdef CMP_CC1101
-	DBG_PRINT(FPSTR(TXT_CCINIT));
+
 
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
-	
 
 
 	if (hasCC1101)
@@ -163,7 +164,7 @@ void cronjob() {
 	const unsigned long  duration = micros() - lastTime;
 
 	Timer1.setPeriod(32001);
-	
+
 	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
 		int sDuration = maxPulse;
 		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
@@ -174,7 +175,7 @@ void cronjob() {
 	 } else if (duration > 10000) {
 		Timer1.setPeriod(maxPulse-duration+16);
 	 }
-#ifdef PIN_LED_INVERSE	
+#ifdef PIN_LED_INVERSE
 	 digitalWrite(PIN_LED, !blinkLED);
 #else
 	 digitalWrite(PIN_LED, blinkLED);
@@ -182,7 +183,7 @@ void cronjob() {
 	 blinkLED = false;
 
 	 sei();
-	
+
 	 // Infrequent time uncritical jobs (~ every 2 hours)
 	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
 		 getUptime();
@@ -196,16 +197,16 @@ void loop() {
 	serialEvent();
 #endif
 	//wdt_reset();
-	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
-		aktVal=FiFo.dequeue();
-		state = musterDec.decode(&aktVal); 
-		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
+	if (cc1101::ccmode == 3) {                  // ASK/OOK = 3 (default)
+		while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
+			aktVal=FiFo.dequeue();
+			state = musterDec.decode(&aktVal); 
+			if (state) blinkLED=true;           // LED blinken, wenn Meldung dekodiert
+		}
+	} else {
+		cc1101::getRxFifo(0);
 	}
-
- }
-
-
-
+}
 
 
 
@@ -226,17 +227,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 
 
 
-
-
-
-
-
 //================================= Serielle verarbeitung ======================================
-
-
-
-
-
 void serialEvent()
 {
 	static uint8_t idx = 0;

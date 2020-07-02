@@ -19,7 +19,7 @@ static const char TXT_EEPROM[]				PROGMEM = "EEPROM";
 static const char TXT_RECENA[]				PROGMEM = "receiver enabled" ;
 static const char TXT_FOUND[]				PROGMEM = "found ";
 static const char TXT_COMMAND[]				PROGMEM = "command e";
-static const char TXT_DOFRESET[]			PROGMEM = "is not correctly set. Please do a factory reset via ";
+static const char TXT_DOFRESET[]			PROGMEM = "is not correctly set for ASK/OOK. Please do a factory reset via ";
 static const char TXT_CCREVISION[]			PROGMEM = "CCVersion =";
 static const char TXT_UNSUPPORTED1[]		PROGMEM = "Unsupported short command";
 static const char TXT_MU[]					PROGMEM = "MU";

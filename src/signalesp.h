@@ -200,7 +200,6 @@ void setup() {
 	initEEPROM();
 
 #ifdef CMP_CC1101
-	DBG_PRINT(FPSTR(TXT_CCINIT));
 	cc1101::CCinit();					 // CC1101 init
 	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
 
@@ -208,10 +207,10 @@ void setup() {
 	{
 		DBG_PRINT(FPSTR(TXT_CC1101));
 		DBG_PRINTLN(FPSTR(TXT_FOUND));
-		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
+		musterDec.setRSSICallback(&cc1101::getRSSI);   // Provide the RSSI Callback
 	}
 	else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
+		musterDec.setRSSICallback(&rssiCallback);      // Provide the RSSI Callback
 	}
 #endif 
 
@@ -490,11 +489,15 @@ void loop() {
 	serialEvent();
 	ethernetEvent();
 
-	while (FiFo.count()>0) { //Puffer auslesen und an Dekoder uebergeben
-		aktVal = FiFo.dequeue();
-		state = musterDec.decode(&aktVal);
-		if (state) blinkLED = true; //LED blinken, wenn Meldung dekodiert
-		if (FiFo.count()<120) yield();
+	if (cc1101::ccmode == 3) {                 // ASK/OOK = 3 (default)
+		while (FiFo.count()>0) {               // Puffer auslesen und an Dekoder uebergeben
+			aktVal = FiFo.dequeue();
+			state = musterDec.decode(&aktVal);
+			if (state) blinkLED = true;        // LED blinken, wenn Meldung dekodiert
+			if (FiFo.count()<120) yield();
+		}
+	} else {
+		cc1101::getRxFifo(0);
 	}
 
 }
@@ -591,6 +594,9 @@ inline void ethernetEvent()
 	}
 }
 
+
+
+//================================= Serielle verarbeitung ======================================
 void serialEvent()
 {
 	static uint8_t idx = 0;
