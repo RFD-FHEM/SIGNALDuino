@@ -1,39 +1,43 @@
 ﻿#include "cc1101.h"
 
+#ifdef ARDUINO_MAPLEMINI_F103CB
+	SPIClass SPI_2(mosiPin, misoPin, sckPin);
+#endif
+
 uint8_t cc1101::revision = 0x01;
 const uint8_t cc1101::initVal[] PROGMEM =
 {
-	// IDX NAME     RESET   COMMENT
+      // IDX NAME     RESET  COMMENT
 0x0D, // 00 IOCFG2    29     GDO2 as serial output
 0x2E, // 01 IOCFG1           Tri-State
 0x2D, // 02 IOCFG0    3F     GDO0 for input
 //0x07, // 03 FIFOTHR          RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
 0x47, // 03 FIFOTHR          RX filter bandwidth = 325 kHz, FIFOTHR = 0x47
-0xD3, // 04 SYNC1     
-0x91, // 05 SYNC0     
+0xD3, // 04 SYNC1
+0x91, // 05 SYNC0
 0x3D, // 06 PKTLEN    0F
-0x04, // 07 PKTCTRL1  
-0x32, // 08 PKTCTRL0  45     
-0x00, // 09 ADDR     
-0x00, // 0A CHANNR   
+0x04, // 07 PKTCTRL1
+0x32, // 08 PKTCTRL0  45
+0x00, // 09 ADDR
+0x00, // 0A CHANNR
 0x06, // 0B FSCTRL1   0F     152kHz IF Frquency
 0x00, // 0C FSCTRL0
 0x10, // 0D FREQ2     1E     Freq   #12  Reg Pos 0C
-0xB0, // 0E FREQ1     C4				 Reg Pos 0D
-0x71, // 0F FREQ0     EC				 Reg Pos 0E
+0xB0, // 0E FREQ1     C4                 Reg Pos 0D
+0x71, // 0F FREQ0     EC                 Reg Pos 0E
 0x57, // 10 MDMCFG4   8C     bWidth 325kHz
 0xC4, // 11 MDMCFG3   22     DataRate
 0x30, // 12 MDMCFG2   02     Modulation: ASK
-0x23, // 13 MDMCFG1   22     
+0x23, // 13 MDMCFG1   22
 0xb9, // 14 MDMCFG0   F8     ChannelSpace: 350kHz
-0x00, // 15 DEVIATN   47     
-0x07, // 16 MCSM2     07     
+0x00, // 15 DEVIATN   47
+0x07, // 16 MCSM2     07
 0x00, // 17 MCSM1     30     Bit 3:2  RXOFF_MODE:  Select what should happen when a packet has been received: 0 = IDLE  3 =  Stay in RX ####
 0x18, // 18 MCSM0     04     Calibration: RX/TX->IDLE
-0x14, // 19 FOCCFG    36     
+0x14, // 19 FOCCFG    36
 0x6C, // 1A BSCFG
 0x07, // 1B AGCCTRL2  03     42 dB instead of 33dB
-0x00, // 1C AGCCTRL1  40     
+0x00, // 1C AGCCTRL1  40
 //0x90, // 1D AGCCTRL0  90     4dB decision boundery
 0x91, // 1D AGCCTRL0  91     8dB decision boundery
 0x87, // 1E WOREVT1
@@ -42,52 +46,57 @@ const uint8_t cc1101::initVal[] PROGMEM =
 //0x56, // 21 FREND1    56     RX filter bandwidth = 101 kHz, FREND1 = 0x56
 0xB6, // 21 FREND1    B6     RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 0x11, // 22 FREND0    16     0x11 for no PA ramping
-0xE9, // 23 FSCAL3    A9    E9 ?? 
-0x2A, // 24 FSCAL2    0A    
+0xE9, // 23 FSCAL3    A9    E9 ??
+0x2A, // 24 FSCAL2    0A
 0x00, // 25 FSCAL1    20    19 ??
-0x1F, // 26 FSCAL0    0D     
+0x1F, // 26 FSCAL0    0D
 0x41, // 27 RCCTRL1
 0x00, // 28 RCCTRL0
 };
 
 
 
- byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
-	 if (hex >= '0' && hex <= '9') hex = hex - '0';
-	 else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
-	 else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
-	 return hex;
-	 // printf ("%d\n",$hex) ??
- }
+byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
+	if (hex >= '0' && hex <= '9') hex = hex - '0';
+	else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
+	else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
+	return hex;
+	// printf ("%d\n",$hex) ??
+}
 
-uint8_t cc1101::sendSPI(const uint8_t val) {				 // send byte via SPI
-#if !defined(ESP8266) && !defined(ESP32)
-	 SPDR = val;                                      // transfer byte via SPI
-	 while (!(SPSR & _BV(SPIF)));                     // wait until SPI operation is terminated
-	 return SPDR;
+uint8_t cc1101::sendSPI(const uint8_t val) {        // send byte via SPI
+#if !defined(ESP8266) && !defined(ESP32) && !defined(ARDUINO_MAPLEMINI_F103CB)
+	SPDR = val;                                     // transfer byte via SPI
+	while (!(SPSR & _BV(SPIF)));                    // wait until SPI operation is terminated
+	return SPDR;
 #else
-	 return SPI.transfer(val);
+	#ifdef ARDUINO_MAPLEMINI_F103CB
+		return SPI_2.transfer(val);                 // transfer use SPI2 on ARDUINO_MAPLEMINI_F103CB board
+	#else
+		return SPI.transfer(val);
+	#endif
 #endif
- }
+}
 
-uint8_t cc1101::cmdStrobe(const uint8_t cmd) {              // send command strobe to the CC1101 IC via SPI
+uint8_t cc1101::cmdStrobe(const uint8_t cmd) {       // send command strobe to the CC1101 IC via SPI
 	 cc1101_Select();                                // select CC1101
 	 wait_Miso_rf();                                 // wait until MISO goes low
 	 uint8_t ret = sendSPI(cmd);                     // send strobe command
 	 wait_Miso_rf();                                 // wait until MISO goes low
 	 cc1101_Deselect();                              // deselect CC1101
-	 return ret;										// Chip Status Byte
- }
+	 return ret;                                     // Chip Status Byte
+}
+
 uint8_t cc1101::readReg(const uint8_t regAddr, const uint8_t regType) {       // read CC1101 register via SPI
 	cc1101_Select();                                // select CC1101
-	wait_Miso_rf();                                    // wait until MISO goes low
+	wait_Miso_rf();                                 // wait until MISO goes low
 	sendSPI(regAddr | regType);                     // send register address
 	uint8_t val = sendSPI(0x00);                    // read result
 	cc1101_Deselect();                              // deselect CC1101
 	return val;
 }
 
-void cc1101::writeReg(const uint8_t regAddr, const uint8_t val) {     // write single register into the CC1101 IC via SPI
+void cc1101::writeReg(const uint8_t regAddr, const uint8_t val) {       // write single register into the CC1101 IC via SPI
 	cc1101_Select();                                // select CC1101
 	wait_Miso();                                    // wait until MISO goes low
 	sendSPI(regAddr);                               // send register address
@@ -104,7 +113,7 @@ void cc1101::readPatable(void) {
 	wait_Miso();                                    // wait until MISO goes low
 	sendSPI(CC1101_PATABLE | CC1101_READ_BURST);    // send register address
 	for (uint8_t i = 0; i < 8; i++) {
-		PatableArray[i] = sendSPI(0x00);        // read result
+		PatableArray[i] = sendSPI(0x00);            // read result
 	}
 	cc1101_Deselect();
 	char b[4];
@@ -121,13 +130,12 @@ void cc1101::writePatable(void) {
 	wait_Miso();                                    // wait until MISO goes low
 	sendSPI(CC1101_PATABLE | CC1101_WRITE_BURST);   // send register address
 	for (uint8_t i = 0; i < 8; i++) {
-		sendSPI(EEPROM.read(EE_CC1101_PA + i));                     // send value
+		sendSPI(EEPROM.read(EE_CC1101_PA + i));     // send value
 	}
 	cc1101_Deselect();
 }
 
-
-void cc1101::readCCreg(const uint8_t reg) {   // read CC1101 register
+void cc1101::readCCreg(const uint8_t reg) {          // read CC1101 register
 	uint8_t var;
 	uint8_t n;
 	char b[11];
@@ -181,7 +189,6 @@ void cc1101::readCCreg(const uint8_t reg) {   // read CC1101 register
 }
 
 void cc1101::commandStrobes(void) {
-
 	uint8_t reg;
 	uint8_t val;
 	uint8_t val1;
@@ -199,7 +206,7 @@ void cc1101::commandStrobes(void) {
 	}
 }
 
-void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC1101 register
+void cc1101::writeCCreg(uint8_t reg, uint8_t var) {   // write CC1101 register
 	if (reg > 1 && reg < 0x40) {
 		writeReg(reg - EE_CC1101_CFG, var);
 		char b[6];
@@ -208,7 +215,8 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) {    // write CC1101 register
 		MSG_PRINTLN(b);
 	}
 }
-void cc1101::writeCCpatable(uint8_t var) {           // write 8 byte to patable (kein pa ramping)
+
+void cc1101::writeCCpatable(uint8_t var) {            // write 8 byte to patable (kein pa ramping)
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
 			EEPROM.write(EE_CC1101_PA + i, var);
@@ -218,7 +226,7 @@ void cc1101::writeCCpatable(uint8_t var) {           // write 8 byte to patable 
 		}
 	}
 	#if defined(ESP8266) || defined(ESP32)
-	EEPROM.commit();
+		EEPROM.commit();
 	#endif
 	writePatable();
 }
@@ -242,19 +250,19 @@ uint8_t cc1101::chipVersion() {
 bool cc1101::checkCC1101() {
 #ifdef CMP_CC1101
 	uint8_t version = chipVersion();  // Version
-#ifdef DEBUG
-	uint8_t partnum = readReg((revision == 0x01 ? CC1101_PARTNUM_REV01 : CC1101_PARTNUM_REV00), CC1101_READ_SINGLE);  // Partnum
-	DBG_PRINT(FPSTR(TXT_CCREVISION));	DBG_PRINTLN("0x" + String(version, HEX));
-	DBG_PRINT(FPSTR(TXT_CCPARTNUM));	DBG_PRINTLN("0x" + String(partnum, HEX)); //TODO String Klasse entfernen
-#endif
+	#ifdef DEBUG
+		uint8_t partnum = readReg((revision == 0x01 ? CC1101_PARTNUM_REV01 : CC1101_PARTNUM_REV00), CC1101_READ_SINGLE);  // Partnum
+		DBG_PRINT(FPSTR(TXT_CCREVISION));	DBG_PRINTLN("0x" + String(version, HEX));
+		DBG_PRINT(FPSTR(TXT_CCPARTNUM));	DBG_PRINTLN("0x" + String(partnum, HEX));      // TODO String Klasse entfernen
+	#endif
 	//checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
 	if (version == 0x00 || version == 0xFF)
 	{
-		DBG_PRINT(F("no "));  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));//  F("no CC11xx found!"));
+		DBG_PRINT(F("no "));  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND)); //  F("no CC11xx found!"));
 		return false;  // Todo: power down SPI etc
 	}
 #endif // CMP_CC1101
-	return true;
+return true;
 }
 
 
@@ -265,26 +273,53 @@ void cc1101::setup()
 	pinAsOutput(mosiPin);
 	pinAsInput(misoPin);
 #endif
-	pinAsOutput(csPin);                    // set pins for SPI communication
+
+#ifndef ARDUINO_MAPLEMINI_F103CB
+	pinAsOutput(csPin);                // set pins for SPI communication
+#endif
 
 #ifdef PIN_MARK433
 	pinAsInputPullUp(PIN_MARK433);
 #endif
 
 
-#if !defined(ESP8266) && !defined(ESP32)
-	SPCR = _BV(SPE) | _BV(MSTR);               // SPI speed = CLK/4
-	digitalHigh(csPin);                 // SPI init
+#if !defined(ESP8266) && !defined(ESP32) && !defined(ARDUINO_MAPLEMINI_F103CB)
+	SPCR = _BV(SPE) | _BV(MSTR);       // SPI speed = CLK/4
+	digitalHigh(csPin);                // SPI init
 	digitalHigh(sckPin);
 	digitalLow(mosiPin);
+#elif ARDUINO_MAPLEMINI_F103CB
+	// Setup SPI 2
+	SPI_2.begin();                     // Initialize the SPI_2 port.
+	SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
+
+	/* these are preparations if the project can be expanded to 4 cc110x
+	pinAsOutput(radioCsPin[0]);
+	digitalHigh(radioCsPin[0]);
+	*/
+
+	pinAsOutput(radioCsPin[1]);
+	digitalHigh(radioCsPin[1]);
+
+	/* these are preparations if the project can be expanded to 4 cc110x
+	pinAsOutput(radioCsPin[2]);
+	digitalHigh(radioCsPin[2]);
+	pinAsOutput(radioCsPin[3]);
+	digitalHigh(radioCsPin[3]);
+	*/
 #else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
 	SPI.begin();
 	SPI.setClockDivider(SPI_CLOCK_DIV4);
 #endif
-	pinAsInput(PIN_RECEIVE);    // gdo2
-	pinAsInput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+pinAsInput(PIN_RECEIVE);               // gdo2
+pinAsInput(PIN_SEND);                  // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input   
+
+#ifndef ARDUINO_MAPLEMINI_F103CB
+	digitalHigh(sckPin);
+	digitalLow(mosiPin);
+#endif
 }
 
 uint8_t cc1101::getRevision() 
@@ -297,7 +332,7 @@ uint8_t cc1101::getRSSI() {
 
 void cc1101::setIdleMode()
 {
-	cmdStrobe(CC1101_SIDLE);                             // Idle mode
+	cmdStrobe(CC1101_SIDLE);           // Idle mode
 	delay(1);
 }
 
@@ -318,7 +353,7 @@ void cc1101::setReceiveMode()
 
 void cc1101::setTransmitMode()
 {
-	cmdStrobe(CC1101_SFTX);   // wird dies benoetigt? Wir verwenden kein FIFO
+	cmdStrobe(CC1101_SFTX);     // wird dies benoetigt? Wir verwenden kein FIFO
 	setIdleMode();
 	uint8_t maxloop = 0xff;
 	while (maxloop-- && (cmdStrobe(CC1101_STX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_TX)  // TX enable
@@ -368,14 +403,14 @@ bool cc1101::regCheck()
 	DBG_PRINTLN(b);
 	*/
 	return (readReg(CC1101_PKTCTRL0, CC1101_CONFIG) == cc1101::initVal[CC1101_PKTCTRL0]) && (readReg(CC1101_IOCFG2, CC1101_CONFIG) == cc1101::initVal[CC1101_IOCFG2]);
- #else
-  return ("");
+#else
+	return ("");
 #endif
 }
 
 
 
-void cc1101::ccFactoryReset() {
+void cc1101::ccFactoryReset() {                               // reset CC1101 and set default values
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {
 		EEPROM.write(EE_CC1101_CFG + i, pgm_read_byte(&initVal[i]));
 		DBG_PRINT(".");
@@ -389,16 +424,16 @@ void cc1101::ccFactoryReset() {
 		}
 	}
 	#if defined(ESP8266) || defined(ESP32)
-	EEPROM.commit();
+		EEPROM.commit();
 	#endif
 	MSG_PRINTLN("ccFactoryReset done");
 }
 
-void cc1101::CCinit(void) {  // initialize CC1101
+void cc1101::CCinit(void) {                                   // initialize CC1101
 #ifdef CMP_CC1101
 	DBG_PRINT(FPSTR(TXT_CCINIT)); 
 
-	cc1101_Deselect();                                  // some deselect and selects to init the cc1101
+	cc1101_Deselect();                                        // some deselect and selects to init the cc1101
 	delayMicroseconds(30);
 
 	// Begin of power on reset
@@ -409,16 +444,16 @@ void cc1101::CCinit(void) {  // initialize CC1101
 	delayMicroseconds(45);
 
 	DBG_PRINT(F("SRES Started,"));
-	cmdStrobe(CC1101_SRES);                               // send reset
+	cmdStrobe(CC1101_SRES);                                   // send reset
 	DBG_PRINT(F("POR Done,"));
 	delay(10);
 
 	cc1101_Select();
 	DBG_PRINT(FPSTR(TXT_EEPROM)); 	DBG_PRINT(FPSTR(TXT_BLANK));	DBG_PRINT(FPSTR(TXT_READ));
-  	wait_Miso();                          // Wait until MISO goes low
+	wait_Miso();                                              // Wait until MISO goes low
 
 	sendSPI(0x00 | CC1101_WRITE_BURST);
-	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {              // write EEPROM value to cc1101
+	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {   // write EEPROM value to cc1101
 		sendSPI(EEPROM.read(EE_CC1101_CFG + i));
 		DBG_PRINT(".");
 		
@@ -426,7 +461,7 @@ void cc1101::CCinit(void) {  // initialize CC1101
 	cc1101_Deselect();
 	delayMicroseconds(10);            // ### todo: welcher Wert ist als delay sinnvoll? ###
 
-	writePatable();                                 // write PatableArray to patable reg
+	writePatable();                   // write PatableArray to patable reg
 	DBG_PRINTLN(F("done"));
 
 	delay(1);

@@ -27,7 +27,7 @@ extern volatile bool blinkLED;
 namespace commands {
 
 
-	
+
 
 
 	inline void getPing()
@@ -201,8 +201,13 @@ namespace commands {
 			}
 #endif
 #ifdef DEBUG
-			MSG_PRINT(F(" DBG "));
-#endif			
+			MSG_PRINT(F(" DBG"));
+#endif
+#ifdef WATCHDOG_STM32
+	if (watchRes) {
+		MSG_PRINT(F(" wr"));
+	}
+#endif
 			MSG_PRINTLN(F(" - compiled at " __DATE__ " " __TIME__));
 			break;
 		case cmd_freeRam:
@@ -271,14 +276,14 @@ namespace commands {
 					MSG_PRINT(" :");
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
-						sprintf(b, " %02X", val);
+						sprintf(b, "%02X", val);
 						MSG_PRINT(b);
 					}
 				}
 				else {
 					MSG_PRINT(" = ");
 					const uint8_t val = EEPROM.read(reg);
-					sprintf(b, " %02X", val);
+					sprintf(b, "%02X", val);
 					MSG_PRINT(b);
 					//printHex2(EEPROM.read(reg));
 				}

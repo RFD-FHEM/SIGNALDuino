@@ -8,6 +8,7 @@ env:
       - BOARD=promini
       - BOARD=ESP32 RECEIVER=cc1101
       - BOARD=ESP8266 RECEIVER=cc1101
+      - BOARD=MAPLEMINI_F103CB RECEIVER=cc1101
   global:
 #  - IDE_VERSION=1.8.8
   - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
@@ -136,6 +137,33 @@ jobs:
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
            - arduino --install-boards esp8266:esp8266:2.6.3
            - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=MAPLEMINI_F103CB
+       - RECEIVER=cc1101
+     before_script:
+           # Add json packages url to the Arduino IDE
+           - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
+           # Install the latest core version
+           - arduino --install-boards STM32:stm32
+           # "package:arch:board" or "package:arch:board:options"
+           - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=MAPLEMINI_F103CB
+     before_script:
+           # Add json packages url to the Arduino IDE
+           - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
+           # Install the latest core version
+           - arduino --install-boards STM32:stm32
+           # "package:arch:board" or "package:arch:board:options"
+           - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 

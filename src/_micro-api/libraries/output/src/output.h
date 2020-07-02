@@ -54,6 +54,7 @@ static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 		#define pinIndex(P) \
 		(((P) >= 8 && (P) <= 11) ? (P) - 4 : (((P) >= 18 && (P) <= 21) ? 25 - (P) : (((P) == 0) ? 2 : (((P) == 1) ? 3 : (((P) == 2) ? 1 : (((P) == 3) ? 0 : (((P) == 4) ? 4 : (((P) == 6) ? 7 : (((P) == 13) ? 7 : (((P) == 14) ? 3 : (((P) == 15) ? 1 : (((P) == 16) ? 2 : (((P) == 17) ? 0 : (((P) == 22) ? 1 : (((P) == 23) ? 0 : (((P) == 24) ? 4 : (((P) == 25) ? 7 : (((P) == 26) ? 4 : (((P) == 27) ? 5 : 6 )))))))))))))))))))
 	#else
+	#ifndef ARDUINO_MAPLEMINI_F103CB
 		#define portOfPin(P)\
 		  (((P)>=0&&(P)<8)?&PORTD:(((P)>7&&(P)<14)?&PORTB:&PORTC))
 		#define ddrOfPin(P)\
@@ -61,21 +62,32 @@ static const char TXT_TPATAB[]				PROGMEM = " to PATABLE done";
 		#define pinOfPin(P)\
 		  (((P)>=0&&(P)<8)?&PIND:(((P)>7&&(P)<14)?&PINB:&PINC))
 		#define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
+    #else
+      #define pinAsInput(pin) pinMode(pin, INPUT)
+      #define pinAsOutput(pin) pinMode(pin, OUTPUT)
+      #define pinAsInputPullUp(pin) pinMode(pin, INPUT_PULLUP)
+      #define digitalLow(pin) digitalWrite(pin, LOW)
+      #define digitalHigh(pin) digitalWrite(pin, HIGH)
+      #define isHigh(pin) (digitalRead(pin) == HIGH)
+      #define isLow(pin) (digitalRead(pin) == LOW)
+    #endif
 	#endif
 
 	#if defined(WIN32) || defined(__linux__)
 		#define digitalLow(P) pinMode(P,LOW)
 		#define digitalHigh(P) pinMode(P,HIGH)
 	#else
-		#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
-		#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
-		#define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
-		#define pinAsOutput(P) *(ddrOfPin(P))|=pinMask(P)
-		#define digitalLow(P) *(portOfPin(P))&=~pinMask(P)
-		#define digitalHigh(P) *(portOfPin(P))|=pinMask(P)
-		#define isHigh(P)((*(pinOfPin(P))& pinMask(P))>0)
-		#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
-		#define digitalState(P)((uint8_t)isHigh(P))
+		#ifndef ARDUINO_MAPLEMINI_F103CB
+			#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
+			#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
+			#define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
+			#define pinAsOutput(P) *(ddrOfPin(P))|=pinMask(P)
+			#define digitalLow(P) *(portOfPin(P))&=~pinMask(P)
+			#define digitalHigh(P) *(portOfPin(P))|=pinMask(P)
+			#define isHigh(P)((*(pinOfPin(P))& pinMask(P))>0)
+			#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
+			#define digitalState(P)((uint8_t)isHigh(P))
+		#endif
 	#endif
 #else
 	#define pinAsInput(pin) pinMode(pin, INPUT)

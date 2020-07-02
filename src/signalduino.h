@@ -35,19 +35,18 @@
 #include "compile_config.h"
 
 
-#define PROGVERS               "3.4.0-dev_20200616"
-#define VERSION_1               0x33
-#define VERSION_2               0x1d
+#define VERSION_1              0x33
+#define VERSION_2              0x1d
 
 #if defined(__AVR__)
 #define PROGNAME               " SIGNALduino "
 
 #define BAUDRATE               57600 // 500000 //57600
-#define FIFO_LENGTH			   90 //150
+#define FIFO_LENGTH            90    // 150
 
 // EEProm Address
-#define EE_MAGIC_OFFSET      0
-#define addr_features        0xff
+#define EE_MAGIC_OFFSET        0
+#define addr_features          0xff
 
 
 
@@ -275,15 +274,12 @@ void serialEvent()
 }
 
 
+
 int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-
  }
-
-
-
 
 
 
