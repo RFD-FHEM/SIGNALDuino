@@ -15,7 +15,7 @@
  * Enable debug option here
  * ************************
 */
-//#define DEBUG
+//#define DEBUG    // (this option is too big for AVR_RADINOCC1101 - 106% | 1988 Bytes too much)
 
 
 /*

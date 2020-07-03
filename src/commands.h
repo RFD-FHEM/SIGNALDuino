@@ -26,10 +26,6 @@ extern volatile bool blinkLED;
 
 namespace commands {
 
-
-
-
-
 	inline void getPing()
 	{
 		MSG_PRINTLN("OK");
@@ -127,10 +123,10 @@ namespace commands {
 		#define  cmd_help '?'
 		#define  cmd_ping 'P'
 		#define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
-		#define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
+		#define  cmd_config 'C'          // CG get config, set config, C<reg> get CC1101 register
 		#define  cmd_patable 'x' 
-		#define  cmd_write 'W'      // write EEPROM und write CC1101 register
-		#define  cmd_read  'r'      // read EEPROM
+		#define  cmd_write 'W'           // write EEPROM und write CC1101 register
+		#define  cmd_read  'r'           // read EEPROM
 		#define  cmd_space ' '
 		#define  cmd_send 'S'
 		#define  cmd_status 's'

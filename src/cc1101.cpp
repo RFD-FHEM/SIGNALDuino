@@ -416,11 +416,11 @@ bool cc1101::regCheck()
 	//uint8_t val;
 #ifdef CMP_CC1101
 	DBG_PRINT(FPSTR(TXT_CC1101));
-	DBG_PRINT(F("_PKTCTRL0=")); DBG_PRINT(readReg(CC1101_PKTCTRL0, CC1101_CONFIG));
+	DBG_PRINT(F("PKTCTRL0=")); DBG_PRINT(readReg(CC1101_PKTCTRL0, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval PKTCTRL0=")); DBG_PRINTLN(cc1101::initVal[CC1101_PKTCTRL0]);
 
 	DBG_PRINT(FPSTR(TXT_CC1101)); 
-	DBG_PRINT(F("_IOCFG2=")); DBG_PRINT(readReg(CC1101_IOCFG2, CC1101_CONFIG));
+	DBG_PRINT(F("IOCFG2=")); DBG_PRINT(readReg(CC1101_IOCFG2, CC1101_CONFIG));
 	DBG_PRINT(F(" vs initval IOCFG2=")); DBG_PRINTLN(cc1101::initVal[CC1101_IOCFG2]);
 	/*
 	DBG_PRINT(FPSTR(TXT_CC1101));
@@ -515,12 +515,11 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 	setReceiveMode();
 
 	#if defined(DEBUG)
-		DBG_PRINT(FPSTR(("CCInit PINs misoPin="))); DBG_PRINT((misoPin));
-		DBG_PRINT(FPSTR((" mosiPin="))); DBG_PRINT((mosiPin));
-		DBG_PRINT(FPSTR((" sckPin="))); DBG_PRINT((sckPin));
-		DBG_PRINT(FPSTR((" csPin="))); DBG_PRINTLN((csPin));
-
-		DBG_PRINT(FPSTR(TXT_CCINIT)); DBG_PRINT(FPSTR(("ccmode="))); DBG_PRINTLN(ccmode);
+		DBG_PRINT(FPSTR(TXT_CCINIT)); DBG_PRINT(FPSTR(TXT_misoPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((misoPin));
+		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_mosiPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((mosiPin));
+		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_sckPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((sckPin));
+		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_csPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((csPin));
+		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_CCmode)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINTLN(ccmode);
 	#endif
 
 #endif
@@ -578,7 +577,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 				if (cc1101::ccmode != 2 || dup == false) {
 
 					if (cc1101::ccmode != 9) {
-						MSG_PRINT(MSG_START);
+						MSG_PRINT(char(MSG_START));      // SDC_WRITE not work in this scope
 						MSG_PRINT(F("MN;D="));
 					}
 					for (uint8_t i = 0; i < fifoBytes; i++) {
@@ -611,7 +610,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
 					MSG_PRINT(F(";"));
-					MSG_PRINT(MSG_END);
+					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
 				}
 			}
