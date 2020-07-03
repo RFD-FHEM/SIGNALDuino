@@ -32,9 +32,9 @@ endif()
 
 # Find all library source and unit test files
 file( GLOB_RECURSE ARDUINO_LIBRARY_SOURCE_FILES ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/output/src/*.h ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/output/src/*.cpp ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/bitstore/*.cpp  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/fastdelegate/src/*.cpp ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signalDecoder/src/*.cpp  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/bitstore/src/*.h  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/fastdelegate/src/*.h ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signalDecoder/src/*.h 
- ${PROJECT_SOURCE_DIR}/../commands.h 
- ${PROJECT_SOURCE_DIR}/../functions.h 
- ${PROJECT_SOURCE_DIR}/../send.h)
+ ${PROJECT_SOURCE_DIR}/../src/commands.h 
+ ${PROJECT_SOURCE_DIR}/../src/functions.h 
+ ${PROJECT_SOURCE_DIR}/../src/send.h)
 file( GLOB ARDUINO_LIBRARY_TEST_FILES   ${PROJECT_SOURCE_DIR}/testSignalDecoder/tests.cpp  ${PROJECT_SOURCE_DIR}/testSignalDecoder/tests.h ${PROJECT_SOURCE_DIR}/testSignalDecoder/targetver.h )
 
 # Create unit test executable

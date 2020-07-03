@@ -4,9 +4,11 @@ env:
   matrix: 
     env: 
       - BOARD=nano328 RECEIVER=cc1101
-      - BOARD=radiono RECEIVER=cc1101  
-      - BOARD=promini 
+      - BOARD=radiono RECEIVER=cc1101
+      - BOARD=promini
+      - BOARD=ESP32 RECEIVER=cc1101
       - BOARD=ESP8266 RECEIVER=cc1101
+      - BOARD=MAPLEMINI_F103CB RECEIVER=cc1101
   global:
 #  - IDE_VERSION=1.8.8
   - secure: JuFfMHl8rC9ZeUF2LWHvWb99xWHn7e+sQcGiFkUrVztrmH6L18r7wyOdCbEpxdHJphQdsBPj6S0qnA4RXuKoMizAQfEmZ01v9ZPXr1y6A+QF+ri3M2ZMicwEUfyT80oPUp+o33HPE7cKG8sq8eM4qlALTFf4VL8QsM4DLyMuZlfkMLa1SkglA6Z7W15Ftm3kPxzFqHt7g/Y0QbFus9NrmS28pE3uZKzMjPvMv5Uyq47Ua6dRGV8brXutN9qsx1La87VtunelOECE1s8RvkjuLVlcQS2YmGkqRWSdGQPKVnK4pH3EtJDZ3010hRfJCus02VsGXNqssDmfOYv8JxS/7TxI6d88VS+YpKrqWfsZ3e9KWL4SiCaTuh3V3OG3iddYWuU13dyZeXviJVaSmKcm0AKs+WdugsApB691d6wQ19ujPwdIaeR9+K68b7jjMJeftkYuheMY4iJHteJO10E5m1BC/VDl8ptWSFdGPmGRTV+uzhJINLkzuc/p8vj/XQh4lcCwssxvfYy1qF5xD+gmtpEvzHNN/lAy3AsJdAf+Ay1PC/3Uo5WP9NtlsYwY6QadDpM4fyObGCapTsLDf7J3sgD1YpZSUvjdDSFz4C8TbXCHfiogcCR+fPKrlctqNX76VnE871pAUdF45E33gFKTndL6s3E8EHmJFiLGVeMJp9Q=
@@ -17,20 +19,20 @@ script:
 before_install:
   - mkdir $PWD/SIGNALDuino
 # - find $PWD/src/_micro-api/libraries -maxdepth 1 -depth -type d -not -name "libraries"    | xargs -i find  {}/src/ -maxdepth 1 -not -name "src" -not -name "examples" | xargs cp -a -t $PWD/SIGNALDuino/;
-  - find $PWD -maxdepth 1 -name "*.h" -or -name "*.cpp" -or -name "*.ino"  | xargs cp -a -t $PWD/SIGNALDuino/
+#  - find $PWD -maxdepth 1 -name "*.h" -or -name "*.cpp" -or -name "*.ino"  | xargs cp -a -t $PWD/SIGNALDuino/
   - wget http://downloads.arduino.cc/arduino-$IDE_VERSION-linux64.tar.xz
 install:
   - tar xf arduino-$IDE_VERSION-linux64.tar.xz;   
   - sudo mv arduino-$IDE_VERSION /usr/local/share/arduino;  
   - sudo ln -s /usr/local/share/arduino/arduino /usr/local/bin/arduino;
-  - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
-  - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
-  - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
-  - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
-  - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
-  - ln -s $PWD/src/_micro-api/libraries/TimerOne /usr/local/share/arduino/libraries/TimerOne
-  - ln -s $PWD/src/_micro-api/libraries/WIFIManager /usr/local/share/arduino/libraries/WIFIManager
-  - ln -s $PWD/src/_micro-api/libraries/ArduinoJson /usr/local/share/arduino/libraries/ArduinoJson
+# - ln -s $PWD/src/_micro-api/libraries/bitstore /usr/local/share/arduino/libraries/bitstore
+# - ln -s $PWD/src/_micro-api/libraries/output /usr/local/share/arduino/libraries/output
+# - ln -s $PWD/src/_micro-api/libraries/signalDecoder /usr/local/share/arduino/libraries/signalDecoder
+# - ln -s $PWD/src/_micro-api/libraries/SimpleFIFO /usr/local/share/arduino/libraries/simpleFIFO
+# - ln -s $PWD/src/_micro-api/libraries/fastdelegate /usr/local/share/arduino/libraries/fastdelegate
+# - ln -s $PWD/src/_micro-api/libraries/TimerOne /usr/local/share/arduino/libraries/TimerOne
+# - ln -s $PWD/src/_micro-api/libraries/WIFIManager /usr/local/share/arduino/libraries/WIFIManager
+# - ln -s $PWD/src/_micro-api/libraries/ArduinoJson /usr/local/share/arduino/libraries/ArduinoJson
   - arduino --pref "compiler.warning_level=all" --save-prefs;
   - mkdir $PWD/release;
   - arduino --pref "build.path=$PWD/release" --save-prefs;
@@ -95,6 +97,27 @@ jobs:
     - 
      stage: deploy
      env:
+       - BOARD=ESP32
+       - RECEIVER=cc1101
+     before_script:
+           - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" --save-prefs
+           - arduino --install-boards esp32:esp32
+           - arduino --board esp32:esp32:esp32:FlashMode=qio,FlashFreq=80 --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=ESP32
+     before_script:
+           - arduino --pref "boardsmanager.additional.urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json" --save-prefs
+           - arduino --install-boards esp32:esp32
+           - arduino --board esp32:esp32:esp32:FlashMode=qio,FlashFreq=80 --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
        - BOARD=ESP8266
        - RECEIVER=cc1101
 #       - IDE_VERSION=1.8.5
@@ -102,8 +125,8 @@ jobs:
 #           - git clone --branch ota http://github.com/tzapu/WiFiManager.git /usr/local/share/arduino/libraries/WIFIManager
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
 #           - arduino --install-library "ArduinoJson:5.13.2";
-           - arduino --install-boards esp8266:esp8266:2.4.2
-           - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
+           - arduino --install-boards esp8266:esp8266:2.6.3
+           - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
@@ -112,8 +135,35 @@ jobs:
        - BOARD=ESP8266
      before_script:
            - arduino --pref "boardsmanager.additional.urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json" --save-prefs
-           - arduino --install-boards esp8266:esp8266:2.4.2
-           - arduino --board esp8266:esp8266:generic:CpuFrequency=80,ResetMethod=ck,CrystalFreq=26,FlashFreq=40,FlashMode=dio,FlashSize=1M64,LwIPVariant=v2mss536,Debug=Disabled,DebugLevel=None____,UploadSpeed=115200 --save-prefs
+           - arduino --install-boards esp8266:esp8266:2.6.3
+           - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=MAPLEMINI_F103CB
+       - RECEIVER=cc1101
+     before_script:
+           # Add json packages url to the Arduino IDE
+           - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
+           # Install the latest core version
+           - arduino --install-boards STM32:stm32
+           # "package:arch:board" or "package:arch:board:options"
+           - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
+     after_success:
+           - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
+    - 
+     stage: deploy
+     env:
+       - BOARD=MAPLEMINI_F103CB
+     before_script:
+           # Add json packages url to the Arduino IDE
+           - arduino --pref "boardsmanager.additional.urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json" --save-prefs
+           # Install the latest core version
+           - arduino --install-boards STM32:stm32
+           # "package:arch:board" or "package:arch:board:options"
+           - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
     - 
