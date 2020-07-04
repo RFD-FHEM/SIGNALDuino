@@ -33,7 +33,7 @@ static const char TXT_EQ[]              PROGMEM = "=";
 static const char TXT_FOUND[]           PROGMEM = "found ";
 static const char TXT_FSEP[]            PROGMEM = ";";
 static const char TXT_MC[]              PROGMEM = "MC";
-static const char TXT_MHZ[]             PROGMEM = "Mhz ";
+static const char TXT_MHZ[]             PROGMEM = "Mhz";
 static const char TXT_MS[]              PROGMEM = "MS";
 static const char TXT_MU[]              PROGMEM = "MU";
 static const char TXT_READ[]            PROGMEM = "read ";
