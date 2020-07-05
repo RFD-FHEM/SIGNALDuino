@@ -53,7 +53,7 @@ before_deploy:
 deploy:
  # - ./deploy.sh
   provider: releases
-  skip-cleanup: true
+  skip_cleanup: true
   draft: true
   prerelease: true
   token:
