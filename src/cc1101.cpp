@@ -194,7 +194,7 @@ void cc1101::commandStrobes(void) {
 	uint8_t val1;
 
 	if (isHexadecimalDigit(IB_1[3])) {
-		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16);
+		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16) + 0x30; // to strobe registers
 		if (reg < 0x3e) {
 			val = cmdStrobe(reg);
 			delay(1);
