@@ -23,7 +23,7 @@
  * ****************************************
 */
 
-#define PROGVERS               "3.5.0-dev_20200702"
+#define PROGVERS               "3.5.0-dev_20200708"
 
 #ifdef OTHER_BOARD_WITH_CC1101
 	#define CMP_CC1101
@@ -82,7 +82,7 @@
 		#define ETHERNET_PRINT
 //		#define PIN_LED_INVERSE             // use this setting for the LED_BUILTIN on WEMOS boards
 	#elif defined(ESP32)
-		#define PIN_RECEIVE          16   // D16 | G16 (depending on type / clone / seller)
+		#define PIN_RECEIVE          13   // D13 | G13 (depending on type / clone / seller) --> old 16, not good (serial) and not all boards n.c.
 		#define PIN_LED              2    // D2  | G2 (depending on type / clone / seller)
 		#define PIN_SEND             4    // D4  | G4 (depending on type / clone / seller) // gdo0Pin TX out
 		#define ETHERNET_PRINT

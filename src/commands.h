@@ -345,7 +345,7 @@ namespace commands {
 #endif
 			}
 #if defined(ESP32) || defined(ESP8266)
-			EEPROM.commit();
+			EEPROM.commit();    // ToDo: ESP32 | if DEBUG setting, crash many times AND DEBUG off, crash if setting freqency, ICACHE_RAM ???
 #endif
 		break;
 		case cmd_status:

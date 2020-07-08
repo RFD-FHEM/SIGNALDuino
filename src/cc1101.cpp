@@ -221,7 +221,7 @@ void cc1101::commandStrobes(void) {
 	uint8_t val1;
 
 	if (isHexadecimalDigit(IB_1[3])) {
-		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16);
+		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16) + 48;  // + dez 48 (0x30) for right adress
 		if (reg < 0x3e) {
 			val = cmdStrobe(reg);
 			delay(1);
@@ -236,6 +236,11 @@ void cc1101::commandStrobes(void) {
 void cc1101::writeCCreg(uint8_t reg, uint8_t var) { // write CC1101 register
 	if (reg > 1 && reg < 0x40) {
 		writeReg(reg - EE_CC1101_CFG, var);
+
+	if (reg - EE_CC1101_CFG == 18) {
+		ccmode = ( var & 0x70 ) >> 4;                // read modulation direct from 0x12 MDMCFG2
+	}
+
 		char b[6];
 		// sprintf_P(b, PSTR("W%02X%02X"), reg, var);
 		sprintf(b,"W%02X%02X",reg,var);
@@ -503,12 +508,12 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 		DBG_PRINT(".");
 	}
 
-	ccmode = ( ( EEPROM.read(EE_CC1101_CFG + 18) ) & 0x70 ) >> 4;   // read modulation direkt
-
 	cc1101_Deselect();
-	delayMicroseconds(10);                                 // ### todo: welcher Wert ist als delay sinnvoll? ###
+	delayMicroseconds(10);                                          // ### todo: welcher Wert ist als delay sinnvoll? ###
 
-	writePatable();                                        // write PatableArray to patable reg
+	ccmode = ( (EEPROM.read(EE_CC1101_CFG + 18) ) & 0x70 ) >> 4;    // first read modulation direct from 0x12 MDMCFG2
+
+	writePatable();                                                 // write PatableArray to patable reg
 	DBG_PRINTLN(F("done"));
 
 	delay(1);
@@ -599,13 +604,6 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
           #endif
  * 
  */
-
-
-//          uint8_t n = EEPROM.read(0x3D);
-//          if (n > 0) {
-//            MSG_PRINT(F(";N="));
-//            MSG_PRINT(n);
-//          }
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
