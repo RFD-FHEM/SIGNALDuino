@@ -21,7 +21,7 @@ extern char IB_1[14];
 extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
-
+extern uint8_t ccmode;;          // xFSK
 
 
 namespace commands {
@@ -313,6 +313,10 @@ namespace commands {
 				}
 
 				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
+
+				if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
+					DBG_PRINTLN("optimum register settings for OOK/ASK operation");
+
 					reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
@@ -342,6 +346,7 @@ namespace commands {
 						cc1101::writeCCreg(reg, val);
 					}
 				}
+			}
 #endif
 			}
 #if defined(ESP32) || defined(ESP8266)
