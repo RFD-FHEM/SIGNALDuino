@@ -1,7 +1,8 @@
 language: cpp
-sudo: required 
+os: linux
+dist: xenial
 env:
-  matrix: 
+  jobs: 
     env: 
       - BOARD=nano328 RECEIVER=cc1101
       - BOARD=radiono RECEIVER=cc1101
@@ -51,50 +52,47 @@ before_deploy:
   - chmod +x ./deploy.sh;
 deploy:
  # - ./deploy.sh
-  skip_cleanup: true
   provider: releases
-  api_key:
+  skip_cleanup: true
+  draft: true
+  prerelease: true
+  token:
     secure: X2FfofClmMfz7Uch6QZYcBCDHfRblljHjMioNOvZdRU0eL1SapPnbCAL4Aff5eox4loJHm0sjRMemCXEDWkbgGxIjGqYaXe9eLdQn/jXUMuGlF+UgWxJsU5xj0kvMA3e6qMD/8gwnmfCFmLamDrYzvOgUOnNLnTmWFHiERLRBdd+b+LZ/68kX1VHnkmEKDEGIt+QfhQM5dO4fZF1MdPsho9mXlPGLSj81S3njAdMKnWVatBWXdNSAMwhJDARO+nfGXHSNoEY/RBmzmt7VTPScnCXrASjsuzHFmU0GvjG1zV8pBPNmj26TlST74xdtWGA7Czl7mLbYup1Q/GATy1s4LrQP/wXHHKKBccg2czlD7I6YgeuTbwgLncmtk918hcqnu4Zn8I2tuUxlB8V1G0u2XMeyQx3jcodxF4I36c1yge+VrW2FeDIl2qOGJwn5Azff4T1SAd49YJGyLMZfVkZljzhUVb92rKrcX33TW2eVyG4kNd6aOi/mH8niNJlsU5osfjhtBP0zQM89QroMV9AMpLfltmMBFGlcH4hxb9gjCWFZXwGqgka5fEAVTCJhp/GNhwuCN754/vdoGaA78zHkOPPIZ2CIBvX93BH2QtaRz+8inY6xA6g4ScVVp3lMjrqe1NdCCR6j927vkp+lvCPj6OLBhkcM4QcYQffRqmaAHY=
   file: $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
   on:
      repo: RFD-FHEM/SIGNALDuino
      tags: true
-     prerelease: true
-     draft: true
-     condition: $TRAVIS_BUILD_STAGE_NAME = "Deploy"
-     #condition: "$TRAVIS_EVENT_TYPE = cron"
-     #condition: $TRAVIS_TAG =~ ^release.*$
+     condition: $TRAVIS_BUILD_STAGE_NAME = "deploy"
      all_branches: true
-     #condition: $TRAVIS_BRANCH =~ ^dev-r33.*
 
 jobs: 
   include: 
-    - 
+    -
       stage: deploy
       env: 
         - BOARD=nano
         - RECEIVER=cc1101
-    - 
+    -
       stage: deploy
       env: 
         - BOARD=nano328
-    - 
+    -
      stage: deploy
      env:
       - BOARD=radino
       - RECEIVER=cc1101
      before_script:
            - arduino --pref boardsmanager.additional.urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json --save-prefs;
-    - 
+    -
      stage: deploy
      env:
       - BOARD=minicul
       - RECEIVER=cc1101
-    - 
+    -
      stage: deploy
      env:
       - BOARD=promini
-    - 
+    -
      stage: deploy
      env:
        - BOARD=ESP32
@@ -105,7 +103,7 @@ jobs:
            - arduino --board esp32:esp32:esp32:FlashMode=qio,FlashFreq=80 --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
      stage: deploy
      env:
        - BOARD=ESP32
@@ -115,7 +113,7 @@ jobs:
            - arduino --board esp32:esp32:esp32:FlashMode=qio,FlashFreq=80 --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
      stage: deploy
      env:
        - BOARD=ESP8266
@@ -129,7 +127,7 @@ jobs:
            - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
      stage: deploy
      env:
        - BOARD=ESP8266
@@ -139,7 +137,7 @@ jobs:
            - arduino --board esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
      stage: deploy
      env:
        - BOARD=MAPLEMINI_F103CB
@@ -153,7 +151,7 @@ jobs:
            - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
      stage: deploy
      env:
        - BOARD=MAPLEMINI_F103CB
@@ -166,7 +164,7 @@ jobs:
            - arduino --board STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB --save-prefs
      after_success:
            - mv $PWD/release/SIGNALDuino.ino.bin $PWD/release/SIGNALDuino_${BOARD}${RECEIVER}${TRAVIS_TAG}.hex
-    - 
+    -
       stage: unittest
       install: skip 
       before_install: skip
@@ -196,4 +194,4 @@ notifications:
     on_failure: change
 stages:
   - unittest
-  - stage: deploy
+  - deploy
