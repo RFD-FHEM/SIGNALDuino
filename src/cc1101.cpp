@@ -194,8 +194,8 @@ void cc1101::commandStrobes(void) {
 	uint8_t val1;
 
 	if (isHexadecimalDigit(IB_1[3])) {
-		reg = (uint8_t)strtol(&IB_1[3], nullptr, 16) + 0x30; // to strobe registers
-		if (reg < 0x3e) {
+	reg = (uint8_t)strtol(&IB_1[2], nullptr, 16);  // address strobe command | CC1101 - Table 42: Command Strobes
+		if (reg < 0x3E) {
 			val = cmdStrobe(reg);
 			delay(1);
 			val1 = cmdStrobe(0x3D);        //  No operation. May be used to get access to the chip status byte.
