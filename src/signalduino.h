@@ -41,6 +41,7 @@
 #define VERSION_2              0x1d
 
 #if defined(__AVR__)
+
 #define PROGNAME               " SIGNALduino "
 
 #define BAUDRATE               57600 // 500000 //57600
@@ -49,7 +50,6 @@
 // EEProm Address
 #define EE_MAGIC_OFFSET        0
 #define addr_features          0xff
-
 
 
 // Predeclation
@@ -91,121 +91,128 @@ char IB_1[14]; // Input Buffer one - capture commands
 
 
 void setup() {
-	Serial.begin(BAUDRATE);
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for native USB
-	}
+  Serial.begin(BAUDRATE);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB
+  }
 
 
 
-	//delay(2000);
-	pinAsInput(PIN_RECEIVE);
-	pinAsOutput(PIN_LED);
-	// CC1101
-	
-	//wdt_reset();
+  //delay(2000);
+  pinAsInput(PIN_RECEIVE);
+  pinAsOutput(PIN_LED);
+  // CC1101
 
-	#ifdef CMP_CC1101
-	cc1101::setup();
-	#endif
-	initEEPROM();
-	#ifdef CMP_CC1101
+  //wdt_reset();
 
+  #ifdef CMP_CC1101
+    cc1101::setup();
+  #endif
+  initEEPROM();
 
-	cc1101::CCinit();					 // CC1101 init
-	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
-
-
-	if (hasCC1101)
-	{
-		//DBG_PRINTLN("CC1101 found");
-		DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
-		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	} else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
-	}
-	#endif 
-
-	pinAsOutput(PIN_SEND);
-	DBG_PRINTLN(F("Starting timerjob"));
-	delay(50);
-
-	Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
-	Timer1.attachInterrupt(cronjob);
-
-	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
-	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
-	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
-	//cmdstring.reserve(40);
-
-	musterDec.setStreamCallback(&writeCallback);
+  #ifdef CMP_CC1101
+    cc1101::CCinit();                    // CC1101 init
+    hasCC1101 = cc1101::checkCC1101();   // Check for cc1101
 
 
-#ifdef CMP_CC1101
-	if (!hasCC1101 || cc1101::regCheck()) {
-#endif
-		enableReceive();
-		DBG_PRINT(FPSTR(TXT_RECENA));
-#ifdef CMP_CC1101
-	}
-	else {
-		DBG_PRINT(FPSTR(TXT_CC1101));
-		DBG_PRINT(FPSTR(TXT_DOFRESET));
-		DBG_PRINTLN(FPSTR(TXT_COMMAND));
-	}
-#endif
-	MSG_PRINTER.setTimeout(400);
+    if (hasCC1101)
+    {
+      //DBG_PRINTLN("CC1101 found");
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
+      musterDec.setRSSICallback(&cc1101::getRSSI);                 // Provide the RSSI Callback
+    } else {
+      musterDec.setRSSICallback(&rssiCallback);                    // Provide the RSSI Callback
+    }
+  #endif 
+
+  pinAsOutput(PIN_SEND);
+  DBG_PRINTLN(F("Starting timerjob"));
+  delay(50);
+
+  Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
+  Timer1.attachInterrupt(cronjob);
+
+  /*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
+  MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
+  MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
+  //cmdstring.reserve(40);
+
+  musterDec.setStreamCallback(&writeCallback);
+
+  #ifdef CMP_CC1101
+    if (!hasCC1101 || cc1101::regCheck()) {
+  #endif
+
+  enableReceive();
+  DBG_PRINT(FPSTR(TXT_RECENA));
+
+  #ifdef CMP_CC1101
+    } else {
+      DBG_PRINT(FPSTR(TXT_CC1101));
+      DBG_PRINT(FPSTR(TXT_DOFRESET));
+      DBG_PRINTLN(FPSTR(TXT_COMMAND));
+    }
+  #endif
+
+  MSG_PRINTER.setTimeout(400);
 }
 
 
 void cronjob() {
-	static uint8_t cnt = 0;
-	cli();
-	const unsigned long  duration = micros() - lastTime;
+  static uint8_t cnt = 0;
+  cli();
+  const unsigned long  duration = micros() - lastTime;
 
-	Timer1.setPeriod(32001);
+  Timer1.setPeriod(32001);
 
-	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
-		int sDuration = maxPulse;
-		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
-			sDuration = -sDuration;
-		}
-		FiFo.enqueue(sDuration);
-		lastTime = micros();
-	 } else if (duration > 10000) {
-		Timer1.setPeriod(maxPulse-duration+16);
-	 }
-#ifdef PIN_LED_INVERSE
-	 digitalWrite(PIN_LED, !blinkLED);
-#else
-	 digitalWrite(PIN_LED, blinkLED);
-#endif
-	 blinkLED = false;
+  if (duration >= maxPulse) { //Auf Maximalwert pruefen.
+    int sDuration = maxPulse;
+    if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
+      sDuration = -sDuration;
+    }
+    FiFo.enqueue(sDuration);
+    lastTime = micros();
+  } else if (duration > 10000) {
+    Timer1.setPeriod(maxPulse-duration+16);
+  }
 
-	 sei();
+  #ifdef PIN_LED_INVERSE
+    digitalWrite(PIN_LED, !blinkLED);
+  #else
+    digitalWrite(PIN_LED, blinkLED);
+  #endif
 
-	 // Infrequent time uncritical jobs (~ every 2 hours)
-	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
-		 getUptime();
+  blinkLED = false;
+  sei();
+
+  // Infrequent time uncritical jobs (~ every 2 hours)
+  if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+    getUptime();
 }
 
 
 void loop() {
-	static int aktVal=0;
-	bool state;
-#ifdef __AVR_ATmega32U4__	
-	serialEvent();
-#endif
-	//wdt_reset();
-	if (cc1101::ccmode == 3) {                  // ASK/OOK = 3 (default)
-		while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
-			aktVal=FiFo.dequeue();
-			state = musterDec.decode(&aktVal); 
-			if (state) blinkLED=true;           // LED blinken, wenn Meldung dekodiert
-		}
-	} else {
-		cc1101::getRxFifo(0);
-	}
+  static int aktVal=0;
+  bool state;
+
+  #ifdef __AVR_ATmega32U4__
+    serialEvent();
+  #endif
+  //wdt_reset();
+
+  #ifdef CMP_CC1101
+    if (cc1101::ccmode == 3) {                // ASK/OOK = 3 (default)
+  #endif
+      while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
+        aktVal=FiFo.dequeue();
+        state = musterDec.decode(&aktVal); 
+        if (state) blinkLED=true;             // LED blinken, wenn Meldung dekodiert
+      }
+  #ifdef CMP_CC1101
+    } else {
+      cc1101::getRxFifo(0);                   // xFSK = 0
+    }
+  #endif
 }
 
 
@@ -213,16 +220,15 @@ void loop() {
 //============================== Write callback =========================================
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
-	while (!MSG_PRINTER.availableForWrite() )
-		yield();
-	//DBG_PRINTLN("Called writeCallback");
+  while (!MSG_PRINTER.availableForWrite() )
+  yield();
+  //DBG_PRINTLN("Called writeCallback");
 
-	//MSG_PRINT(*buf);
-	//MSG_WRITE(buf, len);
-	return MSG_PRINTER.write(buf,len);
-	
-	//serverClient.write("test");
+  //MSG_PRINT(*buf);
+  //MSG_WRITE(buf, len);
+  return MSG_PRINTER.write(buf,len);
 
+  //serverClient.write("test");
 }
 
 
@@ -230,38 +236,37 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 //================================= Serielle verarbeitung ======================================
 void serialEvent()
 {
-	static uint8_t idx = 0;
-	while (MSG_PRINTER.available())
-	{
-		if (idx == 14) {
-			// Short buffer is now full
-			MSG_PRINT("Command to long: ");
-			MSG_PRINTLN(IB_1);
-			idx = 0;
-			return;
-		}
-		else {
-			IB_1[idx] = (char)MSG_PRINTER.read();
-			switch (IB_1[idx])
-			{
-				case '\n':
-				case '\r':
-				case '\0':
-				case '#':
-					//wdt_reset();
-					commands::HandleShortCommand();  // Short command received and can be processed now
-					idx = 0;
-					return; //Exit function
-				case ';':
-					DBG_PRINT("send cmd detected ");
-					DBG_PRINTLN(idx);
-					send_cmd();
-					idx =  0; // increments to 1
-					return; //Exit function
-			}
-			idx++;
-		}
-	}
+  static uint8_t idx = 0;
+  while (MSG_PRINTER.available())
+  {
+    if (idx == 14) {
+      // Short buffer is now full
+      MSG_PRINT("Command to long: ");
+      MSG_PRINTLN(IB_1);
+      idx = 0;
+      return;
+    } else {
+      IB_1[idx] = (char)MSG_PRINTER.read();
+      switch (IB_1[idx])
+      {
+        case '\n':
+        case '\r':
+        case '\0':
+        case '#':
+        //wdt_reset();
+          commands::HandleShortCommand();  // Short command received and can be processed now
+          idx = 0;
+          return; //Exit function
+        case ';':
+          DBG_PRINT("send cmd detected ");
+          DBG_PRINTLN(idx);
+          send_cmd();
+          idx =  0; // increments to 1
+          return; //Exit function
+      }
+      idx++;
+    }
+  }
 }
 
 
@@ -270,8 +275,8 @@ int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
- }
+}
 
 
 
-#endif
+#endif  // END defined(__AVR__)

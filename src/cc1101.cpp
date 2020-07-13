@@ -5,7 +5,7 @@
 #endif
 
 #define ccMaxBuf 64                  // for cc1101 FIFO, variable is better to revised
-uint8_t cc1101::ccmode = 0;          // MDMCFG2–Modem Configuration Bit 6:4
+uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
 extern volatile bool blinkLED;
