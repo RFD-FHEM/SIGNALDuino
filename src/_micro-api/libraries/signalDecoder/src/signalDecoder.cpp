@@ -847,7 +847,9 @@ MUOutput:
 	
 	if (!m_truncated)  // Todo: Eventuell auf vollen Puffer prüfen
 	{
+		bool _success=success;  // save success because it is set to false in reset()
 		reset();
+		success=_success;  // restore success
 	}
 
 	//SDC_PRINTLN("process finished");
@@ -946,6 +948,8 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT("]");
 	}
 	DBG_PRINTLN();
+#else
+delay(0);
 #endif
 }
 
