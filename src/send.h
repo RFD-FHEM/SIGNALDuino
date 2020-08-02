@@ -165,6 +165,7 @@ void send_cmd()
 			if (cmdNo == 0) {
 				DBG_PRINTLN("rearrange beginptr");
 				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
+        DBG_PRINTLN(" ");  // for better overview in DEBUG view
 				msg_endptr = buf; // rearrange to beginning of buf
 				msg_beginptr = nullptr;
 			}
@@ -178,6 +179,7 @@ void send_cmd()
 				DBG_PRINTLN("Adding bucket");
 				if (cmdNo == 0) {
 					MSG_PRINT(msg_beginptr);
+          DBG_PRINTLN(" "); // for better overview in DEBUG view
 					msg_endptr = buf; // rearrange to beginning of buf
 					msg_beginptr = nullptr;
 				}
@@ -189,6 +191,7 @@ void send_cmd()
 		DBG_PRINT("Adding repeats: "); DBG_PRINTLN(command[cmdNo].repeats);
 		if (cmdNo == 0) {
 			MSG_PRINT(msg_beginptr);
+        DBG_PRINTLN(" "); // for better overview in DEBUG view
 			msg_endptr = buf; // rearrange to beginning of buf
 			msg_beginptr = nullptr;
 
@@ -281,9 +284,10 @@ void send_cmd()
 
 	if (command[0].type == combined && command[0].repeats > 0) {
     /* only on combined message typ (MC)
-       repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;
-       repeats 1 --> SM;R=3;P0=500;C=250;D=A4F7FDDE;
-       repeats 3 --> SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;
+       repeats 3 --> SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;          type MC - ASK/OOK
+       repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;    type MU - ASK/OOK
+       repeats 1 --> SN;R=5;D=9A46036AC8D3923EAEB470AB;                     type MN - xFSK
+       repeats 1 --> SM;R=3;P0=500;C=250;D=A4F7FDDE;                        type MS - ASK/OOK
     */
 		repeats = command[0].repeats;
 	}
@@ -321,11 +325,18 @@ void send_cmd()
 		}
 		DBG_PRINTLN("");
 	}
+
 	DBG_PRINT(IB_1);
 	MSG_PRINTLN(buf); // echo data of command
-	musterDec.reset();
-	FiFo.flush();
-	enableReceive();	// enable the receiver
+
+  if (command[cmdNo].type == 3) // send xFSK
+  {
+    DBG_PRINTLN("now xFSK ???");
+  } else {
+    musterDec.reset();
+    FiFo.flush();
+    enableReceive();	// enable the receiver
+  }
 }
 
 
