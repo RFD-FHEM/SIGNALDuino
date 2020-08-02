@@ -150,7 +150,7 @@ void setup() {
   if (!hasCC1101 || cc1101::regCheck()) {
 #endif
     enableReceive();
-    DBG_PRINT(FPSTR(TXT_RECENA));
+    DBG_PRINTLN(FPSTR(TXT_RECENA));
 #ifdef CMP_CC1101
   } else {
     DBG_PRINT(FPSTR(TXT_CC1101));

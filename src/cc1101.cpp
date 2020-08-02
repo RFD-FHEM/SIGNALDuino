@@ -397,7 +397,9 @@ void cc1101::setReceiveMode()
 
 	while (maxloop-- && (cmdStrobe(CC1101_SRX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_RX) // RX enable
 		delay(1);
-	if (maxloop == 0)		DBG_PRINTLN("CC1101: Setting RX failed");
+#ifdef CMP_CC1101
+  if (maxloop == 0) { DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting RX failed")); }
+#endif
 	pinAsInput(PIN_SEND);
 }
 
@@ -409,7 +411,7 @@ void cc1101::setTransmitMode()
 	while (maxloop-- && (cmdStrobe(CC1101_STX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_TX)  // TX enable
 		delay(1);
 #ifdef CMP_CC1101
-	if (maxloop == 0) DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
+	if (maxloop == 0) { DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed")); }
 #endif
 	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
 }

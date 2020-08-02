@@ -88,6 +88,7 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 // SR;R=10;P0=-2000;P1=-1000;P2=500;P3=-6000;D=2020202021212020202121212021202021202121212023;
 
 // SC;R=6;SR;P0=-2560;P1=2560;P3=-640;D=10101010101010113;SM;C=645;D=A1E7E7D6F88D88;F=10AB85550A;   # SOMFY
+// SN;R=13;N=2;D=91C6496AFAAC7070151E465B;                                                          # xFSK Lacrosse
 
 #define maxNumPattern 8
 struct s_sendcmd {
@@ -104,6 +105,7 @@ void send_cmd()
 #define combined 0
 #define manchester 1
 #define raw 2
+#define xFSK 3
 	disableReceive();
 
 	uint8_t repeats = 1;  // Default is always one iteration so repeat is 1 if not set
@@ -154,6 +156,12 @@ void send_cmd()
 			DBG_PRINTLN("Adding raw");
 			extraDelay = false;
 			}
+      else if (msg_beginptr[1] == 'N') // send xFSK
+      {
+      cmdNo++;
+      command[cmdNo].type = xFSK;
+      DBG_PRINTLN("Adding xFSK message");
+      }
 			if (cmdNo == 0) {
 				DBG_PRINTLN("rearrange beginptr");
 				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
@@ -272,6 +280,11 @@ void send_cmd()
 
 
 	if (command[0].type == combined && command[0].repeats > 0) {
+    /* only on combined message typ (MC)
+       repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;
+       repeats 1 --> SM;R=3;P0=500;C=250;D=A4F7FDDE;
+       repeats 3 --> SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;
+    */
 		repeats = command[0].repeats;
 	}
 	for (uint8_t i = 0; i < repeats; i++)
@@ -281,7 +294,7 @@ void send_cmd()
 		for (uint8_t c = 0; c <= cmdNo; c++)
 		{
 			DBG_PRINT(" cmd "); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
-			DBG_PRINT(" reps "); DBG_PRINTLN(command[c].repeats);
+			DBG_PRINT(" repeats msg "); DBG_PRINTLN(command[c].repeats);
 
 			if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
 			else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }

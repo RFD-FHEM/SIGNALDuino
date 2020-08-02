@@ -144,7 +144,7 @@ void setup() {
   #endif
 
   enableReceive();
-  DBG_PRINT(FPSTR(TXT_RECENA));
+  DBG_PRINTLN(FPSTR(TXT_RECENA));
 
   #ifdef CMP_CC1101
     } else {
