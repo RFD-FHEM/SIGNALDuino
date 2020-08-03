@@ -411,7 +411,7 @@ void cc1101::setTransmitMode()
     #else
       DBG_PRINTLN(F(": Setting TX failed"));
     #endif
-    return false;
+    return;
   }
 
 	setIdleMode();
@@ -424,10 +424,10 @@ void cc1101::setTransmitMode()
     #else
       DBG_PRINTLN(F(": Setting TX failed"));
     #endif
-    return false;
+    return;
 	}
 	//pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
-  return true;
+  return;
 }
 
 
