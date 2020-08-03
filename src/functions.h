@@ -67,6 +67,7 @@ void ICACHE_RAM_ATTR handleInterrupt() {
 
 
 void enableReceive() {
+  // ToDo MR if(cc1101::ccmode == 0) ???
 	attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE), handleInterrupt, CHANGE);
 #ifdef CMP_CC1101
 	if (hasCC1101) cc1101::setReceiveMode();
@@ -74,6 +75,7 @@ void enableReceive() {
 }
 
 void disableReceive() {
+  // ToDo MR if(cc1101::ccmode == 0) ???
 	detachInterrupt(digitalPinToInterrupt(PIN_RECEIVE));
 
 #ifdef CMP_CC1101

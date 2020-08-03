@@ -405,15 +405,29 @@ void cc1101::setReceiveMode()
 
 void cc1101::setTransmitMode()
 {
-	cmdStrobe(CC1101_SFTX);     // wird dies benoetigt? Wir verwenden kein FIFO
+  if (cmdStrobeTo(CC1101_SFTX) == false) {  // flush TX with wait MISO timeout
+    #ifdef CMP_CC1101
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
+    #else
+      DBG_PRINTLN(F(": Setting TX failed"));
+    #endif
+    return false;
+  }
+
 	setIdleMode();
 	uint8_t maxloop = 0xff;
 	while (maxloop-- && (cmdStrobe(CC1101_STX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_TX)  // TX enable
 		delay(1);
-#ifdef CMP_CC1101
-	if (maxloop == 0) { DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed")); }
-#endif
-	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
+	if (maxloop == 0) {
+    #ifdef CMP_CC1101
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
+    #else
+      DBG_PRINTLN(F(": Setting TX failed"));
+    #endif
+    return false;
+	}
+	//pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
+  return true;
 }
 
 
@@ -478,7 +492,7 @@ void cc1101::ccFactoryReset() {                            // reset CC1101 and s
 	#if defined(ESP8266) || defined(ESP32)
 		EEPROM.commit();
 	#endif
-	MSG_PRINTLN("ccFactoryReset done");
+	MSG_PRINTLN(F("ccFactoryReset done"));
 }
 
 void cc1101::CCinit(void) {                                // initialize CC1101
@@ -654,4 +668,40 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 */
 		}
 	}
+}
+
+
+void cc1101::sendFIFO(String data) {
+  uint8_t enddata = 0;
+
+  if (data.length() == 0) {
+    return;
+  } else {
+    enddata = data.indexOf(";",0);      // search next   ";"
+    if (enddata == 255) {
+      enddata = data.indexOf("\n",0);   // search next   "\n"
+    }
+
+    if (enddata == 255) {
+      enddata = data.length();
+    }
+
+    cc1101_Select();                                // select CC1101
+    sendSPI(CC1101_TXFIFO | CC1101_WRITE_BURST);    // send register address
+
+    uint8_t val;
+    for (uint8_t i = 0; i < enddata; i+=2) {
+      val = hex2int((uint8_t)data.charAt(i)) * 16;
+      val = hex2int((uint8_t)data.charAt(i+1)) + val;
+      sendSPI(val);    // send value
+    }
+
+    cc1101_Deselect();    //Wait for sending to finish (CC1101 will go to RX state automatically
+
+    for(uint8_t i=0; i< 200;++i) {
+      if( readReg(CC1101_MARCSTATE_REV00, CC1101_STATUS) != MarcStateTx)
+        break;            //neither in RX nor TX, probably some error
+      delay(1);
+    }
+  }
 }

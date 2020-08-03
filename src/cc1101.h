@@ -94,6 +94,7 @@ namespace cc1101 {
 	#define CC1101_SFRX     0x3A  // Flush the RX FIFO buffer | Underflow and # of bytes in TXFIFO / CC1101_TXBYTES
 	#define CC1101_SFTX     0x3B  // Flush the TX FIFO buffer | Overflow and # of bytes in RXFIFO / CC1101_RXBYTES
 	#define CC1101_SNOP     0x3D  // No operation. May be used to get access to the chip status byte.
+  #define CC1101_TXFIFO   0x3F
 	#define CC1101_RXFIFO   0x3F
 
   enum CC1101_MarcState {
@@ -201,6 +202,7 @@ namespace cc1101 {
 	void ccFactoryReset();
 	void commandStrobes(void);
 	void getRxFifo(uint16_t Boffs);                                 // xFSK
+  void sendFIFO(String);                                          // xFSK
 	void readCCreg(const uint8_t reg);                              // read CC1101 register
 	void readPatable(void);
 	void setIdleMode();
