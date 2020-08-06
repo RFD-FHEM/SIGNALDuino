@@ -509,9 +509,9 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 	cc1101_Deselect();
 	delayMicroseconds(45);
 
-	DBG_PRINT(F("SRES Started,"));
+	DBG_PRINT(F("SRES started,"));
 	cmdStrobe(CC1101_SRES);                                // send reset
-	DBG_PRINT(F("POR Done,"));
+	DBG_PRINT(F("POR done,"));
 	delay(10);
 
 	cc1101_Select();
@@ -534,14 +534,6 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 
 	delay(1);
 	setReceiveMode();
-
-	#if defined(DEBUG)
-		DBG_PRINT(FPSTR(TXT_CCINIT)); DBG_PRINT(FPSTR(TXT_misoPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((misoPin));
-		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_mosiPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((mosiPin));
-		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_sckPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((sckPin));
-		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_csPin)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINT((csPin));
-		DBG_PRINT(FPSTR(TXT_BLANK)); DBG_PRINT(FPSTR(TXT_CCmode)); DBG_PRINT(FPSTR(TXT_EQ)); DBG_PRINTLN(ccmode);
-	#endif
 
 #endif
 }

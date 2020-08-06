@@ -156,12 +156,14 @@ void send_cmd()
 			DBG_PRINTLN(F("Adding raw"));
 			extraDelay = false;
 			}
-      else if (msg_beginptr[1] == 'N') // send xFSK
-      {
-      cmdNo++;
-      command[cmdNo].type = xFSK;
-      DBG_PRINTLN(F("Adding xFSK message"));
-      }
+      #ifdef CMP_CC1101
+        else if (msg_beginptr[1] == 'N') // send xFSK
+        {
+          cmdNo++;
+          command[cmdNo].type = xFSK;
+          DBG_PRINTLN(F("Adding xFSK message"));
+        }
+      #endif
 			if (cmdNo == 0) {
 				DBG_PRINTLN(F("rearrange beginptr"));
 				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
@@ -235,7 +237,7 @@ void send_cmd()
 		}
 		if (msg_endptr == msg_beginptr)
 		{
-			DBG_PRINTLN("break loop");
+			DBG_PRINTLN(F("break loop"));
 			break; // break the loop now
 
 		}
@@ -251,7 +253,7 @@ void send_cmd()
 				buffer_left -= l;
 				l = MSG_PRINTER.readBytes(msg_endptr, 1);
 				if (l == 0) {
-					DBG_PRINTLN("TOUT");  break;
+					DBG_PRINTLN(F("TOUT"));  break;
 				}
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
 			if (l == 0)
@@ -297,31 +299,35 @@ void send_cmd()
 	{
 		DBG_PRINT(F("msg ")); DBG_PRINT(i + 1); DBG_PRINT("/"); DBG_PRINT(repeats);
 
-    if (command[cmdNo].type == 3) //xFSK
-    {
-      DBG_PRINTLN(" ");
-      for (uint8_t d = 0; d <= command[cmdNo].repeats - 1; d++)
+    #ifdef CMP_CC1101
+      if (command[cmdNo].type == 3) //xFSK
       {
-        cc1101::sendFIFO(command[cmdNo].datastart);
-      }
-    } else { // no xFSK
-      for (uint8_t c = 0; c <= cmdNo; c++)
-      {
-        DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
-        DBG_PRINT(F(" repeats ")); DBG_PRINTLN(command[c].repeats);
+        DBG_PRINTLN(" ");
+        for (uint8_t d = 0; d <= command[cmdNo].repeats - 1; d++)
+        {
+          cc1101::sendFIFO(command[cmdNo].datastart);
+        }
+      } else { // no xFSK
+    #endif
+        for (uint8_t c = 0; c <= cmdNo; c++)
+        {
+          DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
+          DBG_PRINT(F(" repeats ")); DBG_PRINTLN(command[c].repeats);
 
-        if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
-        else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
-        digitalLow(PIN_SEND);
-        DBG_PRINT(".");
+          if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
+          else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
+          digitalLow(PIN_SEND);
+          DBG_PRINT(".");
+        }
+        DBG_PRINTLN(" ");
+    #ifdef CMP_CC1101
       }
-      DBG_PRINTLN(" ");
-    }
+    #endif
 		if (extraDelay) delay(1);
 	}
 
 	if (ccParamAnz > 0) {
-		DBG_PRINT("ccreg write back ");
+		DBG_PRINT(F("ccreg write back "));
 		//char b[3];
 		for (uint8_t i = 0; i < ccParamAnz; i++)
 		{
@@ -343,8 +349,10 @@ void send_cmd()
     musterDec.reset();
     FiFo.flush();
   } else {
-    MSG_PRINT(F("Marcs="));
-    MSG_PRINTLN(cc1101::getMARCSTATE());     // 0x35 (0xF5): MARCSTATE –Main Radio Control State Machine State
+    #ifdef CMP_CC1101
+      //MSG_PRINT(F("Marcs="));
+      //MSG_PRINTLN(cc1101::getMARCSTATE());     // 0x35 (0xF5): MARCSTATE –Main Radio Control State Machine State
+    #endif
   }
   enableReceive();  // enable the receiver
 }

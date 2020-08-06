@@ -187,7 +187,7 @@ namespace commands {
 						 MSG_PRINT("L");
 						break;
 					default:
-						MSG_PRINT(" unknown");
+						MSG_PRINT(F(" unknown"));
 						break;
 				}
 				MSG_PRINT(")");
@@ -262,7 +262,7 @@ namespace commands {
 			// R<adr>  read EEPROM
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
-				MSG_PRINT("EEPROM ");
+				MSG_PRINT(F("EEPROM "));
 
 				char b[3];
 				sprintf(b, "%2X", reg);
@@ -315,7 +315,7 @@ namespace commands {
 				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
 
 				if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
-					DBG_PRINTLN("optimum register settings for OOK/ASK operation");
+					DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
 
 					reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6

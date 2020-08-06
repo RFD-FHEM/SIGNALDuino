@@ -3,7 +3,7 @@
 /*
  * Config flags for compiling correct options / boards Define only one!
  * ********************************************************************
- * nothing to define                                             // boards without CC1101 (example, ESP8266, ESP32, nano)
+ * nothing to define                                             // boards without CC1101 (example, ESP8266, ESP32, nano, ...)
 */
 //#define CMP_CC1101
 //#define ARDUINO_ATMEGA328P_MINICUL 1                           // minicul with CC1101
@@ -15,15 +15,16 @@
  * Enable debug option here
  * ************************
   Arduino IDE
-  radino_CC1101  - option too big - 31408 Bytes (109%), max 28672
-  minicul        - option too big - 29474 Bytes (102%), max 28672
-  
+  radino_CC1101        - option too big - 29282 Bytes (102%), max 28672
+  radino_CC1101@debug  - option too big - 31282 Bytes (106%), max 28672
+  minicul@debug        - option too big - 29258 Bytes (102%), max 28672
+
   Platform IO
-  minicul_16MHz_CC1101@debug  - (31124 bytes) option too big - allowed (30720 bytes)
-  minicul_8MHz_CC1101@debug   - (31114 bytes) option too big - allowed (30720 bytes)
-  nano_bootl_new_CC1101@debug - (31124 bytes) option too big - allowed (30720 bytes)
-  nano_bootl_old_CC1101@debug - (31124 bytes) option too big - allowed (30720 bytes)
-  radino_CC1101               - (29824 bytes) option too big - allowed (28672 bytes)
+  minicul_16MHz_CC1101@debug  - (30910 bytes) option too big - allowed (30720 bytes)
+  minicul_8MHz_CC1101@debug   - (30900 bytes) option too big - allowed (30720 bytes)
+  nano_bootl_new_CC1101@debug - (30910 bytes) option too big - allowed (30720 bytes)
+  nano_bootl_old_CC1101@debug - (30910 bytes) option too big - allowed (30720 bytes)
+  radino_CC1101               - (29776 bytes) option too big - allowed (28672 bytes)
 */
 //#define DEBUG
 
@@ -33,7 +34,7 @@
  * ****************************************
 */
 
-#define PROGVERS               "3.5.0-dev_20200803"
+#define PROGVERS               "3.5.0-dev_20200806"
 
 #ifdef OTHER_BOARD_WITH_CC1101
   #define CMP_CC1101

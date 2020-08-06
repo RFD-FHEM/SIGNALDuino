@@ -267,7 +267,7 @@ void serialEvent()
   {
     if (idx == 14) {
       // Short buffer is now full
-      MSG_PRINT("Command to long: ");
+      MSG_PRINT(F("Command to long: "));
       MSG_PRINTLN(IB_1);
       idx = 0;
       return;
