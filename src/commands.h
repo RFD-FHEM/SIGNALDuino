@@ -173,18 +173,18 @@ namespace commands {
 				MSG_PRINT(FPSTR(TXT_CHIP)); MSG_PRINT(FPSTR(TXT_BLANK)); MSG_PRINT(FPSTR(TXT_CC110));
 				switch (cc1101::chipVersion()) {
 					case 0x03:
-						 MSG_PRINT("0"); 
+						 MSG_PRINT(F("0")); 
 						break;
 					case 0x14:
 					case 0x04:
-						 MSG_PRINT("1");
+						 MSG_PRINT(F("1"));
 						break;
 					case 0x05:
-						 MSG_PRINT("0E");
+						 MSG_PRINT(F("0E"));
 						break;
 					case 0x07:
  					case 0x17:
-						 MSG_PRINT("L");
+						 MSG_PRINT(F("L"));
 						break;
 					default:
 						MSG_PRINT(F(" unknown"));

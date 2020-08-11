@@ -61,7 +61,7 @@ const uint8_t cc1101::initVal[] PROGMEM =
 
 
 
-byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int    // Todo: printf oder scanf nutzen
+byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int (smallest variant, sketch is bigger with printf or scanf)
 	if (hex >= '0' && hex <= '9') hex = hex - '0';
 	else if (hex >= 'a' && hex <= 'f') hex = hex - 'a' + 10;
 	else if (hex >= 'A' && hex <= 'F') hex = hex - 'A' + 10;
@@ -283,13 +283,13 @@ bool cc1101::checkCC1101() {
 	uint8_t version = chipVersion();                // Version
 	#ifdef DEBUG
 		uint8_t partnum = readReg((revision == 0x01 ? CC1101_PARTNUM_REV01 : CC1101_PARTNUM_REV00), CC1101_READ_SINGLE);  // Partnum
-		DBG_PRINT(FPSTR(TXT_CCREVISION));	DBG_PRINTLN("0x" + String(version, HEX));
-		DBG_PRINT(FPSTR(TXT_CCPARTNUM));	DBG_PRINTLN("0x" + String(partnum, HEX));       // TODO String Klasse entfernen
+		DBG_PRINT(FPSTR(TXT_CCREVISION));	DBG_PRINT("0x"); DBG_PRINTLN(version, HEX);
+		DBG_PRINT(FPSTR(TXT_CCPARTNUM)); DBG_PRINT("0x"); DBG_PRINTLN(partnum, HEX);
 	#endif
 	//checks if valid Chip ID is found. Usualy 0x03 or 0x14. if not -> abort
 	if (version == 0x00 || version == 0xFF)
 	{
-		DBG_PRINT(F("no "));  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));  //  F("no CC11xx found!"));
+		DBG_PRINT(F("no "));  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
 		return false;  // Todo: power down SPI etc
 	}
 #endif // CMP_CC1101
@@ -484,7 +484,9 @@ void cc1101::ccFactoryReset() {                            // reset CC1101 and s
 	#if defined(ESP8266) || defined(ESP32)
 		EEPROM.commit();
 	#endif
-	MSG_PRINTLN(F("ccFactoryReset done"));
+  #ifdef CMP_CC1101
+	  MSG_PRINTLN(FPSTR(TXT_CCFACTORYRESET));
+  #endif
 }
 
 void cc1101::CCinit(void) {                                // initialize CC1101
