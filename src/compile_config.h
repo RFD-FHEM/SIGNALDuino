@@ -15,8 +15,8 @@
  * Enable debug option here
  * ************************
   Arduino IDE
-  radino_CC1101        - option too big - 29282 Bytes (102%), max 28672
-  radino_CC1101@debug  - option too big - 31282 Bytes (106%), max 28672
+  radino_CC1101        - option too big - 29298 Bytes (102%), max 28672
+  radino_CC1101@debug  - option too big - 31260 Bytes (109%), max 28672
   minicul@debug        - option too big - 29258 Bytes (102%), max 28672
 
   Platform IO
@@ -45,17 +45,14 @@
 #endif
 
 // Get compatibility with Arduino IDE and VisualMicro
-#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
-  #define ARDUINO_RADINOCC1101
-#endif
-
 #ifdef ARDUINO_RADINOCC1101
   #define CMP_CC1101
 #endif
 
 
+// enabled ARDUINO_MAPLEMINI_F103CB Watchdog option
 #ifdef ARDUINO_MAPLEMINI_F103CB           // STM32F103CBT6
-  //#define WATCHDOG_STM32 1              // enabled ARDUINO_MAPLEMINI_F103CB Watchdog option
+  //#define WATCHDOG_STM32 1
 #endif
 
 

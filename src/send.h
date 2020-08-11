@@ -193,7 +193,6 @@ void send_cmd()
 			MSG_PRINT(msg_beginptr);
 			msg_endptr = buf; // rearrange to beginning of buf
 			msg_beginptr = nullptr;
-
 		}
 		}
 		else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
@@ -284,7 +283,7 @@ void send_cmd()
 
 
 	if (command[0].type == combined && command[0].repeats > 0) {
-    /* only on combined message typ (MC)
+    /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
        repeats 3 --> SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;          type MC - ASK/OOK
        repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;    type MU - ASK/OOK
        repeats 1 --> SN;R=5;D=9A46036AC8D3923EAEB470AB;                     type MN - xFSK
@@ -314,9 +313,7 @@ void send_cmd()
           if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
           else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
           digitalLow(PIN_SEND);
-          DBG_PRINT(".");
         }
-        DBG_PRINTLN(" ");
     #ifdef CMP_CC1101
       }
     #endif
