@@ -34,7 +34,7 @@
  * ****************************************
 */
 
-#define PROGVERS               "3.5.0-dev_20200806"
+#define PROGVERS               "3.5.0-dev_20200811"
 
 #ifdef OTHER_BOARD_WITH_CC1101
   #define CMP_CC1101
