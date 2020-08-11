@@ -167,7 +167,6 @@ void send_cmd()
 			if (cmdNo == 0) {
 				DBG_PRINTLN(F("rearrange beginptr"));
 				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
-        DBG_PRINTLN(" ");  // for better overview in DEBUG view
 				msg_endptr = buf; // rearrange to beginning of buf
 				msg_beginptr = nullptr;
 			}
@@ -181,7 +180,6 @@ void send_cmd()
 				DBG_PRINTLN(F("Adding bucket"));
 				if (cmdNo == 0) {
 					MSG_PRINT(msg_beginptr);
-          DBG_PRINTLN(" "); // for better overview in DEBUG view
 					msg_endptr = buf; // rearrange to beginning of buf
 					msg_beginptr = nullptr;
 				}
@@ -193,7 +191,6 @@ void send_cmd()
 		DBG_PRINT(F("Adding repeats: ")); DBG_PRINTLN(command[cmdNo].repeats);
 		if (cmdNo == 0) {
 			MSG_PRINT(msg_beginptr);
-        DBG_PRINTLN(" "); // for better overview in DEBUG view
 			msg_endptr = buf; // rearrange to beginning of buf
 			msg_beginptr = nullptr;
 
