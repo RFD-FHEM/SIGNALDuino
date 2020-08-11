@@ -16,15 +16,11 @@
  * ************************
   Arduino IDE
   radino_CC1101        - option too big - 29298 Bytes (102%), max 28672
-  radino_CC1101@debug  - option too big - 30884 Bytes (107%), max 28672
+  radino_CC1101@debug  - option too big - 30882 Bytes (107%), max 28672
   minicul@debug        - option too big - 28806 Bytes (100%), max 28672
 
   Platform IO
-  minicul_16MHz_CC1101@debug  - (30910 bytes) option too big - allowed (30720 bytes)
-  minicul_8MHz_CC1101@debug   - (30900 bytes) option too big - allowed (30720 bytes)
-  nano_bootl_new_CC1101@debug - (30910 bytes) option too big - allowed (30720 bytes)
-  nano_bootl_old_CC1101@debug - (30910 bytes) option too big - allowed (30720 bytes)
-  radino_CC1101               - (29776 bytes) option too big - allowed (28672 bytes)
+  all hardware i.o
 */
 //#define DEBUG
 

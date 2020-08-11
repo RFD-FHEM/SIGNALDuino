@@ -405,9 +405,10 @@ void cc1101::setReceiveMode()
 
 void cc1101::setTransmitMode()
 {
+#ifdef CMP_CC1101
   if (cmdStrobeTo(CC1101_SFTX) == false) {  // flush TX with wait MISO timeout
     DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
-    return false;
+    return;
   }
 
 	setIdleMode();
@@ -416,10 +417,11 @@ void cc1101::setTransmitMode()
 		delay(1);
 	if (maxloop == 0) {
     DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting TX failed"));
-    return false;
+    return;
 	}
 	pinAsOutput(PIN_SEND);      // gdo0Pi, sicherheitshalber bis zum CC1101 init erstmal input
-  return true;
+  return;
+#endif
 }
 
 
