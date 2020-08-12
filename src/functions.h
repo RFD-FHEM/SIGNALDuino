@@ -164,6 +164,36 @@ inline unsigned long getUptime() {
 }
 
 
-//====================== helper functions for smaller sketch size for uC ===========================
+/* 
+ * =================================================
+ *  helper functions for smaller sketch size for uC
+ * =================================================
+ */
+
+int MSG_PRINTtoHEX(int var) {
+/* 
+ * this function is the alternative to 
+ * sprintf(b, "%02x ", xxx(i));
+ * output via MSG_PRINT
+ */
+  if(var < 16) {
+    MSG_PRINT(0);
+  }
+  MSG_PRINT(var , HEX);
+}
+
+int DBG_PRINTtoHEX(int var) {
+/* 
+ * this function is the alternative to 
+ * sprintf(b, "%02x ", yyy(i));
+ * output via DBG_PRINT
+ */
+#ifdef DEBUG
+  if(var < 16) {
+    DBG_PRINT(0);
+  }
+  DBG_PRINT(var , HEX);
+#endif
+}
 
 #endif // endif _FUNCTIONS_h
