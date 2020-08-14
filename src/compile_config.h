@@ -12,16 +12,23 @@
 
 
 /*
- * Enable debug option here
- * ************************
+ * compiling notes
+ * ***************
   Arduino IDE
   radino_CC1101        - option too big - 29298 Bytes (102%), max 28672
   radino_CC1101@debug  - option too big - 30882 Bytes (107%), max 28672
   minicul@debug        - option too big - 28806 Bytes (100%), max 28672
 
   Platform IO
-  all hardware i.o
+  radino_CC1101        - size (29788 bytes) is greater than maximum allowed (28672 bytes)
+  radino_CC1101@debug  - size (32738 bytes) is greater than maximum allowed (28672 bytes)
 */
+
+
+/*
+ * Enable debug option here
+ * ************************
+*
 //#define DEBUG
 
 
@@ -40,7 +47,11 @@
   #define CMP_CC1101
 #endif
 
-// Get compatibility with Arduino IDE and VisualMicro
+// Get compatibility with Arduino IDE, PlatformIO, VisualMicro
+#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+  #define ARDUINO_RADINOCC1101
+#endif
+
 #ifdef ARDUINO_RADINOCC1101
   #define CMP_CC1101
 #endif
