@@ -114,14 +114,14 @@ RAM:   [====      ]  43.2% (used 884 bytes from 2048 bytes)
 Flash: [=======   ]  73.8% (used 22662 bytes from 30720 bytes)
 =============================================================================================
 
-radino_CC1101@debug
-RAM:   [====      ]  41.2% (used 1055 bytes from 2560 bytes)
-Flash: [==========]  95.1% (used 27268 bytes from 28672 bytes)
+radino_CC1101@debug (to big)
+RAM:   [=====     ]  45.4% (used 1162 bytes from 2560 bytes)
+Flash: [==========]  110.0% (used 31552 bytes from 28672 bytes)
 =============================================================================================
 
-radino_CC1101
-RAM:   [===       ]  33.3% (used 853 bytes from 2560 bytes)
-Flash: [========= ]  87.6% (used 25110 bytes from 28672 bytes)
+radino_CC1101 (ONLY xFSK receive)
+RAM:   [====      ]  37.5% (used 960 bytes from 2560 bytes)
+Flash: [==========]  99.9% (used 28656 bytes from 28672 bytes)
 =============================================================================================
 
 esp32_CC1101@debug
