@@ -40,7 +40,11 @@
   #define CMP_CC1101
 #endif
 
-// Get compatibility with Arduino IDE and VisualMicro
+// Get compatibility with Arduino IDE, PlatformIO, VisualMicro
+#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
+  #define ARDUINO_RADINOCC1101
+#endif
+
 #ifdef ARDUINO_RADINOCC1101
   #define CMP_CC1101
 #endif
