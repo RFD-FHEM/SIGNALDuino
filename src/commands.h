@@ -262,7 +262,8 @@ namespace commands {
 			// R<adr>  read EEPROM
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
-				MSG_PRINT(F("EEPROM "));
+				MSG_PRINT(FPSTR(TXT_EEPROM));
+				MSG_PRINT(FPSTR(TXT_BLANK));
 
 				char b[3];
 				sprintf(b, "%2X", reg);

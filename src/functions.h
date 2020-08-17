@@ -13,6 +13,7 @@
   #include "compile_config.h"
   #include <EEPROM.h>
   #include "output.h"
+  #include "helpers.h"
   #include "SimpleFIFO.h"
   #include "cc1101.h"
 
@@ -114,8 +115,8 @@ void dumpEEPROM() {
     DBG_PRINT(F("dump, ")); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINTLN(F(":"));
     char b[4];
     for (uint8_t i = EE_MAGIC_OFFSET; i < 56+ EE_MAGIC_OFFSET; i++) {
-      sprintf(b, "%02x ", EEPROM.read(i));
-      DBG_PRINT(b);
+      DBG_PRINTtoHEX(EEPROM.read(i));
+      DBG_PRINT(FPSTR(TXT_BLANK));
         if ((i & 0x0F) == 0x0F)
         DBG_PRINTLN("");
     }

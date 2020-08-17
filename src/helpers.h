@@ -7,7 +7,10 @@
  * =================================================
  *  helper functions for smaller sketch size for uC
  * =================================================
- * 0 - 28806 size nano with debug
+* 
+ * cnt opt. - size with hardware
+ *    0     - 28806 size nano with debug
+ *    1     - 28652 size nano with debug
  */
 
 
@@ -33,7 +36,7 @@ void DBG_PRINTtoHEX(uint8_t b) {
   if(b < 16) {
     DBG_PRINT(0);
   }
-  //DBG_PRINT(b , HEX);
+  DBG_PRINT(b , HEX);
 #endif
 }
 
