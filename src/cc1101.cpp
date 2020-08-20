@@ -1,4 +1,4 @@
-﻿#include "cc1101.h"
+#include "cc1101.h"
 
 #ifdef ARDUINO_MAPLEMINI_F103CB
 	SPIClass SPI_2(mosiPin, misoPin, sckPin);
@@ -147,8 +147,9 @@ void cc1101::readPatable(void) {
 	char b[4];
 
 	for (uint8_t i = 0; i < 8; i++) {
-		sprintf_P(b, PSTR(" %02X"), PatableArray[i]);
-		MSG_PRINT(b);
+    MSG_PRINT(FPSTR(TXT_BLANK));
+    if(PatableArray[i] < 16) MSG_PRINT(0);  // helpers functions lines
+    MSG_PRINT(PatableArray[i] , HEX);       // helpers functions lines
 	}
 	MSG_PRINTLN("");
 }
@@ -168,7 +169,7 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 	uint8_t n;
 	char b[11];
 
-	if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck
+	if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck, example: C06n2
 		n = (uint8_t)strtol((const char*)IB_1 + 4, NULL, 16);
 		if (reg < 0x2F) {
 			n += 2;
@@ -177,38 +178,40 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 
 			for (uint8_t i = reg; i < reg + n; i++) {
 				var = readReg(i, CC1101_CONFIG);
-				sprintf(b, "%02X", var);
-				MSG_PRINT(b);
+        if(var < 16) MSG_PRINT(0);  // helpers functions lines
+        MSG_PRINT(var , HEX);       // helpers functions lines
 			}
 			MSG_PRINTLN("");
 		}
 	} else {
-		if (reg < 0x3E) {
+		if (reg < 0x3E) {           // example: C06
 			if (reg < 0x2F) {
 				var = readReg(reg, CC1101_CONFIG);
-			}
-			else {
+			} else {
 				var = readReg(reg, CC1101_STATUS);
 			}
-			sprintf_P(b, PSTR("C%02X = %02X"), reg, var);
+			sprintf_P(b, PSTR("C%02X = %02X"), reg, var);  // checked, no other methode smaller
 			MSG_PRINTLN(b);
 		}
-		else if (reg == 0x3E) {                     // patable
+		else if (reg == 0x3E) {     // patable, C3E
 			MSG_PRINT(F("C3E ="));
 			readPatable();
 		}
-		else if (reg == 0x99) {                     // alle register
+		else if (reg == 0x99) {     // alle register, C99
 			for (uint8_t i = 0; i < 0x2f; i++) {
 				if (i == 0 || i == 0x10 || i == 0x20) {
 					if (i > 0) {
-						MSG_PRINT(" ");
+						MSG_PRINT(FPSTR(TXT_BLANK));
 					}
-					sprintf_P(b, PSTR("ccreg %02X: "), i);
-					MSG_PRINT(b);
+					MSG_PRINT(F("ccreg "));
+          if(i < 16) MSG_PRINT(0);  // helpers functions lines
+          MSG_PRINT(i , HEX);       // helpers functions lines
+          MSG_PRINT(F(": "));
 				}
 				var = readReg(i, CC1101_CONFIG);
-				sprintf_P(b, PSTR("%02X "), var);
-				MSG_PRINT(b);
+        if(var < 16) MSG_PRINT(0);  // helpers functions lines
+        MSG_PRINT(var , HEX);       // helpers functions lines
+        MSG_PRINT(" ");
 			}
 			MSG_PRINTLN("");
 		}
@@ -592,8 +595,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					for (uint8_t i = 0; i < fifoBytes; i++) {
 						// printHex2(ccBuf[i]);
 						char b[2];
-						sprintf(b, "%02X", ccBuf[i]);
-						MSG_PRINT(b);
+            if(ccBuf[i] < 16) MSG_PRINT(0);  // helpers functions lines
+            MSG_PRINT(ccBuf[i] , HEX);       // helpers functions lines
 					}
 
 /*

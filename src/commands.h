@@ -71,7 +71,7 @@ namespace commands {
 
 		switch (IB_1[2])
 		{
-			case 'S': //MS
+			case 'S' : //MS
 				bptr = &musterDec.MSenabled;
 				break;
 			case 'U' : //MU
@@ -99,7 +99,6 @@ namespace commands {
 				return;
 		}
 
-
 		storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
 	}
 
@@ -109,7 +108,7 @@ namespace commands {
 		if (strstr(&IB_1[2],"mcmbl=") != NULL)   // mc min bit len
 		{
 			musterDec.mcMinBitLen = strtol(&IB_1[8], NULL,10);
-			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
+			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(F(" bits set"));
 		}
 	}
 
@@ -245,44 +244,38 @@ namespace commands {
 				dumpEEPROM();
 			}
 			break;
-		case cmd_patable:
+		case cmd_patable:  // example: x12
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
 				MSG_PRINT(FPSTR(TXT_WRITE));
 				char b[3];
-				sprintf(b, "%02X", val);
-				MSG_PRINT(b);
+				MSG_PRINTtoHEX(val);
 				MSG_PRINTLN(FPSTR(TXT_TPATAB));
 			}
 			break;
 
 #endif
-		case cmd_read:
-			// R<adr>  read EEPROM
+		case cmd_read:  // r<adr> read EEPROM, example: r0a, r03n
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				MSG_PRINT(FPSTR(TXT_EEPROM));
 				MSG_PRINT(FPSTR(TXT_BLANK));
 
 				char b[3];
-				sprintf(b, "%2X", reg);
-				MSG_PRINT(b);
+				MSG_PRINTtoHEX(reg);
 
 				if (IB_1[3] == 'n') {
-					MSG_PRINT(" :");
+					MSG_PRINT(F(" :"));
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
-						sprintf(b, "%02X", val);
-						MSG_PRINT(b);
+						MSG_PRINTtoHEX(val);
 					}
 				}
 				else {
-					MSG_PRINT(" = ");
+					MSG_PRINT(F(" = "));
 					const uint8_t val = EEPROM.read(reg);
-					sprintf(b, "%02X", val);
-					MSG_PRINT(b);
-					//printHex2(EEPROM.read(reg));
+					MSG_PRINTtoHEX(val);
 				}
 				MSG_PRINTLN("");
 			}
@@ -302,7 +295,7 @@ namespace commands {
 				memcpy(b, &IB_1[3], 2);
 				uint8_t val = strtol(b, nullptr, 16);
 
-				EEPROM.write(reg, val); //Todo pr�fen ob reg hier um 1 erh�ht werden muss
+				EEPROM.write(reg, val); //Todo pruefen ob reg hier um 1 erhoeht werden muss
 				DBG_PRINT(reg);
 				DBG_PRINT("=");
 

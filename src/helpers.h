@@ -10,7 +10,7 @@
 * 
  * cnt opt. - size with hardware
  *    0     - 28806 size nano with debug
- *    1     - 28652 size nano with debug
+ *   10     - 28382 size nano with debug
  */
 
 
