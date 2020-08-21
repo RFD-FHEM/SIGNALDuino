@@ -15,13 +15,12 @@
  * compiling notes
  * ***************
   Arduino IDE
-  radino_CC1101        - ONLY xFSK receive - 28158 Bytes (98%) , max 28672
-  radino_CC1101@debug  - option too big    - 30882 Bytes (107%), max 28672
-  minicul@debug        - option too big    - 28806 Bytes (100%), max 28672
+  radino_CC1101        - ONLY xFSK receive - 27926 Bytes (98%) , max 28672
+  radino_CC1101@debug  - option too big    - 29402 Bytes (102%), max 28672
 
   Platform IO
-  radino_CC1101        - ONLY xFSK receive - 28656 bytes from maximum allowed (28672 bytes)
-  radino_CC1101@debug  - size (32738 bytes) is greater than maximum allowed (28672 bytes)
+  radino_CC1101        - ONLY xFSK receive - 28432 bytes from maximum allowed (28672 bytes)
+  radino_CC1101@debug  - size (31286 bytes) is greater than maximum allowed (28672 bytes)
 */
 
 
