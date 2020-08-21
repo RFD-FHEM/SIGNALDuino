@@ -5,13 +5,13 @@ except ImportError:
 
 Import("env")
 
-# access to global build environment
+### access to global build environment
 #print(env)
 
-# view all build environment
+### view all build environment
 #print(env.Dump())
 
-# to build date str and buildname
+### to build date str and buildname
 import datetime
 date = datetime.datetime.now()
 date = date.strftime("%y") + date.strftime("%m") + date.strftime("%d")
@@ -32,3 +32,39 @@ build_version = "v" + build_release + date
 
 # write project hex, bin, elf to nano_bootl_old_CC1101_v350_dev_20200811.hex
 env.Replace(PROGNAME="%s" % build_name + "_" + "%s" % build_version)
+
+
+
+### copy file to subfolder
+## action tested on windows, linux test needed feedback
+## this relief works from the 2nd run
+movehelp = "no"
+
+if movehelp == "yes":
+ from pathlib import Path
+ import shutil
+
+ current_path = env['PROJECT_BUILD_DIR']
+ current_file = env['PROJECT_BUILD_DIR'] + "\\" +  build_name + "\\" + env['PIOENV'] + "_" + "%s" % build_version
+
+ current_file_bin = Path(current_file + ".bin")
+ current_file_hex = Path(current_file + ".hex")
+
+ new_file_bin = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
+ new_file_hex = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
+
+ ## if bin file exists, copy to subfolder
+ if current_file_bin.is_file():
+  print("- bin file exists -")
+  print(current_file_bin)
+  print("- bin file to -")
+  print(new_file_bin)
+  shutil.copyfile(current_file_bin, new_file_bin)
+
+ ## if hex file exists, copy to subfolder
+ if current_file_hex.is_file():
+  print("- hex file exists -")
+  print(current_file_hex)
+  print("- hex file to -")
+  print(new_file_hex)
+  shutil.copyfile(current_file_hex, new_file_hex)
