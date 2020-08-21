@@ -1,7 +1,7 @@
 ######################################################################
 # This file provides information about the sketch size in PlatformIO #
 #                                                                    #
-# standing: 2020_08_11                                               #
+# standing: 2020_08_21                                               #
 ######################################################################
 
 maple_mini_bootl_v2_CC1101@debug_wr
@@ -9,158 +9,157 @@ RAM:   [==        ]  16.2% (used 3324 bytes from 20480 bytes)
 Flash: [====      ]  35.3% (used 43408 bytes from 122880 bytes)
 =============================================================================================
 
-maple_mini_bootl_v1_CC1101@debug_wr
-RAM:   [====      ]  36.1% (used 6280 bytes from 17408 bytes)
-Flash: [=====     ]  48.1% (used 53204 bytes from 110592 bytes)
-=============================================================================================
-
 maple_mini_bootl_v2_CC1101@debug
 RAM:   [==        ]  16.2% (used 3316 bytes from 20480 bytes)
-Flash: [===       ]  34.7% (used 42652 bytes from 122880 bytes)
-=============================================================================================
-
-maple_mini_bootl_v1_CC1101@debug
-RAM:   [====      ]  36.0% (used 6272 bytes from 17408 bytes)
-Flash: [=====     ]  47.4% (used 52456 bytes from 110592 bytes)
+Flash: [===       ]  34.7% (used 42648 bytes from 122880 bytes)
 =============================================================================================
 
 maple_mini_bootl_v2_CC1101
 RAM:   [==        ]  16.2% (used 3316 bytes from 20480 bytes)
-Flash: [===       ]  32.0% (used 39300 bytes from 122880 bytes)
-=============================================================================================
-
-maple_mini_bootl_v1_CC1101
-RAM:   [====      ]  36.0% (used 6272 bytes from 17408 bytes)
-Flash: [====      ]  44.4% (used 49092 bytes from 110592 bytes)
+Flash: [===       ]  32.0% (used 39324 bytes from 122880 bytes)
 =============================================================================================
 
 maple_mini_bootl_v2
 RAM:   [==        ]  15.8% (used 3240 bytes from 20480 bytes)
-Flash: [===       ]  27.3% (used 33524 bytes from 122880 bytes)
+Flash: [===       ]  27.3% (used 33492 bytes from 122880 bytes)
+=============================================================================================
+
+maple_mini_bootl_v1_CC1101@debug_wr
+RAM:   [====      ]  36.1% (used 6280 bytes from 17408 bytes)
+Flash: [=====     ]  48.1% (used 53208 bytes from 110592 bytes)
+=============================================================================================
+
+maple_mini_bootl_v1_CC1101@debug
+RAM:   [====      ]  36.0% (used 6272 bytes from 17408 bytes)
+Flash: [=====     ]  47.4% (used 52460 bytes from 110592 bytes)
+=============================================================================================
+
+maple_mini_bootl_v1_CC1101
+RAM:   [====      ]  36.0% (used 6272 bytes from 17408 bytes)
+Flash: [====      ]  44.4% (used 49120 bytes from 110592 bytes)
 =============================================================================================
 
 maple_mini_bootl_v1
 RAM:   [====      ]  35.6% (used 6196 bytes from 17408 bytes)
-Flash: [====      ]  39.2% (used 43304 bytes from 110592 bytes)
+Flash: [====      ]  39.1% (used 43276 bytes from 110592 bytes)
 =============================================================================================
 
 nano_bootl_old_CC1101@debug
-RAM:   [======    ]  58.3% (used 1193 bytes from 2048 bytes)
-Flash: [==========]  99.2% (used 30478 bytes from 30720 bytes)
+RAM:   [======    ]  56.9% (used 1165 bytes from 2048 bytes)
+Flash: [==========]  98.1% (used 30146 bytes from 30720 bytes)
 =============================================================================================
 
 nano_bootl_old_CC1101
-RAM:   [=====     ]  48.3% (used 989 bytes from 2048 bytes)
-Flash: [========= ]  89.6% (used 27530 bytes from 30720 bytes)
-=============================================================================================
-
-nano_bootl_new_CC1101@debug
-RAM:   [======    ]  58.3% (used 1193 bytes from 2048 bytes)
-Flash: [==========]  99.2% (used 30478 bytes from 30720 bytes)
-=============================================================================================
-
-nano_bootl_new_CC1101
-RAM:   [=====     ]  48.3% (used 989 bytes from 2048 bytes)
-Flash: [========= ]  89.6% (used 27530 bytes from 30720 bytes)
+RAM:   [=====     ]  47.4% (used 971 bytes from 2048 bytes)
+Flash: [========= ]  88.7% (used 27244 bytes from 30720 bytes)
 =============================================================================================
 
 nano_bootl_old@debug
-RAM:   [=====     ]  53.0% (used 1086 bytes from 2048 bytes)
-Flash: [========  ]  80.8% (used 24834 bytes from 30720 bytes)
+RAM:   [=====     ]  52.2% (used 1070 bytes from 2048 bytes)
+Flash: [========  ]  81.0% (used 24884 bytes from 30720 bytes)
 =============================================================================================
 
 nano_bootl_old
-RAM:   [====      ]  43.2% (used 884 bytes from 2048 bytes)
-Flash: [=======   ]  73.8% (used 22672 bytes from 30720 bytes)
+RAM:   [====      ]  42.7% (used 874 bytes from 2048 bytes)
+Flash: [=======   ]  73.9% (used 22700 bytes from 30720 bytes)
 =============================================================================================
 
+nano_bootl_new_CC1101@debug
+RAM:   [======    ]  56.9% (used 1165 bytes from 2048 bytes)
+Flash: [==========]  98.1% (used 30146 bytes from 30720 bytes)
+=============================================================================================
+
+nano_bootl_new_CC1101
+RAM:   [=====     ]  47.4% (used 971 bytes from 2048 bytes)
+Flash: [========= ]  88.7% (used 27244 bytes from 30720 bytes)
+=============================================================================================
 nano_bootl_new@debug
-RAM:   [=====     ]  53.0% (used 1086 bytes from 2048 bytes)
-Flash: [========  ]  80.8% (used 24834 bytes from 30720 bytes)
+RAM:   [=====     ]  52.2% (used 1070 bytes from 2048 bytes)
+Flash: [========  ]  81.0% (used 24884 bytes from 30720 bytes)
 =============================================================================================
 
 nano_bootl_new
-RAM:   [====      ]  43.2% (used 884 bytes from 2048 bytes)
-Flash: [=======   ]  73.8% (used 22672 bytes from 30720 bytes)
+RAM:   [====      ]  42.7% (used 874 bytes from 2048 bytes)
+Flash: [=======   ]  73.9% (used 22700 bytes from 30720 bytes)
 =============================================================================================
 
 minicul_8MHz_CC1101@debug
-RAM:   [======    ]  58.3% (used 1193 bytes from 2048 bytes)
-Flash: [==========]  99.2% (used 30468 bytes from 30720 bytes)
+RAM:   [======    ]  56.9% (used 1165 bytes from 2048 bytes)
+Flash: [==========]  98.1% (used 30136 bytes from 30720 bytes)
 =============================================================================================
 
 minicul_8MHz_CC1101
-RAM:   [=====     ]  48.3% (used 989 bytes from 2048 bytes)
-Flash: [========= ]  89.6% (used 27520 bytes from 30720 bytes)
+RAM:   [=====     ]  47.4% (used 971 bytes from 2048 bytes)
+Flash: [========= ]  88.7% (used 27234 bytes from 30720 bytes)
 =============================================================================================
 
 minicul_16MHz_CC1101@debug
-RAM:   [======    ]  58.3% (used 1193 bytes from 2048 bytes)
-Flash: [==========]  99.2% (used 30478 bytes from 30720 bytes)
+RAM:   [======    ]  56.9% (used 1165 bytes from 2048 bytes)
+Flash: [==========]  98.1% (used 30146 bytes from 30720 bytes)
 =============================================================================================
 
 minicul_16MHz_CC1101
-RAM:   [=====     ]  48.3% (used 989 bytes from 2048 bytes)
-Flash: [========= ]  89.6% (used 27530 bytes from 30720 bytes)
+RAM:   [=====     ]  47.4% (used 971 bytes from 2048 bytes)
+Flash: [========= ]  88.7% (used 27244 bytes from 30720 bytes)
 =============================================================================================
 
 promini@debug
-RAM:   [=====     ]  53.0% (used 1086 bytes from 2048 bytes)
-Flash: [========  ]  80.8% (used 24824 bytes from 30720 bytes)
+RAM:   [=====     ]  52.2% (used 1070 bytes from 2048 bytes)
+Flash: [========  ]  81.0% (used 24874 bytes from 30720 bytes)
 =============================================================================================
 
 promini
-RAM:   [====      ]  43.2% (used 884 bytes from 2048 bytes)
-Flash: [=======   ]  73.8% (used 22662 bytes from 30720 bytes)
+RAM:   [====      ]  42.7% (used 874 bytes from 2048 bytes)
+Flash: [=======   ]  73.9% (used 22690 bytes from 30720 bytes)
 =============================================================================================
 
 radino_CC1101@debug (to big)
-RAM:   [=====     ]  45.4% (used 1162 bytes from 2560 bytes)
-Flash: [==========]  110.0% (used 31552 bytes from 28672 bytes)
+RAM:   [====      ]  44.4% (used 1136 bytes from 2560 bytes)
+Flash: [==========]  109.1% (used 31286 bytes from 28672 bytes)
 =============================================================================================
 
 radino_CC1101 (ONLY xFSK receive)
-RAM:   [====      ]  37.5% (used 960 bytes from 2560 bytes)
-Flash: [==========]  99.9% (used 28656 bytes from 28672 bytes)
+RAM:   [====      ]  36.7% (used 940 bytes from 2560 bytes)
+Flash: [==========]  99.2% (used 28432 bytes from 28672 bytes)
 =============================================================================================
 
 esp32_CC1101@debug
 RAM:   [=         ]  12.8% (used 41784 bytes from 327680 bytes)
-Flash: [======    ]  64.2% (used 841602 bytes from 1310720 bytes)
+Flash: [======    ]  64.2% (used 841678 bytes from 1310720 bytes)
 =============================================================================================
 
 esp32_CC1101
 RAM:   [=         ]  12.8% (used 41784 bytes from 327680 bytes)
-Flash: [======    ]  64.0% (used 838394 bytes from 1310720 bytes)
+Flash: [======    ]  64.0% (used 838430 bytes from 1310720 bytes)
 =============================================================================================
 
 esp32@debug
 RAM:   [=         ]  12.7% (used 41664 bytes from 327680 bytes)
-Flash: [======    ]  63.7% (used 834494 bytes from 1310720 bytes)
+Flash: [======    ]  63.7% (used 834542 bytes from 1310720 bytes)
 =============================================================================================
 
 esp32
 RAM:   [=         ]  12.7% (used 41664 bytes from 327680 bytes)
-Flash: [======    ]  63.5% (used 832166 bytes from 1310720 bytes)
+Flash: [======    ]  63.5% (used 832162 bytes from 1310720 bytes)
+=============================================================================================
+
+esp8266_CC1101@debug
+RAM:   [====      ]  39.3% (used 32184 bytes from 81920 bytes)
+Flash: [====      ]  35.7% (used 373388 bytes from 1044464 bytes)
 =============================================================================================
 
 esp8266_CC1101
-RAM:   [====      ]  39.3% (used 32212 bytes from 81920 bytes)
-Flash: [====      ]  35.7% (used 373260 bytes from 1044464 bytes)
-=============================================================================================
-
-esp8266_CC1101
-RAM:   [====      ]  39.1% (used 32024 bytes from 81920 bytes)
-Flash: [====      ]  35.4% (used 369896 bytes from 1044464 bytes)
+RAM:   [====      ]  39.1% (used 32004 bytes from 81920 bytes)
+Flash: [====      ]  35.4% (used 370000 bytes from 1044464 bytes)
 =============================================================================================
 
 esp8266@debug
-RAM:   [====      ]  39.2% (used 32116 bytes from 81920 bytes)
-Flash: [====      ]  35.1% (used 366788 bytes from 1044464 bytes)
+RAM:   [====      ]  39.2% (used 32088 bytes from 81920 bytes)
+Flash: [====      ]  35.1% (used 366852 bytes from 1044464 bytes)
 =============================================================================================
 
 esp8266
-RAM:   [====      ]  39.0% (used 31928 bytes from 81920 bytes)
-Flash: [===       ]  34.9% (used 364268 bytes from 1044464 bytes)
+RAM:   [====      ]  39.0% (used 31908 bytes from 81920 bytes)
+Flash: [===       ]  34.9% (used 364292 bytes from 1044464 bytes)
 =============================================================================================
 
