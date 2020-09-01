@@ -36,22 +36,29 @@ env.Replace(PROGNAME="%s" % build_name + "_" + "%s" % build_version)
 
 
 ### copy file to subfolder
-## action tested on windows, linux test needed feedback
 ## this relief works from the 2nd run
 movehelp = "no"
 
 if movehelp == "yes":
  from pathlib import Path
  import shutil
+ import platform
 
  current_path = env['PROJECT_BUILD_DIR']
- current_file = env['PROJECT_BUILD_DIR'] + "\\" +  build_name + "\\" + env['PIOENV'] + "_" + "%s" % build_version
+ 
+ ## OS check ##
+ if platform.system() == "Windows":
+  current_file = env['PROJECT_BUILD_DIR'] + "\\" +  build_name + "\\" + env['PIOENV'] + "_" + "%s" % build_version
+  new_file_bin = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
+  new_file_hex = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
 
+ if platform.system() == "Linux":
+  current_file = env['PROJECT_BUILD_DIR'] + "/" +  build_name + "/" + env['PIOENV'] + "_" + "%s" % build_version
+  new_file_bin = env['PROJECT_BUILD_DIR'] + "/" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
+  new_file_hex = env['PROJECT_BUILD_DIR'] + "/" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
+  
  current_file_bin = Path(current_file + ".bin")
  current_file_hex = Path(current_file + ".hex")
-
- new_file_bin = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
- new_file_hex = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
 
  ## if bin file exists, copy to subfolder
  if current_file_bin.is_file():
@@ -59,7 +66,7 @@ if movehelp == "yes":
   print(current_file_bin)
   print("- bin file to -")
   print(new_file_bin)
-  shutil.copyfile(current_file_bin, new_file_bin)
+  shutil.copyfile(str(current_file_bin), str(new_file_bin))
 
  ## if hex file exists, copy to subfolder
  if current_file_hex.is_file():
@@ -67,4 +74,4 @@ if movehelp == "yes":
   print(current_file_hex)
   print("- hex file to -")
   print(new_file_hex)
-  shutil.copyfile(current_file_hex, new_file_hex)
+  shutil.copyfile(str(current_file_hex), str(new_file_hex))
