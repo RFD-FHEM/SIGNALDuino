@@ -60,11 +60,18 @@
  * file output.h worked with DEBUG variable
  */
 
-//#define DEBUG 1
 //#define DEBUGDETECT 3
-//#define DEBUGDETECT 255  // Very verbose output
+//#define DEBUGDETECT 255   // Very verbose output
 //#define DEBUGDECODE 1
+//#define DEBUGDECODE 2     // Very verbose output
 
+/*
+ * END debug options selection
+*/
+
+#if defined(DEBUGDETECT) || defined(DEBUGDECODE)
+  #define DEBUG 1
+#endif
 
 #ifndef WIFI_ESP
   #include "output.h"
@@ -76,9 +83,15 @@
   #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
 #endif
 
-#define SDC_PRINT(...)		write(__VA_ARGS__)
-#define SDC_WRITE(b)		write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)	write(__VA_ARGS__); write(char(0xA));
+#ifdef DBG_PRINTER
+  #define SDC_PRINTER DBG_PRINTER
+#else
+  #define SDC_PRINTER
+#endif
+
+#define SDC_PRINT(...)    SDC_PRINTER.write(__VA_ARGS__)
+#define SDC_WRITE(b)      SDC_PRINTER.write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  SDC_PRINTER.write(__VA_ARGS__); write(char(0xA));
 
 #ifndef F 
   #define F(V1) V1
@@ -86,6 +99,7 @@
 
 #include "bitstore.h"
 #include "FastDelegate.h"
+
 #define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
