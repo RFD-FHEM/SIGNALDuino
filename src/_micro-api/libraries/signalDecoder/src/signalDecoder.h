@@ -35,24 +35,36 @@
 
 
 #if defined(WIN32) || defined(__linux__)
-	#define ARDUINO 101
-	#define NOSTRING
+  #define ARDUINO 101
+  #define NOSTRING
 #endif
+
 #if defined(__linux__)
-	#include <stdlib.h>
+  #include <stdlib.h>
 #endif
 
 #ifndef DEC
-	#define DEC 10
+  #define DEC 10
 #endif
-
-
 
 #if defined(ARDUINO) && ARDUINO >= 100
   #include "Arduino.h"
 #else
   //#include "WProgram.h"
 #endif
+
+
+/*
+ * different debug options
+ * DEBUG variable must be set separately because no transfer from compile_config.h
+ * file output.h worked with DEBUG variable
+ */
+
+//#define DEBUG 1
+//#define DEBUGDETECT 3
+//#define DEBUGDETECT 255  // Very verbose output
+//#define DEBUGDECODE 1
+
 
 #ifndef WIFI_ESP
   #include "output.h"
@@ -89,16 +101,6 @@ constexpr const uint8_t MSG_END = 3;
 //#define SERIAL_DELIMITER  59 //char(';')
 //#define MSG_START char(0x2)		// this is a non printable Char
 //#define MSG_END   char(0x3)			// this is a non printable Char
-
-/*
- * different debug options
- * DEBUG variable must be set separately because no transfer from compile_config.h
- */
-
-//#define DEBUG 1
-//#define DEBUGDETECT 3
-//#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
