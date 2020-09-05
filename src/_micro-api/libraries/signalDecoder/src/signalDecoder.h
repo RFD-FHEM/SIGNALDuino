@@ -49,31 +49,29 @@
 
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "Arduino.h"
+  #include "Arduino.h"
 #else
-	//#include "WProgram.h"
+  //#include "WProgram.h"
 #endif
-//#define DEBUG 1
-
 
 #ifndef WIFI_ESP
-
-#include "output.h"
+  #include "output.h"
 #else
-#include <ESP8266WiFi.h>
-extern WiFiClient serverClient;
-#define DBG_PRINTER Serial
-#define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
-#define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+  #include <ESP8266WiFi.h>
+  extern WiFiClient serverClient;
+  #define DBG_PRINTER Serial
+  #define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
+  #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
 #endif
 
 #define SDC_PRINT(...)		write(__VA_ARGS__)
 #define SDC_WRITE(b)		write((const uint8_t*)b,(uint8_t) 1) 
 #define SDC_PRINTLN(...)	write(__VA_ARGS__); write(char(0xA));
+
 #ifndef F 
-#define F(V1) V1
+  #define F(V1) V1
 #endif
- 
+
 #include "bitstore.h"
 #include "FastDelegate.h"
 #define maxNumPattern 8
@@ -92,6 +90,12 @@ constexpr const uint8_t MSG_END = 3;
 //#define MSG_START char(0x2)		// this is a non printable Char
 //#define MSG_END   char(0x3)			// this is a non printable Char
 
+/*
+ * different debug options
+ * DEBUG variable must be set separately because no transfer from compile_config.h
+ */
+
+//#define DEBUG 1
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255  // Very verbose output
 //#define DEBUGDECODE 1
@@ -113,7 +117,6 @@ public:
 																		 mcdecoder = nullptr;
 																		};
 
-
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
@@ -123,7 +126,6 @@ public:
 	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
 	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
 
-
 	//private:
 
 	int8_t clock;                           // index to clock in pattern
@@ -132,7 +134,7 @@ public:
 	bool MSenabled;
 	bool MredEnabled;                       // 1 = compress printMsgRaw
 	uint8_t MsMoveCount;
-	
+
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
@@ -189,8 +191,6 @@ public:
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
-
-
 };
 
 
