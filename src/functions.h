@@ -13,7 +13,6 @@
   #include "compile_config.h"
   #include <EEPROM.h>
   #include "output.h"
-  #include "helpers.h"
   #include "SimpleFIFO.h"
   #include "cc1101.h"
 
@@ -21,6 +20,7 @@
   extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
   extern SignalDetectorClass musterDec;
   extern bool hasCC1101;
+  extern void DBG_PRINTtoHEX(uint8_t b);
 
   #define pulseMin  90
 

@@ -22,6 +22,7 @@ extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 extern uint8_t ccmode;;          // xFSK
+extern void MSG_PRINTtoHEX(uint8_t a);
 
 
 namespace commands {

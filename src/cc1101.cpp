@@ -9,6 +9,7 @@ uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
 extern volatile bool blinkLED;
+extern void MSG_PRINTtoHEX(uint8_t a);
 
 const uint8_t cc1101::initVal[] PROGMEM =
 {
@@ -148,8 +149,7 @@ void cc1101::readPatable(void) {
 
 	for (uint8_t i = 0; i < 8; i++) {
     MSG_PRINT(FPSTR(TXT_BLANK));
-    if(PatableArray[i] < 16) MSG_PRINT(0);  // helpers functions lines
-    MSG_PRINT(PatableArray[i] , HEX);       // helpers functions lines
+    MSG_PRINTtoHEX(PatableArray[i]);
 	}
 	MSG_PRINTLN("");
 }
@@ -173,13 +173,15 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 		n = (uint8_t)strtol((const char*)IB_1 + 4, NULL, 16);
 		if (reg < 0x2F) {
 			n += 2;
-			sprintf(b, "C%02Xn%02X=", reg, n);
-			MSG_PRINT(b);
+      
+      /*
+       * sprintf(b, "C%02Xn%02X=", reg, n); // is 36 bytes bigger
+       */
+			MSG_PRINT("C"); MSG_PRINTtoHEX(reg); MSG_PRINT("n"); MSG_PRINTtoHEX(n); MSG_PRINT("="); // C06n04=
 
 			for (uint8_t i = reg; i < reg + n; i++) {
 				var = readReg(i, CC1101_CONFIG);
-        if(var < 16) MSG_PRINT(0);  // helpers functions lines
-        MSG_PRINT(var , HEX);       // helpers functions lines
+        MSG_PRINTtoHEX(var);
 			}
 			MSG_PRINTLN("");
 		}
@@ -190,8 +192,12 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 			} else {
 				var = readReg(reg, CC1101_STATUS);
 			}
-			sprintf_P(b, PSTR("C%02X = %02X"), reg, var);  // checked, no other methode smaller
-			MSG_PRINTLN(b);
+
+      /*
+       * sprintf_P(b, PSTR("C%02X = %02X"), reg, var);  // is 16 bytes bigger
+       */
+
+      MSG_PRINT("C"); MSG_PRINTtoHEX(reg); MSG_PRINT(" = "); MSG_PRINTtoHEX(var); MSG_PRINTLN(""); // C06 = 3D
 		}
 		else if (reg == 0x3E) {     // patable, C3E
 			MSG_PRINT(F("C3E ="));
@@ -204,13 +210,11 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 						MSG_PRINT(FPSTR(TXT_BLANK));
 					}
 					MSG_PRINT(F("ccreg "));
-          if(i < 16) MSG_PRINT(0);  // helpers functions lines
-          MSG_PRINT(i , HEX);       // helpers functions lines
+          MSG_PRINTtoHEX(i);
           MSG_PRINT(F(": "));
 				}
 				var = readReg(i, CC1101_CONFIG);
-        if(var < 16) MSG_PRINT(0);  // helpers functions lines
-        MSG_PRINT(var , HEX);       // helpers functions lines
+        MSG_PRINTtoHEX(var);
         MSG_PRINT(" ");
 			}
 			MSG_PRINTLN("");
@@ -229,9 +233,15 @@ void cc1101::commandStrobes(void) {
 			val = cmdStrobe(reg);
 			delay(1);
 			val1 = cmdStrobe(0x3D);                 //  No operation. May be used to get access to the chip status byte.
-			char b[41];
-			sprintf_P(b, PSTR("cmdStrobeReg %02X chipStatus %02X delay1 %02X"), reg, val >> 4, val1 >> 4);
-			MSG_PRINTLN(b);
+
+      /*
+       *  sprintf_P(b, PSTR("cmdStrobeReg %02X chipStatus %02X delay1 %02X"), reg, val >> 4, val1 >> 4); // is 110 bytes bigger
+       */
+			//
+
+      MSG_PRINT(F("cmdStrobeReg ")); MSG_PRINTtoHEX(reg); MSG_PRINT(F(" chipStatus ")); MSG_PRINTtoHEX(val >> 4);
+      MSG_PRINT(F(" delay1 ")); MSG_PRINTtoHEX(val1 >> 4); // cmdStrobeReg 36 chipStatus 00 delay1 00
+      MSG_PRINTLN("");
 		}
 	}
 }
@@ -241,13 +251,17 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) { // write CC1101 register
 		writeReg(reg - EE_CC1101_CFG, var);
 
 	if (reg - EE_CC1101_CFG == 18) {
-		ccmode = ( var & 0x70 ) >> 4;                // read modulation direct from 0x12 MDMCFG2
+		ccmode = ( var & 0x70 ) >> 4;                // for STM32 - read modulation direct from 0x12 MDMCFG2
 	}
 
-		char b[6];
-		// sprintf_P(b, PSTR("W%02X%02X"), reg, var);
-		sprintf(b,"W%02X%02X",reg,var);
-		MSG_PRINTLN(b);
+    /*
+     * sprintf(b,"W%02X%02X",reg,var); // is 48 bytes bigger
+     */
+		
+    MSG_PRINT("W");
+    MSG_PRINTtoHEX(reg);
+    MSG_PRINTtoHEX(var);
+    MSG_PRINTLN("");
 	}
 }
 
@@ -593,10 +607,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 						MSG_PRINT(F("MN;D="));
 					}
 					for (uint8_t i = 0; i < fifoBytes; i++) {
-						// printHex2(ccBuf[i]);
-						char b[2];
-            if(ccBuf[i] < 16) MSG_PRINT(0);  // helpers functions lines
-            MSG_PRINT(ccBuf[i] , HEX);       // helpers functions lines
+            MSG_PRINTtoHEX(ccBuf[i]);
 					}
 
 /*
@@ -614,7 +625,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
-					MSG_PRINT(F(";"));
+					MSG_PRINT(";");
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
 				}

@@ -1,48 +1,12 @@
 #pragma once
 
-#include "Arduino.h"
-#include "output.h"
+#ifndef helpers_h   /* include guards */
+#define helpers_h
 
-/* 
- * =================================================
- *  helper functions for smaller sketch size for uC
- * =================================================
-* 
- * cnt opt. - size with hardware
- *    0     - 28806 size nano with debug
- *   10     - 28382 size nano with debug
- */
+/* Predefinition MSG_PRINTtoHEX function */
+void MSG_PRINTtoHEX(uint8_t a);
 
+/* Predefinition DBG_PRINTtoHEX function */
+void DBG_PRINTtoHEX(uint8_t b);
 
-void MSG_PRINTtoHEX(uint8_t a) {
-/* 
- * this function is the alternative to 
- * sprintf(b, "%02x", xxx(i));
- * output via MSG_PRINT
- */
-  if(a < 16) {
-    MSG_PRINT(0);
-  }
-  MSG_PRINT(a , HEX);
-}
-
-void DBG_PRINTtoHEX(uint8_t b) {
-/* 
- * this function is the alternative to 
- * sprintf(b, "%02x", yyy(i));
- * output via DBG_PRINT
- */
-#ifdef DEBUG
-  if(b < 16) {
-    DBG_PRINT(0);
-  }
-  DBG_PRINT(b , HEX);
-#endif
-}
-
-
-/* 
- * =====================
- *  END helper functions
- * =====================
- */
+#endif    /* helpers_h */
