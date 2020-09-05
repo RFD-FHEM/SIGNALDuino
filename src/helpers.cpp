@@ -1,5 +1,3 @@
-#pragma once
-
 #include "Arduino.h"
 #include "output.h"
 #include "helpers.h"
@@ -8,12 +6,14 @@
  * =================================================
  *  helper functions for smaller sketch size for uC
  * =================================================
- * 
+ *
+ * Arduino IDE statistic´s:
+ * ------------------------
  * cnt opt. - size with hardware
  *    0     - 28806 size nano with debug
  *   10     - 28382 size nano with debug
  *   15     - 28268 size nano with debug
- *   19     - 28066 size nano with debug (- 2.654 Bytes)
+ *   19     - 28066 size nano with debug (- 740 Bytes)
  *
  *   15     - 29018 size radino without debug
  *   19     - 28810 size radino without debug (- 208 Bytes) | (open 138 Bytes)

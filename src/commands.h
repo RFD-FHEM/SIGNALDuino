@@ -250,7 +250,6 @@ namespace commands {
 				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
 				MSG_PRINT(FPSTR(TXT_WRITE));
-				char b[3];
 				MSG_PRINTtoHEX(val);
 				MSG_PRINTLN(FPSTR(TXT_TPATAB));
 			}
@@ -263,7 +262,6 @@ namespace commands {
 				MSG_PRINT(FPSTR(TXT_EEPROM));
 				MSG_PRINT(FPSTR(TXT_BLANK));
 
-				char b[3];
 				MSG_PRINTtoHEX(reg);
 
 				if (IB_1[3] == 'n') {

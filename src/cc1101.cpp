@@ -145,7 +145,6 @@ void cc1101::readPatable(void) {
 		PatableArray[i] = sendSPI(0x00);            // read result
 	}
 	cc1101_Deselect();
-	char b[4];
 
 	for (uint8_t i = 0; i < 8; i++) {
     MSG_PRINT(FPSTR(TXT_BLANK));
@@ -167,7 +166,6 @@ void cc1101::writePatable(void) {
 void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 	uint8_t var;
 	uint8_t n;
-	char b[11];
 
 	if (IB_1[3] == 'n' && isHexadecimalDigit(IB_1[4])) {   // C<reg>n<anz>  gibt anz+2 fortlaufende register zurueck, example: C06n2
 		n = (uint8_t)strtol((const char*)IB_1 + 4, NULL, 16);
