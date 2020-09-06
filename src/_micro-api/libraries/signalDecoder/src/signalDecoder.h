@@ -58,6 +58,7 @@
  * different debug options
  * DEBUG variable must be set separately because no transfer from compile_config.h
  * file output.h worked with DEBUG variable
+ * note: ToDO check output DEBUG for all devices
  */
 
 //#define DEBUGDETECT 3
@@ -83,15 +84,9 @@
   #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
 #endif
 
-#ifdef DBG_PRINTER
-  #define SDC_PRINTER DBG_PRINTER
-#else
-  #define SDC_PRINTER
-#endif
-
-#define SDC_PRINT(...)    SDC_PRINTER.write(__VA_ARGS__)
-#define SDC_WRITE(b)      SDC_PRINTER.write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  SDC_PRINTER.write(__VA_ARGS__); write(char(0xA));
+#define SDC_PRINT(...)    write(__VA_ARGS__)
+#define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
 
 #ifndef F 
   #define F(V1) V1
