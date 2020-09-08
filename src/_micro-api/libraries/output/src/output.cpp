@@ -1,7 +1,9 @@
 #include "Arduino.h"
 
-#if defined(ESP32) || defined(ESP8266)
-  #define ETHERNET_PRINT 1                // need for right options in output.h
+#ifdef PLATFORMIO                           // intern variables only in Software PLATFORM IO (example 40304), in ARDUINO IDE undef
+  #include "../../../../compile_config.h"   // PLATFORM IO  - need for right options in output.h
+#else
+  #include "compile_config.h"               // ARDUINO IDE  - need for right options in output.h
 #endif
 
 #include "output.h"
