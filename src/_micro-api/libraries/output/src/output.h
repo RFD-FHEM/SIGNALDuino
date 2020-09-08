@@ -126,20 +126,17 @@ static const char TXT_WRITE[]           PROGMEM = "write ";
 #endif
 
 #ifdef ETHERNET_PRINT
-#include <WiFiClient.h>
-
-extern WiFiClient serverClient;
-
-
-#define MSG_PRINTER serverClient // Not Implemented at this time
+  #include <WiFiClient.h>
+  extern WiFiClient serverClient;
+  #define MSG_PRINTER serverClient
 #else
-#define MSG_PRINTER Serial
+  #define MSG_PRINTER Serial
 #endif
 
 #ifdef ETHERNET_DEBUG
-#define DBG_PRINTER Client // Not Implemented at this time
+  #define DBG_PRINTER Client
 #else
-#define DBG_PRINTER Serial
+  #define DBG_PRINTER Serial
 #endif
 
 
@@ -158,4 +155,3 @@ extern WiFiClient serverClient;
 
 
 #endif
-

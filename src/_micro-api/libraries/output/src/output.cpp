@@ -1,6 +1,10 @@
 #include "Arduino.h"
+
+#if defined(ESP32) || defined(ESP8266)
+  #define ETHERNET_PRINT 1                // need for right options in output.h
+#endif
+
 #include "output.h"
-#include "helpers.h"
 
 /* 
  * =================================================
