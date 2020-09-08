@@ -762,23 +762,33 @@ MUOutput:
 				}
 				else {
 				
-					SDC_PRINT("MU");  SDC_PRINT(SERIAL_DELIMITER);
+					MSG_PRINT("MU");  MSG_PRINT(';');
 					calcHisto();
 
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue; 
 						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
-						n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
-						SDC_PRINT(buf);
-
+            
+            /*
+						 * n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
+						 * SDC_PRINT(buf);
+             */
+            MSG_PRINT('P');
+            MSG_PRINT(idx);
+            MSG_PRINT('=');
+            MSG_PRINT(pattern[idx]);
+            MSG_PRINT(';');
 					}
-					SDC_PRINT("D=");
+					MSG_PRINT("D=");
 
 					for (uint8_t i = 0; i < messageLen; ++i) 
 					{
-						sprintf(buf, "%d", message[i]); 
-						SDC_PRINT(buf);
+						/*
+						 * sprintf(buf, "%d", message[i]); 
+						 * SDC_PRINT(buf);
+            */
+            MSG_PRINT(message[i]);
 					}
 					//String postamble;
 					/*
@@ -786,18 +796,30 @@ MUOutput:
 					SDC_PRINT("CP="); SDC_PRINT(clock);     SDC_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
 					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 					*/
-					n = sprintf(buf, ";CP=%i;", clock);
-					SDC_PRINT(buf);
+					
+					/*
+					 * n = sprintf(buf, ";CP=%i;", clock);
+					 * SDC_PRINT(buf);
+          */
+          
+          MSG_PRINT(";CP=");
+          MSG_PRINT(clock);
+          MSG_PRINT(';');
+          
 					if (_rssiCallback != nullptr)
 					{
-						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_PRINT(buf);
+						/* n = sprintf(buf, "R=%i;", rssiValue);
+						 * SDC_PRINT(buf);
+             */
+            MSG_PRINT("R=");
+            MSG_PRINT(rssiValue);
+            MSG_PRINT(';');
 					}
 				}
 
-
 				if (m_overflow) {
-					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
+					/* SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER); */
+          MSG_PRINT('O'); MSG_PRINT(';');
 				}
 
 				SDC_PRINT(MSG_END);

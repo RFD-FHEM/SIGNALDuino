@@ -15,28 +15,35 @@
  * compiling notes
  * ***************
   Arduino IDE
-  radino_CC1101        - ONLY xFSK receive - 27670 Bytes (96%) , max 28672
-  radino_CC1101@debug  - option too big    - 29072 Bytes (101%), max 28672
+  radino_CC1101@debug  - option too big    - 31466 Bytes (109%), max 28672
 
   Platform IO
-  radino_CC1101        - ONLY xFSK receive - 28164 bytes from maximum allowed (28672 bytes)
   radino_CC1101@debug  - size (30958 bytes) is greater than maximum allowed (28672 bytes)
 */
 
 
 /*
- * Enable debug option here
+ * enable debug option here
  * ************************
-*/
+ */
 //#define DEBUG
 
 
 /*
- * Do not Change anything below this line !
+ * ONLY for STM32F103CBT6 - MAPLE MINI
+ * enabled ARDUINO_MAPLEMINI_F103CB Watchdog option
+ */
+#ifdef ARDUINO_MAPLEMINI_F103CB
+  //#define WATCHDOG_STM32 1
+#endif
+
+
+/*
+ * do NOT change anything below this line !
  * ****************************************
 */
 
-#define PROGVERS               "3.5.0-dev_20200811"
+#define PROGVERS               "3.5.0-dev_20200908_v2"
 
 #ifdef OTHER_BOARD_WITH_CC1101
   #define CMP_CC1101
@@ -49,22 +56,6 @@
 #ifdef ARDUINO_RADINOCC1101
   #define CMP_CC1101
 #endif
-
-
-// enabled ARDUINO_MAPLEMINI_F103CB Watchdog option
-#ifdef ARDUINO_MAPLEMINI_F103CB           // STM32F103CBT6
-  //#define WATCHDOG_STM32 1
-#endif
-
-
-#ifdef ESP8266
-
-#endif
-
-#ifdef ESP32
-
-#endif
-
 
 #ifdef CMP_CC1101
   #ifdef ARDUINO_RADINOCC1101
@@ -81,7 +72,6 @@
     #define PIN_MARK433           A0
   #elif ARDUINO_MAPLEMINI_F103CB
     const uint8_t pinReceive[] = {11, 18, 16, 14};  // compatible to variant -> Circuit board for four connected cc110x devices
-
     #define PIN_LED              33
     #define PIN_SEND             17                 // GDO Pin TX out
     #define PIN_RECEIVE          pinReceive[1]      // GDO2
@@ -97,7 +87,7 @@
     #define PIN_LED              2    // D2  | G2 (depending on type / clone / seller)
     #define PIN_SEND             4    // D4  | G4 (depending on type / clone / seller) // GDO0 Pin TX out
     #define ETHERNET_PRINT
-  #else 
+  #else
     #define PIN_LED              9
     #define PIN_SEND             3    // gdo0Pin TX out
     #define PIN_RECEIVE          2

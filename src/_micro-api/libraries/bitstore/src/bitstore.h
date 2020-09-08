@@ -247,7 +247,13 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 			datastore[z] = char(datastore[i] << shift_left) | char(datastore[i + 1] >> shift_right);;
 
 		}
-		if (valcount % 2 == 0) //Wenn valcount auf eine gerade Zahl f‰llt, brauchen wir noch eine Zuweisung
+		
+		/*
+     * if (valcount % 2 == 0) //Wenn valcount auf eine gerade Zahl faellt, brauchen wir noch eine Zuweisung
+		 * is 48 bytes bigger
+     */
+    
+    if (valcount & 1 == 0) //Wenn valcount auf eine gerade Zahl f√§llt, brauchen wir noch eine Zuweisung
 		{
 			datastore[z] = datastore[i] << shift_left;
 			/*
@@ -267,7 +273,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 
 		//bcnt = 7-shift_left;
 
-		//bcnt = bcnt - valuelen;  // Todo: Kl‰ren ob dies benˆtigt wird
+		//bcnt = bcnt - valuelen;  // Todo: Kl√§ren ob dies ben√∂tigt wird
 		//offset = 1;
 	}
 	else {
@@ -285,7 +291,6 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		Serial.print(" after: bc=");  Serial.print(bytecount, DEC);
 		Serial.print(" vc="); Serial.print(valcount, DEC);
 		*/
-
 
 	}
 	/*
@@ -307,9 +312,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 	Serial.println(" ");
 	*/
 
-
 	return true;
-
 }
 
 template<uint8_t bufSize>

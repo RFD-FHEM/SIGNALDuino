@@ -1,9 +1,9 @@
 #include "Arduino.h"
 
-#ifdef PLATFORMIO                           // intern variables only in Software PLATFORM IO (example 40304), in ARDUINO IDE undef
-  #include "../../../../compile_config.h"   // PLATFORM IO  - need for right options in output.h
+#ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
+  #include "../../../../compile_config.h"   // Platform IO  - need for right options in output.h
 #else
-  #include "compile_config.h"               // ARDUINO IDE  - need for right options in output.h
+  #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
 #endif
 
 #include "output.h"
@@ -16,13 +16,11 @@
  * Arduino IDE statistic´s:
  * ------------------------
  * cnt opt. - size with hardware
- *    0     - 28806 size nano with debug
- *   10     - 28382 size nano with debug
- *   15     - 28268 size nano with debug
- *   19     - 28066 size nano with debug (- 740 Bytes)
+ *    0     - 28806 size nano with debug (standing branch dev-r3.5_xFSK_pre, radino without sending xFSK)
+ *   24     - 29356 size nano with debug (+ 550 Bytes, full xFSK support)
  *
- *   15     - 29018 size radino without debug
- *   19     - 28810 size radino without debug (- 208 Bytes) | (open 138 Bytes)
+ *    0     - 29298 size radino without debug  (standing branch dev-r3.5_xFSK_pre, radino without sending xFSK)
+ *   24     - 28576 size radino without debug (- 722 Bytes, , full xFSK support)
  */
 
 

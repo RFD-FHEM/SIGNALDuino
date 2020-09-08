@@ -156,7 +156,7 @@ void send_cmd()
 			DBG_PRINTLN(F("Adding raw"));
 			extraDelay = false;
 			}
-      #if defined CMP_CC1101 && not defined ARDUINO_RADINOCC1101
+      #if defined CMP_CC1101
         else if (msg_beginptr[1] == 'N') // send xFSK
         {
           cmdNo++;
@@ -295,7 +295,7 @@ void send_cmd()
 	{
 		DBG_PRINT(F("msg ")); DBG_PRINT(i + 1); DBG_PRINT("/"); DBG_PRINT(repeats);
 
-    #if defined CMP_CC1101 && not defined ARDUINO_RADINOCC1101
+    #if defined CMP_CC1101
       if (command[cmdNo].type == 3) //xFSK
       {
         DBG_PRINTLN(" ");
@@ -314,7 +314,7 @@ void send_cmd()
           else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
           digitalLow(PIN_SEND);
         }
-    #if defined CMP_CC1101 && not defined ARDUINO_RADINOCC1101
+    #if defined CMP_CC1101
       }
     #endif
 		if (extraDelay) delay(1);

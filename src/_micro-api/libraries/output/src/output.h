@@ -133,8 +133,9 @@ static const char TXT_WRITE[]           PROGMEM = "write ";
   #define MSG_PRINTER Serial
 #endif
 
-#ifdef ETHERNET_DEBUG
-  #define DBG_PRINTER Client
+
+#ifdef ETHERNET_DEBUG         // variable is not defined
+  #define DBG_PRINTER Client  // now used ???
 #else
   #define DBG_PRINTER Serial
 #endif

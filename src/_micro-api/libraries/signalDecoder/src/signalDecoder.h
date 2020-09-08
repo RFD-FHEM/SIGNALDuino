@@ -74,14 +74,24 @@
   #define DEBUG 1
 #endif
 
-#ifndef WIFI_ESP
+#ifdef PLATFORMIO                           // intern variable only in software PlatformIO (example 40304), in Arduino IDE undef
+  #include "../../../../compile_config.h"   // PlatformIO   - need for right options in output.h
+#else
+  #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
+#endif
+
+#ifndef WIFI_ESP        // variable is not defined
   #include "output.h"
 #else
-  #include <ESP8266WiFi.h>
-  extern WiFiClient serverClient;
-  #define DBG_PRINTER Serial
-  #define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
-  #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+/*
+ * this code no needed, variable WIFI_ESP not defined
+ * 
+ * #include <ESP8266WiFi.h>
+ * extern WiFiClient serverClient;
+ * #define DBG_PRINTER Serial
+ * #define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
+ * #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+ */
 #endif
 
 #define SDC_PRINT(...)    write(__VA_ARGS__)
