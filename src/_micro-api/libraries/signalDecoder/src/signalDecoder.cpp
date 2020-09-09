@@ -55,6 +55,7 @@ const bool SignalDetectorClass::checkMBuffer(const uint8_t begin)
 	return true;
 }
 
+
 void SignalDetectorClass::bufferMove(const uint8_t start)
 {
 	m_truncated = false;
@@ -83,9 +84,6 @@ void SignalDetectorClass::bufferMove(const uint8_t start)
 		DBG_PRINT(__FUNCTION__); DBG_PRINT(" move error "); 	DBG_PRINT(start);
 		//printOut();
 	}
-
-
-
 }
 
 
@@ -96,8 +94,6 @@ void SignalDetectorClass::addData(const int8_t value)
 	{
 		DBG_PRINTLN(""); 	DBG_PRINT(__FUNCTION__); DBG_PRINT(" msglen: "); DBG_PRINT(messageLen);
 	}*/
-
-
 
 	if (message.addValue(value))
 	{
@@ -127,7 +123,6 @@ void SignalDetectorClass::addData(const int8_t value)
 	SDC_PRINT(" state="); SDC_PRINT(state);
 	SDC_PRINT(" success="); 
 	SDC_PRINTLN(success);
-
 }
 
 inline void SignalDetectorClass::addPattern()
@@ -151,7 +146,6 @@ inline void SignalDetectorClass::doDetect()
 	valid = (messageLen == 0 || last == nullptr || (*first ^ *last) < 0); // true if a and b have opposite signs
 	valid &= (messageLen == maxMsgSize) ? false : true;
 	valid &= (*first > -maxPulse);  // if low maxPulse detected, start processMessage()
-
 
 //		if (messageLen == 0) pattern_pos = patternLen = 0;
 //      if (messageLen == 0) valid = true;
@@ -192,8 +186,6 @@ inline void SignalDetectorClass::doDetect()
 			rssiValue = _rssiCallback();
 	}
 
-
-
 	int8_t fidx = findpatt(*first);
 	if (fidx >= 0) {
 		// Upd pattern
@@ -209,8 +201,6 @@ inline void SignalDetectorClass::doDetect()
 			{
 				processMessage();
 				calcHisto();
-
-
 			}
 			for (uint8_t i = messageLen - 1 ; i >= 0 && histo[pattern_pos] > 0 && messageLen>0; --i)
 			{
@@ -233,7 +223,6 @@ inline void SignalDetectorClass::doDetect()
 			pattern_pos = 0;  // Wenn der Positions Index am Ende angelegt ist, gehts wieder bei 0 los und wir ueberschreiben alte pattern
 			patternLen = maxNumPattern;
 			mcDetected = false;  // When changing a pattern, we need to redetect a manchester signal and we are not in a buffer full mode scenario
-
 		}
 		if (pattern_pos > patternLen) patternLen = pattern_pos;
 
@@ -243,7 +232,7 @@ inline void SignalDetectorClass::doDetect()
 	addData(fidx);
 	//histo[fidx ]++;  // need changes in unittests
 
-#if DEBUGDETECT > 3
+	#if DEBUGDETECT > 3
 		DBG_PRINT("Pulse: "); DBG_PRINT(*first);
 		DBG_PRINT(", "); DBG_PRINT(*last);
 	    DBG_PRINT(", TOL: "); DBG_PRINT(tol); DBG_PRINT(", fidx: "); DBG_PRINT(fidx);
@@ -253,10 +242,9 @@ inline void SignalDetectorClass::doDetect()
 		DBG_PRINT(", BC:");	DBG_PRINT(message.bytecount); 
 		DBG_PRINT(", vcnt:");	DBG_PRINT(message.valcount);
 		DBG_PRINTLN(" ");
-#endif
-
-
+	#endif
 }
+
 
 bool SignalDetectorClass::decode(const int * pulse)
 {
@@ -287,10 +275,10 @@ void SignalDetectorClass::compress_pattern()
 			if (histo[idx2] == 0 || (pattern[idx] ^ pattern[idx2]) < 0)
 				continue;
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
-#if DEBUGDETECT>2
-			DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(";");
-#endif // DEBUGDETECT
 
+			#if DEBUGDETECT>2
+				DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(";");
+			#endif // DEBUGDETECT
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
@@ -305,26 +293,23 @@ void SignalDetectorClass::compress_pattern()
 					}
 				}
 
-#if DEBUGDETECT>2
-				DBG_PRINT("compr: "); DBG_PRINT(idx2); DBG_PRINT("->"); DBG_PRINT(idx); DBG_PRINT(";");
-				DBG_PRINT(histo[idx2]); DBG_PRINT("*"); DBG_PRINT(pattern[idx2]);
-				DBG_PRINT("->");
-				DBG_PRINT(histo[idx]); DBG_PRINT("*"); DBG_PRINT(pattern[idx]);
-				
-#endif // DEBUGDETECT
-
+				#if DEBUGDETECT > 2
+					DBG_PRINT("compr: "); DBG_PRINT(idx2); DBG_PRINT("->"); DBG_PRINT(idx); DBG_PRINT(";");
+					DBG_PRINT(histo[idx2]); DBG_PRINT("*"); DBG_PRINT(pattern[idx2]);
+					DBG_PRINT("->");
+					DBG_PRINT(histo[idx]); DBG_PRINT("*"); DBG_PRINT(pattern[idx]);
+				#endif
 
 				int  sum = histo[idx] + histo[idx2];
 				pattern[idx] = ((long(pattern[idx]) * histo[idx]) + (long(pattern[idx2]) * histo[idx2])) / sum;
 				histo[idx] += histo[idx2];
 				pattern[idx2] = histo[idx2]= 0;
 
-#if DEBUGDETECT>2
-				DBG_PRINT(" idx:"); DBG_PRINT(pattern[idx]);
-				DBG_PRINT(" idx2:"); DBG_PRINT(pattern[idx2]);
-				DBG_PRINTLN(";");
-#endif // DEBUGDETECT
-
+				#if DEBUGDETECT > 2
+					DBG_PRINT(" idx:"); DBG_PRINT(pattern[idx]);
+					DBG_PRINT(" idx2:"); DBG_PRINT(pattern[idx2]);
+					DBG_PRINTLN(";");
+				#endif
 			}
 		}
 	}
@@ -356,9 +341,9 @@ void SignalDetectorClass::processMessage()
 		success = false;
 		m_overflow = (messageLen == maxMsgSize) ? true : false;
 
-#if DEBUGDETECT >= 1
-		DBG_PRINTLN("Message received:");
-#endif
+		#if DEBUGDETECT >= 1
+			DBG_PRINTLN("Message received:");
+		#endif
 
 		if (!mcDetected)
 		{
@@ -371,17 +356,16 @@ void SignalDetectorClass::processMessage()
 			calcHisto();
 		}
 
-#if DEBUGDETECT >= 1
-		printOut();
-#endif
+		#if DEBUGDETECT >= 1
+			printOut();
+		#endif
 
 		if (state == syncfound && messageLen >= minMessageLen)// Messages mit clock / Sync Verhaeltnis pruefen
 		{
-#if DEBUGDECODE >0
-			SDC_PRINT(" MS check: ");
-
-			//printOut();
-#endif	
+			#if DEBUGDECODE > 0
+				SDC_PRINT(" MS check: ");
+				//printOut();
+			#endif
 
 			// Setup of some protocol identifiers, should be retrieved via fhem in future
 
@@ -407,14 +391,15 @@ void SignalDetectorClass::processMessage()
 													   //if (!m_endfound) mend=messageLen;  // Reduce mend if we are behind messageLen
 			calcHisto(mstart, mend);	// Recalc histogram due to shortened message
 
-#if DEBUGDECODE > 1
-			DBG_PRINT("Index: ");
-			DBG_PRINT(" MStart: "); DBG_PRINT(mstart);
-			DBG_PRINT(" SYNC: "); DBG_PRINT(sync);
-			DBG_PRINT(", CP: "); DBG_PRINT(clock);
-			DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
-			DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
-#endif // DEBUGDECODE
+			#if DEBUGDECODE > 1
+				DBG_PRINT("Index: ");
+				DBG_PRINT(" MStart: "); DBG_PRINT(mstart);
+				DBG_PRINT(" SYNC: "); DBG_PRINT(sync);
+				DBG_PRINT(", CP: "); DBG_PRINT(clock);
+				DBG_PRINT(" - MEFound: "); DBG_PRINTLN(m_endfound);
+				DBG_PRINT(" - MEnd: "); DBG_PRINTLN(mend);
+			#endif
+
 			if (m_endfound && (mend - mstart) < minMessageLen) {
 				state = clockfound; // step back back to clockfound state, because it is to short for our ms signals
 				goto MUOutput;
@@ -422,21 +407,26 @@ void SignalDetectorClass::processMessage()
 			if ((m_endfound && (mend - mstart) >= minMessageLen) || (!m_endfound && messageLen < maxMsgSize && (messageLen - mstart) >= minMessageLen))
 			{
 
-#ifdef DEBUGDECODE
-				SDC_PRINTLN("Filter Match: ");;
-#endif
-		
+				#ifdef DEBUGDECODE
+					SDC_PRINTLN("Filter Match: ");;
+				#endif
+
 				//preamble = "";
 				//postamble = "";
 
 				/*				Output raw message Data				*/
-				SDC_PRINT(MSG_START);
+
+				/* SDC_PRINT(MSG_START); */
+				MSG_PRINT(char(MSG_START));
+
 				if (MredEnabled) {
 					int patternInt;
 					uint8_t patternLow;
 					uint8_t patternIdx;
-					
-					SDC_PRINT("Ms");  SDC_PRINT(SERIAL_DELIMITER);
+
+					/* SDC_PRINT("Ms");  SDC_PRINT(SERIAL_DELIMITER); */
+					MSG_PRINT("Ms");  MSG_PRINT(';');
+
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
@@ -450,7 +440,7 @@ void SignalDetectorClass::processMessage()
 						else {
 							patternIdx = idx | 0x80;    // Bit5 = 0 (Vorzeichen positiv)
 						}
-						
+
 						patternLow = lowByte(patternInt);
 						if (bitRead(patternLow, (uint8_t)7) == 0) {
 							bitSet(patternLow, (uint8_t)7);
@@ -458,18 +448,27 @@ void SignalDetectorClass::processMessage()
 						else {
 							bitSet(patternIdx, (uint8_t)4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						SDC_PRINT(patternIdx);
-						SDC_PRINT(patternLow);
-						SDC_PRINT(highByte(patternInt) | 0x80);
-						SDC_PRINT(SERIAL_DELIMITER);
+
+						/*
+						 * SDC_PRINT(patternIdx);
+						 * SDC_PRINT(patternLow);
+						 * SDC_PRINT(highByte(patternInt) | 0x80);
+						 * SDC_PRINT(SERIAL_DELIMITER);
+						*/
+						MSG_PRINT(char(patternIdx));
+						MSG_PRINT(char(patternLow));
+						MSG_PRINT(char(highByte(patternInt) | 0x80));
+						MSG_PRINT(';');
 					}
 
 					//uint8_t n;
 					if ((mend & 1) == 1) {   // zwei Nibble im letzten Byte übergeben
-						SDC_PRINT("D");
+						/* SDC_PRINT("D"); */
+						MSG_PRINT('D');
 					}
 					else {
-						SDC_PRINT("d");     // ein Nibble im letzten Byte übergeben
+						/* SDC_PRINT("d"); */    // ein Nibble im letzten Byte übergeben
+						MSG_PRINT('d');          // ein Nibble im letzten Byte übergeben
 					}
 					if ((mstart & 1) == 1) {  // ungerade Startposition
 						mstart--;
@@ -477,39 +476,62 @@ void SignalDetectorClass::processMessage()
 						message.getByte(mstart / 2, &n);
 						n = (n & 15) | 128;             // high nibble = 8 als Kennzeichen für ungeraden mstart
 
-						SDC_PRINT(n);
+						/* SDC_PRINT(n); */
+						MSG_PRINT(char(n));
+
  						mstart += 2;
 					}
 					for (uint8_t i = mstart; i <= mend; i=i+2) {					
 						message.getByte(i/2,&n);
-						SDC_PRINT(n);
+
+						/* SDC_PRINT(n); */
+						MSG_PRINT(char(n));
 					}
 
-					n = sprintf(buf, ";C%X;S%X;", clock, sync);
-					SDC_PRINT(buf);
+					/* n = sprintf(buf, ";C%X;S%X;", clock, sync);
+					 * SDC_PRINT(buf);
+					 */
+					MSG_PRINT(";C");
+					MSG_PRINT(clock, HEX);
+					MSG_PRINT(";S");
+					MSG_PRINT(sync, HEX);
+					MSG_PRINT(";");
+
 					if (_rssiCallback != nullptr)
 					{
-						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_PRINT(buf);
+						/* n = sprintf(buf, "R%X;", rssiValue);
+						 * SDC_PRINT(buf);
+						 */
+						MSG_PRINT('R');
+						MSG_PRINT(rssiValue, HEX);
+						MSG_PRINT(';');
 					}
 			    }
 				else {
-					SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER);
+					/* SDC_PRINT("MS");  SDC_PRINT(SERIAL_DELIMITER); */
+					MSG_PRINT("MS");  MSG_PRINT(';');
+
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
-						
-						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
-						n = sprintf(buf, "P%i=%i;", idx,pattern[idx]);
-						SDC_PRINT(buf);
 
+						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
+						/*
+						 * n = sprintf(buf, "P%i=%i;", idx,pattern[idx]);
+						 * SDC_PRINT(buf);
+						 */
+						MSG_PRINT('P'); MSG_PRINT(idx); MSG_PRINT('='); MSG_PRINT(pattern[idx]); MSG_PRINT(';');
 					}
-					SDC_PRINT("D=");
+					
+					/* SDC_PRINT("D="); */
+					MSG_PRINT("D=");
 
 					for (uint8_t i = mstart; i <= mend; i++)
 					{
-						sprintf(buf, "%d", message[i]);
-						SDC_PRINT(buf);
+						/* sprintf(buf, "%d", message[i]);
+						 * SDC_PRINT(buf);
+						 */
+						MSG_PRINT(message[i]);
 					}
 					/*
 					SDC_PRINT(SERIAL_DELIMITER);
@@ -517,17 +539,25 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT("SP="); SDC_PRINT(itoa(sync, buf, 10));      SDC_PRINT(SERIAL_DELIMITER);     // SyncPulse
 					SDC_PRINT("R=");  SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
 					*/
-					n = sprintf(buf, ";CP=%i;SP=%i;", clock, sync);
-					SDC_PRINT(buf);
+
+					/* n = sprintf(buf, ";CP=%i;SP=%i;", clock, sync);
+					 * SDC_PRINT(buf);
+					 */
+
+					MSG_PRINT(";CP="); MSG_PRINT(clock); MSG_PRINT(";SP="); MSG_PRINT(sync); MSG_PRINT(';');
+
 					if (_rssiCallback != nullptr)
 					{
-						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_PRINT(buf);
+						/* n = sprintf(buf, "R=%i;", rssiValue);
+						 * SDC_PRINT(buf);
+						 */
+						MSG_PRINT("R="); MSG_PRINT(rssiValue); MSG_PRINT(';');
 					}
 				}
 
 				if (m_overflow) {
-					SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER);
+					/* SDC_PRINT("O");  SDC_PRINT(SERIAL_DELIMITER); */
+					MSG_PRINT('O'); MSG_PRINT(';');
 				}
 				m_truncated = false;
 				
@@ -538,53 +568,62 @@ void SignalDetectorClass::processMessage()
 					//SDC_PRINT(F("MS move. messageLen ")); SDC_PRINTLN(messageLen);
 					mstart = 0;
 					//SDC_PRINT("m"); SDC_PRINT(MsMoveCount); SDC_PRINT(SERIAL_DELIMITER);
-					n = sprintf(buf, "m%i;", MsMoveCount);
-					SDC_PRINT(buf);
+
+					/* n = sprintf(buf, "m%i;", MsMoveCount);
+					 * SDC_PRINT(buf);
+					 */
+					MSG_PRINT('m'); MSG_PRINT(MsMoveCount); MSG_PRINT(';');
 				}
-				SDC_PRINT(MSG_END);
-				SDC_PRINT(char(0xA));
+				
+				/* SDC_PRINT(MSG_END);
+				 * SDC_PRINT(char(0xA));
+				 */
+				MSG_PRINT(char(MSG_END));
+				MSG_PRINT(char(0xA));
+
 				success = true;
 			}
 			else if (m_endfound == false && mstart > 0 && mend + 1 >= maxMsgSize) // Start found, but no end. We remove everything bevore start and hope to find the end later
 			{
 				//SDC_PRINT("copy");
-#ifdef DEBUGDECODE
-				DBG_PRINT(" move msg ");;
-#endif
+				#ifdef DEBUGDECODE
+					DBG_PRINT(" move msg ");;
+				#endif
+
 				bufferMove(mstart);
 				mstart = 0;
 				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 			} 
 			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
-#ifdef DEBUGDECODE
-				DBG_PRINT(" move msg ");;
-#endif
+				#ifdef DEBUGDECODE
+					DBG_PRINT(" move msg ");;
+				#endif
+
 				bufferMove(mend+1);
 				mstart = 0;
 				//m_truncated = true;  // Flag that we truncated the message array and want to receiver some more data
 				success = true;	// don't process other message types
 			}
 			else {
-#ifdef DEBUGDECODE
-				SDC_PRINTLN(" Buffer overflow, flushing message array");
-#endif
+				#ifdef DEBUGDECODE
+					SDC_PRINTLN(" Buffer overflow, flushing message array");
+				#endif
 				//SDC_PRINT(MSG_START);
 				//SDC_PRINT("Buffer overflow while processing signal");
 				//SDC_PRINT(MSG_END);
 				reset(); // Our Messagebuffer is not big enough, no chance to get complete Message
-				
+
 				success = true;	// don't process other message types
 			}
 		}
 MUOutput:
 		if (success == false && (MUenabled || MCenabled)) {
 
-#if DEBUGDECODE >0
-			DBG_PRINT(" check:");
-
-			//printOut();
-#endif	
-// Message has a clock puls, but no sync. Try to decode this
+			#if DEBUGDECODE >0
+				DBG_PRINT(" check:");
+				//printOut();
+			#endif	
+			// Message has a clock puls, but no sync. Try to decode this
 
 			//preamble = "";
 			//postamble = "";

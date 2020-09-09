@@ -17,10 +17,10 @@
  * ------------------------
  * cnt opt. - size with hardware
  *    0     - 28806 size nano with debug (standing branch dev-r3.5_xFSK_pre, radino without sending xFSK)
- *   25     - 29360 size nano with debug (+ 554 Bytes, full xFSK support)
+ *   26     - 29180 size nano with debug (+ 374 Bytes, full xFSK support)
  *
  *    0     - 29298 size radino without debug  (standing branch dev-r3.5_xFSK_pre, radino without sending xFSK)
- *   25     - 28556 size radino without debug (- 742 Bytes, , full xFSK support)
+ *   26     - 28360 size radino without debug (- 938 Bytes, , full xFSK support)
  */
 
 

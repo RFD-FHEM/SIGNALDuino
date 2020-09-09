@@ -15,7 +15,7 @@
  * compiling notes
  * ***************
   Arduino IDE
-  radino_CC1101@debug  - option too big    - 31466 Bytes (109%), max 28672
+  radino_CC1101@debug  - option too big    - 31288 Bytes (109%), max 28672
 
   Platform IO
   radino_CC1101@debug  - size (30958 bytes) is greater than maximum allowed (28672 bytes)
@@ -43,7 +43,7 @@
  * ****************************************
 */
 
-#define PROGVERS               "3.5.0-dev_20200908_v2"
+#define PROGVERS               "3.5.0-dev_20200909_v3"
 
 #ifdef OTHER_BOARD_WITH_CC1101
   #define CMP_CC1101
