@@ -703,14 +703,19 @@ MUOutput:
 
 #if DEBUGDECODE > 1
 				DBG_PRINT(" MU found: ");
-#endif // DEBUGDECODE
-				SDC_PRINT(MSG_START);
+#endif
+
+				/* SDC_PRINT(MSG_START); */
+				MSG_PRINT(char(MSG_START));
+
 				if (MredEnabled) {
 					int patternInt;
 					uint8_t patternLow;
 					uint8_t patternIdx;
-					
-					SDC_PRINT("Mu");  SDC_PRINT(SERIAL_DELIMITER);
+
+					/* SDC_PRINT("Mu");  SDC_PRINT(SERIAL_DELIMITER); */
+					MSG_PRINT("Mu"); MSG_PRINT(';');
+
 					calcHisto();
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
@@ -733,32 +738,53 @@ MUOutput:
 						else {
 							bitSet(patternIdx, (uint8_t)4);   // wenn bei patternLow Bit7 gesetzt ist, dann bei patternIdx Bit4 = 1
 						}
-						SDC_PRINT(patternIdx);
-						SDC_PRINT(patternLow);
-						SDC_PRINT(highByte(patternInt) | 0x80);
-						SDC_PRINT(SERIAL_DELIMITER);
+
+						/*
+						 * SDC_PRINT(patternIdx);
+						 * SDC_PRINT(patternLow);
+						 * SDC_PRINT(highByte(patternInt) | 0x80);
+						 * SDC_PRINT(SERIAL_DELIMITER);
+						*/
+
+						MSG_PRINT(char(patternIdx));
+						MSG_PRINT(char(patternLow));
+						MSG_PRINT(char(highByte(patternInt) | 0x80));
+						MSG_PRINT(';');
 					}
 
 					if ((messageLen & 1) == 1) {  // ein Nibble im letzten Byte übergeben ungerade 
-						SDC_PRINT("d");
+						/* SDC_PRINT("d"); */
+						MSG_PRINT('d');
 					}
 					else {
-						SDC_PRINT("D");			// zwei Nibble im letzten Byte übergeben ungerade 
+						/* SDC_PRINT("D");	*/		// zwei Nibble im letzten Byte übergeben ungerade
+						MSG_PRINT('D');			// zwei Nibble im letzten Byte übergeben ungerade 
 					}
 
 					for (uint8_t i = 0; i <= message.bytecount; i++) {
 						message.getByte(i, &n);
-						SDC_PRINT(n);
+						/* SDC_PRINT(n); */
+						MSG_PRINT(char(n));
 					}
 
-					n = sprintf(buf, ";C%X;", clock);
-					SDC_PRINT(buf);
+					/*
+					 * n = sprintf(buf, ";C%X;", clock);
+					 * SDC_PRINT(buf);
+					*/
+					MSG_PRINT(";C");
+					MSG_PRINT(clock, HEX);
+					MSG_PRINT(";");
+
 					if (_rssiCallback != nullptr)
 					{
-						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_PRINT(buf);
+						/*
+						 * n = sprintf(buf, "R%X;", rssiValue);
+						 * SDC_PRINT(buf);
+						 */
+						MSG_PRINT('R');
+						MSG_PRINT(rssiValue, HEX);
+						MSG_PRINT(';');
 					}
-
 				}
 				else {
 				
@@ -822,13 +848,16 @@ MUOutput:
           MSG_PRINT('O'); MSG_PRINT(';');
 				}
 
-				SDC_PRINT(MSG_END);
-				SDC_PRINT(char(0xA));
+				/*
+				 * SDC_PRINT(MSG_END);
+				 * SDC_PRINT(char(0xA));
+				 */
 				
+				MSG_PRINT(char(MSG_END));
+				MSG_PRINT(char(0xA));
 				m_truncated = false;
 				success = true;
 			}
-
 		}
 		
 	if (success == false) 
