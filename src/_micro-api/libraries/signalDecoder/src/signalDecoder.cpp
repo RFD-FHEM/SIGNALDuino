@@ -36,8 +36,9 @@
 #define sd_min(a,b) ((a)<(b)?(a):(b))
 #define sd_max(a,b) ((a)>(b)?(a):(b))
 
+extern void MSG_PRINTtoHEX(uint8_t a);
 
-#if defined(WIN32) || defined(__linux__)
+#if defined(WIN32) || defined(__linux__) /* ** for which variant or system is this required? ** */
 	#define ARDUINO 101
 	#define NOSTRING
 #endif
@@ -125,11 +126,13 @@ void SignalDetectorClass::addData(const int8_t value)
 	SDC_PRINTLN(success);
 }
 
+
 inline void SignalDetectorClass::addPattern()
 {
 	pattern[pattern_pos] = *first;						//Store pulse in pattern array
 	pattern_pos++;
 }
+
 
 inline void SignalDetectorClass::updPattern( const uint8_t ppos)
 {
@@ -139,7 +142,6 @@ inline void SignalDetectorClass::updPattern( const uint8_t ppos)
 
 inline void SignalDetectorClass::doDetect()
 {
-
 	//printOut();
 
 	bool valid;
@@ -178,7 +180,6 @@ inline void SignalDetectorClass::doDetect()
 			DBG_PRINTLN(F(" mb f a t proc ")); // message buffer full after try proccessMessage
 			printOut();
 		}
-		
 	}
 	else if (messageLen == minMessageLen) {
 		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
@@ -276,9 +277,9 @@ void SignalDetectorClass::compress_pattern()
 				continue;
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
 
-			#if DEBUGDETECT>2
+			#if DEBUGDETECT > 2
 				DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(";");
-			#endif // DEBUGDETECT
+			#endif
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
 			{
@@ -330,6 +331,7 @@ void SignalDetectorClass::compress_pattern()
 	}
 	*/
 }
+
 
 void SignalDetectorClass::processMessage()
 {
@@ -414,7 +416,7 @@ void SignalDetectorClass::processMessage()
 				//preamble = "";
 				//postamble = "";
 
-				/*				Output raw message Data				*/
+				/* ### Output raw message Data ### */
 
 				/* SDC_PRINT(MSG_START); */
 				MSG_PRINT(char(MSG_START));
@@ -495,7 +497,7 @@ void SignalDetectorClass::processMessage()
 					MSG_PRINT(clock, HEX);
 					MSG_PRINT(";S");
 					MSG_PRINT(sync, HEX);
-					MSG_PRINT(";");
+					MSG_PRINT(';');
 
 					if (_rssiCallback != nullptr)
 					{
@@ -587,7 +589,7 @@ void SignalDetectorClass::processMessage()
 			{
 				//SDC_PRINT("copy");
 				#ifdef DEBUGDECODE
-					DBG_PRINT(" move msg ");;
+					DBG_PRINT(" move msg ");
 				#endif
 
 				bufferMove(mstart);
@@ -596,7 +598,7 @@ void SignalDetectorClass::processMessage()
 			} 
 			else if (m_endfound && mend < maxMsgSize) {  // Start and end found, but end is not at end of buffer, so we remove only what was checked
 				#ifdef DEBUGDECODE
-					DBG_PRINT(" move msg ");;
+					DBG_PRINT(" move msg ");
 				#endif
 
 				bufferMove(mend+1);
@@ -646,11 +648,11 @@ MUOutput:
 
 				if ((mcDetected || mcdecoder->isManchester()))	// Check if valid manchester pattern and try to decode
 				{
-#if DEBUGDECODE > 1
-					SDC_PRINTLN(" MC found: ");
-#endif // DEBUGDECODE
+          #if DEBUGDECODE > 1
+            SDC_PRINTLN(" MC found: ");
+          #endif
 
-#if DEBUGDECODE == 1 // todo kommentar entfernen
+          #if DEBUGDECODE == 1
 					SDC_WRITE(MSG_START);
 					SDC_PRINT("DMC");
 					SDC_WRITE(SERIAL_DELIMITER);
@@ -683,15 +685,27 @@ MUOutput:
 					}
 
 					SDC_PRINTLN(MSG_END);
-#endif
+          #endif
+
 					if (mcdecoder->doDecode())
 					{
-						SDC_PRINT(MSG_START);
-						SDC_PRINT("MC");
-						n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder->longlow], pattern[mcdecoder->longhigh]);
-						SDC_PRINT(buf);
-						n = sprintf(buf, ";SL=%i;SH=%i;", pattern[mcdecoder->shortlow], pattern[mcdecoder->shorthigh]);
-						SDC_PRINT(buf);
+						/*
+						 * SDC_PRINT(MSG_START);
+						 * SDC_PRINT("MC");
+						 * n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder->longlow], pattern[mcdecoder->longhigh]);
+						 * SDC_PRINT(buf);
+						 * n = sprintf(buf, ";SL=%i;SH=%i;", pattern[mcdecoder->shortlow], pattern[mcdecoder->shorthigh]);
+						 * SDC_PRINT(buf);
+						*/
+
+						MSG_PRINT(char(MSG_START));
+						MSG_PRINT("MC");
+
+						MSG_PRINT(";LL="); MSG_PRINT(pattern[mcdecoder->longlow]);
+						MSG_PRINT(";LH="); MSG_PRINT(pattern[mcdecoder->longhigh]);
+						MSG_PRINT(";SL="); MSG_PRINT(pattern[mcdecoder->shortlow]);
+						MSG_PRINT(";SH="); MSG_PRINT(pattern[mcdecoder->shorthigh]);
+						MSG_PRINT(';');
 
 						/*
 						SDC_PRINT("LL="); SDC_PRINT(pattern[mcdecoder->longlow]); SDC_PRINT(SERIAL_DELIMITER);
@@ -699,25 +713,40 @@ MUOutput:
 						SDC_PRINT("SL="); SDC_PRINT(pattern[mcdecoder->shortlow]); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("SH="); SDC_PRINT(pattern[mcdecoder->shorthigh]); SDC_PRINT(SERIAL_DELIMITER);
 						*/
-						SDC_PRINT("D=");  mcdecoder->printMessageHexStr();
 
-						n = sprintf(buf, ";C=%i;L=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount);
-						SDC_PRINT(buf);
+						/* SDC_PRINT("D=");  mcdecoder->printMessageHexStr();
+						 * n = sprintf(buf, ";C=%i;L=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount);
+						 * SDC_PRINT(buf);
+						*/
+						MSG_PRINT("D="); mcdecoder->printMessageHexStr();
+						MSG_PRINT(";C="); MSG_PRINT(mcdecoder->clock);
+						MSG_PRINT(";L="); MSG_PRINT(mcdecoder->ManchesterBits.valcount);
+						MSG_PRINT(';');
+
 						if (_rssiCallback != nullptr)
 						{
-							n = sprintf(buf, "R=%i;", rssiValue);
-							SDC_PRINT(buf);
-						}						/*
+							/* n = sprintf(buf, "R=%i;", rssiValue);
+							 * SDC_PRINT(buf);
+							 */
+							MSG_PRINT("R="); MSG_PRINT(rssiValue); MSG_PRINT(';');
+						}
+						/*
 						SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("C="); SDC_PRINT(mcdecoder->clock); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
 						SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
 						*/
-						SDC_PRINT(MSG_END);
-						SDC_PRINT(char(0xA));
-#ifdef DEBUGDECODE
-						DBG_PRINTLN("");
-#endif
+
+						/* SDC_PRINT(MSG_END);
+						 * SDC_PRINT(char(0xA));
+						 */
+
+						MSG_PRINT(char(MSG_END));
+						MSG_PRINT(char(0xA));
+
+						#ifdef DEBUGDECODE
+							DBG_PRINTLN('');
+						#endif
 						//					printMsgStr(&preamble, &mcbitmsg, &postamble);
 						mcDetected = false;
 						success = true;
@@ -734,7 +763,6 @@ MUOutput:
 						}
 					}
 				}
-
 			}
 		}
 		if (MUenabled && !mcDetected && state == clockfound && success == false && messageLen >= minMessageLen) {
@@ -1405,25 +1433,28 @@ void ManchesterpatternDecoder::printMessageHexStr()
 {
 	//char hexStr[] = "00"; // Not really needed
 
-	char cbuffer[3];
+	/* char cbuffer[3]; */
 	uint8_t idx;
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
-		sprintf(cbuffer, "%02X", getMCByte(idx));
+		/* sprintf(cbuffer, "%02X", getMCByte(idx));
 		//SDC_PRINT(hexStr);
-		pdec->write(cbuffer);
+		 * pdec->write(cbuffer);
+		 */
+		MSG_PRINTtoHEX(getMCByte(idx));
 	}
 
-	sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
+	/* sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf); */
+	MSG_PRINT( (getMCByte(idx) >> 4 & 0xf) , HEX);
 	//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
-		sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
+		/* sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF); */
+		MSG_PRINT( (getMCByte(idx) & 0xF) , HEX);
 		//SDC_PRINT(hexStr);
-		
 	}
 	//pdec->msgPort->print(cbuffer);
-	pdec->write(cbuffer);
+	/* pdec->write(cbuffer); */
 }
 
 

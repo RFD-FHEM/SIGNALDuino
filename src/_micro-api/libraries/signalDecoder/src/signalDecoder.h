@@ -34,7 +34,7 @@
 #define _SIGNALDECODER_h
 
 
-#if defined(WIN32) || defined(__linux__)
+#if defined(WIN32) || defined(__linux__)  /* ** for which variant or system is this required? ** */
   #define ARDUINO 101
   #define NOSTRING
 #endif
@@ -74,13 +74,13 @@
   #define DEBUG 1
 #endif
 
-#ifdef PLATFORMIO                           // intern variable only in software PlatformIO (example 40304), in Arduino IDE undef
-  #include "../../../../compile_config.h"   // PlatformIO   - need for right options in output.h
+#ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
+  #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
 #else
-  #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
+  #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
 #endif
 
-#ifndef WIFI_ESP        // variable is not defined
+#ifndef WIFI_ESP        /* variable is not defined */
   #include "output.h"
 #else
 /*
