@@ -745,7 +745,7 @@ MUOutput:
 						MSG_PRINT(char(0xA));
 
 						#ifdef DEBUGDECODE
-							DBG_PRINTLN('');
+							DBG_PRINTLN("");
 						#endif
 						//					printMsgStr(&preamble, &mcbitmsg, &postamble);
 						mcDetected = false;
