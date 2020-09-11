@@ -58,13 +58,20 @@
  * different debug options
  * DEBUG variable must be set separately because no transfer from compile_config.h
  * file output.h worked with DEBUG variable
- * note: ToDO check output DEBUG for all devices
  */
 
+//#define DEBUG 0
+
+/* all variants DEBUGDETECT */
+//#define DEBUGDETECT 0
+//#define DEBUGDETECT 1
+//#define DEBUGDETECT 2
 //#define DEBUGDETECT 3
-//#define DEBUGDETECT 255   // Very verbose output
+//#define DEBUGDETECT 255          /* very verbose output */
+
+/* all variants DEBUGDECODE */
 //#define DEBUGDECODE 1
-//#define DEBUGDECODE 2     // Very verbose output
+//#define DEBUGDECODE 255          /* very verbose output */
 
 /*
  * END debug options selection
