@@ -62,14 +62,14 @@
 
 //#define DEBUG 0
 
-/* all variants DEBUGDETECT */
+/* all variations DEBUGDETECT */
 //#define DEBUGDETECT 0
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 2
 //#define DEBUGDETECT 3
 //#define DEBUGDETECT 255          /* very verbose output */
 
-/* all variants DEBUGDECODE */
+/* all variations DEBUGDECODE */
 //#define DEBUGDECODE 1
 //#define DEBUGDECODE 255          /* very verbose output */
 
@@ -101,9 +101,11 @@
  */
 #endif
 
-#define SDC_PRINT(...)    write(__VA_ARGS__)
-#define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+/*
+ * #define SDC_PRINT(...)    write(__VA_ARGS__)
+ * #define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
+ * #define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+*/
 
 #ifndef F 
   #define F(V1) V1

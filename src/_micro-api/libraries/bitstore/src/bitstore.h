@@ -253,7 +253,7 @@ bool BitStore<bufSize>::moveLeft(const uint16_t begin)
 		 * is 48 bytes bigger
      */
     
-    if (valcount & 1 == 0) //Wenn valcount auf eine gerade Zahl fällt, brauchen wir noch eine Zuweisung
+    if ( (valcount & 1) == 0) //Wenn valcount auf eine gerade Zahl fällt, brauchen wir noch eine Zuweisung
 		{
 			datastore[z] = datastore[i] << shift_left;
 			/*
