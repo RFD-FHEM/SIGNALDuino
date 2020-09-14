@@ -293,12 +293,12 @@ void send_cmd()
 	}
 	for (uint8_t i = 0; i < repeats; i++)
 	{
-		DBG_PRINT(F("msg ")); DBG_PRINT(i + 1); DBG_PRINT("/"); DBG_PRINT(repeats);
+		DBG_PRINT(F("msg ")); DBG_PRINT(i + 1); DBG_PRINT('/'); DBG_PRINT(repeats);
 
     #if defined CMP_CC1101
       if (command[cmdNo].type == 3) //xFSK
       {
-        DBG_PRINTLN(" ");
+        DBG_PRINTLN(' ');
         for (uint8_t d = 0; d <= command[cmdNo].repeats - 1; d++)
         {
           cc1101::sendFIFO(command[cmdNo].datastart);
@@ -307,7 +307,7 @@ void send_cmd()
     #endif
         for (uint8_t c = 0; c <= cmdNo; c++)
         {
-          DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT("/"); DBG_PRINT(cmdNo);
+          DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT('/'); DBG_PRINT(cmdNo);
           DBG_PRINT(F(" repeats ")); DBG_PRINTLN(command[c].repeats);
 
           if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
