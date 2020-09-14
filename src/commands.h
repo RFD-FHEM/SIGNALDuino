@@ -161,7 +161,7 @@ namespace commands {
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
-				MSG_PRINT("(");
+				MSG_PRINT('(');
 
 #endif
 #ifdef PIN_MARK433
@@ -173,24 +173,24 @@ namespace commands {
 				MSG_PRINT(FPSTR(TXT_CHIP)); MSG_PRINT(FPSTR(TXT_BLANK)); MSG_PRINT(FPSTR(TXT_CC110));
 				switch (cc1101::chipVersion()) {
 					case 0x03:
-						 MSG_PRINT(F("0")); 
+						 MSG_PRINT(F('0')); 
 						break;
 					case 0x14:
 					case 0x04:
-						 MSG_PRINT(F("1"));
+						 MSG_PRINT(F('1'));
 						break;
 					case 0x05:
 						 MSG_PRINT(F("0E"));
 						break;
 					case 0x07:
  					case 0x17:
-						 MSG_PRINT(F("L"));
+						 MSG_PRINT(F('L'));
 						break;
 					default:
 						MSG_PRINT(F(" unknown"));
 						break;
 				}
-				MSG_PRINT(")");
+				MSG_PRINT(')');
 	#endif
 #endif
 #ifdef CMP_CC1101
@@ -296,7 +296,7 @@ namespace commands {
 
 				EEPROM.write(reg, val); //Todo pruefen ob reg hier um 1 erhoeht werden muss
 				DBG_PRINT(reg);
-				DBG_PRINT("=");
+				DBG_PRINT('=');
 
 				DBG_PRINTLN(val);
 
