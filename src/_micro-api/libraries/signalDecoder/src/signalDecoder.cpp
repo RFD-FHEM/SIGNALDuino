@@ -279,7 +279,7 @@ void SignalDetectorClass::compress_pattern()
 			const int16_t tol = int(((abs(pattern[idx2])*tolFact) + (abs(pattern[idx])*tolFact)) / 2);
 
 			#if DEBUGDETECT > 2
-				DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(";");
+				DBG_PRINT("comptol: "); DBG_PRINT(tol); DBG_PRINT("  "); DBG_PRINT(idx2); DBG_PRINT("<->"); DBG_PRINT(idx); DBG_PRINT(';');
 			#endif
 
 			if (inTol(pattern[idx2], pattern[idx], tol))  // Pattern are very equal, so we can combine them
