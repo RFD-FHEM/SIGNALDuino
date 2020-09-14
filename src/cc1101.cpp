@@ -175,7 +175,7 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
       /*
        * sprintf(b, "C%02Xn%02X=", reg, n); // is 36 bytes bigger
        */
-			MSG_PRINT("C"); MSG_PRINTtoHEX(reg); MSG_PRINT("n"); MSG_PRINTtoHEX(n); MSG_PRINT("="); // C06n04=
+			MSG_PRINT('C'); MSG_PRINTtoHEX(reg); MSG_PRINT('n'); MSG_PRINTtoHEX(n); MSG_PRINT('='); // C06n04=
 
 			for (uint8_t i = reg; i < reg + n; i++) {
 				var = readReg(i, CC1101_CONFIG);
@@ -195,7 +195,7 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
        * sprintf_P(b, PSTR("C%02X = %02X"), reg, var);  // is 16 bytes bigger
        */
 
-      MSG_PRINT("C"); MSG_PRINTtoHEX(reg); MSG_PRINT(" = "); MSG_PRINTtoHEX(var); MSG_PRINTLN(""); // C06 = 3D
+      MSG_PRINT('C'); MSG_PRINTtoHEX(reg); MSG_PRINT(" = "); MSG_PRINTtoHEX(var); MSG_PRINTLN(""); // C06 = 3D
 		}
 		else if (reg == 0x3E) {     // patable, C3E
 			MSG_PRINT(F("C3E ="));
@@ -213,7 +213,7 @@ void cc1101::readCCreg(const uint8_t reg) {         // read CC1101 register
 				}
 				var = readReg(i, CC1101_CONFIG);
         MSG_PRINTtoHEX(var);
-        MSG_PRINT(" ");
+        MSG_PRINT(' ');
 			}
 			MSG_PRINTLN("");
 		}
@@ -256,7 +256,7 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) { // write CC1101 register
      * sprintf(b,"W%02X%02X",reg,var); // is 48 bytes bigger
      */
 		
-    MSG_PRINT("W");
+    MSG_PRINT('W');
     MSG_PRINTtoHEX(reg);
     MSG_PRINTtoHEX(var);
     MSG_PRINTLN("");
@@ -488,7 +488,7 @@ bool cc1101::regCheck()
 void cc1101::ccFactoryReset() {                            // reset CC1101 and set default values
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {
 		EEPROM.write(EE_CC1101_CFG + i, pgm_read_byte(&initVal[i]));
-		DBG_PRINT(".");
+		DBG_PRINT('.');
 	}
 	for (uint8_t i = 0; i < 8; i++) {
 		if (i == 1) {
@@ -532,7 +532,7 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 	sendSPI(0x00 | CC1101_WRITE_BURST);
 	for (uint8_t i = 0; i < sizeof(cc1101::initVal); i++) {         // write EEPROM value to cc1101
 		sendSPI(EEPROM.read(EE_CC1101_CFG + i));
-		DBG_PRINT(".");
+		DBG_PRINT('.');
 	}
 
 	cc1101_Deselect();
@@ -623,7 +623,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
-					MSG_PRINT(";");
+					MSG_PRINT(';');
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
 				}
