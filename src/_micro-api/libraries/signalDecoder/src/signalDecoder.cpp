@@ -39,7 +39,7 @@
 
 extern void MSG_PRINTtoHEX(uint8_t a);
 
-#if defined(WIN32) || defined(__linux__) /* ** for which variant or system is this required? ** */
+#if defined(WIN32) || defined(__linux__) /* is required to run tests on the library - https://github.com/RFD-FHEM/SIGNALDuino/pull/145#discussion_r499140057 */
 	#define ARDUINO 101
 	#define NOSTRING
 #endif
@@ -1359,14 +1359,14 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 *
 * ()
 */
-#ifdef NOSTRING		
+#ifdef NOSTRING
 const char* ManchesterpatternDecoder::getMessageHexStr()
 #else
 void ManchesterpatternDecoder::getMessageHexStr(String *message)
 #endif
 {
 	char hexStr[] = "00" ; // Not really needed
-#ifndef NOSTRING		
+#ifndef NOSTRING
 	message->reserve((ManchesterBits.valcount /4)+2);
 	if (!message)
 		return;
