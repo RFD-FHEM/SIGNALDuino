@@ -2,7 +2,17 @@
 #ifndef _OUTPUT_h
 #define _OUTPUT_h
 
+/*
+ * different debug options
+ * DEBUG variable must be set separately if the library is used alone without SIGNALduino project
+ * file output.h worked with DEBUG variable
+ */
 
+//#define DEBUG 0
+
+/*
+ * END debug options selection
+*/
 
 #ifdef CMP_CC1101
 static const char TXT_CC1101[]          PROGMEM = "cc1101 ";

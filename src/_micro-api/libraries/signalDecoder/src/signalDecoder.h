@@ -56,8 +56,8 @@
 
 /*
  * different debug options
- * DEBUG variable must be set separately because no transfer from compile_config.h
- * file output.h worked with DEBUG variable
+ * DEBUG variable must be set separately if the library is used alone without SIGNALduino project
+ * file signalDecoder.h worked with DEBUG, DEBUGDETECT, DEBUGDECODE variable
  */
 
 //#define DEBUG 0
@@ -89,8 +89,8 @@
   #endif
 #endif
 
-#ifndef WIFI_ESP        /* variable is not defined */
-  #include "output.h"
+#ifndef WIFI_ESP              /* variable is not defined, where is this used ??? */
+  #include "output.h"         /* Dependency is needed */
 #else
 /*
  * this code no needed, variable WIFI_ESP not defined
