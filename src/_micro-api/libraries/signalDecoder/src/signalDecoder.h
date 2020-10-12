@@ -81,10 +81,14 @@
   #define DEBUG 1
 #endif
 
-#ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
-  #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
-#else
-  #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
+#ifdef _COMMANDS_h                            /* to break Dependency, _COMMANDS_h is only available in the SIGNALduino project () 
+                                                 alternatively a separate variable which is set in compile_config.h */
+
+  #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
+    #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
+  #else
+    #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
+  #endif
 #endif
 
 #ifndef WIFI_ESP        /* variable is not defined */
@@ -111,8 +115,8 @@
   #define F(V1) V1
 #endif
 
-#include "bitstore.h"
-#include "FastDelegate.h"
+#include "bitstore.h"         /* Dependency is needed */
+#include "FastDelegate.h"     /* Dependency is needed */
 
 #define maxNumPattern 8
 #define maxMsgSize 254
