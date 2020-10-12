@@ -1,9 +1,12 @@
 #include "Arduino.h"
 
-#ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
-  #include "../../../../compile_config.h"   // Platform IO  - need for right options in output.h
-#else
-  #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
+#ifdef _COMMANDS_h                            /* to break Dependency, _COMMANDS_h is only available in the SIGNALduino project () 
+                                                 alternatively a separate variable which is set in compile_config.h */
+  #ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
+    #include "../../../../compile_config.h"   // Platform IO  - need for right options in output.h
+  #else
+    #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
+  #endif
 #endif
 
 #include "output.h"
