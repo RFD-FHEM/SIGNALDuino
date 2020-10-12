@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef _COMPILE_CONFIG_h
+#define _COMPILE_CONFIG_h
+
 /*
  * Config flags for compiling correct options / boards Define only one!
  * ********************************************************************
@@ -115,3 +118,6 @@
     #define PIN_SEND             11
   #endif
 #endif
+
+
+#endif  /* END _COMPILE_CONFIG_h */
