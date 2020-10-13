@@ -18,17 +18,20 @@
  * Arduino IDE statistic´s:
  * ------------------------
  * cnt opt. - size with hardware
- *    0     - 28212 size nano with debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
- *    0     - 28806 size nano with debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
- *   29     - 27302 size nano with debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -1504 Bytes opt | -910 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *    0     - 28212 size nano CC1101 with debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
+ *    0     - 28806 size nano CC1101 with debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
+ *   29     - 27302 size nano CC1101 with debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -1504 Bytes opt | -910 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *   30     - 24712 size nano CC1101 with debug (branch dev-r3.5_xFSK_revised_v2_TEST -4094 Bytes opt | -3500 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
  *
- *    0     - 25638 size nano without debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
- *    0     - 27226 size nano without debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
- *   29     - 24086 size nano without debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -3140 Bytes opt | -1552 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *    0     - 25638 size nano CC1101 without debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
+ *    0     - 27226 size nano CC1101 without debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
+ *   29     - 24086 size nano CC1101 without debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -3140 Bytes opt | -1552 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *   30     - 23268 size nano CC1101 without debug (branch dev-r3.5_xFSK_revised_v2_TEST -3958 Bytes opt | -2370 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
  *
- *    0     - 27700 size radino without debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
- *    0     - 29298 size radino without debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
- *   29     - 26190 size radino without debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -3108 Bytes opt | -1510 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *    0     - 27700 size radino CC1101 without debug (branch dev-r3.4, without xFSK support, only ASK/OOK support)
+ *    0     - 29298 size radino CC1101 without debug (branch dev-r3.5_xFSK_pre, radino without sending xFSK, ASK/OOK support)
+ *   29     - 26190 size radino CC1101 without debug (branch dev-r3.5_xFSK_pre_size_opt_v6 -3108 Bytes opt | -1510 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
+ *   30     - 25372 size radino CC1101 without debug (branch dev-r3.5_xFSK_revised_v2_TEST -3926 Bytes opt | -2328 Bytes to dev-r3.4 , full xFSK support, ASK/OOK support)
  */
 
 
