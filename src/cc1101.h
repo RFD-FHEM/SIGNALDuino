@@ -202,7 +202,7 @@ namespace cc1101 {
 	void ccFactoryReset();
 	void commandStrobes(void);
 	void getRxFifo(uint16_t Boffs);                                 // xFSK
-  void sendFIFO(String);                                          // xFSK
+  void sendFIFO(char*, char*);                                    // xFSK
 	void readCCreg(const uint8_t reg);                              // read CC1101 register
 	void readPatable(void);
 	void setIdleMode();

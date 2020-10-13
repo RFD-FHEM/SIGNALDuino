@@ -40,13 +40,11 @@ void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 	while (stoptime > micros()) {
 		;
 	}
-	//DBG_PRINTLN("");
-
 }
-//SM;R=2;C=400;D=AFAFAF;
 
 
 
+// SM;R=2;C=400;D=AFAFAF;
 
 void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 {
@@ -156,14 +154,12 @@ void send_cmd()
 			DBG_PRINTLN(F("Adding raw"));
 			extraDelay = false;
 			}
-      #if defined CMP_CC1101
         else if (msg_beginptr[1] == 'N') // send xFSK
         {
           cmdNo++;
           command[cmdNo].type = xFSK;
           DBG_PRINTLN(F("Adding xFSK message"));
         }
-      #endif
 			if (cmdNo == 0) {
 				DBG_PRINTLN(F("rearrange beginptr"));
 				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
@@ -284,10 +280,14 @@ void send_cmd()
 
 	if (command[0].type == combined && command[0].repeats > 0) {
     /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
-       repeats 3 --> SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;          type MC - ASK/OOK
-       repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;    type MU - ASK/OOK
-       repeats 1 --> SN;R=5;D=9A46036AC8D3923EAEB470AB;                     type MN - xFSK
-       repeats 1 --> SM;R=3;P0=500;C=250;D=A4F7FDDE;                        type MS - ASK/OOK
+
+       -> ToDO: check message without datapart to send, device crashes?
+          SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;
+       
+       repeats 3 --> SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;  type MC - ASK/OOK
+       repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;                          type MU - ASK/OOK
+       repeats 1 --> SN;R=5;D=9A46036AC8D3923EAEB470AB;                                           type MN - xFSK
+       repeats 1 --> SM;R=3;P0=500;C=250;D=A4F7FDDE;                                              type MS - ASK/OOK
     */
 		repeats = command[0].repeats;
 	}
@@ -295,16 +295,6 @@ void send_cmd()
 	{
 		DBG_PRINT(F("msg ")); DBG_PRINT(i + 1); DBG_PRINT('/'); DBG_PRINT(repeats);
 
-    #if defined CMP_CC1101
-      if (command[cmdNo].type == 3) //xFSK
-      {
-        DBG_PRINTLN(' ');
-        for (uint8_t d = 0; d <= command[cmdNo].repeats - 1; d++)
-        {
-          cc1101::sendFIFO(command[cmdNo].datastart);
-        }
-      } else { // no xFSK
-    #endif
         for (uint8_t c = 0; c <= cmdNo; c++)
         {
           DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT('/'); DBG_PRINT(cmdNo);
@@ -312,11 +302,14 @@ void send_cmd()
 
           if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
           else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
-          digitalLow(PIN_SEND);
+          
+        #if defined CMP_CC1101
+          else if (command[c].type == xFSK) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) cc1101::sendFIFO(command[cmdNo].datastart, command[c].dataend); }
+        #endif
+
+          if (command[cmdNo].type != 3) { digitalLow(PIN_SEND); } /* only not xFSK */
         }
-    #if defined CMP_CC1101
-      }
-    #endif
+        
 		if (extraDelay) delay(1);
 	}
 
@@ -346,6 +339,8 @@ void send_cmd()
     #ifdef CMP_CC1101
       //MSG_PRINT(F("Marcs="));
       //MSG_PRINTLN(cc1101::getMARCSTATE());     // 0x35 (0xF5): MARCSTATE –Main Radio Control State Machine State
+    #else
+      MSG_PRINTLN("no supported device to send");
     #endif
   }
   enableReceive();  // enable the receiver

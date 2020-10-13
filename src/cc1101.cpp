@@ -671,28 +671,15 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 }
 
 
-void cc1101::sendFIFO(String data) {
-  uint8_t enddata = 0;
-
-  if (data.length() == 0) {
-    return;
-  } else {
-    enddata = data.indexOf(";",0);      // search next   ";"
-    if (enddata == 255) {
-      enddata = data.indexOf("\n",0);   // search next   "\n"
-    }
-
-    if (enddata == 255) {
-      enddata = data.length();
-    }
-
+void cc1101::sendFIFO(char *startpos, char *endpos) {
     cc1101_Select();                                // select CC1101
     sendSPI(CC1101_TXFIFO | CC1101_WRITE_BURST);    // send register address
 
     uint8_t val;
-    for (uint8_t i = 0; i < enddata; i+=2) {
-      val = hex2int((uint8_t)data.charAt(i)) * 16;
-      val = hex2int((uint8_t)data.charAt(i+1)) + val;
+    for (char *i = startpos; i < endpos; i+=2) {
+      val = hex2int(i[0]) * 16;
+      val+= hex2int(i[1]);
+      /* DBG_PRINTLN(val); // only to debug */
       sendSPI(val);    // send value
     }
 
@@ -703,5 +690,4 @@ void cc1101::sendFIFO(String data) {
         break;            //neither in RX nor TX, probably some error
       delay(1);
     }
-  }
 }
