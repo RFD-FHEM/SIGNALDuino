@@ -36,7 +36,9 @@
 #define sd_min(a,b) ((a)<(b)?(a):(b))
 #define sd_max(a,b) ((a)>(b)?(a):(b))
 
+/* MR to search other Variant
 extern void MSG_PRINTtoHEX(uint8_t a);
+*/
 
 #if defined(WIN32) || defined(__linux__) /* is required to run tests on the library - https://github.com/RFD-FHEM/SIGNALDuino/pull/145#discussion_r499140057 */
 	#define ARDUINO 101
@@ -668,8 +670,8 @@ MUOutput:
 						SDC_PRINT(";SH="); SDC_PRINT(pattern[mcdecoder->shorthigh]);
 
 						SDC_PRINT(";D="); mcdecoder->printMessageHexStr();
-						SDC_PRINT(";C="); MSG_PRINT(mcdecoder->clock);
-						SDC_PRINT(";L="); MSG_PRINT(mcdecoder->ManchesterBits.valcount);
+						SDC_PRINT(";C="); SDC_PRINT(mcdecoder->clock);
+						SDC_PRINT(";L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount);
 						SDC_PRINT(';');
 						if (_rssiCallback != nullptr)
 						{
@@ -1328,28 +1330,34 @@ void ManchesterpatternDecoder::printMessageHexStr()
 {
 	//char hexStr[] = "00"; // Not really needed
 
-	/* char cbuffer[3]; */
+	char cbuffer[3];
 	uint8_t idx;
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
-		/* sprintf(cbuffer, "%02X", getMCByte(idx));
+		sprintf(cbuffer, "%02X", getMCByte(idx));
 		//SDC_PRINT(hexStr);
-		 * pdec->write(cbuffer);
-		 */
+		pdec->write(cbuffer);
+    /* MR to search other Variant
 		MSG_PRINTtoHEX(getMCByte(idx));
+    */
 	}
 
-	/* sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf); */
-	MSG_PRINT( (getMCByte(idx) >> 4 & 0xf) , HEX);
+	sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
+	/* MR to search other Variant
+  MSG_PRINT( (getMCByte(idx) >> 4 & 0xf) , HEX); // SDC_PRINT no HEX support
+  */
 	//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
-		/* sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF); */
-		MSG_PRINT( (getMCByte(idx) & 0xF) , HEX);
+		sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
+    /* MR to search other Variant
+    MSG_PRINT( (getMCByte(idx) & 0xF) , HEX); // SDC_PRINT no HEX support
+    */
 		//SDC_PRINT(hexStr);
+		
 	}
 	//pdec->msgPort->print(cbuffer);
-	/* pdec->write(cbuffer); */
+	pdec->write(cbuffer);
 }
 
 
