@@ -486,16 +486,26 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(n);
 					}
 
+					/* MR to search other Variant
 					SDC_PRINT(";C");
 					SDC_PRINT(clock, HEX);
 					SDC_PRINT(";S");
 					SDC_PRINT(sync, HEX);
 					SDC_PRINT(';');
+					*/
+
+					n = sprintf(buf, ";C%X;S%X;", clock, sync);
+					SDC_PRINT(buf);
+
 					if (_rssiCallback != nullptr)
 					{
+						/* MR to search other Variant
 						SDC_PRINT('R');
 						SDC_PRINT(rssiValue, HEX);
 						SDC_PRINT(';');
+						*/
+						n = sprintf(buf, "R%X;", rssiValue);
+						SDC_PRINT(buf);
 					}
 			    }
 				else {
@@ -744,15 +754,22 @@ MUOutput:
 						message.getByte(i, &n);
 						SDC_PRINT(n);
 					}
-
+					/* MR to search other Variant
 					SDC_PRINT(";C");
 					SDC_PRINT(clock, HEX);
 					SDC_PRINT(';');
+					*/
+					n = sprintf(buf, ";C%X;", clock);
+					SDC_PRINT(buf);
 					if (_rssiCallback != nullptr)
 					{
+						/* MR to search other Variant
 						SDC_PRINT('R');
 						SDC_PRINT(rssiValue, HEX);
 						SDC_PRINT(';');
+						*/
+						n = sprintf(buf, "R%X;", rssiValue);
+						SDC_PRINT(buf);
 					}
 
 				}
