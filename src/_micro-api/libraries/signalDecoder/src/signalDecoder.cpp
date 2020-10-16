@@ -667,8 +667,8 @@ MUOutput:
 						if (histo[idx] == 0) continue;
 						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
 						n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
-						SDC_WRITE((const uint8_t *)buf, n);
-
+						//SDC_WRITE((const uint8_t *)buf, n);
+						SDC_WRITE(buf);
 					}
 					SDC_PRINT("D=");
 
