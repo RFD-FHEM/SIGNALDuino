@@ -426,7 +426,7 @@ void SignalDetectorClass::processMessage()
 			{
 
 				#ifdef DEBUGDECODE
-					SDC_PRINTLN("Filter Match: ");;
+					SDC_PRINTLN("Filter Match: ");
 				#endif
 
 				//preamble = "";
@@ -611,7 +611,7 @@ void SignalDetectorClass::processMessage()
 			}
 			else {
 				#ifdef DEBUGDECODE
-					SDC_PRINTLN(F(" Buffer overflow, flushing message array"));
+					SDC_PRINTLN(" Buffer overflow, flushing message array");
 				#endif
 				//SDC_PRINT(MSG_START);
 				//SDC_PRINT("Buffer overflow while processing signal");
