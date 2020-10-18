@@ -141,6 +141,7 @@ public:
 																		};
 
 	void reset();
+  void SDC_PRINTtoHex(unsigned int numberToPrint); // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
 	bool decode(const int* pulse);
 	const status getState();
 	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
