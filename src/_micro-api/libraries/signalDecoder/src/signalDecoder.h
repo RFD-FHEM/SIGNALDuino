@@ -81,14 +81,6 @@
   #define DEBUG 1
 #endif
 
-#ifdef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
-  #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
-    #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
-  #else
-    #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
-  #endif
-#endif
-
 #ifndef WIFI_ESP              /* variable is not defined, where is this used ??? */
   #include "output.h"         /* Dependency is needed */
 #else
