@@ -1,10 +1,10 @@
 #include "Arduino.h"
 
-#ifdef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
+#ifndef UNITTEST                              // to break Dependency, UNITTEST is only available UNITTEST´s ???
   #ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
-    #include "../../../../compile_config.h"   // Platform IO  - need for right options in output.h
+    #include "../../../../compile_config.h"   // Platform IO  - need for right options in output.h | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
   #else
-    #include "compile_config.h"               // Arduino IDE  - need for right options in output.h
+    #include "compile_config.h"               // Arduino IDE  - need for right options in output.h | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
   #endif
 #endif
 
