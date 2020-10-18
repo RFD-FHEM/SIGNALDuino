@@ -36,9 +36,6 @@
 #define sd_min(a,b) ((a)<(b)?(a):(b))
 #define sd_max(a,b) ((a)>(b)?(a):(b))
 
-/* MR to search other Variant
-extern void MSG_PRINTtoHEX(uint8_t a);
-*/
 
 #if defined(WIN32) || defined(__linux__) /* is required to run tests on the library - https://github.com/RFD-FHEM/SIGNALDuino/pull/145#discussion_r499140057 */
 	#define ARDUINO 101
@@ -118,10 +115,13 @@ void SignalDetectorClass::addData(const int8_t value)
 		*/
 	} else {
 		printOut();
+    #if defined(DEBUGDETECT) || defined(DEBUGDECODE)
 		SDC_PRINT(" addData oflow->");
 		SDC_PRINT(" mstart="); SDC_PRINT(mstart);
 		SDC_PRINT(" mend="); SDC_PRINT(mend);
+    #endif
 	}
+  #if defined(DEBUGDETECT) || defined(DEBUGDECODE)
 	SDC_PRINT(" val="); SDC_PRINT(value);
 	SDC_PRINT(" msglen="); SDC_PRINT(messageLen);
 	SDC_PRINT(" bytc="); SDC_PRINT(message.bytecount);
@@ -129,6 +129,7 @@ void SignalDetectorClass::addData(const int8_t value)
 	SDC_PRINT(" mTrunc="); SDC_PRINT(m_truncated);
 	SDC_PRINT(" state="); SDC_PRINT(state);
 	SDC_PRINT(" success="); 
+  #endif
 	SDC_PRINTLN(success);
 
 }
@@ -488,26 +489,22 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(n);
 					}
 
-					/* MR to search other Variant
-					SDC_PRINT(";C");
-					SDC_PRINT(clock, HEX);
-					SDC_PRINT(";S");
-					SDC_PRINT(sync, HEX);
+					SDC_PRINT(";C"); SDC_PRINTtoHex(clock);
+					SDC_PRINT(";S"); SDC_PRINTtoHex(sync);
 					SDC_PRINT(';');
-					*/
 
+					/*
 					n = sprintf(buf, ";C%X;S%X;", clock, sync);
 					SDC_PRINT(buf);
+					*/
 
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT('R');
-						SDC_PRINT(rssiValue, HEX);
-						SDC_PRINT(';');
-						*/
+						SDC_PRINT('R'); SDC_PRINTtoHex(rssiValue); SDC_PRINT(';');
+						/*
 						n = sprintf(buf, "R%X;", rssiValue);
 						SDC_PRINT(buf);
+						*/
 					}
 			    }
 				else {
@@ -811,22 +808,19 @@ MUOutput:
 						message.getByte(i, &n);
 						SDC_PRINT(n);
 					}
-					/* MR to search other Variant
-					SDC_PRINT(";C");
-					SDC_PRINT(clock, HEX);
-					SDC_PRINT(';');
-					*/
+
+					SDC_PRINT(";C"); SDC_PRINTtoHex(clock); SDC_PRINT(';');
+					/*
 					n = sprintf(buf, ";C%X;", clock);
 					SDC_PRINT(buf);
+					*/
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT('R');
-						SDC_PRINT(rssiValue, HEX);
-						SDC_PRINT(';');
-						*/
+						SDC_PRINT('R'); SDC_PRINTtoHex(rssiValue); SDC_PRINT(';');
+						/*
 						n = sprintf(buf, "R%X;", rssiValue);
 						SDC_PRINT(buf);
+						*/
 					}
 
 				}
@@ -947,6 +941,12 @@ MUOutput:
 
 
 
+void SignalDetectorClass::SDC_PRINTtoHex(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
+  if (numberToPrint >= 16)
+    SDC_PRINTtoHex(numberToPrint / 16);
+  /* line is needed, no line - no output !!! */
+  SDC_PRINT("0123456789ABCDEF"[numberToPrint % 16]);
+}
 
 
 
@@ -1024,7 +1024,7 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT(c);
 	}
 
-	DBG_PRINT(". "); DBG_PRINT(" ["); DBG_PRINT(messageLen); DBG_PRINTLN(']');
+	DBG_PRINT(".  ["); DBG_PRINT(messageLen); DBG_PRINTLN(']');
 	DBG_PRINT("Pattern: ");
 	for (uint8_t idx = 0; idx<patternLen; ++idx) {
 		DBG_PRINT(" P"); DBG_PRINT(idx);
