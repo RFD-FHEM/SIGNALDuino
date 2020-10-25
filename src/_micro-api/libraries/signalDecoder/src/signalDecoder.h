@@ -215,9 +215,9 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
-	const size_t write(const uint8_t *buffer, size_t size);   /* for Unittest - output object over callback */
-	const size_t write(const char *str);                      /* for Unittest - output object over callback */
-	const size_t write(uint8_t b);                            /* for Unittest - output object over callback */
+	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
+	const size_t write(const char *str);                      // for the return value
+	const size_t write(uint8_t b);                            // for the return value
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals

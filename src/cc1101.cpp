@@ -609,7 +609,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 						MSG_PRINT(F("MN;D="));
 					}
 					for (uint8_t i = 0; i < fifoBytes; i++) {
-            MSG_PRINTtoHEX(ccBuf[i]);
+						MSG_PRINTtoHEX(ccBuf[i]);
 					}
 
 /*

@@ -281,9 +281,6 @@ void send_cmd()
 	if (command[0].type == combined && command[0].repeats > 0) {
     /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
 
-       -> ToDO: check message without datapart to send, device crashes?
-          SC;R=3;SR;P0=5000;SM;P0=500;C=250;D=A4F7FDDE;
-       
        repeats 3 --> SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;  type MC - ASK/OOK
        repeats 1 --> SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;                          type MU - ASK/OOK
        repeats 1 --> SN;R=5;D=9A46036AC8D3923EAEB470AB;                                           type MN - xFSK
