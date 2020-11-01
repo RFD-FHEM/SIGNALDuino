@@ -20,6 +20,7 @@
   extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
   extern SignalDetectorClass musterDec;
   extern bool hasCC1101;
+  extern void DBG_PRINTtoHEX(uint8_t b);
 
   #define pulseMin  90
 
@@ -36,14 +37,6 @@
   #endif
 
 
-void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf(b, "%02x", yyy(i));
-#ifdef DEBUG
-  if(b < 16) {
-    DBG_PRINT(0);
-  }
-  DBG_PRINT(b , HEX);
-#endif
-}
 
 //========================= Pulseauswertung ================================================
 void ICACHE_RAM_ATTR handleInterrupt() {

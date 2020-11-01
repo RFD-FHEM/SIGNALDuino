@@ -9,6 +9,7 @@ uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
 extern volatile bool blinkLED;
+extern void MSG_PRINTtoHEX(uint8_t a);
 
 const uint8_t cc1101::initVal[] PROGMEM =
 {
@@ -58,13 +59,6 @@ const uint8_t cc1101::initVal[] PROGMEM =
 0x41, // 27 RCCTRL1
 0x00, // 28 RCCTRL0
 };
-
-void MSG_PRINTtoHEX(uint8_t a) { // this function is the alternative to sprintf(b, "%02x", xxx(i))
-  if(a < 16) {
-    MSG_PRINT(0);
-  }
-  MSG_PRINT(a , HEX);
-}
 
 byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int (smallest variant, sketch is bigger with printf or scanf)
 	if (hex >= '0' && hex <= '9') hex = hex - '0';
@@ -609,7 +603,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 						MSG_PRINT(F("MN;D="));
 					}
 					for (uint8_t i = 0; i < fifoBytes; i++) {
-            MSG_PRINTtoHEX(ccBuf[i]);
+						MSG_PRINTtoHEX(ccBuf[i]);
 					}
 
 /*
