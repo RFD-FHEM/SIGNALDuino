@@ -9,7 +9,31 @@
 //	#include "WProgram.h"
 #endif
 
-#include "compile_config.h"
+#ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
+  #include "../../../../compile_config.h"   // Platform IO  - need for right options MSG_PRINTtoHEX / DBG_PRINTtoHEX | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
+#else
+  #include "compile_config.h"               // Arduino IDE  - need for right options MSG_PRINTtoHEX / DBG_PRINTtoHEX | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
+#endif
+
+/* Help functions MSG_PRINTtoHEX & DBG_PRINTtoHEX
+ * This position is the only one where you can compile
+ */
+
+void MSG_PRINTtoHEX(uint8_t a) { // this function is the alternative to sprintf(b, "%02x", xxx(i))
+  if(a < 16) {
+    MSG_PRINT(0);
+  }
+  MSG_PRINT(a , HEX);
+}
+
+void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf(b, "%02x", yyy(i));
+#ifdef DEBUG
+  if(b < 16) {
+    DBG_PRINT(0);
+  }
+  DBG_PRINT(b , HEX);
+#endif
+}
 
 #include <EEPROM.h>
 #include "output.h"
@@ -22,7 +46,6 @@ extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 extern uint8_t ccmode;;          // xFSK
-extern void MSG_PRINTtoHEX(uint8_t a);
 
 
 namespace commands {
