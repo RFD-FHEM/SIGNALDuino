@@ -9,11 +9,7 @@
 //	#include "WProgram.h"
 #endif
 
-#ifdef PLATFORMIO                           // intern variable only in Software Platform IO (example 40304), in Arduino IDE undef
-  #include "../../../../compile_config.h"   // Platform IO  - need for right options MSG_PRINTtoHEX / DBG_PRINTtoHEX | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
-#else
-  #include "compile_config.h"               // Arduino IDE  - need for right options MSG_PRINTtoHEX / DBG_PRINTtoHEX | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
-#endif
+#include "compile_config.h"               // MSG_PRINTtoHEX / DBG_PRINTtoHEX - need for right options | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
 
 /* Help functions MSG_PRINTtoHEX & DBG_PRINTtoHEX
  * This position is the only one where you can compile
