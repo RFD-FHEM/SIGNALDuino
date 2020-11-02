@@ -34,55 +34,87 @@
 #define _SIGNALDECODER_h
 
 
-#if defined(WIN32) || defined(__linux__)
-	#define ARDUINO 101
-	#define NOSTRING
+#if defined(WIN32) || defined(__linux__)  /* ** for which variant or system is this required? ** */
+  #define ARDUINO 101
+  #define NOSTRING
 #endif
+
 #if defined(__linux__)
-	#include <stdlib.h>
+  #include <stdlib.h>
 #endif
 
 #ifndef DEC
-/* UB
-no PlattformIO compatible
-#define DEC 10
-
-----
- no ERROR PlattformIO
-#define DEZ 10
-*/
+  #define DEC 10
 #endif
-
-
 
 #if defined(ARDUINO) && ARDUINO >= 100
-	#include "Arduino.h"
+  #include "Arduino.h"
 #else
-	//#include "WProgram.h"
-#endif
-//#define DEBUG 1
-
-
-#ifndef WIFI_ESP
-
-#include "output.h"
-#else
-#include <ESP8266WiFi.h>
-extern WiFiClient serverClient;
-#define DBG_PRINTER Serial
-#define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
-#define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+  //#include "WProgram.h"
 #endif
 
-#define SDC_PRINT(...)		write(__VA_ARGS__)
-#define SDC_WRITE(b)		write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)	write(__VA_ARGS__); write(char(0xA));
+
+/*
+ * different debug options
+ * DEBUG variable must be set separately if the library is used alone without SIGNALduino project
+ * file signalDecoder.h worked with DEBUG, DEBUGDETECT, DEBUGDECODE variable
+ */
+
+//#define DEBUG 0
+
+/* all variations DEBUGDETECT */
+//#define DEBUGDETECT 0
+//#define DEBUGDETECT 1
+//#define DEBUGDETECT 2
+//#define DEBUGDETECT 3
+//#define DEBUGDETECT 255          /* very verbose output */
+
+/* all variations DEBUGDECODE */
+//#define DEBUGDECODE 1
+//#define DEBUGDECODE 255          /* very verbose output */
+
+/*
+ * END debug options selection
+*/
+
+#if defined(DEBUGDETECT) || defined(DEBUGDECODE)
+  #define DEBUG 1
+#endif
+
+#ifdef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
+  #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
+    #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
+  #else
+    #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
+  #endif
+#endif
+
+#ifndef WIFI_ESP              /* variable is not defined, where is this used ??? */
+  #include "output.h"         /* Dependency is needed */
+#else
+/*
+ * this code no needed, variable WIFI_ESP not defined
+ * 
+ * #include <ESP8266WiFi.h>
+ * extern WiFiClient serverClient;
+ * #define DBG_PRINTER Serial
+ * #define DBG_PRINT(...) { DBG_PRINTER.print(__VA_ARGS__); }
+ * #define DBG_PRINTLN(...) { DBG_PRINTER.println(__VA_ARGS__); }
+ */
+#endif
+
+/* for Unittest - output object over callback */
+#define SDC_PRINT(...)    write(__VA_ARGS__)
+#define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+
 #ifndef F 
-#define F(V1) V1
+  #define F(V1) V1
 #endif
- 
-#include "bitstore.h"
-#include "FastDelegate.h"
+
+#include "bitstore.h"         /* Dependency is needed */
+#include "FastDelegate.h"     /* Dependency is needed */
+
 #define maxNumPattern 8
 #define maxMsgSize 254
 #define minMessageLen 40
@@ -98,10 +130,6 @@ constexpr const uint8_t MSG_END = 3;
 //#define SERIAL_DELIMITER  59 //char(';')
 //#define MSG_START char(0x2)		// this is a non printable Char
 //#define MSG_END   char(0x3)			// this is a non printable Char
-
-//#define DEBUGDETECT 3
-//#define DEBUGDETECT 255  // Very verbose output
-//#define DEBUGDECODE 1
 
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
@@ -120,7 +148,6 @@ public:
 																		 mcdecoder = nullptr;
 																		};
 
-
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
@@ -130,7 +157,6 @@ public:
 	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
 	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
 
-
 	//private:
 
 	int8_t clock;                           // index to clock in pattern
@@ -139,7 +165,7 @@ public:
 	bool MSenabled;
 	bool MredEnabled;                       // 1 = compress printMsgRaw
 	uint8_t MsMoveCount;
-	
+
 	uint8_t histo[maxNumPattern];
 	//uint8_t message[maxMsgSize];
 	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
@@ -189,15 +215,13 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
-	const size_t write(const uint8_t *buffer, size_t size);
-	const size_t write(const char *str);
-	const size_t write(uint8_t b);
+	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
+	const size_t write(const char *str);                      // for the return value
+	const size_t write(uint8_t b);                            // for the return value
 
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
-
-
 };
 
 

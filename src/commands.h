@@ -21,14 +21,11 @@ extern char IB_1[14];
 extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
-
+extern uint8_t ccmode;;          // xFSK
+extern void MSG_PRINTtoHEX(uint8_t a);
 
 
 namespace commands {
-
-
-
-
 
 	inline void getPing()
 	{
@@ -48,7 +45,7 @@ namespace commands {
 	}
 
 	/*
-	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen
+	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen <<<<----- printf benoetigt mehr Speicher als diese Variante
 		if (hex < 16) {
 			MSG_PRINT("0");
 		}
@@ -75,7 +72,7 @@ namespace commands {
 
 		switch (IB_1[2])
 		{
-			case 'S': //MS
+			case 'S' : //MS
 				bptr = &musterDec.MSenabled;
 				break;
 			case 'U' : //MU
@@ -103,7 +100,6 @@ namespace commands {
 				return;
 		}
 
-
 		storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
 	}
 
@@ -113,7 +109,7 @@ namespace commands {
 		if (strstr(&IB_1[2],"mcmbl=") != NULL)   // mc min bit len
 		{
 			musterDec.mcMinBitLen = strtol(&IB_1[8], NULL,10);
-			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(" bits set");
+			MSG_PRINT(musterDec.mcMinBitLen); MSG_PRINT(F(" bits set"));
 		}
 	}
 
@@ -127,10 +123,10 @@ namespace commands {
 		#define  cmd_help '?'
 		#define  cmd_ping 'P'
 		#define  cmd_ccFactoryReset 'e'  // EEPROM / factory reset
-		#define  cmd_config 'C'     // CG get config, set config, C<reg> get CC1101 register
+		#define  cmd_config 'C'          // CG get config, set config, C<reg> get CC1101 register
 		#define  cmd_patable 'x' 
-		#define  cmd_write 'W'      // write EEPROM und write CC1101 register
-		#define  cmd_read  'r'      // read EEPROM
+		#define  cmd_write 'W'           // write EEPROM und write CC1101 register
+		#define  cmd_read  'r'           // read EEPROM
 		#define  cmd_space ' '
 		#define  cmd_send 'S'
 		#define  cmd_status 's'
@@ -165,13 +161,13 @@ namespace commands {
 #ifdef CMP_CC1101
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
-				MSG_PRINT("(");
+				MSG_PRINT('(');
 
 #endif
 #ifdef PIN_MARK433
 				MSG_PRINT(FPSTR(isLow(PIN_MARK433) ? TXT_433 : TXT_868));
 				MSG_PRINT(FPSTR(TXT_MHZ));
-				MSG_PRINT(")");
+				MSG_PRINT(')');
 #else
 	#ifdef CMP_CC1101
 				MSG_PRINT(FPSTR(TXT_CHIP)); MSG_PRINT(FPSTR(TXT_BLANK)); MSG_PRINT(FPSTR(TXT_CC110));
@@ -191,10 +187,10 @@ namespace commands {
 						 MSG_PRINT("L");
 						break;
 					default:
-						MSG_PRINT(" unknown");
+						MSG_PRINT(F(" unknown"));
 						break;
 				}
-				MSG_PRINT(")");
+				MSG_PRINT(')');
 	#endif
 #endif
 #ifdef CMP_CC1101
@@ -249,43 +245,36 @@ namespace commands {
 				dumpEEPROM();
 			}
 			break;
-		case cmd_patable:
+		case cmd_patable:  // example: x12
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				uint8_t val = (uint8_t)strtol(IB_1+1, nullptr, 16);
 				cc1101::writeCCpatable(val);
 				MSG_PRINT(FPSTR(TXT_WRITE));
-				char b[3];
-				sprintf(b, "%02X", val);
-				MSG_PRINT(b);
+				MSG_PRINTtoHEX(val);
 				MSG_PRINTLN(FPSTR(TXT_TPATAB));
 			}
 			break;
 
 #endif
-		case cmd_read:
-			// R<adr>  read EEPROM
+		case cmd_read:  // r<adr> read EEPROM, example: r0a, r03n
 			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && hasCC1101) {
 				const uint8_t reg = (uint8_t)strtol(IB_1+1, nullptr, 16);
-				MSG_PRINT("EEPROM ");
+				MSG_PRINT(FPSTR(TXT_EEPROM));
+				MSG_PRINT(FPSTR(TXT_BLANK));
 
-				char b[3];
-				sprintf(b, "%2X", reg);
-				MSG_PRINT(b);
+				MSG_PRINTtoHEX(reg);
 
 				if (IB_1[3] == 'n') {
-					MSG_PRINT(" :");
+					MSG_PRINT(F(" :"));
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
-						sprintf(b, "%02X", val);
-						MSG_PRINT(b);
+						MSG_PRINTtoHEX(val);
 					}
 				}
 				else {
-					MSG_PRINT(" = ");
+					MSG_PRINT(F(" = "));
 					const uint8_t val = EEPROM.read(reg);
-					sprintf(b, "%02X", val);
-					MSG_PRINT(b);
-					//printHex2(EEPROM.read(reg));
+					MSG_PRINTtoHEX(val);
 				}
 				MSG_PRINTLN("");
 			}
@@ -305,9 +294,9 @@ namespace commands {
 				memcpy(b, &IB_1[3], 2);
 				uint8_t val = strtol(b, nullptr, 16);
 
-				EEPROM.write(reg, val); //Todo pr�fen ob reg hier um 1 erh�ht werden muss
+				EEPROM.write(reg, val); //Todo pruefen ob reg hier um 1 erhoeht werden muss
 				DBG_PRINT(reg);
-				DBG_PRINT("=");
+				DBG_PRINT('=');
 
 				DBG_PRINTLN(val);
 
@@ -317,6 +306,10 @@ namespace commands {
 				}
 
 				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
+
+				if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
+					DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
+
 					reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
 					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
 					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
@@ -346,10 +339,11 @@ namespace commands {
 						cc1101::writeCCreg(reg, val);
 					}
 				}
+			}
 #endif
 			}
 #if defined(ESP32) || defined(ESP8266)
-			EEPROM.commit();
+			EEPROM.commit();    // ToDo: ESP32 | if DEBUG setting, crash many times AND DEBUG off, crash if setting freqency, ICACHE_RAM ???
 #endif
 		break;
 		case cmd_status:

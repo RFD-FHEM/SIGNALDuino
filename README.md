@@ -1,4 +1,4 @@
-# SIGNALDuino uC v3.4.0-development  with cc1101 support 
+# SIGNALDuino uC v3.5.0-development  with cc1101 support 
 [![Build Status](https://travis-ci.org/RFD-FHEM/SIGNALDuino.svg?branch=master)](https://travis-ci.org/RFD-FHEM/SIGNALDuino)
 
 ### Getting started
@@ -27,7 +27,7 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 * ESP32 (ESP32-WROOM-32 / ESP32-WROOM-32D)
 * ESP8266
 * RadinoCC1101
-* STM32 F103CBT6 (Maple Mini, bootloader v1.0)
+* STM32 F103CBT6 (Maple Mini)
 
 ### ESP32 Notes
 
