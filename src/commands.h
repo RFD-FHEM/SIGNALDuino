@@ -9,7 +9,31 @@
 //	#include "WProgram.h"
 #endif
 
-#include "compile_config.h"
+#include "compile_config.h"               // MSG_PRINTtoHEX / DBG_PRINTtoHEX - need for right options | ETHERNET_PRINT -> MSG_PRINTER Serial or serverClient
+
+/* Help functions MSG_PRINTtoHEX & DBG_PRINTtoHEX
+ * This position is the only one where you can compile and
+ * no dependencies on libraries.
+ * ( functions for less memory sketch consumption )
+ */
+
+void MSG_PRINTtoHEX(uint8_t a) { // this function is the alternative to sprintf(b, "%02x", xxx(i))
+  if(a < 16) {
+    MSG_PRINT(0);
+  }
+  MSG_PRINT(a , HEX);
+}
+
+void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf(b, "%02x", yyy(i));
+#ifdef DEBUG
+  if(b < 16) {
+    DBG_PRINT(0);
+  }
+  DBG_PRINT(b , HEX);
+#endif
+}
+
+/* Help functions END */
 
 #include <EEPROM.h>
 #include "output.h"
@@ -22,7 +46,6 @@ extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 extern uint8_t ccmode;;          // xFSK
-extern void MSG_PRINTtoHEX(uint8_t a);
 
 
 namespace commands {
