@@ -3,6 +3,7 @@
 *   Library to decode radio signals based on patternd detection
 *   2014-2015  N.Butzek, S.Butzek
 *   2015-2018  S.Butzek
+*   2018-2020  S.Butzek, HomeAutoUser
 
 *   This library contains different classes to perform detecting of digital signals
 *   typical for home automation. The focus for the moment is on different sensors
@@ -62,16 +63,16 @@
 
 //#define DEBUG 0
 
-/* all variations DEBUGDETECT */
+/* all variations DEBUGDETECT | output serial */
 //#define DEBUGDETECT 0
 //#define DEBUGDETECT 1
 //#define DEBUGDETECT 2
 //#define DEBUGDETECT 3
-//#define DEBUGDETECT 255          /* very verbose output */
+//#define DEBUGDETECT 255    /* very verbose output */ // ->> ESP8266, >>>stack>>> error
 
-/* all variations DEBUGDECODE */
+/* all variations DEBUGDECODE | output serial */
 //#define DEBUGDECODE 1
-//#define DEBUGDECODE 255          /* very verbose output */
+//#define DEBUGDECODE 255    /* very verbose output */
 
 /*
  * END debug options selection
