@@ -111,8 +111,7 @@ void SignalDetectorClass::addData(const int8_t value)
 		*/
 	} else {
 		printOut();
-		SDC_PRINT(" addData oflow->");
-		SDC_PRINT(" mstart="); SDC_PRINT(mstart);
+		SDC_PRINT(" addData oflow-> mstart="); SDC_PRINT(mstart);
 		SDC_PRINT(" mend="); SDC_PRINT(mend);
 	}
 	SDC_PRINT(" val="); SDC_PRINT(value);
