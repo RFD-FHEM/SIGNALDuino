@@ -469,26 +469,13 @@ void SignalDetectorClass::processMessage()
 						SDC_PRINT(n);
 					}
 
-					/* MR to search other Variant
-					SDC_PRINT(";C");
-					SDC_PRINT(clock, HEX);
-					SDC_PRINT(";S");
-					SDC_PRINT(sync, HEX);
-					SDC_PRINT(';');
-					*/
-
-					n = sprintf(buf, ";C%X;S%X;", clock, sync);
-					SDC_PRINT(buf);
+					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂    ;C2;S4;    RF1;O;m2;␃
+					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(";S"); SDC_PRINT(sync + 48); SDC_PRINT(';');
 
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT('R');
-						SDC_PRINT(rssiValue, HEX);
-						SDC_PRINT(';');
-						*/
-						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_PRINT(buf);
+						//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
+						SDC_PRINT('R'); SDC_PRINTtoHEX(rssiValue); SDC_PRINT(';');
 					}
 				}
 				else {
@@ -497,59 +484,33 @@ void SignalDetectorClass::processMessage()
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
-						/* MR to search other Variant
-						SDC_PRINT('P');
-						SDC_PRINT(idx);
-						SDC_PRINT('=');
-						SDC_PRINT(pattern[idx]);
-						SDC_PRINT(';');
-						*/
-						
-						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
-						n = sprintf(buf, "P%i=%i;", idx,pattern[idx]);
-						SDC_PRINT(buf);
+						//␂MS;    P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;    D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;R=35;m2;␃
+						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(';');
 					}
 
 					SDC_PRINT("D=");
 
 					for (uint8_t i = mstart; i <= mend; i++)
 					{
-						/* MR to search other Variant
-						SDC_PRINT(message[i]);
-						*/
-						sprintf(buf, "%d", message[i]);
-						SDC_PRINT(buf);
+						//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=    32345634563456345634563456345634565656343434343434    ;CP=3;SP=2;R=35;m2;␃
+						SDC_PRINT(message[i] + 48);
 					}
-					/* MR to search other Variant
-					SDC_PRINT(";CP=");
-					SDC_PRINT(clock);
-					SDC_PRINT(";SP=");
-					SDC_PRINT(sync);
-					SDC_PRINT(';');
-					*/
 
-					/*
-					SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("CP="); SDC_PRINT(itoa(clock, buf, 10));     SDC_PRINT(SERIAL_DELIMITER);     // ClockPulse
-					SDC_PRINT("SP="); SDC_PRINT(itoa(sync, buf, 10));      SDC_PRINT(SERIAL_DELIMITER);     // SyncPulse
-					SDC_PRINT("R=");  SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)					
-					*/
-					n = sprintf(buf, ";CP=%i;SP=%i;", clock, sync);
-					SDC_PRINT(buf);
+					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434    ;CP=3;SP=2;    R=35;m2;␃
+					SDC_PRINT(';'); SDC_PRINT("CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
+
+					// NOT WORK ???? WHY ??? need new test
+					//SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
 
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT("R=");
-						SDC_PRINT(rssiValue);
-						SDC_PRINT(';');
-						*/
-						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_PRINT(buf);
+						//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
+						SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
 					}
 				}
 
 				if (m_overflow) {
+					//␂MS;P1=489;P4=-2045;P5=-3971;P6=-8054;D=1616141414151515141514151414141414141414141515151415151414141414141414141414141415141415;CP=1;SP=6;R=239;    O;    m2;␃
 					SDC_PRINT("O;");
 				}
 				m_truncated = false;
@@ -560,14 +521,9 @@ void SignalDetectorClass::processMessage()
 					bufferMove(mend+1);
 					//SDC_PRINT(F("MS move. messageLen ")); SDC_PRINTLN(messageLen);
 					mstart = 0;
-					/* MR to search other Variant
-					SDC_PRINT('m');
-					SDC_PRINT(MsMoveCount);
-					SDC_PRINT(';');
-					*/
-					//SDC_PRINT("m"); SDC_PRINT(MsMoveCount); SDC_PRINT(SERIAL_DELIMITER);
-					n = sprintf(buf, "m%i;", MsMoveCount);
-					SDC_PRINT(buf);
+
+					//␂MS;P1=489;P4=-2045;P5=-3971;P6=-8054;D=1616141414151515141514151414141414141414141515151415151414141414141414141414141415141415;CP=1;SP=6;R=239;O;    m2;␃
+					SDC_PRINT('m'); SDC_PRINT(MsMoveCount + 48); SDC_PRINT(';');
 				}
 				SDC_PRINT(MSG_END);
 				SDC_PRINT(char(0xA));
@@ -681,49 +637,26 @@ MUOutput:
 					if (mcdecoder->doDecode())
 					{
 						SDC_PRINT(MSG_START);
-						/* MR to search other Variant
-						SDC_PRINT("MC;LL="); SDC_PRINT(pattern[mcdecoder->longlow]);
-						SDC_PRINT(";LH="); SDC_PRINT(pattern[mcdecoder->longhigh]);
-						SDC_PRINT(";SL="); SDC_PRINT(pattern[mcdecoder->shortlow]);
-						SDC_PRINT(";SH="); SDC_PRINT(pattern[mcdecoder->shorthigh]);
 
+						//␂    MC;LL=-2926;LH=2935;SL=-1472;SH=1525    ;D=AFF1FFA1;C=1476;L=32;R=0;␃
+						SDC_PRINT("MC;LL="); SDC_PRINT(itoa(pattern[mcdecoder->longlow], buf, 10));
+						SDC_PRINT(";LH="); SDC_PRINT(itoa(pattern[mcdecoder->longhigh], buf, 10));
+						SDC_PRINT(";SL="); SDC_PRINT(itoa(pattern[mcdecoder->shortlow], buf, 10));
+						SDC_PRINT(";SH="); SDC_PRINT(itoa(pattern[mcdecoder->shorthigh], buf, 10));
+
+						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525    ;D=AFF1FFA1;C=1476;L=32;    R=0;␃
 						SDC_PRINT(";D="); mcdecoder->printMessageHexStr();
-						SDC_PRINT(";C="); SDC_PRINT(mcdecoder->clock);
-						SDC_PRINT(";L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount);
+						SDC_PRINT(";C="); SDC_PRINT(itoa(mcdecoder->clock, buf, 10));
+						SDC_PRINT(";L="); SDC_PRINT(itoa(mcdecoder->ManchesterBits.valcount, buf, 10));
 						SDC_PRINT(';');
-						*/
-						SDC_PRINT("MC");
-						n = sprintf(buf, ";LL=%i;LH=%i", pattern[mcdecoder->longlow], pattern[mcdecoder->longhigh]);
-						SDC_PRINT(buf);
-						n = sprintf(buf, ";SL=%i;SH=%i;", pattern[mcdecoder->shortlow], pattern[mcdecoder->shorthigh]);
-						SDC_PRINT(buf);
-
-						/*
-						SDC_PRINT("LL="); SDC_PRINT(pattern[mcdecoder->longlow]); SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("LH="); SDC_PRINT(pattern[mcdecoder->longhigh]); SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("SL="); SDC_PRINT(pattern[mcdecoder->shortlow]); SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("SH="); SDC_PRINT(pattern[mcdecoder->shorthigh]); SDC_PRINT(SERIAL_DELIMITER);
-						*/
-						SDC_PRINT("D=");  mcdecoder->printMessageHexStr();
-
-						n = sprintf(buf, ";C=%i;L=%i;", mcdecoder->clock, mcdecoder->ManchesterBits.valcount);
-						SDC_PRINT(buf);
 
 						if (_rssiCallback != nullptr)
 						{
-					    /* MR to search other Variant
-							SDC_PRINT("R=");
-							SDC_PRINT(rssiValue);
-							SDC_PRINT(';');
-							*/
-							n = sprintf(buf, "R=%i;", rssiValue);
-							SDC_PRINT(buf);
-						}						/*
-						SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("C="); SDC_PRINT(mcdecoder->clock); SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("L="); SDC_PRINT(mcdecoder->ManchesterBits.valcount); SDC_PRINT(SERIAL_DELIMITER);
-						SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
-						*/
+							//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
+							SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
+						}
+
+						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
 						SDC_PRINT(MSG_END);
 						SDC_PRINT(char(0xA));
 
@@ -802,22 +735,14 @@ MUOutput:
 						message.getByte(i, &n);
 						SDC_PRINT(n);
 					}
-					/* MR to search other Variant
-					SDC_PRINT(";C");
-					SDC_PRINT(clock, HEX);
-					SDC_PRINT(';');
-					*/
-					n = sprintf(buf, ";C%X;", clock);
-					SDC_PRINT(buf);
+
+					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT    ;C7;    R21;␃
+					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(';');
+
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT('R');
-						SDC_PRINT(rssiValue, HEX);
-						SDC_PRINT(';');
-						*/
-						n = sprintf(buf, "R%X;", rssiValue);
-						SDC_PRINT(buf);
+						//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
+						SDC_PRINT('R'); SDC_PRINTtoHEX(rssiValue); SDC_PRINT(';');
 					}
 				}
 				else {
@@ -828,52 +753,27 @@ MUOutput:
 					for (uint8_t idx = 0; idx < patternLen; idx++)
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
-						//SDC_PRINT('P'); SDC_PRINT(idx); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(SERIAL_DELIMITER);
-						n = sprintf(buf, "P%i=%i;", idx, pattern[idx]);
-						SDC_PRINT(buf);
 
-						/* MR to search other Variant
-						SDC_PRINT('P');
-						SDC_PRINT(idx);
-						SDC_PRINT('=');
-						SDC_PRINT(pattern[idx]);
-						SDC_PRINT(';');
-						*/
+						//␂MU;    P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;    D=34563456345634563456345634563456565634343434343430;CP=3;R=25;␃
+						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(';');
 					}
+
 					SDC_PRINT("D=");
 
 					for (uint8_t i = 0; i < messageLen; ++i) 
 					{
-						/* MR to search other Variant
-						SDC_PRINT(message[i]);
-						*/
-						sprintf(buf, "%d", message[i]); 
-						SDC_PRINT(buf);
+						//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=    34563456345634563456345634563456565634343434343430    ;CP=3;R=25;␃
+						SDC_PRINT(message[i] + 48);
 					}
 					//String postamble;
-					/* MR to search other Variant
-					SDC_PRINT(";CP=");
-					SDC_PRINT(clock);
-					SDC_PRINT(';');
-					*/
 
-					/*
-					SDC_PRINT(SERIAL_DELIMITER);
-					SDC_PRINT("CP="); SDC_PRINT(clock);     SDC_PRINT(SERIAL_DELIMITER);    // ClockPulse, (not valid for manchester)
-					SDC_PRINT("R=");  SDC_PRINT(rssiValue); SDC_PRINT(SERIAL_DELIMITER);     // Signal Level (RSSI)
-					*/
-					n = sprintf(buf, ";CP=%i;", clock);
-					SDC_PRINT(buf);
+					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430    ;CP=3;    R=25;␃
+					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
 					if (_rssiCallback != nullptr)
 					{
-						/* MR to search other Variant
-						SDC_PRINT("R=");
-						SDC_PRINT(rssiValue);
-						SDC_PRINT(';');
-						*/
-						n = sprintf(buf, "R=%i;", rssiValue);
-						SDC_PRINT(buf);
+						//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
+						SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
 					}
 				}
 
@@ -933,6 +833,14 @@ MUOutput:
 	//SDC_PRINTLN("process finished");
 }
 
+
+/* function to convert to HEX without a leading zero */
+void SignalDetectorClass::SDC_PRINTtoHEX(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
+  if (numberToPrint >= 16)
+    SDC_PRINTtoHEX(numberToPrint / 16);
+  /* line is needed, no line - no output !!! */
+  SDC_PRINT("0123456789ABCDEF"[numberToPrint % 16]);
+}
 
 
 void SignalDetectorClass::reset()
@@ -1391,6 +1299,22 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 }
 
 
+/* convert a 4-bit nibble to a hexadecimal character */
+char ManchesterpatternDecoder::nibble_to_HEX(uint8_t nibble) {
+  nibble &= 0xF;
+  return nibble > 9 ? nibble - 10 + 'A' : nibble + '0';
+}
+
+
+/* convert byte to 2 hexadecimal characters | sprintf(cbuffer +1, "%02X", getMCByte(idx) & 0xF); */
+int ManchesterpatternDecoder::HEX_twoDigits(char* cbuffer, uint8_t val)
+{
+  cbuffer[0] = nibble_to_HEX(val >> 4);
+  cbuffer[1] = nibble_to_HEX(val);
+  cbuffer[2] = '\0';
+}
+
+
 /** @brief (Converts decoded manchester bits in a provided string as hex)
 *
 * ()
@@ -1403,29 +1327,25 @@ void ManchesterpatternDecoder::printMessageHexStr()
 	uint8_t idx;
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
-		sprintf(cbuffer, "%02X", getMCByte(idx));
-		//SDC_PRINT(hexStr);
+		HEX_twoDigits(cbuffer, getMCByte(idx));
 		pdec->write(cbuffer);
-		/* MR to search other Variant
-		MSG_PRINTtoHEX(getMCByte(idx));
-		*/
 	}
 
-	sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
-	/* MR to search other Variant
-	MSG_PRINT( (getMCByte(idx) >> 4 & 0xf) , HEX); // SDC_PRINT no HEX support
-	*/
-	//pdec->write(hexStr);
+		/* MR to search other Variant
+     *  HIER WEITER MACHEN MR 201105 TEST
+		*/
+
+		//sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
+		pdec->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
+		//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
-		sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
-		/* MR to search other Variant
-		MSG_PRINT( (getMCByte(idx) & 0xF) , HEX); // SDC_PRINT no HEX support
-		*/
-		//SDC_PRINT(hexStr);
+		//sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
+		pdec->write(nibble_to_HEX(getMCByte(idx) & 0xF));
 	}
 	//pdec->msgPort->print(cbuffer);
-	pdec->write(cbuffer);
+
+	//pdec->write(cbuffer);
 }
 
 
@@ -1452,29 +1372,13 @@ void ManchesterpatternDecoder::printMessageHexStr()
 	if (!str)
 		return;
 
-	str->concat("LL="); str->concat(pdec->pattern[longlow]); str->concat(';');
-	str->concat("LH="); str->concat(pdec->pattern[longhigh]); str->concat(';');
-	str->concat("SL="); str->concat(pdec->pattern[shortlow]); str->concat(';');
-	str->concat("SH="); str->concat(pdec->pattern[shorthigh]); str->concat(';');
+	str->concat("LL="); str->concat(pdec->pattern[longlow]);
+	str->concat(";LH="); str->concat(pdec->pattern[longhigh]);
+	str->concat(";SL="); str->concat(pdec->pattern[shortlow]);
+	str->concat(";SH="); str->concat(pdec->pattern[shorthigh]); str->concat(';');
 #endif
 }
 
-/** @brief (one liner)
-*
-* (documentation goes here)
-*/
-
-void ManchesterpatternDecoder::printMessagePulseStr()
-{
-	//char cbuffer[50];
-	//sprintf(cbuffer,"LL=%u;LH=%u;SL=%u;SH=%u;", pdec->pattern[longlow], pdec->pattern[longhigh], pdec->pattern[shortlow], pdec->pattern[shorthigh]);
-	//pdec->msgPort->print(cbuffer);
-
-	//SDC_PRINT("LL="); SDC_PRINT(pdec->pattern[longlow]); SDC_PRINT(SERIAL_DELIMITER);
-	//SDC_PRINT("LH="); SDC_PRINT(pdec->pattern[longhigh]); SDC_PRINT(SERIAL_DELIMITER);
-	//SDC_PRINT("SL="); SDC_PRINT(pdec->pattern[shortlow]); SDC_PRINT(SERIAL_DELIMITER);
-	//SDC_PRINT("SH="); SDC_PRINT(pdec->pattern[shorthigh]); SDC_PRINT(SERIAL_DELIMITER);
-}
 
 /** @brief (one liner)
 *
