@@ -43,6 +43,49 @@
 #endif
 
 
+///////////////////////////////////////////////////////////////////////
+/* SELFMADE -  Implementation of itoa() */
+
+char* myitoa(int num, char* str, int base) {
+  int i = 0;
+  bool isNegative = false;
+  /* Handle 0 explicitely, otherwise empty string is printed for 0 */
+  if (num == 0) {
+    str[i++] = '0';
+    str[i] = '\0';
+    return str;
+  }
+  // In standard itoa(), negative numbers are handled only with
+  // base 10. Otherwise numbers are considered unsigned.
+  if (num < 0 && base == 10) {
+    isNegative = true;
+    num = -num;
+  }
+  // Process individual digits
+  while (num != 0) {
+    int rem = num % base;
+    str[i++] = (rem > 9) ? (rem - 10) + 'a' : rem + '0';
+    num = num / base;
+  }
+
+  if (isNegative) str[i++] = '-';  // If number is negative, append '-'
+  str[i] = '\0';                   // Append string terminator
+  myreverse(str, i);               // Reverse the string
+  return str;
+}
+
+/* A utility function to reverse a string  */
+void myreverse(char str[], int length) {
+  for (int i = 0, j = length - 1; i < length / 2; i++, j--)  {
+    int temp = str[i];
+    str[i] = str[j];
+    str[j] = temp;
+  }
+}
+
+///////////////////////////////////////////////////////////////////////
+
+
 //Helper function to check buffer for bad data
 const bool SignalDetectorClass::checkMBuffer(const uint8_t begin)
 {
@@ -484,7 +527,7 @@ void SignalDetectorClass::processMessage()
 					{
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
 						//␂MS;    P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;    D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;R=35;m2;␃
-						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(';');
+						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(myitoa(pattern[idx], buf, 10)); SDC_PRINT(';');
 					}
 
 					SDC_PRINT("D=");
@@ -504,7 +547,7 @@ void SignalDetectorClass::processMessage()
 					if (_rssiCallback != nullptr)
 					{
 						//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
-						SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
+						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf, 10)); SDC_PRINT(';');
 					}
 				}
 
@@ -616,7 +659,7 @@ MUOutput:
 
 						for (uint8_t i = 0; i < messageLen; ++i)
 						{
-							SDC_PRINT(itoa(message[i], buf, 10));
+							SDC_PRINT(myitoa(message[i], buf, 10));
 						}
 						SDC_PRINT(';');
 
@@ -638,21 +681,21 @@ MUOutput:
 						SDC_PRINT(MSG_START);
 
 						//␂    MC;LL=-2926;LH=2935;SL=-1472;SH=1525    ;D=AFF1FFA1;C=1476;L=32;R=0;␃
-						SDC_PRINT("MC;LL="); SDC_PRINT(itoa(pattern[mcdecoder->longlow], buf, 10));
-						SDC_PRINT(";LH="); SDC_PRINT(itoa(pattern[mcdecoder->longhigh], buf, 10));
-						SDC_PRINT(";SL="); SDC_PRINT(itoa(pattern[mcdecoder->shortlow], buf, 10));
-						SDC_PRINT(";SH="); SDC_PRINT(itoa(pattern[mcdecoder->shorthigh], buf, 10));
+						SDC_PRINT("MC;LL="); SDC_PRINT(myitoa(pattern[mcdecoder->longlow], buf, 10));
+						SDC_PRINT(";LH="); SDC_PRINT(myitoa(pattern[mcdecoder->longhigh], buf, 10));
+						SDC_PRINT(";SL="); SDC_PRINT(myitoa(pattern[mcdecoder->shortlow], buf, 10));
+						SDC_PRINT(";SH="); SDC_PRINT(myitoa(pattern[mcdecoder->shorthigh], buf, 10));
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525    ;D=AFF1FFA1;C=1476;L=32;    R=0;␃
 						SDC_PRINT(";D="); mcdecoder->printMessageHexStr();
-						SDC_PRINT(";C="); SDC_PRINT(itoa(mcdecoder->clock, buf, 10));
-						SDC_PRINT(";L="); SDC_PRINT(itoa(mcdecoder->ManchesterBits.valcount, buf, 10));
+						SDC_PRINT(";C="); SDC_PRINT(myitoa(mcdecoder->clock, buf, 10));
+						SDC_PRINT(";L="); SDC_PRINT(myitoa(mcdecoder->ManchesterBits.valcount, buf, 10));
 						SDC_PRINT(';');
 
 						if (_rssiCallback != nullptr)
 						{
 							//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
-							SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
+							SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf, 10)); SDC_PRINT(';');
 						}
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
@@ -754,7 +797,7 @@ MUOutput:
 						if (pattern[idx] == 0 || histo[idx] == 0) continue;
 
 						//␂MU;    P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;    D=34563456345634563456345634563456565634343434343430;CP=3;R=25;␃
-						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(itoa(pattern[idx], buf, 10)); SDC_PRINT(';');
+						SDC_PRINT('P'); SDC_PRINT(idx + 48); SDC_PRINT('='); SDC_PRINT(myitoa(pattern[idx], buf, 10)); SDC_PRINT(';');
 					}
 
 					SDC_PRINT("D=");
@@ -772,7 +815,7 @@ MUOutput:
 					if (_rssiCallback != nullptr)
 					{
 						//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
-						SDC_PRINT("R="); SDC_PRINT(itoa(rssiValue, buf, 10)); SDC_PRINT(';');
+						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf, 10)); SDC_PRINT(';');
 					}
 				}
 
