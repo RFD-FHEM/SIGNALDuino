@@ -44,7 +44,7 @@
 
 
 ///////////////////////////////////////////////////////////////////////
-/* SELFMADE -  Implementation of itoa() */
+/* SELFMADE - implementation of non standard function itoa() */
 
 char* myitoa(int num, char* str, int base) {
   int i = 0;
@@ -669,8 +669,6 @@ MUOutput:
 
 						if (mcDetected) {
 							SDC_PRINT("MD;");
-							/* SDC_PRINT("MD"); */
-							/* SDC_WRITE(SERIAL_DELIMITER); */
 						}
 
 						SDC_PRINTLN(MSG_END);
@@ -1349,7 +1347,7 @@ char ManchesterpatternDecoder::nibble_to_HEX(uint8_t nibble) {
 
 
 /* convert byte to 2 hexadecimal characters | sprintf(cbuffer +1, "%02X", getMCByte(idx) & 0xF); */
-int ManchesterpatternDecoder::HEX_twoDigits(char* cbuffer, uint8_t val)
+void ManchesterpatternDecoder::HEX_twoDigits(char* cbuffer, uint8_t val)
 {
   cbuffer[0] = nibble_to_HEX(val >> 4);
   cbuffer[1] = nibble_to_HEX(val);
@@ -1372,10 +1370,6 @@ void ManchesterpatternDecoder::printMessageHexStr()
 		HEX_twoDigits(cbuffer, getMCByte(idx));
 		pdec->write(cbuffer);
 	}
-
-		/* MR to search other Variant
-     *  HIER WEITER MACHEN MR 201105 TEST
-		*/
 
 		//sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
 		pdec->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));

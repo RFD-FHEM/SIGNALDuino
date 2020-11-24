@@ -250,7 +250,7 @@ public:
 #endif
 	void printMessageHexStr();
 	char nibble_to_HEX(uint8_t nibble);
-	int HEX_twoDigits(char* cbuffer, uint8_t val);
+	void HEX_twoDigits(char* cbuffer, uint8_t val);
 
 	const bool isManchester();
 	void reset();
