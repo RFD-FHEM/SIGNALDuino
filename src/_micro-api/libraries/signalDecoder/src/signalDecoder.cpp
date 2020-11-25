@@ -43,8 +43,11 @@
 #endif
 
 
-///////////////////////////////////////////////////////////////////////
-/* SELFMADE - implementation of non standard function itoa() */
+
+/* **********************************************************
+ * SELFMADE - implementation of non standard function itoa()
+ * "itoa() function is not defined in ANSI-C and is not part of C++, but is supported by some compilers."
+ */
 
 char* myitoa(int num, char* str, int base) {
   int i = 0;
@@ -83,7 +86,7 @@ void myreverse(char str[], int length) {
   }
 }
 
-///////////////////////////////////////////////////////////////////////
+/* END - SELFMADE implementation section */
 
 
 //Helper function to check buffer for bad data
@@ -539,11 +542,8 @@ void SignalDetectorClass::processMessage()
 					}
 
 					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434    ;CP=3;SP=2;    R=35;m2;␃
-					SDC_PRINT(';'); SDC_PRINT("CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
-
-					// NOT WORK ???? WHY ??? need new test
-					//SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
-
+					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
+          
 					if (_rssiCallback != nullptr)
 					{
 						//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
@@ -1973,13 +1973,7 @@ const bool ManchesterpatternDecoder::isManchester()
 								DBG_PRINT(str);
 								sprintf(str, " MC %s:%d", "SH", shorthigh);
 								DBG_PRINT(str);
-								/*
-								DBG_PRINT(" MC LL:"); DBG_PRINT(longlow,DEC);
-								DBG_PRINT(", MC LH:"); DBG_PRINT(longhigh,DEC);
 
-								DBG_PRINT(", MC SL:"); DBG_PRINT(shortlow,DEC);
-								DBG_PRINT(", MC SH:"); DBG_PRINT(shorthigh,DEC);
-								*/
 								DBG_PRINTLN("");
 							#endif
 
