@@ -80,7 +80,7 @@ char* myitoa(int num, char* str, int base) {
 /* A utility function to reverse a string  */
 void myreverse(char str[], int length) {
   for (int i = 0, j = length - 1; i < length / 2; i++, j--)  {
-    int temp = str[i];
+    const unsigned char temp = str[i];
     str[i] = str[j];
     str[j] = temp;
   }
