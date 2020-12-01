@@ -134,8 +134,7 @@ constexpr const uint8_t MSG_END = 3;
 
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
-void myreverse(char str[], int length);       // for myitoa function
-char* myitoa(int num, char* str, int base);   // selfmade myitoa function
+char* myitoa(int num, char* str);   // selfmade myitoa function
 
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
