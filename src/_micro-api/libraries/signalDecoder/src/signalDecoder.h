@@ -134,6 +134,8 @@ constexpr const uint8_t MSG_END = 3;
 
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
+char* myitoa(int num, char* str);   // selfmade myitoa function
+
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
 
@@ -150,6 +152,7 @@ public:
 																		};
 
 	void reset();
+  void SDC_PRINTtoHEX(unsigned int numberToPrint);
 	bool decode(const int* pulse);
 	const status getState();
 	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
@@ -245,7 +248,8 @@ public:
 	void getMessageLenStr(String* str);
 #endif
 	void printMessageHexStr();
-	void printMessagePulseStr();
+	char nibble_to_HEX(uint8_t nibble);
+	void HEX_twoDigits(char* cbuffer, uint8_t val);
 
 	const bool isManchester();
 	void reset();
