@@ -50,10 +50,10 @@
  */
 
 char* myitoa(int num, char *str) {
-  static const uint16_t pows10[] = {10000, 1000, 100, 10};
+  static const uint16_t pows10[4] = {10000, 1000, 100, 10};
   const uint16_t *p = pows10;
   uint16_t pow10;
-  uint8_t not0 = 0;
+  bool not0 = 0;
   uint8_t idx = 0;
   if (num < 0) {
     str[idx++] = '-';
@@ -508,7 +508,7 @@ void SignalDetectorClass::processMessage()
 					if (_rssiCallback != nullptr)
 					{
 						//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
-						SDC_PRINT('R'); SDC_PRINTtoHEX(rssiValue); SDC_PRINT(';');
+						SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 					}
 				}
 				else {
@@ -770,7 +770,7 @@ MUOutput:
 					if (_rssiCallback != nullptr)
 					{
 						//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
-						SDC_PRINT('R'); SDC_PRINTtoHEX(rssiValue); SDC_PRINT(';');
+						SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 					}
 				}
 				else {
@@ -863,9 +863,9 @@ MUOutput:
 
 
 /* function to convert to HEX without a leading zero */
-void SignalDetectorClass::SDC_PRINTtoHEX(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
+void SignalDetectorClass::SDC_PRINT_intToHex(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
   if (numberToPrint >= 16)
-    SDC_PRINTtoHEX(numberToPrint / 16);
+    SDC_PRINT_intToHex(numberToPrint / 16);
   /* line is needed, no line - no output !!! */
   SDC_PRINT("0123456789ABCDEF"[numberToPrint % 16]);
 }

@@ -152,7 +152,6 @@ public:
 																		};
 
 	void reset();
-  void SDC_PRINTtoHEX(unsigned int numberToPrint);
 	bool decode(const int* pulse);
 	const status getState();
 	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
@@ -162,6 +161,7 @@ public:
 	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
 
 	//private:
+  void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
