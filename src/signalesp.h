@@ -512,7 +512,7 @@ void loop() {
 #define _USE_WRITE_BUFFER
 
 #ifdef _USE_WRITE_BUFFER
-  const size_t writeBufferSize = 256; // old 128
+  const size_t writeBufferSize = 512;
   size_t writeBufferCurrent = 0;
   uint8_t writeBuffer[writeBufferSize];
 #endif
