@@ -35,19 +35,27 @@ jobs:
         uses: textbook/git-checkout-submodule-action@master
       - name: Install tools
         run: |
+            echo "::group::googletest"
             export CMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/tests/install
-            export GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest
             cd $GITHUB_WORKSPACE/tests/ci
+            export GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest
             ./install_googletest.sh
+            echo "::endgroup::"
+            echo "::group::rapidassist"
             cd $GITHUB_WORKSPACE/tests/ci
             ./install_rapidassist.sh
+            echo "::endgroup::"
+            echo "::group::win32arduino"
             ls -l $GITHUB_WORKSPACE/tests/win32arduino
             cd $GITHUB_WORKSPACE/tests/ci
             ./build_win32arduino.sh
+            echo "::endgroup::"
+            echo "::group::build signalDecoderTest"
             cd $GITHUB_WORKSPACE/tests/ci
             ./build_signalDecoderTests.sh
             cd $GITHUB_WORKSPACE/
             ls -l
+            echo "::endgroup::"
       - name: run test
         run: |
             cd $GITHUB_WORKSPACE/tests/build
