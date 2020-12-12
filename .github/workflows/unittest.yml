@@ -52,10 +52,10 @@ jobs:
         BOARD:
           - nano328
           - leonardo
-          #- radino
-          #- minicul
-          #- promini
-          #- ESP32
+          - radino
+          - minicul
+          - promini
+          - ESP32
         RECEIVER:
           - cc1101
           - simple
@@ -149,4 +149,4 @@ jobs:
       - name: Compile sketch
         run: >-
           arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}"
-          ${{ matrix.boardurl }} $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino 
+          ${{ matrix.boardurl }} --output-dir=$PWD --output=${{ matrix.BOARD }} $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino 
