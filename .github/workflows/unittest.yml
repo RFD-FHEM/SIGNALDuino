@@ -57,6 +57,7 @@ jobs:
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:nano:cpu=atmega328'
+            compilerflag: 'OTHER_BOARD_WITH_CC1101=1'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -74,5 +75,5 @@ jobs:
           ls -l $PWD/src/arduino-ide/SIGNALDuino/ArduinoJson/
       - name: Compile Sketch
         run: >-
-          arduino-cli compile --fqbn ${{ matrix.fqbn }}
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property=build.extra_flags=-D${{ matrix.compilerflag }}
           $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
