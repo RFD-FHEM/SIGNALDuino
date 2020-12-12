@@ -1,6 +1,8 @@
 name: unittest
-'on':
+on:
   push: null
+  release:
+    types: [created, prereleased]
   pull_request: null
   workflow_dispatch: null
 jobs:
@@ -52,7 +54,7 @@ jobs:
         BOARD:
           - nano328
           - leonardo
-          - radino
+          #- radino
           - minicul
           - promini
           - ESP32
@@ -148,5 +150,22 @@ jobs:
           pip install pyserial
       - name: Compile sketch
         run: >-
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}"
-          ${{ matrix.boardurl }} --output-dir=$PWD --output=${{ matrix.BOARD }} $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino 
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" 
+          ${{ matrix.boardurl }} --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+      - name: Get release
+        id: get_release
+        if: ${{ github.event_name == 'release'}}
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload Release Asset
+        id: upload-release-asset 
+        if: ${{ github.event_name == 'release' }}
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./SIGNALDuino.ino.hex
+          asset_name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}_${{ github.event.release.tag_name }}.hex
+          asset_content_type: application/octet-stream
