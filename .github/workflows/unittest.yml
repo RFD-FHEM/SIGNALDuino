@@ -47,22 +47,89 @@ jobs:
           ./bin/TestProject 
   deploy:
     strategy:
+      fail-fast: false
       matrix:
         BOARD:
           - nano328
+          - leonardo
+          #- radino
+          #- minicul
+          #- promini
+          #- ESP32
         RECEIVER:
           - cc1101
           - simple
+        exclude:
+          - BOARD: radino
+            RECEIVER: simple
+          - BOARD: promini
+            RECEIVER: cc1101
+          - BOARD: minicul
+            RECEIVER: simple
+          - BOARD: leonardo
+            RECEIVER: simple
         include:
           - BOARD: nano328
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:nano:cpu=atmega328'
-            compilerflag: '-DOTHER_BOARD_WITH_CC1101=1'
+            compilerflag: '\"-DOTHER_BOARD_WITH_CC1101=1\"'
           - BOARD: nano328
             RECEIVER: simple
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:nano:cpu=atmega328'
+          # - BOARD: radino
+            # arduino-platform: 'arduino:avr In-Circuit:avr'
+            # fqbn: 'In-Circuit:avr:radinoCC1101'
+            # boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
+            # compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\" \"-DUSB_VID=0x2341\" \"-DUSB_PID=0x8036\"
+          - BOARD: leonardo
+            RECEIVER: cc1101
+            arduino-platform: 'arduino:avr'
+            fqbn: 'arduino:avr:leonardo'
+            compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\"
+          - BOARD: minicul
+            RECEIVER: cc1101
+            arduino-platform: 'arduino:avr'
+            fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
+            compilerflag: \"-DARDUINO_ATMEGA328P_MINICUL=1\"
+          - BOARD: promini
+            RECEIVER: simple
+            arduino-platform: 'arduino:avr'
+            fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
+          - BOARD: ESP32
+            RECEIVER: cc1101
+            arduino-platform: 'esp32:esp32'
+            fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
+            compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
+            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+          - BOARD: ESP32
+            RECEIVER: simple
+            arduino-platform: 'esp32:esp32'
+            fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
+            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+          - BOARD: ESP8266
+            RECEIVER: cc1101
+            arduino-platform: 'esp8266:esp8266@2.6.3'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
+            boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
+          - BOARD: ESP8266
+            RECEIVER: simple
+            arduino-platform: 'esp8266:esp8266@2.6.3'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
+          - BOARD: MAPLEMINI_F103CB
+            RECEIVER: cc1101
+            arduino-platform: 'STM32:stm32'
+            fqbn: 'STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB'
+            compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
+            boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
+          - BOARD: MAPLEMINI_F103CB
+            RECEIVER: simple
+            arduino-platform: 'STM32:stm32'
+            fqbn: 'STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB'
+            boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -71,14 +138,15 @@ jobs:
         uses: textbook/git-checkout-submodule-action@master
       - name: Setup Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
-      - name: Install platform
-        run: arduino-cli core update-index
-      - name: Add core(s)
-        run: 'arduino-cli core install ${{ matrix.arduino-platform }}'
-      - name: run lists
+      - name: Prepare plattform installation
+        run: arduino-cli core update-index ${{ matrix.boardurl }}
+      - name: Install plattform 
+        run: arduino-cli core install ${{ matrix.arduino-platform }} ${{ matrix.boardurl }}
+      - name: install pyserial
+        if: ${{ matrix.BOARD == 'ESP32' }}
         run: |
-          ls -l $PWD/src/arduino-ide/SIGNALDuino/ArduinoJson/
-      - name: Compile Sketch
+          pip install pyserial
+      - name: Compile sketch
         run: >-
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property=build.extra_flags=\"${{ matrix.compilerflag }}\"
-          $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}"
+          ${{ matrix.boardurl }} $PWD/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino 
