@@ -1,10 +1,9 @@
 name: unittest
 on:
-  push: null
   release:
-    types: [created, prereleased]
-  pull_request: null
+    types: [created, prereleased, published]
   workflow_dispatch: null
+  pull_request: null
 jobs:
   unittest:
     runs-on: ubuntu-latest
@@ -134,6 +133,8 @@ jobs:
             boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
     runs-on: ubuntu-latest
     steps:
+      # - name: info
+        # run: echo ${{ github.event_name }}
       - name: Checkout
         uses: actions/checkout@master
       - name: Checkout submodules
@@ -149,9 +150,14 @@ jobs:
         run: |
           pip install pyserial
       - name: Compile sketch
-        run: >-
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" 
-          ${{ matrix.boardurl }} --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+        id: compile_sketch
+        run: |
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
+      # - name: rename firmwarefile
+        # if: ${{ matrix.BOARD == 'ESP32' }}
+        # run: |
+          # mv .bin *.hex
       - name: Get release
         id: get_release
         if: ${{ github.event_name == 'release'}}
@@ -166,6 +172,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-          asset_path: ./SIGNALDuino.ino.hex
+          asset_path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
           asset_name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}_${{ github.event.release.tag_name }}.hex
           asset_content_type: application/octet-stream
