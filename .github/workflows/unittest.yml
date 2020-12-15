@@ -52,7 +52,7 @@ jobs:
       matrix:
         BOARD:
           - nano328
-          - leonardo
+          - micro
           #- radino
           - minicul
           - promini
@@ -67,7 +67,7 @@ jobs:
             RECEIVER: cc1101
           - BOARD: minicul
             RECEIVER: simple
-          - BOARD: leonardo
+          - BOARD: micro
             RECEIVER: simple
         include:
           - BOARD: nano328
@@ -84,11 +84,12 @@ jobs:
             # fqbn: 'In-Circuit:avr:radinoCC1101'
             # boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
             # compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\" \"-DUSB_VID=0x2341\" \"-DUSB_PID=0x8036\"
-          - BOARD: leonardo
+          - BOARD: micro
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
-            fqbn: 'arduino:avr:leonardo'
+            fqbn: 'arduino:avr:micro'
             compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\"
+            build_param1: \"build.f_cpu=8000000L\"
           - BOARD: minicul
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
@@ -152,7 +153,7 @@ jobs:
       - name: Compile sketch
         id: compile_sketch
         run: |
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
       # - name: rename firmwarefile
         # if: ${{ matrix.BOARD == 'ESP32' }}
