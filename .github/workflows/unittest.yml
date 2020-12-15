@@ -47,6 +47,7 @@ jobs:
           ls -l
           ./bin/TestProject 
   deploy:
+    needs: unittest
     strategy:
       fail-fast: false
       matrix:
