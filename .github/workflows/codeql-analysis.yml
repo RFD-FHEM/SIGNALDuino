@@ -99,9 +99,13 @@ jobs:
       uses: github/codeql-action/init@v1
       with:
          languages: cpp
+    - name: Install arduino-cli
+      run:
+        |
+        mkdir -p ~/.local/bin
+        echo "~/.local/bin" >> $GITHUB_PATH
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/.local/bin sh
 
-    - name: Setup Arduino CLI
-      uses: arduino/setup-arduino-cli@v1.1.1
     - name: Prepare plattform installation
       run: arduino-cli core update-index ${{ matrix.boardurl }}
     - name: Install plattform 
@@ -114,11 +118,14 @@ jobs:
       run:
         |
         # static link fix from https://github.com/github/securitylab/discussions/171
-        for i in ~/.arduino*/packages/arduino/tools/avr-gcc/*/bin/*; do
-          mv "$i" "$i.real";
-          printf '#!/bin/bash\nexec "'"$i"'.real" ${1+"$@"}\n' > "$i";
-          chmod +x "$i";
-        done
+        for file in ~/.arduino15/packages/*/tools/*-gcc/*/bin/*; do
+          if [ -x "$file" ]
+          then 
+            mv "$file" "$file.real";
+            printf '#!/bin/bash\nexec "'"$file"'.real" ${1+"$@"}\n' > "$file";
+            chmod +x "$file";
+          fi;
+        done;
 
     - name: Compile sketch
       id: compile_sketch
