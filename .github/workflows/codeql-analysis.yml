@@ -1,14 +1,3 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
-#
 name: "CodeQL"
 
 on:
@@ -94,28 +83,19 @@ jobs:
     - name: Checkout submodules
       uses: textbook/git-checkout-submodule-action@master
 
-    # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
          languages: cpp
-    #- name: Install arduino-cli
-      #run:
-      #  |
-      #  mkdir -p ~/.local/bin
-      #  echo "~/.local/bin" >> $GITHUB_PATH
-      #  curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/.local/bin sh
-    - name: Setup Arduino CLI
+    - name: Install Arduino CLI
       uses: arduino/setup-arduino-cli@v1.1.1
 
-    - name: Prepare plattform installation
-      run: arduino-cli core update-index ${{ matrix.boardurl }}
-    - name: Install plattform 
-      run: arduino-cli core install ${{ matrix.arduino-platform }} ${{ matrix.boardurl }}
-    - name: install pyserial
-      if: ${{ matrix.BOARD == 'ESP32' }}
-      run: |
-        pip install pyserial
+    - name: Setup arduino-cli
+      uses: ./.github/actions/arduino-cli
+      with:
+        boardurl: ${{ matrix.boardurl }}
+        plattform: ${{ matrix.arduino-platform }}
+
     - name: Static link
       run:
         |
