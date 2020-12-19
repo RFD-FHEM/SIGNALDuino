@@ -99,12 +99,14 @@ jobs:
       uses: github/codeql-action/init@v1
       with:
          languages: cpp
-    - name: Install arduino-cli
-      run:
-        |
-        mkdir -p ~/.local/bin
-        echo "~/.local/bin" >> $GITHUB_PATH
-        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/.local/bin sh
+    #- name: Install arduino-cli
+      #run:
+      #  |
+      #  mkdir -p ~/.local/bin
+      #  echo "~/.local/bin" >> $GITHUB_PATH
+      #  curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | BINDIR=~/.local/bin sh
+    - name: Setup Arduino CLI
+      uses: arduino/setup-arduino-cli@v1.1.1
 
     - name: Prepare plattform installation
       run: arduino-cli core update-index ${{ matrix.boardurl }}
