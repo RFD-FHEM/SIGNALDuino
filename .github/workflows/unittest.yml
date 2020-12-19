@@ -51,25 +51,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        #BOARD:
-        #  - nano328
-        #  - micro
-        #  #- radino
-        #  - minicul
-        #  - promini
-        #  - ESP32
-      #  RECEIVER:
-      #    - cc1101
-      #    - simple
-      #  exclude:
-      #    - BOARD: radino
-      #      RECEIVER: simple
-      #    - BOARD: promini
-      #      RECEIVER: cc1101
-      #    - BOARD: minicul
-      #      RECEIVER: simple
-      #    - BOARD: micro
-      #      RECEIVER: simple
         include:
           - BOARD: nano
             RECEIVER: cc1101
@@ -87,12 +68,6 @@ jobs:
             boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
             compilerflag: \"-DARDUINO_RADINOCC1101=1\"
             build_param1: "compiler.path={runtime.tools.avr-gcc-7.3.0-atmel3.6.1-arduino7.path}/bin/"
-          #- BOARD: radino
-          #  RECEIVER: cc1101
-          #  arduino-platform: 'arduino:avr'
-          #  fqbn: 'arduino:avr:micro'
-          #  compilerflag: \"-DARDUINO_RADINOCC1101=1\"
-          #  build_param1: \"build.f_cpu=8000000L\"
           - BOARD: minicul
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
@@ -137,37 +112,34 @@ jobs:
             boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
     runs-on: ubuntu-latest
     steps:
-      # - name: info
-        # run: echo ${{ github.event_name }}
       - name: Checkout
         uses: actions/checkout@master
+
       - name: Checkout submodules
         uses: textbook/git-checkout-submodule-action@master
-      - name: Setup Arduino CLI
+
+      - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
-      - name: Prepare plattform installation
-        run: arduino-cli core update-index ${{ matrix.boardurl }}
-      - name: Install plattform 
-        run: arduino-cli core install ${{ matrix.arduino-platform }} ${{ matrix.boardurl }}
-      - name: install pyserial
-        if: ${{ matrix.BOARD == 'ESP32' }}
-        run: |
-          pip install pyserial
+
+      - name: Setup arduino-cli
+        uses: ./.github/actions/arduino-cli
+        with:
+          boardurl: ${{ matrix.boardurl }}
+          plattform: ${{ matrix.arduino-platform }}
+
       - name: Compile sketch
         id: compile_sketch
         run: |
           arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
-      # - name: rename firmwarefile
-        # if: ${{ matrix.BOARD == 'ESP32' }}
-        # run: |
-          # mv .bin *.hex
+
       - name: Get release
         id: get_release
         if: ${{ github.event_name == 'release'}}
         uses: bruceadams/get-release@v1.2.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
       - name: Upload Release Asset
         id: upload-release-asset 
         if: ${{ github.event_name == 'release' }}
