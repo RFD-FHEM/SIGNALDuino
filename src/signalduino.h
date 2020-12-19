@@ -97,7 +97,7 @@ void setup() {
   }
 
 
-
+  pinAsInputPullUp(11);
   //delay(2000);
   pinAsInput(PIN_RECEIVE);
   pinAsOutput(PIN_LED);
