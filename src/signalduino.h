@@ -96,8 +96,8 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB
   }
 
-
-  pinAsInputPullUp(11);
+  for (i=2;i<13;i++)
+    pinAsInputPullUp(i);
   //delay(2000);
   pinAsInput(PIN_RECEIVE);
   pinAsOutput(PIN_LED);
