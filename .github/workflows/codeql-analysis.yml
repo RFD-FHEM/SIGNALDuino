@@ -120,7 +120,7 @@ jobs:
         # static link fix from https://github.com/github/securitylab/discussions/171
         for file in ~/.arduino15/packages/*/tools/*-gcc/*/bin/*; do
           if [ -x "$file" ]
-          then 
+          then
             mv "$file" "$file.real";
             printf '#!/bin/bash\nexec "'"$file"'.real" ${1+"$@"}\n' > "$file";
             chmod +x "$file";
@@ -129,7 +129,7 @@ jobs:
 
     - name: Compile sketch
       id: compile_sketch
-      run: 
+      run:
         arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino --warnings=all
 
     - name: Perform CodeQL Analysis
