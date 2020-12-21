@@ -130,8 +130,43 @@ jobs:
       - name: Compile sketch
         id: compile_sketch
         run: |
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)\n"
+          echo "$COMPILE_OUTPUT"
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
+          echo "::set-output name=skechsize::$(echo "$OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
+          echo "::set-output name=globalramusage::$(echo "$OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
+
+      - name: Get flash and ram usage
+        id: compile_sizes
+        run: |
+          echo Flash usage: ${{ steps.compile_sketch.skechsize }} bytes
+          echo Ram usage: ${{ steps.compile_sketch.globalramusage }} bytes        
+
+      - name: Find Comment
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ github.sha }}
+      
+      - name: Create comment
+        if: ${{ steps.fc.outputs.comment-id == 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ${{ github.sha }}
+            | Board | Name | Value |
+            |-------|------|-------|
+
+      - name: Update comment
+        if: ${{ steps.fc.outputs.comment-id != 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body: |
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | Sketchsize | ${{ steps.compile_sketch.skechsize }} bytes |
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | RAM usage | ${{ steps.compile_sketch.globalramusage }} |
 
       - name: Get release
         id: get_release
@@ -151,6 +186,7 @@ jobs:
           asset_path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
           asset_name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}_${{ github.event.release.tag_name }}.hex
           asset_content_type: application/octet-stream
+
       - name: Upload artifact
         uses: actions/upload-artifact@v2
         with:
