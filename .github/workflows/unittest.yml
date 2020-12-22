@@ -141,7 +141,6 @@ jobs:
         run: |
           echo Flash usage: ${{ steps.compile_sketch.outputs.skechsize }} bytes
           echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes   
-          echo Job Id: ${{ github.job	}}     
 
       - name: Find Comment
         uses: peter-evans/find-comment@v1
