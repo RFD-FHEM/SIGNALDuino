@@ -140,7 +140,8 @@ jobs:
         id: compile_sizes
         run: |
           echo Flash usage: ${{ steps.compile_sketch.outputs.skechsize }} bytes
-          echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes        
+          echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes   
+          echo Job Id: ${{ github.job	}}     
 
       - name: Find Comment
         uses: peter-evans/find-comment@v1
@@ -158,6 +159,7 @@ jobs:
             ### Size report for commit: ${{ github.sha }}
             | Board | Flash | Ram |
             |-------|-------|-----|
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Update comment
         if: ${{ steps.fc.outputs.comment-id != 0 }}
