@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+        with: 
+          submodules: true
       - name: prepare env
         run: >
           echo "TRAVIS_BUILD_DIR=$PWD" >> $GITHUB_ENV
@@ -17,8 +19,7 @@ jobs:
           $GITHUB_ENV
 
           echo "GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest" >> $GITHUB_ENV
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+
       - name: Install tools
         run: |
           echo "::group::googletest"
@@ -114,9 +115,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+        with: 
+          submodules: true
 
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
@@ -130,17 +130,17 @@ jobs:
       - name: Compile sketch
         id: compile_sketch
         run: |
-          COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)\n"
+          export COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)
           echo "$COMPILE_OUTPUT"
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
-          echo "::set-output name=skechsize::$(echo "$OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
-          echo "::set-output name=globalramusage::$(echo "$OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
+          echo "::set-output name=skechsize::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
+          echo "::set-output name=globalramusage::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
 
       - name: Get flash and ram usage
         id: compile_sizes
         run: |
-          echo Flash usage: ${{ steps.compile_sketch.skechsize }} bytes
-          echo Ram usage: ${{ steps.compile_sketch.globalramusage }} bytes        
+          echo Flash usage: ${{ steps.compile_sketch.outputs.skechsize }} bytes
+          echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes        
 
       - name: Find Comment
         uses: peter-evans/find-comment@v1
@@ -155,9 +155,9 @@ jobs:
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body: |
-            ${{ github.sha }}
-            | Board | Name | Value |
-            |-------|------|-------|
+            ### Size report for commit: ${{ github.sha }}
+            | Board | Flash | Ram |
+            |-------|-------|-----|
 
       - name: Update comment
         if: ${{ steps.fc.outputs.comment-id != 0 }}
@@ -165,8 +165,7 @@ jobs:
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           body: |
-            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | Sketchsize | ${{ steps.compile_sketch.skechsize }} bytes |
-            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | RAM usage | ${{ steps.compile_sketch.globalramusage }} |
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Get release
         id: get_release
