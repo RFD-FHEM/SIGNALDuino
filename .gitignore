@@ -210,3 +210,8 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+__vm/
+.vscode/
+.pio/
+tests/install/
+*.sln
