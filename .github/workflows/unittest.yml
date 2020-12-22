@@ -143,6 +143,7 @@ jobs:
           echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes   
 
       - name: Find Comment
+        if: ${{ github.event.pull_request.number > 0 }}
         uses: peter-evans/find-comment@v1
         id: fc
         with:
@@ -150,7 +151,7 @@ jobs:
           body-includes: ${{ github.sha }}
       
       - name: Create comment
-        if: ${{ steps.fc.outputs.comment-id == 0 }}
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -161,7 +162,7 @@ jobs:
             | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Update comment
-        if: ${{ steps.fc.outputs.comment-id != 0 }}
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }}
         uses: peter-evans/create-or-update-comment@v1
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
