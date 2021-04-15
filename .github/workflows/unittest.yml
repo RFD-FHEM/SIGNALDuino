@@ -9,6 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+        with: 
+          submodules: true
       - name: prepare env
         run: >
           echo "TRAVIS_BUILD_DIR=$PWD" >> $GITHUB_ENV
@@ -17,8 +19,7 @@ jobs:
           $GITHUB_ENV
 
           echo "GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest" >> $GITHUB_ENV
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+
       - name: Install tools
         run: |
           echo "::group::googletest"
@@ -91,13 +92,13 @@ jobs:
           - BOARD: ESP8266
             RECEIVER: cc1101
             arduino-platform: 'esp8266:esp8266@2.6.3'
-            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: ESP8266
             RECEIVER: ""
             arduino-platform: 'esp8266:esp8266@2.6.3'
-            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: MAPLEMINI_F103CB
             RECEIVER: cc1101
@@ -114,9 +115,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@master
-
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+        with: 
+          submodules: true
 
       - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
@@ -130,8 +130,44 @@ jobs:
       - name: Compile sketch
         id: compile_sketch
         run: |
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          export COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)
+          echo "$COMPILE_OUTPUT"
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
+          echo "::set-output name=skechsize::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
+          echo "::set-output name=globalramusage::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
+
+      - name: Get flash and ram usage
+        id: compile_sizes
+        run: |
+          echo Flash usage: ${{ steps.compile_sketch.outputs.skechsize }} bytes
+          echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes   
+
+      - name: Find Comment
+        if: ${{ github.event.pull_request.number > 0 }}
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ github.sha }}
+      
+      - name: Create comment
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Size report for commit: ${{ github.sha }}
+            | Board | Flash | Ram |
+            |-------|-------|-----|
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
+
+      - name: Update comment
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body: |
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Get release
         id: get_release
@@ -151,3 +187,10 @@ jobs:
           asset_path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
           asset_name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}_${{ github.event.release.tag_name }}.hex
           asset_content_type: application/octet-stream
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}.hex
+          path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
+          if-no-files-found: warn
