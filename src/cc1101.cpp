@@ -5,7 +5,7 @@
 #endif
 
 #define ccMaxBuf 64                  // for cc1101 FIFO, variable is better to revised
-uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4
+uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4 default ASK/OOK
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
 extern volatile bool blinkLED;
@@ -247,7 +247,7 @@ void cc1101::writeCCreg(uint8_t reg, uint8_t var) { // write CC1101 register
 		writeReg(reg - EE_CC1101_CFG, var);
 
 	if (reg - EE_CC1101_CFG == 18) {
-		ccmode = ( var & 0x70 ) >> 4;                // for STM32 - read modulation direct from 0x12 MDMCFG2
+		ccmode = ( var & 0x70 ) >> 4;                // read modulation direct from 0x12 MDMCFG2
 	}
 
     /*
@@ -596,9 +596,9 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					fifoBytes = ccMaxBuf;
 				}
 				dup = readRXFIFO(fifoBytes);
-				if (cc1101::ccmode != 2 || dup == false) {
+				if (cc1101::ccmode != 2 || dup == false) { // Ralf9: 2 - FIFO ohne dup
 
-					if (cc1101::ccmode != 9) {
+					if (cc1101::ccmode != 9) { // Ralf9: 9 - FIFO mit Debug Ausgaben
 						MSG_PRINT(char(MSG_START));      // SDC_WRITE not work in this scope
 						MSG_PRINT(F("MN;D="));
 					}
@@ -656,7 +656,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
  * 
  */
 
-			if (marcstate == 17 || cc1101::ccmode == 0) {   // RXoverflow oder LaCrosse?
+      if (marcstate == 17 || cc1101::ccmode != 3) {   // RXoverflow oder nicht ASK/OOK
+//			if (marcstate == 17 || cc1101::ccmode == 0) {   // RXoverflow oder LaCrosse?
 				if (cc1101::flushrx()) {                    // Flush the RX FIFO buffer
 					cc1101::setReceiveMode();
 				}
