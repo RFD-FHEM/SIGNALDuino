@@ -139,8 +139,8 @@ namespace cc1101 {
 	#endif
 #endif
 
-	#define wait_Miso()       while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return; miso_count--; }           // wait until SPI MISO line goes low
-	#define wait_Miso_rf()    while(isHigh(misoPin) ) { static uint8_t miso_count=255;delay(1); if(miso_count==0) return false; miso_count--; }     // wait until SPI MISO line goes low
+	#define wait_Miso()       do { uint8_t miso_count = 255; while(isHigh(misoPin)) { delay(1); if(miso_count == 0) return      ; miso_count--; } break; } while(1);    // wait until SPI MISO line goes low
+	#define wait_Miso_rf()    do { uint8_t miso_count = 255; while(isHigh(misoPin)) { delay(1); if(miso_count == 0) return false; miso_count--; } break; } while(1);    // wait until SPI MISO line goes low
 
 #ifdef ARDUINO_MAPLEMINI_F103CB
 	#define cc1101_Select()   digitalLow(cc1101::radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
