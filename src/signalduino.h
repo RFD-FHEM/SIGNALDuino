@@ -96,7 +96,7 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB
   }
 
-  for (uint8_t i=2;i<13;i++) {
+  for (uint8_t i=2;i<10;i++) { // all SPI pins excluded! if SPI pins are set to "pinS Input_PullUp" -> crash after a short time!
     pinAsInputPullUp(i);
   }
   //delay(2000);
