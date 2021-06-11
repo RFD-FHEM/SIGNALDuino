@@ -96,9 +96,26 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB
   }
 
-  for (uint8_t i=4;i<10;i++) { // pullup on for unused pins
-    pinAsInputPullUp(i);
-  }
+  // defined states - pullup on for unused pins
+  #ifndef ARDUINO_RADINOCC1101
+    #ifdef CMP_CC1101
+      for (uint8_t i=4;i<9;i++) {
+        pinAsInputPullUp(i);
+      }
+      for (uint8_t i=14;i<20;i++) {
+        pinAsInputPullUp(i);
+      }
+    #else
+      for (uint8_t i=4;i<20;i++) {
+        if (i != 9) pinAsInputPullUp(i); // not LED
+      }
+    #endif
+  #else
+    for (uint8_t i=2;i<24;i++) {
+      if (i != 4 && ( (i < 7 || i > 9 ) && (i < 13 || i > 17) ) ) pinAsInputPullUp(i); // not PIN_Mark,GDO2,SS,GDO0,LED
+    }
+  #endif
+
   //delay(2000);
   pinAsInput(PIN_RECEIVE);
   pinAsOutput(PIN_LED);
