@@ -97,22 +97,27 @@ void setup() {
   }
 
   // defined states - pullup on for unused pins
-  #ifndef ARDUINO_RADINOCC1101
+  #ifndef ARDUINO_RADINOCC1101 // not RADINOCC1101
     #ifdef CMP_CC1101
-      for (uint8_t i=4;i<9;i++) {
+      uint8_t offset = 0; // different start of the pins
+      #ifdef ARDUINO_ATMEGA328P_MINICUL
+        offset = 1;
+      #endif
+      
+      for (uint8_t i=4 + offset;i<9 + offset;i++) {
         pinAsInputPullUp(i);
       }
-      for (uint8_t i=14;i<20;i++) {
+      for (uint8_t i=14 + offset;i<20;i++) {
         pinAsInputPullUp(i);
       }
-    #else
-      for (uint8_t i=4;i<20;i++) {
-        if (i != 9) pinAsInputPullUp(i); // not LED
+    #else // Arduino Nano without CC1101
+      for (uint8_t i=3;i<20;i++) { // not PIN_RECEIVE
+        if ( i != PIN_SEND && i != PIN_LED ) {pinAsInputPullUp(i);}
       }
     #endif
-  #else
+  #else // everything except RADINOCC1101
     for (uint8_t i=2;i<24;i++) {
-      if (i != 4 && ( (i < 7 || i > 9 ) && (i < 13 || i > 17) ) ) pinAsInputPullUp(i); // not PIN_Mark,GDO2,SS,GDO0,LED
+      if (i != 4 && ( (i < 7 || i > 9 ) && (i < 13 || i > 17) ) ) {pinAsInputPullUp(i);} // not PIN_Mark,GDO2,SS,GDO0,LED
     }
   #endif
 
