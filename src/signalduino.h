@@ -97,29 +97,29 @@ void setup() {
   }
 
   // defined states - pullup on for unused pins
-  #ifndef ARDUINO_RADINOCC1101 // not RADINOCC1101
-    #ifdef CMP_CC1101
-      uint8_t offset = 0; // different start of the pins
-      #ifdef ARDUINO_ATMEGA328P_MINICUL
-        offset = 1;
-      #endif
-      
-      for (uint8_t i=4 + offset;i<9 + offset;i++) {
-        pinAsInputPullUp(i);
-      }
-      for (uint8_t i=14 + offset;i<20;i++) {
-        pinAsInputPullUp(i);
-      }
-    #else // Arduino Nano without CC1101
-      for (uint8_t i=3;i<20;i++) { // not PIN_RECEIVE
-        if ( i != PIN_SEND && i != PIN_LED ) {pinAsInputPullUp(i);}
-      }
+  // Start behind RX / TX Pin´s --> all hardware used for system serial 0 & 1
+  // End on Pin 23 --> radino with used highest Pin numbre
+  for (uint8_t i=2;i<24;i++) {
+    // pins for receive, send, LED
+    if (  (i == PIN_RECEIVE) || (i == PIN_SEND) || (i == PIN_LED) ) { continue; }
+
+    // cc1101 pins
+    #if defined(CMP_CC1101)
+      if ((i == csPin) || (i == mosiPin) || (i == misoPin) || (i == sckPin)) { continue; }
     #endif
-  #else // everything except RADINOCC1101
-    for (uint8_t i=2;i<24;i++) {
-      if (i != 4 && ( (i < 7 || i > 9 ) && (i < 13 || i > 17) ) ) {pinAsInputPullUp(i);} // not PIN_Mark,GDO2,SS,GDO0,LED
-    }
-  #endif
+
+    // PIN_MARK433 pin (only on RADINOCC1101 & ATMEGA328P_MINICUL)
+    #if defined(ARDUINO_RADINOCC1101) || defined(ARDUINO_ATMEGA328P_MINICUL)
+      if (i == PIN_MARK433) { continue; }
+    #endif
+
+    // more pins´s (only on RADINOCC1101)
+    #if not defined (ARDUINO_RADINOCC1101)
+      if (i >= 20) { continue; }
+    #endif
+
+    pinAsInputPullUp(i);
+  }
 
   //delay(2000);
   pinAsInput(PIN_RECEIVE);
