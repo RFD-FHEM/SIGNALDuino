@@ -99,25 +99,22 @@ void setup() {
   // defined states - pullup on for unused pins
   // Start behind RX / TX Pin´s --> all hardware used for system serial 0 & 1
   // End on Pin 23 --> radino with used highest Pin numbre
-  for (uint8_t i=2;i<24;i++) {
-    // pins for receive, send, LED
-    if (  (i == PIN_RECEIVE) || (i == PIN_SEND) || (i == PIN_LED) ) { continue; }
+  for (uint8_t i=2 ; i<=23;i++) {
+    if (i==PIN_LED) continue;
+    if (i==PIN_RECEIVE) continue;
+    if (i==PIN_SEND) continue;
 
-    // cc1101 pins
-    #if defined(CMP_CC1101)
-      if ((i == csPin) || (i == mosiPin) || (i == misoPin) || (i == sckPin)) { continue; }
+    #ifdef CMP_CC1101 
+      if (i==MOSI || i==MISO || i==SCK || i==SS) continue;
     #endif
 
-    // PIN_MARK433 pin (only on RADINOCC1101 & ATMEGA328P_MINICUL)
     #if defined(ARDUINO_RADINOCC1101) || defined(ARDUINO_ATMEGA328P_MINICUL)
-      if (i == PIN_MARK433) { continue; }
-    #endif
+      if (i==PIN_MARK433) continue;
 
-    // more pins´s (only on RADINOCC1101)
-    #if not defined (ARDUINO_RADINOCC1101)
-      if (i >= 20) { continue; }
+      #ifdef ARDUINO_RADINOCC1101
+        if (i==SS || i==17) continue;
+      #endif
     #endif
-
     pinAsInputPullUp(i);
   }
 
