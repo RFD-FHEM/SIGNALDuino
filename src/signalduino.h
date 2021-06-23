@@ -102,7 +102,7 @@ void setup() {
   // radino                     --> end on Pin 29 (CCM_radino_CC1101.pdf | sources In-Circuit -> pins_arduino.h)
   for (uint8_t i=2 ; i<=29;i++) {
     #ifndef ARDUINO_RADINOCC1101
-      if (i>=23) break;
+      if (i>23) break;
     #endif
 
     if (i==LED_BUILTIN) continue;
