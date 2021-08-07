@@ -1554,7 +1554,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 				#endif
 			} else {  // No long
 				const int8_t mpiPlusOne = pdec->message[i + 1]; // get  next pattern for further processing
-				if (    mpi == -1 || mpiPlusOne == -1 ||
+				if (    mpi == -1 || mpiPlusOne == -1 || pdec->messageLen - 2 <= i ||
 					(	bit == 0 && (mpi != shortlow  || mpiPlusOne != shorthigh) ) ||
 					(	bit == 1 && (mpi != shorthigh || mpiPlusOne != shortlow) )
 				   ) {
