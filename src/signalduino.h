@@ -96,7 +96,33 @@ void setup() {
     ; // wait for serial port to connect. Needed for native USB
   }
 
+  // defined states - pullup on for unused pins
+  // start behind RX / TX Pin´s --> all hardware used for system serial 0 & 1
+  // not radino (other boards)  --> end on Pin 23
+  // radino                     --> end on Pin 29 (CCM_radino_CC1101.pdf | sources In-Circuit -> pins_arduino.h)
+  for (uint8_t i=2 ; i<=29;i++) {
+    #ifndef ARDUINO_RADINOCC1101
+      if (i>23) break;
+    #endif
 
+    if (i==LED_BUILTIN) continue;
+    if (i==PIN_LED) continue;
+    if (i==PIN_RECEIVE) continue;
+    if (i==PIN_SEND) continue;
+
+    #ifdef CMP_CC1101 
+      if (i==MOSI || i==MISO || i==SCK || i==SS) continue;
+    #endif
+
+    #if defined(ARDUINO_RADINOCC1101) || defined(ARDUINO_ATMEGA328P_MINICUL)
+      if (i==PIN_MARK433) continue;
+
+      #ifdef ARDUINO_RADINOCC1101
+        if (i==8 || i==LED_BUILTIN_RX || i==LED_BUILTIN_TX) continue;  // special pin ´s --> ...\packages\In-Circuit\hardware\avr\1.0.0\variants\ictmicro --> pins_arduino.h
+      #endif
+    #endif
+    pinAsInputPullUp(i);
+  }
 
   //delay(2000);
   pinAsInput(PIN_RECEIVE);

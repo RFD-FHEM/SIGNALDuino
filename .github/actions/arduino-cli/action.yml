@@ -2,7 +2,7 @@ name: 'setup arduino-cli and plattform'
 description: 'install plattform into arduino-cli to be ready to compile'
 inputs:
   boardurl:  
-    description: 'URL of arduino compaible package.json'
+    description: 'URL of arduino compatible package.json'
     required: false
     default: ''
   plattform:  
