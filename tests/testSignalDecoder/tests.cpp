@@ -380,9 +380,6 @@ namespace arduino {
 			  ASSERT_STREQ(mcStr, base.c_str()); // may not compile or give warning
 		  }
 
-
-
-
 		  TEST_F(Tests, testMCbasicNA1)
 		  {
 
@@ -624,7 +621,7 @@ namespace arduino {
 		  //MU;P0=-1580;P1=873;P2=-1071;P3=-591;P4=388;P5=-3076;D=01212121213424313424313424313424313421243121213424312121213421243134243134243121342124313421212121243134243121342124313421243121342121212121212121212121212431342431342124313424313421245121212121212121212121212121212121342431342431342431342431342124312121;CP=4;O;
 		  TEST_F(Tests, testMCosv2_b)
 		  {
-			  // RTHN318_13_5 T : 19.3�C  Full Message= MC;LL=-1070;LH=873;SL=-591;SH=387;D=5555555533332D4D52CCD2CAACD2CB4AAAAAACCB328;L=169;C=486;
+			  // RTHN318_13_5 T : 19.3°C  Full Message= MC;LL=-1070;LH=873;SL=-591;SH=387;D=5555555533332D4D52CCD2CAACD2CB4AAAAAACCB328;L=169;C=486;
 
 			  // OSV2 which has a short pulse before gap instead of a long pulse
 
@@ -985,7 +982,7 @@ namespace arduino {
 
 			bool result = mcdecoder.doDecode();
 			ASSERT_EQ(226, mcdecoder.ManchesterBits.valcount - 1);
-			ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgef�hrt, und das l�st einen reset aus, da wir am Ende sind.
+			ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgeführt, und das löst einen reset aus, da wir am Ende sind.
 			ASSERT_FALSE(mcdecoder.pdec->mcDetected);
 			ASSERT_TRUE(result);
 
