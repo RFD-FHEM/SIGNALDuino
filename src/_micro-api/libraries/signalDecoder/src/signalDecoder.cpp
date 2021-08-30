@@ -1542,9 +1542,9 @@ const bool ManchesterpatternDecoder::doDecode() {
 		// Decoding occures here
 		if (mc_sync)
 		{
-			const uint8_t mpi = pdec->message[i]; // Store pattern for further processing
+			const int8_t mpi = pdec->message[i]; // get pattern for further processing
 
-			if (isLong(mpi) && i < pdec->messageLen - 1) {
+			if (i < pdec->messageLen - 1 && isLong(mpi) ) {
 				bit = bit ^ (1);
 
 				#ifdef DEBUGDECODE
@@ -1552,22 +1552,12 @@ const bool ManchesterpatternDecoder::doDecode() {
 					if (mpi == longlow)
 						value = 'l';
 				#endif
-			}
-			else {
-				const uint8_t mpiPlusOne = pdec->message[i + 1]; // Store previois pattern for further processing
-				if (bit == 0 && i < pdec->messageLen - 2 && mpi == shortlow && mpiPlusOne == shorthigh)
-				{
-					#ifdef DEBUGDECODE
-						value = 's';
-					#endif
-				}
-				else if (bit == 1 && i < pdec->messageLen - 2 && mpi == shorthigh && mpiPlusOne == shortlow)
-				{
-					#ifdef DEBUGDECODE
-						value = 'S';
-					#endif
-				}
-				else {
+			} else {  // No long
+				const int8_t mpiPlusOne = pdec->message[i + 1]; // get  next pattern for further processing
+				if (    pdec->messageLen - 2 <= i ||
+					(	bit == 0 && (mpi != shortlow  || mpiPlusOne != shorthigh) ) ||
+					(	bit == 1 && (mpi != shorthigh || mpiPlusOne != shortlow) )
+				   ) {
 					// Found something that fits not to our manchester signal
 					#ifdef DEBUGDECODE
 						DBG_PRINT("H(");
@@ -1585,8 +1575,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 						#endif
 
 						ManchesterBits.reset();
-					}
-					else {
+					} else {
 						pdec->mend = i;
 
 						#ifdef DEBUGDECODE
@@ -1640,25 +1629,32 @@ const bool ManchesterpatternDecoder::doDecode() {
 
 					#ifdef DEBUGDECODE
 						DBG_PRINT(')');
-					#endif
-				}
-				i++;
+					#endif						
+				} else {
+					i++;
+				} 
+				#ifdef DEBUGDECODE
+				else if (bit == 0 && mpi == shortlow && mpiPlusOne == shorthigh)	{
+					value = 's';
+				} else if (bit == 1 && mpi == shorthigh && mpiPlusOne == shortlow)	{
+					value = 'S';
+				} 
+				#endif
 			}
 
 			if (mc_sync) { // don't add bit if manchester processing was canceled
 				ManchesterBits.addValue(bit);
-
 				#ifdef DEBUGDECODE
 					DBG_PRINT(value);
 					DBG_PRINT((uint8_t)ManchesterBits.getValue(ManchesterBits.valcount - 1), DEC);
 				#endif
-			}
-			else {
+			} else {
 				#ifdef DEBUGDECODE
 				  DBG_PRINT('_');
 				#endif
 			}
 		} // 		endif (mc_sync)
+		//if (i<255) i++;
 		i++;
 	}
 	pdec->mend = i; // Todo: keep short in buffer;
