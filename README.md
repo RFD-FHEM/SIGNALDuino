@@ -1,21 +1,21 @@
-# SIGNALDuino uC v3.4.0-development  with cc1101 support 
+# SIGNALDuino uC v3.4.0-development  with CC1101 support 
 [![Build Status](https://travis-ci.org/RFD-FHEM/SIGNALDuino.svg?branch=master)](https://travis-ci.org/RFD-FHEM/SIGNALDuino)
 
 ### Getting started
 
 
-System to receive digital signals and provide them to other systems pro demodulatiob. Currently tested with 433 MHZ, but not limited to that frequency or media.
+System to receive digital signals and provide them to other systems for demodulation. Currently tested with 433 MHz, but not limited to that frequency or media.
 
 
-Just clone the repo and open the project file with visualstudio. (only available for windows)
+Just clone the repo and open the project file with Visual Studio (only available for windows) or VSCode.
 You can also open it with the Arduino IDE. 
 Compile it and have fun.
-If you are using the Arduino IDE, you have to copy all the libs into your sketch folder and alter some includes.
+If you are using the Arduino IDE, you have to copy all the libs into your sketch folder and modify some includes.
 
 ### Using SIGNALDuino in FHEM
 
-If you want to use the SIGNALDuino with FHEM, you can use it directly from FHEM. No neet to compile any sourcode.
-You find more Information here:
+If you want to use the SIGNALDuino with FHEM, you can use it directly from FHEM. No need to compile any sourcode.
+You find more information here:
 http://www.fhemwiki.de/wiki/SIGNALDuino
 
 
@@ -31,12 +31,12 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 
 ### ESP32 Notes
 
-If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished tested with all variants from ESP32. Contributors are welcome. If you have mane errors from fastDelegate.h try adding this compiler flag:
+If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished tested with all variants from ESP32. Contributors are welcome. If you have any errors from `fastDelegate.h` try adding this compiler flag:
  -Wno-unused-local-typedef
 
 ### Signal from my device ist not detected
 
-We have a pattern detection engine, that detect serval signal types. May not all, but most of them.
+Implemented is a pattern detection engine, that can detect serval signal types. May not all, but most of them.
 
 Uncomment #define debugdetect in libs/remotesensor/patterdecoder.h
 Search for some output which describes a pattern with serval bits received.
