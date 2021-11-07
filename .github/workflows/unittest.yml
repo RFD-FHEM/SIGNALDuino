@@ -83,12 +83,12 @@ jobs:
             arduino-platform: 'esp32:esp32'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
-            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP32
             RECEIVER: ""
             arduino-platform: 'esp32:esp32'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
-            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP8266
             RECEIVER: cc1101
             arduino-platform: 'esp8266:esp8266@2.6.3'
