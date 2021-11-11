@@ -1634,7 +1634,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 					i++;
 				} 
 				#ifdef DEBUGDECODE
-				else if (bit == 0 && mpi == shortlow && mpiPlusOne == shorthigh)	{
+				if (bit == 0 && mpi == shortlow && mpiPlusOne == shorthigh)	{
 					value = 's';
 				} else if (bit == 1 && mpi == shorthigh && mpiPlusOne == shortlow)	{
 					value = 'S';
