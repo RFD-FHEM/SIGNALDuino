@@ -554,9 +554,9 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 	if (isHigh(PIN_RECEIVE)) {                     // wait for CC1100_FIFOTHR given bytes to arrive in FIFO
 		#ifdef PIN_LED_INVERSE
-			digitalWrite(PIN_LED, !blinkLED);
-		#else
 			digitalWrite(PIN_LED, blinkLED);
+		#else
+			digitalWrite(PIN_LED, !blinkLED);
 		#endif
 
 /*
