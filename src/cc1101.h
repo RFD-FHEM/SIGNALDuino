@@ -122,7 +122,6 @@ namespace cc1101 {
   , MarcStateRxTxSwitch     = 0x15u
   , MarcStateTxFifoUnerflow = 0x16u
   };
-
 #if defined(ESP8266) || defined(ESP32)
 	#define pinAsInput(pin) pinMode(pin, INPUT)
 	#define pinAsOutput(pin) pinMode(pin, OUTPUT)

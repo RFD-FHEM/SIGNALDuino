@@ -41,7 +41,6 @@
 #define VERSION_2              0x1d
 
 #if defined(__AVR__)
-
 #define PROGNAME               " SIGNALduino "
 
 #define BAUDRATE               57600 // 500000 //57600
