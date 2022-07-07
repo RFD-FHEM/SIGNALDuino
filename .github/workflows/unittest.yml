@@ -3,11 +3,14 @@ on:
   release:
     types: [created, prereleased, published]
   workflow_dispatch: null
+  pull_request: null
 jobs:
   unittest:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+        with: 
+          submodules: true
       - name: prepare env
         run: >
           echo "TRAVIS_BUILD_DIR=$PWD" >> $GITHUB_ENV
@@ -16,8 +19,7 @@ jobs:
           $GITHUB_ENV
 
           echo "GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest" >> $GITHUB_ENV
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
+
       - name: Install tools
         run: |
           echo "::group::googletest"
@@ -46,55 +48,34 @@ jobs:
           ls -l
           ./bin/TestProject 
   deploy:
+    needs: unittest
     strategy:
       fail-fast: false
       matrix:
-        BOARD:
-          - nano328
-          - leonardo
-          #- radino
-          - minicul
-          - promini
-          - ESP32
-        RECEIVER:
-          - cc1101
-          - simple
-        exclude:
-          - BOARD: radino
-            RECEIVER: simple
-          - BOARD: promini
-            RECEIVER: cc1101
-          - BOARD: minicul
-            RECEIVER: simple
-          - BOARD: leonardo
-            RECEIVER: simple
         include:
-          - BOARD: nano328
+          - BOARD: nano
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:nano:cpu=atmega328'
             compilerflag: '\"-DOTHER_BOARD_WITH_CC1101=1\"'
           - BOARD: nano328
-            RECEIVER: simple
+            RECEIVER: ""
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:nano:cpu=atmega328'
-          # - BOARD: radino
-            # arduino-platform: 'arduino:avr In-Circuit:avr'
-            # fqbn: 'In-Circuit:avr:radinoCC1101'
-            # boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
-            # compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\" \"-DUSB_VID=0x2341\" \"-DUSB_PID=0x8036\"
-          - BOARD: leonardo
+          - BOARD: radino
             RECEIVER: cc1101
-            arduino-platform: 'arduino:avr'
-            fqbn: 'arduino:avr:leonardo'
-            compilerflag: \"-DARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101=1\"
+            arduino-platform: 'arduino:avr In-Circuit:avr'
+            fqbn: 'In-Circuit:avr:radinoCC1101'
+            boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
+            compilerflag: \"-DARDUINO_RADINOCC1101=1\"
+            build_param1: "compiler.path={runtime.tools.avr-gcc-7.3.0-atmel3.6.1-arduino7.path}/bin/"
           - BOARD: minicul
             RECEIVER: cc1101
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
             compilerflag: \"-DARDUINO_ATMEGA328P_MINICUL=1\"
           - BOARD: promini
-            RECEIVER: simple
+            RECEIVER: ""
             arduino-platform: 'arduino:avr'
             fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
           - BOARD: ESP32
@@ -102,22 +83,22 @@ jobs:
             arduino-platform: 'esp32:esp32'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
-            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP32
-            RECEIVER: simple
+            RECEIVER: ""
             arduino-platform: 'esp32:esp32'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
-            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json' 
+            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP8266
             RECEIVER: cc1101
             arduino-platform: 'esp8266:esp8266@2.6.3'
-            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: ESP8266
-            RECEIVER: simple
+            RECEIVER: ""
             arduino-platform: 'esp8266:esp8266@2.6.3'
-            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40,dbg=Serial,lvl=CORE'
+            fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: MAPLEMINI_F103CB
             RECEIVER: cc1101
@@ -126,47 +107,79 @@ jobs:
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
           - BOARD: MAPLEMINI_F103CB
-            RECEIVER: simple
+            RECEIVER: ""
             arduino-platform: 'STM32:stm32'
             fqbn: 'STM32:stm32:GenF1:pnum=MAPLEMINI_F103CB'
             boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
     runs-on: ubuntu-latest
     steps:
-      # - name: info
-        # run: echo ${{ github.event_name }}
       - name: Checkout
         uses: actions/checkout@master
-      - name: Checkout submodules
-        uses: textbook/git-checkout-submodule-action@master
-      - name: Setup Arduino CLI
+        with: 
+          submodules: true
+
+      - name: Install Arduino CLI
         uses: arduino/setup-arduino-cli@v1.1.1
-      - name: Prepare plattform installation
-        run: arduino-cli core update-index ${{ matrix.boardurl }}
-      - name: Install plattform 
-        run: arduino-cli core install ${{ matrix.arduino-platform }} ${{ matrix.boardurl }}
-      - name: install pyserial
-        if: ${{ matrix.BOARD == 'ESP32' }}
-        run: |
-          pip install pyserial
+
+      - name: Setup arduino-cli
+        uses: ./.github/actions/arduino-cli
+        with:
+          boardurl: ${{ matrix.boardurl }}
+          plattform: ${{ matrix.arduino-platform }}
+
       - name: Compile sketch
         id: compile_sketch
         run: |
-          arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino
+          export COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)
+          echo "$COMPILE_OUTPUT"
           echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
-      # - name: rename firmwarefile
-        # if: ${{ matrix.BOARD == 'ESP32' }}
-        # run: |
-          # mv .bin *.hex
+          echo "::set-output name=skechsize::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
+          echo "::set-output name=globalramusage::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
+
+      - name: Get flash and ram usage
+        id: compile_sizes
+        run: |
+          echo Flash usage: ${{ steps.compile_sketch.outputs.skechsize }} bytes
+          echo Ram usage: ${{ steps.compile_sketch.outputs.globalramusage }} bytes   
+
+      - name: Find Comment
+        if: ${{ github.event.pull_request.number > 0 }}
+        uses: peter-evans/find-comment@v1
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: ${{ github.sha }}
+      
+      - name: Create comment
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### Size report for commit: ${{ github.sha }}
+            | Board | Flash | Ram |
+            |-------|-------|-----|
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
+
+      - name: Update comment
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }}
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          body: |
+            | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
+
       - name: Get release
         id: get_release
         if: ${{ github.event_name == 'release'}}
-        uses: bruceadams/get-release@v1.2.3
+        uses: bruceadams/get-release@v1.2.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
       - name: Upload Release Asset
         id: upload-release-asset 
         if: ${{ github.event_name == 'release' }}
-        uses: actions/upload-release-asset@v1.0.2
+        uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -174,3 +187,10 @@ jobs:
           asset_path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
           asset_name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}_${{ github.event.release.tag_name }}.hex
           asset_content_type: application/octet-stream
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}.hex
+          path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
+          if-no-files-found: warn

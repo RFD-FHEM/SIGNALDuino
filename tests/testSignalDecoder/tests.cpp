@@ -621,7 +621,7 @@ namespace arduino {
 		  //MU;P0=-1580;P1=873;P2=-1071;P3=-591;P4=388;P5=-3076;D=01212121213424313424313424313424313421243121213424312121213421243134243134243121342124313421212121243134243121342124313421243121342121212121212121212121212431342431342124313424313421245121212121212121212121212121212121342431342431342431342431342124312121;CP=4;O;
 		  TEST_F(Tests, testMCosv2_b)
 		  {
-			  // RTHN318_13_5 T : 19.3°C  Full Message= MC;LL=-1070;LH=873;SL=-591;SH=387;D=5555555533332D4D52CCD2CAACD2CB4AAAAAACCB328;L=169;C=486;
+			  // RTHN318_13_5 T : 19.3Â°C  Full Message= MC;LL=-1070;LH=873;SL=-591;SH=387;D=5555555533332D4D52CCD2CAACD2CB4AAAAAACCB328;L=169;C=486;
 
 			  // OSV2 which has a short pulse before gap instead of a long pulse
 
@@ -982,7 +982,7 @@ namespace arduino {
 
 			bool result = mcdecoder.doDecode();
 			ASSERT_EQ(226, mcdecoder.ManchesterBits.valcount - 1);
-			ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgeführt, und das löst einen reset aus, da wir am Ende sind.
+			ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgefÃ¼hrt, und das lÃ¶st einen reset aus, da wir am Ende sind.
 			ASSERT_FALSE(mcdecoder.pdec->mcDetected);
 			ASSERT_TRUE(result);
 
@@ -1000,6 +1000,37 @@ namespace arduino {
 			ASSERT_EQ(1, mcdecoder.ManchesterBits.getValue(222));
 
 
+		}
+
+		
+		TEST_F(Tests,mcLoop1) // causes endless loop
+		{
+			std::string dstr2 = "MU;P0=-623;P1=231;P2=599;P3=-243;P4=-839;P5=857;D=01023102310102310145454541023102323232310102310101010102323101010232323231023232310102310101023102310102310101010102323101010232323231023232310102310101023102310102310545454541023102323232310102310101010102323101010232323231023232310102310101023102310102;";
+			state =  import_sigdata(&dstr2, false);
+			std::cout << outputStr << "\n";
+
+			ASSERT_EQ(254,ooDecode.messageLen);
+			ooDecode.calcHisto();
+			ooDecode.printOut();
+			ASSERT_TRUE(mcdecoder.isManchester());
+			bool result = mcdecoder.doDecode();
+			ASSERT_EQ(false, result);
+			ASSERT_EQ(0, mcdecoder.ManchesterBits.valcount);
+		}
+
+		TEST_F(Tests,mcLoop2) // causes endless loop
+		{
+			std::string dstr2 = "MU;P0=-251;P1=231;P2=-613;P3=840;P4=-858;P5=607;D=01234343434125012505052501212121212505012105012121250505050125050125050125012125050125050501234343434125012505052501212121212505012121250505050125050125050125012125050125050501234343434125012505050501212501212121212505012121250505050125050125050125012125;";
+			state =  import_sigdata(&dstr2, false);
+			std::cout << outputStr << "\n";
+
+			ASSERT_EQ(254,ooDecode.messageLen);
+			ooDecode.calcHisto();
+			ooDecode.printOut();
+			ASSERT_TRUE(mcdecoder.isManchester());
+			bool result = mcdecoder.doDecode();
+			ASSERT_EQ(false, result);
+			ASSERT_EQ(0, mcdecoder.ManchesterBits.valcount);
 		}
 
 		TEST_F(Tests,mcLong2) //Maverick et733
@@ -1037,7 +1068,7 @@ namespace arduino {
 
 		TEST_F(Tests, mcMaverick1)
 		{
-			// Fehlerhafte Taktdate beim Sender. Erkennung als MC nicht möglich.
+			// Fehlerhafte Taktdate beim Sender. Erkennung als MC nicht mÃ¶glich.
 			// protocolid: temp1=24, temp2=-532;
 			//std::string dstr = "MU;P0=-4913;P1=228;P2=361;P3=-632;P4=-382;P5=153;P6=106;D=0101010101010101023232323245354245354245323232323542463232323232323232323236424;";
 			std::string dstr = "MU;P0=-288;P1=211;P2=467;P3=-4872;P4=-527;D=3131313131313131324242424201410201410201424242424102014102014242410201410242014242424242424242424242424241024201410242014102420142424102014102;";
@@ -1100,7 +1131,6 @@ namespace arduino {
 		{
 				bool state;
 
-
 				std::string dstr = "MU;P0=-32001;P1=1673;P2=-1260;P3=-4304;P4=5712;P5=-6752;P6=3145;P7=-2718;D=12121212121212121212121345126712671212121267621712121212121212121212621712126;CP=1;";
 				state = import_sigdata(&dstr);
 				dstr =  "MU;P0=-27224;P1=1673;P2=-1260;P3=-4304;P4=5712;P5=-6752;P6=3145;P7=-2718;D=012121212121212121212121345126712671212121267621712121212121212121212621712126;CP=1;"; // Lange pause zwischen den Wiederholungen einbauen
@@ -1114,7 +1144,6 @@ namespace arduino {
 				ooDecode.calcHisto();
 				ooDecode.getClock();
 				ooDecode.getSync();
-
 
 				//ooDecode.printOut();
 
@@ -1139,8 +1168,6 @@ namespace arduino {
 				ASSERT_TRUE(mcdecoder.doDecode());
 				mcStr=mcdecoder.getMessageHexStr();
 				ASSERT_STREQ(mcStr.c_str(), mcHex.c_str()); // may not compile or give warning
-
-		
 
 		}
 

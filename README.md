@@ -1,6 +1,7 @@
-# SIGNALDuino uC v3.4.0-development  with CC1101 support 
-[![Build Status](https://travis-ci.org/RFD-FHEM/SIGNALDuino.svg?branch=master)](https://travis-ci.org/RFD-FHEM/SIGNALDuino)
+# SIGNALDuino uC v3.5.0 with cc1101 support 
+Development: ![unittest](https://github.com/RFD-FHEM/SIGNALDuino/workflows/unittest/badge.svg?branch=dev-r3.5_xFSK)
 
+Master: ![unittest](https://github.com/RFD-FHEM/SIGNALDuino/workflows/unittest/badge.svg?branch=master)
 ### Getting started
 
 
@@ -27,11 +28,11 @@ http://www.fhemwiki.de/wiki/SIGNALDuino
 * ESP32 (ESP32-WROOM-32 / ESP32-WROOM-32D)
 * ESP8266
 * RadinoCC1101
-* STM32 F103CBT6 (Maple Mini, bootloader v1.0)
+* STM32 F103CBT6 (Maple Mini)
 
 ### ESP32 Notes
 
-If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished tested with all variants from ESP32. Contributors are welcome. If you have any errors from `fastDelegate.h` try adding this compiler flag:
+If you encounter problems compiling for ESP32, sorry the code for this microcontroller is currently not finished tested with all variants from ESP32. Contributors are welcome. If you have mane errors from fastDelegate.h try adding this compiler flag:
  -Wno-unused-local-typedef
 
 ### Signal from my device ist not detected

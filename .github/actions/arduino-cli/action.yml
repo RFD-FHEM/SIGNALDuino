@@ -1,0 +1,28 @@
+name: 'setup arduino-cli and plattform'
+description: 'install plattform into arduino-cli to be ready to compile'
+inputs:
+  boardurl:  
+    description: 'URL of arduino compatible package.json'
+    required: false
+    default: ''
+  plattform:  
+    description: 'plattform name(s), which shoud be installed'
+    required: true
+    default: 'arduino:avr'
+    
+runs:
+  using: "composite"
+  steps: 
+    - name: Prepare plattform installation
+      run: arduino-cli core update-index ${{ inputs.boardurl }}
+      shell: bash
+    - name: Install plattform 
+      run: arduino-cli core install ${{ inputs.plattform }} ${{ inputs.boardurl }}
+      shell: bash
+    - name: install pyserial
+      run: |
+        if [ ${{ inputs.plattform }} == "esp32:esp32" ]
+        then
+          pip install pyserial
+        fi;
+      shell: bash

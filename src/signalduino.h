@@ -1,5 +1,7 @@
+#pragma once
+
 /*
-*   RF_RECEIVER v3.4.0 for Arduino
+*   RF_RECEIVER v3.5.0 for Arduino
 *   Sketch to use an arduino as a receiver/sending device for digital signals
 *
 *   The Sketch can also encode and send data via a transmitter,
@@ -49,7 +51,6 @@
 #define addr_features          0xff
 
 
-
 // Predeclation
 void serialEvent();
 void cronjob();
@@ -89,188 +90,207 @@ char IB_1[14]; // Input Buffer one - capture commands
 
 
 void setup() {
-	Serial.begin(BAUDRATE);
-	while (!Serial) {
-		; // wait for serial port to connect. Needed for native USB
-	}
+  Serial.begin(BAUDRATE);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB
+  }
+
+  // defined states - pullup on for unused pins
+  // start behind RX / TX Pin´s --> all hardware used for system serial 0 & 1
+  // not radino (other boards)  --> end on Pin 23
+  // radino                     --> end on Pin 29 (CCM_radino_CC1101.pdf | sources In-Circuit -> pins_arduino.h)
+  for (uint8_t i=2 ; i<=29;i++) {
+    #ifndef ARDUINO_RADINOCC1101
+      if (i>23) break;
+    #endif
+
+    if (i==LED_BUILTIN) continue;
+    if (i==PIN_LED) continue;
+    if (i==PIN_RECEIVE) continue;
+    if (i==PIN_SEND) continue;
+
+    #ifdef CMP_CC1101 
+      if (i==MOSI || i==MISO || i==SCK || i==SS) continue;
+    #endif
+
+    #if defined(ARDUINO_RADINOCC1101) || defined(ARDUINO_ATMEGA328P_MINICUL)
+      if (i==PIN_MARK433) continue;
+
+      #ifdef ARDUINO_RADINOCC1101
+        if (i==8 || i==LED_BUILTIN_RX || i==LED_BUILTIN_TX) continue;  // special pin ´s --> ...\packages\In-Circuit\hardware\avr\1.0.0\variants\ictmicro --> pins_arduino.h
+      #endif
+    #endif
+    pinAsInputPullUp(i);
+  }
+
+  //delay(2000);
+  pinAsInput(PIN_RECEIVE);
+  pinAsOutput(PIN_LED);
+  // CC1101
+
+  //wdt_reset();
+
+  #ifdef CMP_CC1101
+    cc1101::setup();
+  #endif
+  initEEPROM();
+
+  #ifdef CMP_CC1101
+    cc1101::CCinit();                    // CC1101 init
+    hasCC1101 = cc1101::checkCC1101();   // Check for cc1101
 
 
-	
-	//delay(2000);
-	pinAsInput(PIN_RECEIVE);
-	pinAsOutput(PIN_LED);
-	// CC1101
-	
-	//wdt_reset();
+    if (hasCC1101)
+    {
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
+      musterDec.setRSSICallback(&cc1101::getRSSI);                 // Provide the RSSI Callback
+    } else {
+      musterDec.setRSSICallback(&rssiCallback);                    // Provide the RSSI Callback
+    }
+  #endif 
 
-	#ifdef CMP_CC1101
-	cc1101::setup();
-	#endif
-  	initEEPROM();
-	#ifdef CMP_CC1101
-	DBG_PRINT(FPSTR(TXT_CCINIT));
+  pinAsOutput(PIN_SEND);
+  DBG_PRINTLN(F("Starting timerjob"));
+  delay(50);
 
-	cc1101::CCinit();					 // CC1101 init
-	hasCC1101 = cc1101::checkCC1101();	 // Check for cc1101
-	
+  Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
+  Timer1.attachInterrupt(cronjob);
 
+  /*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
+  MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
+  MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
+  //cmdstring.reserve(40);
 
-	if (hasCC1101)
-	{
-		//DBG_PRINTLN("CC1101 found");
-		DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
-		musterDec.setRSSICallback(&cc1101::getRSSI);                    // Provide the RSSI Callback
-	} else {
-		musterDec.setRSSICallback(&rssiCallback);	// Provide the RSSI Callback		
-	}
-	#endif 
+  musterDec.setStreamCallback(&writeCallback);
 
-	pinAsOutput(PIN_SEND);
-	DBG_PRINTLN(F("Starting timerjob"));
-	delay(50);
+  #ifdef CMP_CC1101
+    if (!hasCC1101 || cc1101::regCheck()) {
+  #endif
 
-	Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
-	Timer1.attachInterrupt(cronjob);
+  enableReceive();
+  DBG_PRINTLN(FPSTR(TXT_RECENA));
 
-	/*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
-	MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
-	MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
-	//cmdstring.reserve(40);
+  #ifdef CMP_CC1101
+    } else {
+      DBG_PRINT(FPSTR(TXT_CC1101));
+      DBG_PRINT(FPSTR(TXT_DOFRESET));
+      DBG_PRINTLN(FPSTR(TXT_COMMAND));
+    }
+  #endif
 
-	musterDec.setStreamCallback(&writeCallback);
-
-
-#ifdef CMP_CC1101
-	if (!hasCC1101 || cc1101::regCheck()) {
-#endif
-		enableReceive();
-		DBG_PRINT(FPSTR(TXT_RECENA));
-#ifdef CMP_CC1101
-	}
-	else {
-		DBG_PRINT(FPSTR(TXT_CC1101));
-		DBG_PRINT(FPSTR(TXT_DOFRESET));
-		DBG_PRINTLN(FPSTR(TXT_COMMAND));
-	}
-#endif
-	MSG_PRINTER.setTimeout(400);
+  MSG_PRINTER.setTimeout(400);
 }
 
 
 void cronjob() {
-	static uint8_t cnt = 0;
-	cli();
-	const unsigned long  duration = micros() - lastTime;
+  static uint8_t cnt = 0;
+  cli();
+  const unsigned long  duration = micros() - lastTime;
 
-	Timer1.setPeriod(32001);
-	
-	if (duration >= maxPulse) { //Auf Maximalwert pruefen.
-		int sDuration = maxPulse;
-		if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
-			sDuration = -sDuration;
-		}
-		FiFo.enqueue(sDuration);
-		lastTime = micros();
-	 } else if (duration > 10000) {
-		Timer1.setPeriod(maxPulse-duration+16);
-	 }
-#ifdef PIN_LED_INVERSE	
-	 digitalWrite(PIN_LED, !blinkLED);
-#else
-	 digitalWrite(PIN_LED, blinkLED);
-#endif
-	 blinkLED = false;
+  Timer1.setPeriod(32001);
 
-	 sei();
-	
-	 // Infrequent time uncritical jobs (~ every 2 hours)
-	 if (cnt++ == 0)  // if cnt is 0 at start or during rollover
-		 getUptime();
+  if (duration >= maxPulse) { //Auf Maximalwert pruefen.
+    int sDuration = maxPulse;
+    if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
+      sDuration = -sDuration;
+    }
+    FiFo.enqueue(sDuration);
+    lastTime = micros();
+  } else if (duration > 10000) {
+    Timer1.setPeriod(maxPulse-duration+16);
+  }
+
+  #ifdef PIN_LED_INVERSE
+    digitalWrite(PIN_LED, !blinkLED);
+  #else
+    digitalWrite(PIN_LED, blinkLED);
+  #endif
+
+  blinkLED = false;
+  sei();
+
+  // Infrequent time uncritical jobs (~ every 2 hours)
+  if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+    getUptime();
 }
 
 
 void loop() {
-	static int aktVal=0;
-	bool state;
-#ifdef __AVR_ATmega32U4__	
-	serialEvent();
-#endif
-	//wdt_reset();
-	while (FiFo.count()>0 ) { //Puffer auslesen und an Dekoder uebergeben
-		aktVal=FiFo.dequeue();
-		state = musterDec.decode(&aktVal); 
-		if (state) blinkLED=true; //LED blinken, wenn Meldung dekodiert
-	}
+  static int aktVal=0;
+  bool state;
 
- }
+  #ifdef __AVR_ATmega32U4__
+    serialEvent();
+  #endif
+  //wdt_reset();
 
-
-
+  #ifdef CMP_CC1101
+    if (cc1101::ccmode == 3) {                // ASK/OOK = 3 (default)
+  #endif
+      while (FiFo.count()>0 ) {               // Puffer auslesen und an Dekoder uebergeben
+        aktVal=FiFo.dequeue();
+        state = musterDec.decode(&aktVal); 
+        if (state) blinkLED=true;             // LED blinken, wenn Meldung dekodiert
+      }
+  #ifdef CMP_CC1101
+    } else {
+      cc1101::getRxFifo(0);                   // xFSK = 0
+    }
+  #endif
+}
 
 
 
 //============================== Write callback =========================================
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
-	while (!MSG_PRINTER.availableForWrite() )
-		yield();
-	//DBG_PRINTLN("Called writeCallback");
+  while (!MSG_PRINTER.availableForWrite() )
+  yield();
+  //DBG_PRINTLN("Called writeCallback");
 
-	//MSG_PRINT(*buf);
-	//MSG_WRITE(buf, len);
-	return MSG_PRINTER.write(buf,len);
-	
-	//serverClient.write("test");
+  //MSG_PRINT(*buf);
+  //MSG_WRITE(buf, len);
+  return MSG_PRINTER.write(buf,len);
 
+  //serverClient.write("test");
 }
 
 
 
-
-
-
-
-
 //================================= Serielle verarbeitung ======================================
-
-
-
-
-
 void serialEvent()
 {
-	static uint8_t idx = 0;
-	while (MSG_PRINTER.available())
-	{
-		if (idx == 14) {
-			// Short buffer is now full
-			MSG_PRINT("Command to long: ");
-			MSG_PRINTLN(IB_1);
-			idx = 0;
-			return;
-		}
-		else {
-			IB_1[idx] = (char)MSG_PRINTER.read();
-			switch (IB_1[idx])
-			{
-				case '\n':
-				case '\r':
-				case '\0':
-				case '#':
-					//wdt_reset();
-					commands::HandleShortCommand();  // Short command received and can be processed now
-					idx = 0;
-					return; //Exit function
-				case ';':
-					DBG_PRINT("send cmd detected ");
-					DBG_PRINTLN(idx);
-					send_cmd();
-					idx =  0; // increments to 1
-					return; //Exit function
-			}
-			idx++;
-		}
-	}
+  static uint8_t idx = 0;
+  while (MSG_PRINTER.available())
+  {
+    if (idx == 14) {
+      // Short buffer is now full
+      MSG_PRINT(F("Command to long: "));
+      MSG_PRINTLN(IB_1);
+      idx = 0;
+      return;
+    } else {
+      IB_1[idx] = (char)MSG_PRINTER.read();
+      switch (IB_1[idx])
+      {
+        case '\n':
+        case '\r':
+        case '\0':
+        case '#':
+        //wdt_reset();
+          commands::HandleShortCommand();  // Short command received and can be processed now
+          idx = 0;
+          return; //Exit function
+        case ';':
+          DBG_PRINT("send cmd detected ");
+          DBG_PRINTLN(idx);
+          send_cmd();
+          idx =  0; // increments to 1
+          return; //Exit function
+      }
+      idx++;
+    }
+  }
 }
 
 
@@ -279,8 +299,8 @@ int freeRam () {
   extern int __heap_start, *__brkval;
   int v;
   return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
- }
+}
 
 
 
-#endif
+#endif  // END defined(__AVR__)
