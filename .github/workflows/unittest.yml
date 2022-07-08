@@ -189,7 +189,7 @@ jobs:
           asset_content_type: application/octet-stream
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: SIGNALDuino_${{ matrix.BOARD }}${{ matrix.RECEIVER }}.hex
           path: ./SIGNALDuino.ino.${{ steps.compile_sketch.outputs.fileext }}
