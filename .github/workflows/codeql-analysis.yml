@@ -83,7 +83,7 @@ jobs:
         submodules: true
 
     - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
+      uses: github/codeql-action/init@v2
       with:
          languages: cpp
     - name: Install Arduino CLI
@@ -114,4 +114,4 @@ jobs:
         arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino --warnings=all
 
     - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      uses: github/codeql-action/analyze@v2
