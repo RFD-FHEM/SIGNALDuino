@@ -27,7 +27,7 @@ build_name = env['PIOENV']
 
 # Build versions with a point are difficult to process
 # System uses dot for file extension
-build_release = "350_dev"
+build_release = "350_"
 build_version = "v" + build_release + date
 
 # write project hex, bin, elf to nano_bootl_old_CC1101_v350_dev_20200811.hex
