@@ -1550,6 +1550,26 @@ namespace arduino {
 			}
 		}
 
+		TEST_F(Tests, muReedTripRadio)
+		{
+			// model=Hideki_30, sensor id=bb, channel=4, cnt=2, bat=ok, temp=22.7, humidity=28,
+			//hideki protocol not inverted
+			std::string dstr = "MU;P0=-1532;P1=337;P2=-5136;P3=998;P4=-333;P5=-982;P6=-10211;D=012343434343434343434343434151515153415151516343434343434343434343434343434341515151534151515163434343434343434343434343434343415151515341515151634343434343434343434343434343434151515153415151;CP=3;R=58;";
+
+			state = import_sigdata(&dstr);
+
+			DigitalSimulate(-32001); // Pause zwischen Wiederholungen
+			DigitalSimulate(1); // Letzten Pulse (Pause) hier enden lassen
+
+			// ooDecode.printOut();
+
+			int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+			int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+			std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+			std::string bstr = "MS;P1=337;P3=998;P4=-333;P5=-982;P6=-10211;D=16343434343434343434343434343434341515151534151515;CP=1;SP=6;m2;";
+			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
+		}
+
 	  //--------------------------------------------------------------------------------------------------
 	  /*
 	  TEST_F(Tests, testDigitalPinString)
