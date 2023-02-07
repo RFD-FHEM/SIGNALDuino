@@ -128,7 +128,9 @@ WiFiManager wifiManager;
   WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 #endif
 
-
+void restart(){
+  ESP.restart();	
+}
 
 void setup() {
   //char cfg_ipmode[7] = "dhcp";
@@ -159,6 +161,7 @@ void setup() {
     Server.stop();  // end telnet server
     Serial.print("WiFi lost connection. Reason: ");
     Serial.println(info.sta_er_fail_reason);
+    restart();	  
   }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
 #endif
 
@@ -291,6 +294,8 @@ IPAddress _ip, _gw, _sn;
 
 	//bool wps_successfull=false;
 Serial.println("Starting config portal with SSID: NodeDuinoConfig");
+wifiManager.setConfigPortalTimeout(60);
+wifiManager.setConfigPortalTimeoutCallback(restart);
 	/*
 	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
 
@@ -333,6 +338,7 @@ Serial.println("Starting config portal with SSID: NodeDuinoConfig");
 		}
 	}
 	*/
+wifiManager.setConnectTimeout(20);
 wifiManager.autoConnect("NodeDuinoConfig",NULL);
 
 	/*
