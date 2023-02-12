@@ -1062,13 +1062,13 @@ bool SignalDetectorClass::getClock()
 	for (uint8_t i = 0; i<patternLen; ++i) 		  // Schleife fuer Clock
 	{
 		//if (pattern[i][0]<=0 || pattern[i][0] > 3276)  continue;  // Annahme Werte <0 / >3276 sind keine Clockpulse
-		if (tstclock == -1 && (pattern[i] >= 0) && (histo[i] > messageLen*0.16))
+		if (tstclock == -1 && (pattern[i] >= 0) && (histo[i] > messageLen*0.13))
 		{
 			tstclock = i;
 			continue;
 		}
 
-		if ((pattern[i] >= 0) && (pattern[i] < pattern[tstclock]) && (histo[i] > messageLen*0.17)) {
+		if ((pattern[i] >= 0) && (pattern[i] < pattern[tstclock]) && (histo[i] > messageLen*0.13)) {
 			tstclock = i;
 		}
 	}
