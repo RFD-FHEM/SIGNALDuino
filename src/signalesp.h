@@ -8,6 +8,9 @@
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
 #define FIFO_LENGTH            200
+#define S_brand                " SIGNALESP "
+#define S_debugPrefix           " DB "
+#define S_ssidpre               "SIGNALESP"
 
 #define ETHERNET_PRINT
 #define WIFI_MANAGER_OVERRIDE_STRINGS
@@ -153,13 +156,13 @@ void setup() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.begin();  // start telnet server
     Server.setNoDelay(true);
-  }, WiFiEvent_t::SYSTEM_EVENT_STA_CONNECTED);
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STACONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.stop();  // end telnet server
     Serial.print("WiFi lost connection. Reason: ");
-    Serial.println(info.sta_er_fail_reason);
-  }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+    Serial.println(info.wps_fail_reason);
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
 #endif
 
 //ESP.wdtEnable(2000);
