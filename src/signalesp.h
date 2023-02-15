@@ -131,7 +131,9 @@ WiFiManager wifiManager;
   WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 #endif
 
-
+void restart(){
+  ESP.restart();
+}
 
 void setup() {
   //char cfg_ipmode[7] = "dhcp";
@@ -156,13 +158,14 @@ void setup() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.begin();  // start telnet server
     Server.setNoDelay(true);
-  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STACONNECTED);
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.stop();  // end telnet server
     Serial.print("WiFi lost connection. Reason: ");
     Serial.println(info.wps_fail_reason);
-  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_AP_STADISCONNECTED);
+    
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 #endif
 
 //ESP.wdtEnable(2000);
@@ -293,7 +296,9 @@ IPAddress _ip, _gw, _sn;
 	//wifiManager.setBreakAfterConfig(true); // Exit the config portal even if there is a wrong config
 
 	//bool wps_successfull=false;
-Serial.println("Starting config portal with SSID: NodeDuinoConfig");
+Serial.println("Starting config portal with SSID: SignalESP");
+wifiManager.setConfigPortalTimeout(60);
+wifiManager.setConfigPortalTimeoutCallback(restart);
 	/*
 	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
 
@@ -336,7 +341,8 @@ Serial.println("Starting config portal with SSID: NodeDuinoConfig");
 		}
 	}
 	*/
-wifiManager.autoConnect("NodeDuinoConfig",NULL);
+wifiManager.setConnectTimeout(20);
+wifiManager.autoConnect("SignalESP",NULL);
 
 	/*
 	if (shouldSaveConfig)
