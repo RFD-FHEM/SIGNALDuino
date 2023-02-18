@@ -7,8 +7,12 @@
 //#include <tchar.h>
 //#include <arduino.h>
 
+#include "Arduino.h"
+#include "Serial.h"
+
+
 #include <gtest/gtest.h>
-//#include <gmock/gmock.h>
+#include <gmock/gmock.h>
 
 
 #include <signalDecoder.h>

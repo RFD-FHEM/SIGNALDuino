@@ -194,6 +194,8 @@ namespace arduino {
 		//--------------------------------------------------------------------------------------------------
 		void Tests::SetUp()
 		{
+		    ArduinoMock* arduinoMock = arduinoMockInstance();
+
 			// Set well defined defaults
 			outputStr.clear();
 			mcdecoder.reset();
@@ -206,11 +208,13 @@ namespace arduino {
 			duration = 0;
 			state = false;
 			mcdecoder.setMinBitLen(17);
+	
 		}
 
 		//--------------------------------------------------------------------------------------------------
 		void Tests::TearDown()
 		{
+			releaseArduinoMock();
 		}
 
 		  TEST_F(Tests,testInTolerance)
@@ -258,6 +262,7 @@ namespace arduino {
 
 		  TEST_F(Tests,testCompressPattern)
 		  {
+
 			  int pulse = 500;
 
 			  DigitalSimulate(-(pulse * 10));
