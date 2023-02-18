@@ -12,7 +12,6 @@ set(CMAKE_CXX_STANDARD 11)
 if (POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
-enable_testing()
 
 set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/install)
 set(CMAKE_PREFIX_PATH ${PROJECT_SOURCE_DIR}/install/include/rapidassst-0.10.2;${PROJECT_SOURCE_DIR}/install/include/win32arduino-2.4.0)
