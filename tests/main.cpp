@@ -1,28 +1,22 @@
 // main.cpp : Defines the entry point for the console application.
 //
 
-#include "targetver.h"
-
 #include <stdio.h>
-//#include <tchar.h>
-//#include <arduino.h>
 
-#include "Arduino.h"
-#include "Serial.h"
+#include <Arduino.h>
+#include <Serial.h>
 
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-
-#include <signalDecoder.h>
-//#include <output/src/output.h>
+#include "tests.cpp"
 
 int main(int argc, char **argv)
 {
 
 
-  ::testing::GTEST_FLAG(output) = "xml:testWin32Arduino.testResults.xml";
+  ::testing::GTEST_FLAG(output) = "xml:testArduino.testResults.xml";
   ::testing::GTEST_FLAG(print_time) = true;
 
   ::testing::InitGoogleTest(&argc, argv);
@@ -33,6 +27,4 @@ int main(int argc, char **argv)
    //system("pause");
 
   return wResult; // returns 0 if all the tests are successful, or 1 otherwise
-
-
 }

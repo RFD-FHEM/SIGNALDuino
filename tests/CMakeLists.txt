@@ -33,26 +33,30 @@ FetchContent_Declare(googletest
     GIT_REPOSITORY https://github.com/google/googletest.git
     GIT_TAG release-1.10.0
     FIND_PACKAGE_ARGS NAMES GTest
-    )
+)
 
 FetchContent_Declare(arduino_mock
     GIT_REPOSITORY https://github.com/sidey79/arduino-mock.git
-    GIT_TAG sidey79-patch-2)
+    GIT_TAG sidey79-patch-2
+)
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
 FetchContent_MakeAvailable(arduino_mock googletest)
 
-file( GLOB_RECURSE ARDUINO_LIBRARY_SOURCE_FILES ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/output/src/*.h ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/output/src/*.cpp ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/bitstore/*.cpp  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/fastdelegate/src/*.cpp ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signalDecoder/src/*.cpp  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/bitstore/src/*.h  ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/fastdelegate/src/*.h ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/signalDecoder/src/*.h 
- ${PROJECT_SOURCE_DIR}/../src/commands.h 
- ${PROJECT_SOURCE_DIR}/../src/functions.h 
- ${PROJECT_SOURCE_DIR}/../src/send.h)
-file( GLOB ARDUINO_LIBRARY_TEST_FILES   ${PROJECT_SOURCE_DIR}/testSignalDecoder/tests.cpp  ${PROJECT_SOURCE_DIR}/testSignalDecoder/tests.h ${PROJECT_SOURCE_DIR}/testSignalDecoder/targetver.h )
+file( GLOB ARDUINO_LIBRARY_SOURCE_FILES
+    ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/*/src/*.h
+    ${PROJECT_SOURCE_DIR}/../src/_micro-api/libraries/*/src/*.cpp
+)
+
+
+#message("ARDUINO_LIBRARY_SOURCE_FILES: ${ARDUINO_LIBRARY_SOURCE_FILES}")
+#message("ARDUINO_LIBRARY_SOURCE_DIRS: ${ARDUINO_LIBRARY_SOURCE_DIRS}")
+
 
 # Adding the software and main test file as an executable
 add_executable(TestProject
   ${ARDUINO_LIBRARY_SOURCE_FILES}
-  ${ARDUINO_LIBRARY_TEST_FILES}
-  ${PROJECT_SOURCE_DIR}/testSignalDecoder/main.cpp
+  ${PROJECT_SOURCE_DIR}/main.cpp
 )
 # Link all libraries
 target_link_libraries(TestProject
