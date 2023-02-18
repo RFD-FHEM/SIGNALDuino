@@ -958,8 +958,6 @@ void SignalDetectorClass::printOut()
 		DBG_PRINT(']');
 	}
 	DBG_PRINTLN();
-#else
-	delay(0);
 #endif
 }
 

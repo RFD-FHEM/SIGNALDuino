@@ -194,9 +194,6 @@ namespace arduino {
 		//--------------------------------------------------------------------------------------------------
 		void Tests::SetUp()
 		{
-		    ArduinoMock* arduinoMock = arduinoMockInstance();
-
-			// Set well defined defaults
 			outputStr.clear();
 			mcdecoder.reset();
 			ooDecode.reset();
@@ -214,7 +211,6 @@ namespace arduino {
 		//--------------------------------------------------------------------------------------------------
 		void Tests::TearDown()
 		{
-			releaseArduinoMock();
 		}
 
 		  TEST_F(Tests,testInTolerance)
@@ -1401,10 +1397,10 @@ namespace arduino {
 			ooDecode.printOut();
 			ASSERT_FALSE(mcdecoder.isManchester());
 
+
 			ASSERT_TRUE(mcdecoder.doDecode());
 			//ASSERT_FALSE(mcdecoder.isManchester());
 			ASSERT_FALSE(state);
-
 		}
 		
 		TEST_F(Tests, msHeidemann)
