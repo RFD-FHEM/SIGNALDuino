@@ -211,7 +211,6 @@ namespace arduino {
 		//--------------------------------------------------------------------------------------------------
 		void Tests::TearDown()
 		{
-			releaseArduinoMock();
 		}
 
 		  TEST_F(Tests,testInTolerance)
