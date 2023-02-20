@@ -23,7 +23,7 @@
 #include "compile_config.h"
 
 void serialEvent();
-void ICACHE_RAM_ATTR cronjob(void *pArg);
+void IRAM_ATTR cronjob(void *pArg);
 int freeRam();
 inline void ethernetEvent();
 //unsigned long getUptime();
@@ -32,7 +32,7 @@ inline void ethernetEvent();
 //void initEEPROM(void);
 uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
-void ICACHE_RAM_ATTR sosBlink(void *pArg);
+void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
   extern "C" {
@@ -112,7 +112,7 @@ const char boot_sequence[] = "00010100111";
 
 
 
-void ICACHE_RAM_ATTR sosBlink (void *pArg) {
+void IRAM_ATTR sosBlink (void *pArg) {
   static uint8_t pos = 0;
   const char* pChar;
   pChar = (const char*)pArg;      //OK in both C and C++
@@ -443,7 +443,7 @@ digitalLow(PIN_LED);
 
 
 
-void ICACHE_RAM_ATTR cronjob(void *pArg) {
+void IRAM_ATTR cronjob(void *pArg) {
   cli();
   static uint8_t cnt = 0;
 

@@ -26,7 +26,7 @@
 
 
   #if !defined(ESP8266) && !defined(ESP32)
-    #define ICACHE_RAM_ATTR 
+    #define IRAM_ATTR 
   #else
     #ifdef ESP8266
       extern os_timer_t cronTimer;
@@ -39,7 +39,7 @@
 
 
 //========================= Pulseauswertung ================================================
-void ICACHE_RAM_ATTR handleInterrupt() {
+void IRAM_ATTR handleInterrupt() {
   #ifdef ARDUINO_MAPLEMINI_F103CB
     noInterrupts();
   #elif ESP32
