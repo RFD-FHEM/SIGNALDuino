@@ -297,7 +297,7 @@ IPAddress _ip, _gw, _sn;
 
 	//bool wps_successfull=false;
 Serial.println("Starting config portal with SSID: SignalESP");
-wifiManager.setConfigPortalTimeout(60);
+wifiManager.setConfigPortalTimeout(120);
 wifiManager.setConfigPortalTimeoutCallback(restart);
 	/*
 	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
@@ -341,7 +341,7 @@ wifiManager.setConfigPortalTimeoutCallback(restart);
 		}
 	}
 	*/
-wifiManager.setConnectTimeout(20);
+wifiManager.setConnectTimeout(60);
 wifiManager.autoConnect("SignalESP",NULL);
 
 	/*
