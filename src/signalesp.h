@@ -342,6 +342,7 @@ wifiManager.setConfigPortalTimeoutCallback(restart);
 	}
 	*/
 wifiManager.setConnectTimeout(60);
+
 wifiManager.autoConnect("SignalESP",NULL);
 
 	/*
@@ -568,7 +569,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 
 #else
 
-  while (!serverClient.available()) {
+  while (!serverClient.accept()) {
     yield();
     if (!serverClient.connected()) return 0;
   }
@@ -590,12 +591,12 @@ inline void ethernetEvent()
   if (Server.hasClient()) {
     if (!serverClient || !serverClient.connected()) {
       if (serverClient) serverClient.stop();
-      serverClient = Server.available();
+      serverClient = Server.accept();
       serverClient.flush();
       //DBG_PRINTLN("New client: ");
       //DBG_PRINTLN(serverClient.remoteIP());
     } else {
-      WiFiClient rejectClient = Server.available();
+      WiFiClient rejectClient = Server.accept();
       rejectClient.stop();
       //DBG_PRINTLN("Reject new Client: ");
       //DBG_PRINTLN(rejectClient.remoteIP());
