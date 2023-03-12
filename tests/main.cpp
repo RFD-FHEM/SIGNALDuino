@@ -3,14 +3,20 @@
 
 #include <stdio.h>
 
-#include <Arduino.h>
-#include <Serial.h>
+#include <arduino-mock/Arduino.h>
+#include "arduino-mock/Serial.h"
 
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+char IB_1[14]; // Input Buffer one - capture commands
+void disableReceive() {} ;
+void enableReceive() {} ;
+
+
 #include "tests.cpp"
+#include "test_send.cpp"
 
 int main(int argc, char **argv)
 {

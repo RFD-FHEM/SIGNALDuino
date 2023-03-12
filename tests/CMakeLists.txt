@@ -37,7 +37,7 @@ FetchContent_Declare(googletest
 
 FetchContent_Declare(arduino_mock
     GIT_REPOSITORY https://github.com/sidey79/arduino-mock.git
-    GIT_TAG sidey79-patch-2
+    GIT_TAG sidey79-patch-3
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
@@ -49,8 +49,10 @@ file( GLOB ARDUINO_LIBRARY_SOURCE_FILES
 )
 
 
-#message("ARDUINO_LIBRARY_SOURCE_FILES: ${ARDUINO_LIBRARY_SOURCE_FILES}")
-#message("ARDUINO_LIBRARY_SOURCE_DIRS: ${ARDUINO_LIBRARY_SOURCE_DIRS}")
+message("ARDUINO_LIBRARY_SOURCE_FILES: ${ARDUINO_LIBRARY_SOURCE_FILES}")
+message("ARDUINO_LIBRARY_SOURCE_DIRS: ${ARDUINO_LIBRARY_SOURCE_DIRS}")
+message("ARDUINO_MOCK_SOURCE_DIR: ${arduino_mock_SOURCE_DIR}")
+
 
 
 # Adding the software and main test file as an executable
@@ -65,13 +67,23 @@ target_link_libraries(TestProject
     ${CMAKE_THREAD_LIBS_INIT}
 )
 
+target_include_directories(TestProject PUBLIC 
+    ${arduino_mock_SOURCE_DIR}/include
+    ${googletest_SOURCE_DIR}/googletest/include
+    ${googletest_SOURCE_DIR}/googlemock/include
+)
+
 include(GoogleTest)
 
 # (Optional) Setting up the compiler
 #target_compile_features(TestProject PUBLIC cxx_std_11)
 #set_target_properties(TestProject PROPERTIES CXX_EXTENSIONS OFF)
 
+
 include_directories(
+    ${googletest_SOURCE_DIR}/googletest/include
+    ${googletest_SOURCE_DIR}/googlemock/include
+    ${arduino_mock_SOURCE_DIR}/include
     ../src/
     ../src/_micro-api/libraries/output/src/
     ../src/_micro-api/libraries/output/src/
@@ -81,6 +93,7 @@ include_directories(
     ../src/_micro-api/libraries/bitstore/src/
     ../src/_micro-api/libraries/fastdelegate/src/
     ../src/_micro-api/libraries/signalDecoder/src/
+    ../src/_micro-api/libraries/SimpleFIFO/src/
 )
 
 enable_testing()

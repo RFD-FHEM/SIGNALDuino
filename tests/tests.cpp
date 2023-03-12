@@ -55,13 +55,14 @@
 
 #include "tests.h"
 #include <string>
-#include <Arduino.h>
+#include "arduino-mock/Arduino.h"
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
 #define NOSTRING
 #endif
 
 #include <signalDecoder.h>
+
 
 namespace arduino { 
 	namespace test
