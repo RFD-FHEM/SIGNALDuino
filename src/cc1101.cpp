@@ -577,6 +577,9 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 		if (fifoBytes > 0) {
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
+      		
+			// My own special debug setting
+			int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
 
 /*
  * !!! for DEVELOPMENT and DEBUG only !!!
@@ -590,7 +593,6 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
       #endif
  * 
  */
-
 			if (fifoBytes < 0x80) {                // RXoverflow?
 				if (fifoBytes > ccMaxBuf) {
 					fifoBytes = ccMaxBuf;
@@ -605,8 +607,10 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					for (uint8_t i = 0; i < fifoBytes; i++) {
 						MSG_PRINTtoHEX(ccBuf[i]);
 					}
+					
+					// My own special debug setting
 
-/*
+/* 
  * !!! for DEVELOPMENT and DEBUG only !!!
  * 
           #ifdef DEBUG
@@ -621,6 +625,9 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
+					MSG_PRINT(';');
+					MSG_PRINT(F(";A="));
+					MSG_PRINTtoHEX(freqErr);
 					MSG_PRINT(';');
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
