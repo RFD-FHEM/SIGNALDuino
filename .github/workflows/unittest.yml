@@ -12,18 +12,15 @@ jobs:
         with: 
           submodules: true
       - name: prepare env
-        run: >
+        run: |
           echo "TRAVIS_BUILD_DIR=$PWD" >> $GITHUB_ENV
-
-          echo "CMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/tests/install" >>
-          $GITHUB_ENV
-
+          echo "CMAKE_PREFIX_PATH=$PWD/tests/install" >> $GITHUB_ENV
           echo "GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest" >> $GITHUB_ENV
 
       - name: Install tools
         run: |
           echo "::group::googletest"
-          export CMAKE_PREFIX_PATH=$TRAVIS_BUILD_DIR/tests/install
+          export CMAKE_PREFIX_PATH=$PWD/tests/install
           cd $GITHUB_WORKSPACE/tests/ci
           export GTEST_ROOT=$CMAKE_PREFIX_PATH/googletest
           ./install_googletest.sh
@@ -132,9 +129,9 @@ jobs:
         run: |
           export COMPILE_OUTPUT=$(arduino-cli compile --fqbn ${{ matrix.fqbn }} --build-property="compiler.cpp.extra_flags=${{ matrix.compilerflag }}" ${{ matrix.boardurl }} --build-property="${{ matrix.build_param1 }}" --output-dir=$GITHUB_WORKSPACE $GITHUB_WORKSPACE/src/arduino-ide/SIGNALDuino/SIGNALDuino.ino)
           echo "$COMPILE_OUTPUT"
-          echo "::set-output name=fileext::$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")"
-          echo "::set-output name=skechsize::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")"         
-          echo "::set-output name=globalramusage::$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Global variables use )\d+")"
+          echo "fileext=$(test -f $GITHUB_WORKSPACE/SIGNALDuino.ino.bin && echo "bin" || echo "hex")" >> $GITHUB_OUTPUT
+          echo "skechsize=$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Sketch uses )\d+")" >> $GITHUB_OUTPUT
+          echo "globalramusage=$(echo "$COMPILE_OUTPUT" | grep -Po "(?<=^Global variables use )\d+")" >> $GITHUB_OUTPUT
 
       - name: Get flash and ram usage
         id: compile_sizes
