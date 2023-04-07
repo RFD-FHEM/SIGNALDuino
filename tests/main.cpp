@@ -9,14 +9,34 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+// #include <ctype.h>
 
 char IB_1[14]; // Input Buffer one - capture commands
-void disableReceive() {} ;
-void enableReceive() {} ;
+void disableReceive();
+void enableReceive();
+int freeRam() { return 100; };
+void cli() {};
+void sei() {};
 
+bool hasCC1101=true;
+volatile unsigned long lastTime=0;
+volatile bool blinkLED=false;
+
+bool isDigit(int8_t value)
+{
+  bool digit = value >= '0' && value <= '9';
+  return digit;
+}
+
+bool isHexadecimalDigit(int8_t value)
+{
+  return  isdigit(value) ||
+          (value >= 'a' && value <= 'f') ||
+          (value >= 'A' && value <= 'F') ;
+}
 
 #include "tests.cpp"
-//#include "test_send.cpp"
+#include "test_serialCommand.cpp"
 
 int main(int argc, char **argv)
 {
