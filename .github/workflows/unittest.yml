@@ -151,7 +151,7 @@ jobs:
           body-includes: ${{ github.sha }}
       
       - name: Create comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }} && "! github.event.pull_request.head.repo.fork " 
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }} && {{ github.event.pull_request.head.repo.fork == false }} 
 
         uses: peter-evans/create-or-update-comment@v2
         with:
@@ -163,7 +163,7 @@ jobs:
             | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Update comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }} && "! github.event.pull_request.head.repo.fork " 
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }} && {{ github.event.pull_request.head.repo.fork == false }} 
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
