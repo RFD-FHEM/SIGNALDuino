@@ -80,24 +80,24 @@ jobs:
             fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
           - BOARD: ESP32
             RECEIVER: cc1101
-            arduino-platform: 'esp32:esp32'
+            arduino-platform: 'esp32:esp32@6.0.1'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP32
             RECEIVER: ""
-            arduino-platform: 'esp32:esp32'
+            arduino-platform: 'esp32:esp32@6.0.1'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
             boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
           - BOARD: ESP8266
             RECEIVER: cc1101
-            arduino-platform: 'esp8266:esp8266@2.6.3'
+            arduino-platform: 'esp8266:esp8266@4.2.0'
             fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: ESP8266
             RECEIVER: ""
-            arduino-platform: 'esp8266:esp8266@2.6.3'
+            arduino-platform: 'esp8266:esp8266@4.2.0'
             fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: MAPLEMINI_F103CB
