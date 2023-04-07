@@ -580,10 +580,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   return serverClient.write(buf, len);
   //serverClient.write("test");
 #endif
-
 }
-
-
 
 inline void ethernetEvent()
 {
