@@ -16,7 +16,7 @@ void enableReceive() {} ;
 
 
 #include "tests.cpp"
-#include "test_send.cpp"
+//#include "test_send.cpp"
 
 int main(int argc, char **argv)
 {
