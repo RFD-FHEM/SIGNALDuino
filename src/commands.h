@@ -330,39 +330,39 @@ namespace commands {
 
 				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
 
-				if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
-					DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
+					if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
+						DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
 
-					reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
-					// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
-					// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
-					if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
-						val = 0x56;          // FREND1 = 0x56
-					}
-					else {
-						val = 0xB6;         // FREND1 = 0xB6
-					}
-					EEPROM.write(reg, val);
-					if (hasCC1101) {
-						cc1101::writeCCreg(reg, val);
-					}
-					reg = 0x03 + 2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
-					memcpy(b, &IB_1[3], 2);
-					val = strtol(b, nullptr, 16);
-					// RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
-					// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
-					if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
-						val = 0x47;          // FIFOTHR = 0x47
-					}
-					else {
-						val = 0x07;           // FIFOTHR = 0x07
-					}
-					EEPROM.write(reg, val);
-					if (hasCC1101) {
-						cc1101::writeCCreg(reg, val);
+						reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
+						// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
+						// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
+						if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
+							val = 0x56;          // FREND1 = 0x56
+						}
+						else {
+							val = 0xB6;         // FREND1 = 0xB6
+						}
+						EEPROM.write(reg, val);
+						if (hasCC1101) {
+							cc1101::writeCCreg(reg, val);
+						}
+						reg = 0x03 + 2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
+						memcpy(b, &IB_1[3], 2);
+						val = strtol(b, nullptr, 16);
+						// RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
+						// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
+						if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
+							val = 0x47;          // FIFOTHR = 0x47
+						}
+						else {
+							val = 0x07;           // FIFOTHR = 0x07
+						}
+						EEPROM.write(reg, val);
+						if (hasCC1101) {
+							cc1101::writeCCreg(reg, val);
+						}
 					}
 				}
-			}
 #endif
 			}
 #if defined(ESP32) || defined(ESP8266)
