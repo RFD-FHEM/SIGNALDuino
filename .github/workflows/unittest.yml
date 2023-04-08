@@ -64,7 +64,7 @@ jobs:
             fqbn: 'arduino:avr:nano:cpu=atmega328'
           - BOARD: radino
             RECEIVER: cc1101
-            arduino-platform: 'arduino:avr In-Circuit:avr'
+            arduino-platform: 'In-Circuit:avr'
             fqbn: 'In-Circuit:avr:radinoCC1101'
             boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
             compilerflag: \"-DARDUINO_RADINOCC1101=1\"
