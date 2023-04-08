@@ -21,7 +21,7 @@ runs:
       shell: bash
     - name: install pyserial
       run: |
-        if [[ "${{ inputs.plattform }}"" == "esp32:esp32"* ]]
+        if [[ "${{ inputs.plattform }}" == "esp32:esp32"* ]]
         then
           pip install pyserial
         fi;
