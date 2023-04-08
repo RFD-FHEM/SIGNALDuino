@@ -64,7 +64,7 @@ jobs:
             fqbn: 'arduino:avr:nano:cpu=atmega328'
           - BOARD: radino
             RECEIVER: cc1101
-            arduino-platform: 'In-Circuit:avr'
+            arduino-platform: 'arduino:avr In-Circuit:avr'
             fqbn: 'In-Circuit:avr:radinoCC1101'
             boardurl: '--additional-urls=http://library.radino.cc/Arduino_1_8/package_radino_radino32_index.json'
             compilerflag: \"-DARDUINO_RADINOCC1101=1\"
@@ -151,7 +151,7 @@ jobs:
           body-includes: ${{ github.sha }}
       
       - name: Create comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0  && github.event.pull_request.head.repo.fork == false }} 
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0  && github.event.pull_request.head.repo.fork == false }}
 
         uses: peter-evans/create-or-update-comment@v2
         with:
@@ -163,7 +163,7 @@ jobs:
             | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Update comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 && github.event.pull_request.head.repo.fork == false }} 
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 && github.event.pull_request.head.repo.fork == false }}
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
