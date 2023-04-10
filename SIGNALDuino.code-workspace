@@ -1,0 +1,114 @@
+{
+    "settings": {
+        "editor.tokenColorCustomizations": {
+            "textMateRules": [
+                {
+                    "scope": "googletest.failed",
+                    "settings": {
+                        "foreground": "#f00"
+                    }
+                },
+                {
+                    "scope": "googletest.passed",
+                    "settings": {
+                        "foreground": "#0f0"
+                    }
+                },
+                {
+                    "scope": "googletest.run",
+                    "settings": {
+                        "foreground": "#0f0"
+                    }
+                }
+            ]
+        },
+        "files.associations": {
+            "xstring": "cpp",
+            "bitset": "cpp",
+            "sstream": "cpp",
+            "limits": "cpp",
+            "istream": "cpp",
+            "*.tcc": "cpp",
+            "iosfwd": "cpp",
+            "xlocale": "cpp",
+            "string_view": "cpp",
+            "array": "cpp",
+            "deque": "cpp",
+            "initializer_list": "cpp",
+            "list": "cpp",
+            "queue": "cpp",
+            "random": "cpp",
+            "type_traits": "cpp",
+            "vector": "cpp",
+            "xhash": "cpp",
+            "xtree": "cpp",
+            "xutility": "cpp",
+            "utility": "cpp",
+            "ostream": "cpp",
+            "algorithm": "cpp",
+            "atomic": "cpp",
+            "cctype": "cpp",
+            "chrono": "cpp",
+            "clocale": "cpp",
+            "cmath": "cpp",
+            "condition_variable": "cpp",
+            "cstdarg": "cpp",
+            "cstddef": "cpp",
+            "cstdint": "cpp",
+            "cstdio": "cpp",
+            "cstdlib": "cpp",
+            "cstring": "cpp",
+            "ctime": "cpp",
+            "cwchar": "cpp",
+            "cwctype": "cpp",
+            "exception": "cpp",
+            "forward_list": "cpp",
+            "fstream": "cpp",
+            "functional": "cpp",
+            "iomanip": "cpp",
+            "ios": "cpp",
+            "iostream": "cpp",
+            "iterator": "cpp",
+            "locale": "cpp",
+            "map": "cpp",
+            "memory": "cpp",
+            "mutex": "cpp",
+            "new": "cpp",
+            "numeric": "cpp",
+            "optional": "cpp",
+            "ratio": "cpp",
+            "set": "cpp",
+            "shared_mutex": "cpp",
+            "stdexcept": "cpp",
+            "streambuf": "cpp",
+            "string": "cpp",
+            "system_error": "cpp",
+            "thread": "cpp",
+            "tuple": "cpp",
+            "typeinfo": "cpp",
+            "unordered_map": "cpp",
+            "unordered_set": "cpp",
+            "xfacet": "cpp",
+            "xiosbase": "cpp",
+            "xlocbuf": "cpp",
+            "xlocinfo": "cpp",
+            "xlocmes": "cpp",
+            "xlocmon": "cpp",
+            "xlocnum": "cpp",
+            "xloctime": "cpp",
+            "xmemory": "cpp",
+            "xmemory0": "cpp",
+            "xstddef": "cpp",
+            "xtr1common": "cpp",
+            "cinttypes": "cpp"
+        }
+    },
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "tests"
+        }
+    ]
+}
