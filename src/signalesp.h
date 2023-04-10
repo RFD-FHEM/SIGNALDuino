@@ -8,6 +8,9 @@
 #define VERSION_2              0x1d
 #define BAUDRATE               115200
 #define FIFO_LENGTH            200
+#define S_brand                " SIGNALESP "
+#define S_debugPrefix           " DB "
+#define S_ssidpre               "SIGNALESP"
 
 #define ETHERNET_PRINT
 #define WIFI_MANAGER_OVERRIDE_STRINGS
@@ -20,7 +23,7 @@
 #include "compile_config.h"
 
 void serialEvent();
-void ICACHE_RAM_ATTR cronjob(void *pArg);
+void IRAM_ATTR cronjob(void *pArg);
 int freeRam();
 inline void ethernetEvent();
 //unsigned long getUptime();
@@ -29,7 +32,7 @@ inline void ethernetEvent();
 //void initEEPROM(void);
 uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
-void ICACHE_RAM_ATTR sosBlink(void *pArg);
+void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
   extern "C" {
@@ -109,7 +112,7 @@ const char boot_sequence[] = "00010100111";
 
 
 
-void ICACHE_RAM_ATTR sosBlink (void *pArg) {
+void IRAM_ATTR sosBlink (void *pArg) {
   static uint8_t pos = 0;
   const char* pChar;
   pChar = (const char*)pArg;      //OK in both C and C++
@@ -128,7 +131,9 @@ WiFiManager wifiManager;
   WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 #endif
 
-
+void restart(){
+  ESP.restart();
+}
 
 void setup() {
   //char cfg_ipmode[7] = "dhcp";
@@ -153,13 +158,14 @@ void setup() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.begin();  // start telnet server
     Server.setNoDelay(true);
-  }, WiFiEvent_t::SYSTEM_EVENT_STA_CONNECTED);
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.stop();  // end telnet server
     Serial.print("WiFi lost connection. Reason: ");
-    Serial.println(info.sta_er_fail_reason);
-  }, WiFiEvent_t::SYSTEM_EVENT_STA_DISCONNECTED);
+    Serial.println(info.wps_fail_reason);
+    
+  }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 #endif
 
 //ESP.wdtEnable(2000);
@@ -290,7 +296,9 @@ IPAddress _ip, _gw, _sn;
 	//wifiManager.setBreakAfterConfig(true); // Exit the config portal even if there is a wrong config
 
 	//bool wps_successfull=false;
-Serial.println("Starting config portal with SSID: NodeDuinoConfig");
+Serial.println("Starting config portal with SSID: SignalESP");
+wifiManager.setConfigPortalTimeout(120);
+wifiManager.setConfigPortalTimeoutCallback(restart);
 	/*
 	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
 
@@ -333,7 +341,9 @@ Serial.println("Starting config portal with SSID: NodeDuinoConfig");
 		}
 	}
 	*/
-wifiManager.autoConnect("NodeDuinoConfig",NULL);
+wifiManager.setConnectTimeout(60);
+
+wifiManager.autoConnect("SignalESP",NULL);
 
 	/*
 	if (shouldSaveConfig)
@@ -434,7 +444,7 @@ digitalLow(PIN_LED);
 
 
 
-void ICACHE_RAM_ATTR cronjob(void *pArg) {
+void IRAM_ATTR cronjob(void *pArg) {
   cli();
   static uint8_t cnt = 0;
 
@@ -559,7 +569,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
 
 #else
 
-  while (!serverClient.available()) {
+  while (!serverClient.accept()) {
     yield();
     if (!serverClient.connected()) return 0;
   }
@@ -570,10 +580,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   return serverClient.write(buf, len);
   //serverClient.write("test");
 #endif
-
 }
-
-
 
 inline void ethernetEvent()
 {
@@ -581,12 +588,12 @@ inline void ethernetEvent()
   if (Server.hasClient()) {
     if (!serverClient || !serverClient.connected()) {
       if (serverClient) serverClient.stop();
-      serverClient = Server.available();
+      serverClient = Server.accept();
       serverClient.flush();
       //DBG_PRINTLN("New client: ");
       //DBG_PRINTLN(serverClient.remoteIP());
     } else {
-      WiFiClient rejectClient = Server.available();
+      WiFiClient rejectClient = Server.accept();
       rejectClient.stop();
       //DBG_PRINTLN("Reject new Client: ");
       //DBG_PRINTLN(rejectClient.remoteIP());

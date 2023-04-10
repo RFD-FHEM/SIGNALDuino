@@ -77,24 +77,24 @@ jobs:
             fqbn: 'arduino:avr:pro:cpu=8MHzatmega328'
           - BOARD: ESP32
             RECEIVER: cc1101
-            arduino-platform: 'esp32:esp32'
+            arduino-platform: 'esp32:esp32@2.0.7'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
-            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
+            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
           - BOARD: ESP32
             RECEIVER: ""
-            arduino-platform: 'esp32:esp32'
+            arduino-platform: 'esp32:esp32@2.0.7'
             fqbn: 'esp32:esp32:esp32:FlashMode=qio,FlashFreq=80'
-            boardurl: '--additional-urls=https://dl.espressif.com/dl/package_esp32_index.json'
+            boardurl: '--additional-urls=https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json'
           - BOARD: ESP8266
             RECEIVER: cc1101
-            arduino-platform: 'esp8266:esp8266@2.6.3'
+            arduino-platform: 'esp8266:esp8266@3.1.2'
             fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             compilerflag: \"-DOTHER_BOARD_WITH_CC1101=1\"
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: ESP8266
             RECEIVER: ""
-            arduino-platform: 'esp8266:esp8266@2.6.3'
+            arduino-platform: 'esp8266:esp8266@3.1.2'
             fqbn: 'esp8266:esp8266:generic:xtal=80,eesz=1M64,FlashMode=qio,FlashFreq=40'
             boardurl: '--additional-urls=http://arduino.esp8266.com/stable/package_esp8266com_index.json'
           - BOARD: MAPLEMINI_F103CB
@@ -148,7 +148,8 @@ jobs:
           body-includes: ${{ github.sha }}
       
       - name: Create comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0 }}
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id == 0  && github.event.pull_request.head.repo.fork == false }}
+
         uses: peter-evans/create-or-update-comment@v2
         with:
           issue-number: ${{ github.event.pull_request.number }}
@@ -159,7 +160,7 @@ jobs:
             | ${{ matrix.BOARD }}${{ matrix.RECEIVER }} | ${{ steps.compile_sketch.outputs.skechsize }} bytes | ${{ steps.compile_sketch.outputs.globalramusage }} bytes |
 
       - name: Update comment
-        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 }}
+        if: ${{ github.event.pull_request.number > 0 && steps.fc.outputs.comment-id != 0 && github.event.pull_request.head.repo.fork == false }}
         uses: peter-evans/create-or-update-comment@v2
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
