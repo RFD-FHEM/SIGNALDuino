@@ -1,7 +1,6 @@
 [submodule "src/_micro-api/libraries/WIFIManager"]
 	path = src/_micro-api/libraries/WIFIManager
 	url = https://github.com/tzapu/WiFiManager.git
-	branch = ota
 [submodule "src/_micro-api/libraries/ArduinoJson"]
 	path = src/_micro-api/libraries/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson.git

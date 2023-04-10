@@ -26,7 +26,7 @@
 
 
   #if !defined(ESP8266) && !defined(ESP32)
-    #define ICACHE_RAM_ATTR 
+    #define IRAM_ATTR 
   #else
     #ifdef ESP8266
       extern os_timer_t cronTimer;
@@ -39,9 +39,12 @@
 
 
 //========================= Pulseauswertung ================================================
-void ICACHE_RAM_ATTR handleInterrupt() {
+void IRAM_ATTR handleInterrupt() {
   #ifdef ARDUINO_MAPLEMINI_F103CB
     noInterrupts();
+  #elif ESP32
+    portMUX_TYPE mutex = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL(&mutex);
   #else
     cli();
   #endif
@@ -63,6 +66,8 @@ void ICACHE_RAM_ATTR handleInterrupt() {
   } // else => trash
   #ifdef ARDUINO_MAPLEMINI_F103CB
     interrupts();
+  #elif ESP32
+    portEXIT_CRITICAL(&mutex);
   #else
     sei();
   #endif
