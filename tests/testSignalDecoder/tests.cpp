@@ -194,7 +194,6 @@ namespace arduino {
 		//--------------------------------------------------------------------------------------------------
 		void Tests::SetUp()
 		{
-			// Set well defined defaults
 			outputStr.clear();
 			mcdecoder.reset();
 			ooDecode.reset();
@@ -206,6 +205,7 @@ namespace arduino {
 			duration = 0;
 			state = false;
 			mcdecoder.setMinBitLen(17);
+	
 		}
 
 		//--------------------------------------------------------------------------------------------------
@@ -258,6 +258,7 @@ namespace arduino {
 
 		  TEST_F(Tests,testCompressPattern)
 		  {
+
 			  int pulse = 500;
 
 			  DigitalSimulate(-(pulse * 10));
@@ -1396,10 +1397,10 @@ namespace arduino {
 			ooDecode.printOut();
 			ASSERT_FALSE(mcdecoder.isManchester());
 
+
 			ASSERT_TRUE(mcdecoder.doDecode());
 			//ASSERT_FALSE(mcdecoder.isManchester());
 			ASSERT_FALSE(state);
-
 		}
 		
 		TEST_F(Tests, msHeidemann)
@@ -1549,6 +1550,44 @@ namespace arduino {
 				outputStr = "";
 			}
 		}
+
+		TEST_F(Tests, muReedTripRadio1)
+		{
+			std::string dstr = "MU;P0=-1532;P1=337;P2=-5136;P3=998;P4=-333;P5=-982;P6=-10211;D=012343434343434343434343434151515153415151516343434343434343434343434343434341515151534151515163434343434343434343434343434343415151515341515151634343434343434343434343434343434151515153415151;CP=3;R=58;";
+
+			state = import_sigdata(&dstr);
+
+			DigitalSimulate(-32001); // Pause zwischen Wiederholungen
+			DigitalSimulate(1); // Letzten Pulse (Pause) hier enden lassen
+
+			// ooDecode.printOut();
+
+			int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+			int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+			std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+			std::string bstr = "MS;P1=337;P3=998;P4=-333;P5=-982;P6=-10211;D=16343434343434343434343434343434341515151534151515;CP=1;SP=6;m2;";
+			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
+		}
+
+		TEST_F(Tests, muReedTripRadio2)
+		{
+			std::string dstr = "MU;P0=-20560;P1=988;P2=-342;P3=335;P4=-1007;P5=-10281;D=012121212121212121212121212121212343434341234123435121212121212121212121212121212123434343412341234351212121212121212121212121212121234343434123412343512121212121212121212121212121212343434341234123;CP=1;R=47;";
+
+			state = import_sigdata(&dstr);
+
+			DigitalSimulate(1); // Letzten Pulse (Pause) hier enden lassen
+			DigitalSimulate(-32001); // Pause zwischen Wiederholungen
+			
+
+			// ooDecode.printOut();
+
+			int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+			int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+			std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+			std::string bstr = "MS;P1=988;P2=-342;P3=335;P4=-1007;P5=-10281;D=35121212121212121212121212121212123434343412341234;CP=3;SP=5;m2;";
+			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
+		}
+		
 
 	  //--------------------------------------------------------------------------------------------------
 	  /*
