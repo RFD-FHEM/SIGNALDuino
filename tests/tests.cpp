@@ -55,13 +55,14 @@
 
 #include "tests.h"
 #include <string>
-#include "Arduino.h"
+#include "arduino-mock/Arduino.h"
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
 #define NOSTRING
 #endif
 
-#include "signalDecoder.h"
+#include <signalDecoder.h>
+
 
 namespace arduino { 
 	namespace test
@@ -595,7 +596,7 @@ namespace arduino {
 
 			result = mcdecoder.doDecode();
 			ASSERT_TRUE(result);
-			std::cout << outputStr;
+			// std::cout << outputStr;
 
 			ASSERT_EQ(mcdecoder.ManchesterBits.bytecount, 21);
 
@@ -606,7 +607,7 @@ namespace arduino {
 			mcStr.clear();
 
 			//char lstr[10];
-			std::cout << geFullMCString();
+			// std::cout << geFullMCString();
 
 
 			sprintf(lstr, "%d", mcdecoder.ManchesterBits.valcount);
@@ -644,7 +645,7 @@ namespace arduino {
 			  ASSERT_TRUE(mcdecoder.isManchester());
 			  bool result = mcdecoder.doDecode();
 			  ASSERT_TRUE(result);
-			  std::cout << outputStr;
+			  // std::cout << outputStr;
 
 			  ASSERT_EQ(mcdecoder.ManchesterBits.bytecount, 19);
 
@@ -675,11 +676,11 @@ namespace arduino {
 
 			  result = mcdecoder.doDecode();
 			  ASSERT_TRUE(result);
-			  std::cout << outputStr;
+			  // std::cout << outputStr;
 
 			  ASSERT_EQ(mcdecoder.ManchesterBits.bytecount, 21);
 
-			  std::cout << geFullMCString();
+			  //std::cout << geFullMCString();
 			  mcStr = mcdecoder.getMessageHexStr();
 			  ASSERT_STREQ(mcStr.c_str(), fpDataHex.c_str());
 			  mcStr.clear();
@@ -713,7 +714,7 @@ namespace arduino {
 
 			  bool result = mcdecoder.doDecode();
 			  ASSERT_TRUE(result);
-			  std::cout << outputStr;
+			  //std::cout << outputStr;
 
 			  ASSERT_EQ(mcdecoder.ManchesterBits.bytecount, 19);
 
@@ -757,7 +758,7 @@ namespace arduino {
 
 			  result = mcdecoder.doDecode();
 			  ASSERT_TRUE(result);
-			  std::cout << outputStr;
+			  //std::cout << outputStr;
 
 			  ASSERT_EQ(mcdecoder.ManchesterBits.bytecount, 21);
 
@@ -766,7 +767,7 @@ namespace arduino {
 			  base = "55555555334B2D4D52CCD2CAAAD2CB4AAAD352ACCD0";
 			  ASSERT_STREQ(mcStr.c_str(), base.c_str());
 			  mcStr.clear();
-			  std::cout << geFullMCString();
+			  //std::cout << geFullMCString();
 
 			  //char lstr[10];
 
@@ -804,7 +805,7 @@ namespace arduino {
 			  ASSERT_STREQ(mcStr.c_str(), refMCstr.c_str());
 		
 
-			  std::cout << geFullMCString();
+			  // std::cout << geFullMCString();
 		  }
 
 
@@ -1008,7 +1009,7 @@ namespace arduino {
 		{
 			std::string dstr2 = "MU;P0=-623;P1=231;P2=599;P3=-243;P4=-839;P5=857;D=01023102310102310145454541023102323232310102310101010102323101010232323231023232310102310101023102310102310101010102323101010232323231023232310102310101023102310102310545454541023102323232310102310101010102323101010232323231023232310102310101023102310102;";
 			state =  import_sigdata(&dstr2, false);
-			std::cout << outputStr << "\n";
+			// std::cout << outputStr << "\n";
 
 			ASSERT_EQ(254,ooDecode.messageLen);
 			ooDecode.calcHisto();
@@ -1023,7 +1024,7 @@ namespace arduino {
 		{
 			std::string dstr2 = "MU;P0=-251;P1=231;P2=-613;P3=840;P4=-858;P5=607;D=01234343434125012505052501212121212505012105012121250505050125050125050125012125050125050501234343434125012505052501212121212505012121250505050125050125050125012125050125050501234343434125012505050501212501212121212505012121250505050125050125050125012125;";
 			state =  import_sigdata(&dstr2, false);
-			std::cout << outputStr << "\n";
+			// std::cout << outputStr << "\n";
 
 			ASSERT_EQ(254,ooDecode.messageLen);
 			ooDecode.calcHisto();
@@ -1053,7 +1054,7 @@ namespace arduino {
 				DigitalSimulate(-32001);
 
 
-				std::cout << outputStr << "\n";
+				// std::cout << outputStr << "\n";
 
 				ASSERT_EQ(147,ooDecode.messageLen);
 				ooDecode.calcHisto();
@@ -1082,7 +1083,7 @@ namespace arduino {
 			ASSERT_TRUE(mcdecoder.isManchester());
 			ASSERT_TRUE(mcdecoder.doDecode());
 			ASSERT_EQ(103, mcdecoder.ManchesterBits.valcount);
-			std::cout << geFullMCString();
+			//std::cout << geFullMCString();
 
 			std::string mcStr;
 			mcStr = mcdecoder.getMessageHexStr();
@@ -1188,9 +1189,9 @@ namespace arduino {
 					state = ooDecode.decode(&data[i]);
 					if (state) {
 						decoded = true;
-						std::cout << outputStr;
+						// std::cout << outputStr;
 						outputStr = "";
-						std::cout << geFullMCString();
+						// std::cout << geFullMCString();
 
 					}
 				}
@@ -1209,7 +1210,7 @@ namespace arduino {
 
 			state = import_sigdata(&dstr);
 			//ASSERT_TRUE(state);
-			std::cout << geFullMCString();
+			// std::cout << geFullMCString();
 		                      
 			std::string hexRef = "51B4E8B5947C179ED52FC78";
 			std::string lenRef = ";L=89";
@@ -1227,7 +1228,7 @@ namespace arduino {
 
 			state = import_sigdata(&dstr);
 			//ASSERT_TRUE(state);
-			std::cout << geFullMCString();
+			//std::cout << geFullMCString();
 
 			std::string hexRef = "A8DA745ADA3E0BCF6A976EC";
 			std::string lenRef = ";L=90";
@@ -1244,7 +1245,7 @@ namespace arduino {
 
 			state = import_sigdata(&dstr);
 			//ASSERT_TRUE(state);
-			std::cout << geFullMCString();
+			// std::cout << geFullMCString();
 
 			std::string hexRef = "A8DA745AEA3E0BCF6A96F4C";
 			std::string lenRef = ";L=90";
@@ -1261,7 +1262,7 @@ namespace arduino {
 
 			state = import_sigdata(&dstr);
 			//ASSERT_TRUE(state);
-			std::cout << geFullMCString();
+			// std::cout << geFullMCString();
 
 			std::string hexRef = "A8DA745ADA3E0BCF6A976EC";
 			std::string lenRef = ";L=90";
@@ -1277,7 +1278,7 @@ namespace arduino {
 
 			state = import_sigdata(&dstr);
 			//ASSERT_TRUE(state);
-			std::cout << geFullMCString();
+			// std::cout << geFullMCString();
 
 			std::string hexRef = "A8DA745ACA3E0BCF6A97E3C";
 			std::string lenRef = ";L=90";
@@ -1311,7 +1312,7 @@ namespace arduino {
 			state = import_sigdata(&dstr);
 			ooDecode.processMessage();
 			ASSERT_TRUE(ooDecode.success);
-			std::cout << outputStr;
+			// std::cout << outputStr;
 		}
 
 		TEST_F(Tests, mcInvalidMC2)

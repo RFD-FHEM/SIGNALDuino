@@ -16,7 +16,7 @@ jobs:
         with:
           cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
 
-      - name: preapre directory
+      - name: prepare directory
         working-directory: ./tests
         run:  mkdir -p build
       
