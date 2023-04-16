@@ -625,9 +625,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
-					MSG_PRINT(';');
 					MSG_PRINT(F(";A="));
-					MSG_PRINTtoHEX(freqErr);
+					MSG_PRINT(u_int8_t(freqErr));
 					MSG_PRINT(';');
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
