@@ -21,6 +21,9 @@
   extern SignalDetectorClass musterDec;
   extern bool hasCC1101;
   extern void DBG_PRINTtoHEX(uint8_t b);
+  extern bool AfcEnabled;
+  extern int8_t freqOffAcc;       
+  extern float freqErrAvg;        
 
   #define pulseMin  90
 
@@ -95,25 +98,31 @@ void disableReceive() {
 
 
 //================================= EEProm commands ======================================
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red) {
+void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc) {
+  if (afc == 0) { // reset AFC
+    freqOffAcc = 0;
+    freqErrAvg = 0;
+    cc1101::writeReg(0x0C, 0x00); // reset 0x0C: FSCTRL0 – Frequency Synthesizer Control
+  }
   mu = mu << 1;
   mc = mc << 2;
   red = red << 3;
-
-  int8_t dat = ms | mu | mc | red;
+  afc = afc << 4;
+  int8_t dat = ms | mu | mc | red | afc;
   EEPROM.write(addr_features, dat);
   #if defined(ESP8266) || defined(ESP32)
     EEPROM.commit();
   #endif
 }
 
-void getFunctions(bool *ms, bool *mu, bool *mc, bool *red) {
+void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc) {
   int8_t dat = EEPROM.read(addr_features);
 
   *ms = bool(dat &(1 << 0));
   *mu = bool(dat &(1 << 1));
   *mc = bool(dat &(1 << 2));
   *red = bool(dat &(1 << 3));
+  *afc = bool(dat &(1 << 4));
 }
 
 void dumpEEPROM() {
@@ -136,7 +145,7 @@ void initEEPROM(void) {
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
     DBG_PRINT(F("Reading values from ")); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
   } else {
-    storeFunctions(1, 1, 1, 1);    // Init EEPROM with all flags enabled
+    storeFunctions(1, 1, 1, 1, 0); // Init EEPROM with all flags enabled, AFC disabled
     //hier fehlt evtl ein getFunctions()
     MSG_PRINTLN(F("Init eeprom to defaults after flash"));
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
@@ -149,7 +158,7 @@ void initEEPROM(void) {
       EEPROM.commit();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
   DBG_PRINTLN(F("done"));
   dumpEEPROM();
 }

@@ -24,7 +24,7 @@ date = datetime.datetime.now().strftime("%y%m%d")
 # build_version = config.get("env", "BUILD_FLAGS")
 
 # name from env:project | example: [env:nano_bootl_old_CC1101] 
-build_name = env['PIOENV']
+build_name = "SIGNALDuino_" + env['PIOENV']
 
 # Build versions with a point are difficult to process
 # System uses dot for file extension
@@ -43,8 +43,8 @@ elif (reftype == 'tag') :
 else:
     build_version = basetag+"+"+date
 
-# write project hex, bin, elf like SIGANALduino_esp32_CC1101_3.5.0-11-gcc56+230423.bin
-env.Replace(PROGNAME="SIGNALduino_{0}_{1}".format(build_name,build_version))
+# write project hex, bin, elf to nano_bootl_old_CC1101_v350_dev_20200811.hex
+env.Replace(PROGNAME="%s" % build_name + "_" + "%s" % build_version)
 
 env.Append(CPPDEFINES=[
     ("PROGVERS",env.StringifyMacro(build_version)),

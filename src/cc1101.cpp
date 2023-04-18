@@ -547,6 +547,9 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 #endif
 }
 
+int8_t freqOffAcc = 0;       
+float freqErrAvg = 0;        
+extern bool AfcEnabled; // AFC on or off
 
 void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 	uint8_t fifoBytes;
@@ -560,14 +563,12 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 		#endif
 
 /*
- * 
  * Ralf ( mode numbering == own selection )
  * cc1101 Mode: 0 - normal ASK/OOK, 1 - FIFO, 2 - FIFO ohne dup, 3 - FIFO LaCrosse, 4 - experimentell, 9 - FIFO mit Debug Ausgaben
  *
  * Sidey ( mode numbering == cc1101 data sheet setting numbering 0x12: MDMCFG2–Modem Configuration )
  * cc1101 Mode: 0 - FIFO LaCrosse, 3 - normal ASK/OOK
  * 
-
     if (ccmode == 4) {
       cc1101::ccStrobe_SIDLE(); // start over syncing
     }
@@ -577,9 +578,14 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 		if (fifoBytes > 0) {
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
-      		
-			// My own special debug setting
 			int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
+			if (AfcEnabled == 1) {
+				freqErrAvg = freqErrAvg - float(freqErrAvg / 8.0) + float(freqErr / 8.0);  // Mittelwert über Abweichung
+				// freqErrAvg = freqErrAvg - float(freqErrAvg / 10.0) + float(freqErr / 10.0);  // Mittelwert über Abweichung
+				// freqErrAvg = freqErrAvg - float(freqErrAvg / 12.0) + float(freqErr / 12.0);  // Mittelwert über Abweichung
+				freqOffAcc += round(freqErrAvg);
+				cc1101::writeReg(0x0C, freqOffAcc); // 0x0C: FSCTRL0 – Frequency Synthesizer Control
+			}
 
 /*
  * !!! for DEVELOPMENT and DEBUG only !!!
@@ -608,8 +614,6 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 						MSG_PRINTtoHEX(ccBuf[i]);
 					}
 					
-					// My own special debug setting
-
 /* 
  * !!! for DEVELOPMENT and DEBUG only !!!
  * 
@@ -626,7 +630,7 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
 					MSG_PRINT(F(";A="));
-					MSG_PRINT(u_int8_t(freqErr));
+					MSG_PRINT(freqErr);
 					MSG_PRINT(';');
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");
