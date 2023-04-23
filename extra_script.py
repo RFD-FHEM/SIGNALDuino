@@ -29,17 +29,22 @@ build_name = env['PIOENV']
 # Build versions with a point are difficult to process
 # System uses dot for file extension
 
-
+reftype = os.environ.get('GITHUB_REF_TYPE','local')
 basetag = (
     subprocess.check_output(["git", "describe", "--tags", "--first-parent", "--abbrev=1"])
     .strip()
     .decode("utf-8")
 )
 
-build_version = os.environ.get('GITHUB_REF_NAME',basetag+"+"+date)
+if (reftype == 'branch') :
+    build_version = basetag+os.environ.get('GITHUB_REF_NAME')+"+"+date
+elif (reftype == 'tag') :
+    build_version = os.environ.get('GITHUB_REF_NAME',basetag+"+"+date)
+else:
+    build_version = basetag+"+"+date
 
 # write project hex, bin, elf like SIGANALduino_esp32_CC1101_3.5.0-11-gcc56+230423.bin
-env.Replace(PROGNAME="SIGANALduino_{0}_{1}".format(build_name,build_version))
+env.Replace(PROGNAME="SIGNALduino_{0}_{1}".format(build_name,build_version))
 
 env.Append(CPPDEFINES=[
     ("PROGVERS",env.StringifyMacro(build_version)),
