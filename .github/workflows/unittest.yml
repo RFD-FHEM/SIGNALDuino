@@ -1,10 +1,10 @@
 name: unittest
 on:
-  release:
-    types: [created, prereleased, published]
   workflow_dispatch: null
-  pull_request:
-
+  pull_request: 
+  push:
+    tags:
+      - '**'
 jobs:
   unittest:
     runs-on: ubuntu-latest
