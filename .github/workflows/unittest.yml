@@ -3,7 +3,7 @@ on:
   release:
     types: [created, prereleased, published]
   workflow_dispatch: null
-  push: null
+  pull_request:
 
 jobs:
   unittest:
@@ -46,23 +46,19 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - envName: nano_bootl_new
-          - envName: nano_bootl_new_CC1101
-          - envName: nano_bootl_old
-          - envName: nano_bootl_old_CC1101
-          - envName: radino_CC1101
-          - envName: wemos_d1_mini_pro_CC1101
-          - envName: wemos_d1_mini_pro
+          - envName: nano328
+          - envName: nanoCC1101
+          - envName: radinoCC1101
           - envName: pro_promini_16MHz
           - envName: pro_promini_16MHz_CC1101
           - envName: pro_promini_8MHz
           - envName: pro_promini_8MHz_CC1101
           - envName: esp32
-          - envName: esp32_CC1101
+          - envName: esp32CC1101
           - envName: esp8266
-          - envName: esp8266_CC1101
-          - envName: maple_mini_bootl_v1_CC1101
-          - envName: maple_mini_bootl_v1
+          - envName: esp8266CC1101
+          - envName: MAPLEMINI_F103CBcc1101
+          - envName: MAPLEMINI_F103CB
 
     runs-on: ubuntu-latest
     steps:
@@ -72,24 +68,19 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - name: Extract branch name
-        shell: bash
-        run: echo "gh_branch_name=$(echo ${GITHUB_REF#refs/heads/})" >> $GITHUB_ENV
-        id: extract_branch
-        
       - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/pip
             ~/.platformio/.cache
           key: ${{ matrix.envName }}-pio
-      
+
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
-        
+
       - name: Run PlatformIO and compile sketch
         id: compile_sketch
         run: |

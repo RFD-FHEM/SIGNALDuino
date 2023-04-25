@@ -97,4 +97,5 @@ include_directories(
 )
 
 enable_testing()
-add_test(all_tests TestProject)
+gtest_discover_tests(TestProject)
+#add_test(testSamesign TestProject)
