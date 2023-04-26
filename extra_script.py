@@ -39,7 +39,7 @@ basetag = (
 if (reftype == 'branch') :
     build_version = basetag+os.environ.get('GITHUB_HEAD_REF')+"+"+date
 elif (reftype == 'tag') :
-    build_version = os.environ.get('GITHUB_HEAD_REF',basetag+"+"+date)
+    build_version = os.environ.get('GITHUB_REF_NAME',basetag+"+"+date)
 else:
     build_version = basetag+"+"+date
 
