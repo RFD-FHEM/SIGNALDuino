@@ -87,7 +87,9 @@ jobs:
           export COMPILE_OUTPUT=$(pio run -e ${{ matrix.envName }} )
           echo "$COMPILE_OUTPUT"
           FILEEXT=$(find .pio/build/${{ matrix.envName }} -maxdepth 1 \( -name 'SIGNALduino*.bin' -o -name 'SIGNALduino*.hex' \) | while read file; do echo "${file##*.}"; done)
+          FILENAME=$(find .pio/build/${{ matrix.envName }}/ -maxdepth 1 \( -name 'SIGNALduino*.bin' -o -name 'SIGNALduino*.hex' \) -printf "%f" )
           echo "Extension: $FILEEXT"
+          echo "FILENAME=$(echo $FILENAME | tr -d '\n')" >> $GITHUB_OUTPUT
           echo "FILEEXT=$(echo $FILEEXT | tr -d '\n')" >> $GITHUB_OUTPUT
           echo "SKETCHSIZE=$(echo "$COMPILE_OUTPUT" | grep -Po "(^Flash: ).*")" >> $GITHUB_OUTPUT
           echo "GLOBALRAMUSAGE=$(echo "$COMPILE_OUTPUT" | grep -Po "(^RAM: ).*")" >> $GITHUB_OUTPUT
@@ -102,9 +104,9 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v3
         with:
-          name: SIGNALduino_${{ matrix.envName }}.${{ steps.compile_sketch.outputs.FILEEXT }}
+          name: ${{ steps.compile_sketch.outputs.FILENAME }}
           path: |
-            .pio/build/${{ matrix.envName }}/SIGNALduino*.${{ steps.compile_sketch.outputs.FILEEXT }}
+            .pio/build/${{ matrix.envName }}/${{ steps.compile_sketch.outputs.FILENAME }}
           if-no-files-found: warn
   release:
     needs: build
