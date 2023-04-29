@@ -46,19 +46,20 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - envName: nano328
+          - envName: nano328s
           - envName: nanoCC1101
           - envName: radinoCC1101
-          - envName: pro_promini_16MHz
-          - envName: pro_promini_16MHz_CC1101
-          - envName: pro_promini_8MHz
-          - envName: pro_promini_8MHz_CC1101
-          - envName: esp32
+          - envName: miniculCC1101
+          - envName: promini16s
+          - envName: promini16CC1101
+          - envName: promini8s
+          - envName: promini8CC1101
+          - envName: esp32s
           - envName: esp32CC1101
-          - envName: esp8266
+          - envName: esp8266s
           - envName: esp8266CC1101
           - envName: MAPLEMINI_F103CBcc1101
-          - envName: MAPLEMINI_F103CB
+          - envName: MAPLEMINI_F103CBs
 
     runs-on: ubuntu-latest
     steps:
@@ -108,6 +109,7 @@ jobs:
           path: |
             .pio/build/${{ matrix.envName }}/${{ steps.compile_sketch.outputs.FILENAME }}
           if-no-files-found: warn
+
   release:
     needs: build
     permissions:
