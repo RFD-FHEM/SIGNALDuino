@@ -80,7 +80,7 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
+        run: pip install --upgrade platformio==6.1.6
 
       - name: Run PlatformIO and compile sketch
         id: compile_sketch
