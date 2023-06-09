@@ -13,65 +13,62 @@ Import("env")
 
 ### to build date str and buildname
 import datetime
-date = datetime.datetime.now()
-date = date.strftime("%y") + date.strftime("%m") + date.strftime("%d")
+import subprocess
+import os
+import platform
+date = datetime.datetime.now().strftime("%y%m%d")
 
 # for config.get
 # config = configparser.ConfigParser()
 # config.read("platformio.ini")
 # build_version = config.get("env", "BUILD_FLAGS")
 
-
 # name from env:project | example: [env:nano_bootl_old_CC1101] 
 build_name = env['PIOENV']
 
 # Build versions with a point are difficult to process
 # System uses dot for file extension
-build_release = "350_"
-build_version = "v" + build_release + date
 
-# write project hex, bin, elf to nano_bootl_old_CC1101_v350_dev_20200811.hex
-env.Replace(PROGNAME="%s" % build_name + "_" + "%s" % build_version)
+reftype = os.environ.get('GITHUB_REF_TYPE','local')
+basetag = (
+    subprocess.check_output(["git", "describe", "--tags", "--first-parent", "--abbrev=1"])
+    .strip()
+    .decode("utf-8")
+)
+
+if (reftype == 'branch') :
+    build_version = basetag+os.environ.get('GITHUB_HEAD_REF')+"+"+date
+elif (reftype == 'tag') :
+    build_version = os.environ.get('GITHUB_REF_NAME',basetag+"+"+date)
+else:
+    build_version = basetag+"+"+date
+
+# write project hex, bin, elf like SIGANALduino_esp32_CC1101_3.5.0-11-gcc56+230423.bin
+env.Replace(PROGNAME="SIGNALduino_{0}_{1}".format(build_name,build_version))
+
+env.Append(CPPDEFINES=[
+    ("PROGVERS",env.StringifyMacro(build_version)),
+])
 
 
+#Copy functions has to be finished, it does currently not work
+def copy_firmware(source, target, env):
 
-### copy file to subfolder
-## this relief works from the 2nd run
-movehelp = "no"
+    from pathlib import Path
+    import shutil
+    filename= source
+    if env["PIOPLATFORM"] == "espressif32" or env["PIOPLATFORM"] == "espressif8266":
+        filename = source + ".bin"
+    else:
+        filename = source + ".hex"
+    
+    print (filename)
+    ## if bin file exists, copy to subfolder
+    # shutil.copyfile(str(filename), str(BUILD_DIR))
 
-if movehelp == "yes":
- from pathlib import Path
- import shutil
- import platform
 
- current_path = env['PROJECT_BUILD_DIR']
- 
- ## OS check ##
- if platform.system() == "Windows":
-  current_file = env['PROJECT_BUILD_DIR'] + "\\" +  build_name + "\\" + env['PIOENV'] + "_" + "%s" % build_version
-  new_file_bin = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
-  new_file_hex = env['PROJECT_BUILD_DIR'] + "\\" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
+#if platform.system() == "Windows":
+#    env.AddPostAction("$BUILD_DIR\\${PROGNAME}", copy_firmware)
 
- if platform.system() == "Linux":
-  current_file = env['PROJECT_BUILD_DIR'] + "/" +  build_name + "/" + env['PIOENV'] + "_" + "%s" % build_version
-  new_file_bin = env['PROJECT_BUILD_DIR'] + "/" + env['PIOENV'] + "_" + "%s" % build_version + ".bin"
-  new_file_hex = env['PROJECT_BUILD_DIR'] + "/" + env['PIOENV'] + "_" + "%s" % build_version + ".hex"
-  
- current_file_bin = Path(current_file + ".bin")
- current_file_hex = Path(current_file + ".hex")
-
- ## if bin file exists, copy to subfolder
- if current_file_bin.is_file():
-  print("- bin file exists -")
-  print(current_file_bin)
-  print("- bin file to -")
-  print(new_file_bin)
-  shutil.copyfile(str(current_file_bin), str(new_file_bin))
-
- ## if hex file exists, copy to subfolder
- if current_file_hex.is_file():
-  print("- hex file exists -")
-  print(current_file_hex)
-  print("- hex file to -")
-  print(new_file_hex)
-  shutil.copyfile(str(current_file_hex), str(new_file_hex))
+#if platform.system() == "Linux":
+#    env.AddPostAction("$BUILD_DIR/${PROGNAME}", copy_firmware)
