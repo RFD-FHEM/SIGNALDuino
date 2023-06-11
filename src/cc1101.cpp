@@ -547,9 +547,6 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 #endif
 }
 
-int8_t freqOffAcc = 0;       
-float freqErrAvg = 0;        
-extern bool AfcEnabled; // AFC on or off
 
 void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 	uint8_t fifoBytes;
@@ -579,12 +576,12 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
 			int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
-			if (AfcEnabled == 1) {
-				freqErrAvg = freqErrAvg - float(freqErrAvg / 8.0) + float(freqErr / 8.0);  // Mittelwert über Abweichung
+			if (cc1101::AfcEnabled == 1) {
+				cc1101::freqErrAvg = cc1101::freqErrAvg - float(cc1101::freqErrAvg / 8.0) + float(cc1101::freqErr / 8.0);  // Mittelwert über Abweichung
 				// freqErrAvg = freqErrAvg - float(freqErrAvg / 10.0) + float(freqErr / 10.0);  // Mittelwert über Abweichung
 				// freqErrAvg = freqErrAvg - float(freqErrAvg / 12.0) + float(freqErr / 12.0);  // Mittelwert über Abweichung
-				freqOffAcc += round(freqErrAvg);
-				cc1101::writeReg(0x0C, freqOffAcc); // 0x0C: FSCTRL0 – Frequency Synthesizer Control
+				cc1101::freqOffAcc += round(cc1101::freqErrAvg);
+				cc1101::writeReg(0x0C, cc1101::freqOffAcc); // 0x0C: FSCTRL0 – Frequency Synthesizer Control
 			}
 
 /*

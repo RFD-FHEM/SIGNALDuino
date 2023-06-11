@@ -21,9 +21,9 @@
   extern SignalDetectorClass musterDec;
   extern bool hasCC1101;
   extern void DBG_PRINTtoHEX(uint8_t b);
-  extern bool AfcEnabled;
-  extern int8_t freqOffAcc;       
-  extern float freqErrAvg;        
+  extern bool cc1101::AfcEnabled;
+  extern int8_t cc1101::freqOffAcc;       
+  extern float cc1101::freqErrAvg;        
 
   #define pulseMin  90
 
@@ -99,11 +99,13 @@ void disableReceive() {
 
 //================================= EEProm commands ======================================
 void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc) {
+  #ifdef CMP_CC1101
   if (afc == 0) { // reset AFC
-    freqOffAcc = 0;
-    freqErrAvg = 0;
-    cc1101::writeReg(0x0C, 0x00); // reset 0x0C: FSCTRL0 – Frequency Synthesizer Control
+    cc1101::freqOffAcc = 0;
+    cc1101::freqErrAvg = 0;
+    cc1101::writeReg(static_cast<uint8_t>(0x0C), static_cast<uint8_t>(afc) ); // reset 0x0C: FSCTRL0 – Frequency Synthesizer Control
   }
+  #endif
   mu = mu << 1;
   mc = mc << 2;
   red = red << 3;
@@ -158,7 +160,7 @@ void initEEPROM(void) {
       EEPROM.commit();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &cc1101::AfcEnabled);
   DBG_PRINTLN(F("done"));
   dumpEEPROM();
 }
