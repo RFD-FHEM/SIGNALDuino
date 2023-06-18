@@ -30,7 +30,7 @@ namespace cc1101 {
 
 	extern int8_t freqOffAcc;
 	extern float freqErrAvg;
-	extern bool AfcEnabled; // AFC on or off
+	
 
 	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101

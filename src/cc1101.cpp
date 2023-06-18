@@ -12,6 +12,7 @@ int8_t cc1101::freqOffAcc = 0;
 float cc1101::freqErrAvg = 0;
 extern volatile bool blinkLED;
 extern void MSG_PRINTtoHEX(uint8_t a);
+extern bool AfcEnabled;
 
 const uint8_t cc1101::initVal[] PROGMEM =
 {
