@@ -8,6 +8,8 @@
 uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4 default ASK/OOK
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
+int8_t cc1101::freqOffAcc = 0;
+float cc1101::freqErrAvg = 0;
 extern volatile bool blinkLED;
 extern void MSG_PRINTtoHEX(uint8_t a);
 
@@ -576,8 +578,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
 			int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
-			if (cc1101::AfcEnabled == 1) {
-				cc1101::freqErrAvg = cc1101::freqErrAvg - float(cc1101::freqErrAvg / 8.0) + float(cc1101::freqErr / 8.0);  // Mittelwert über Abweichung
+			if (AfcEnabled == 1) {
+				cc1101::freqErrAvg = cc1101::freqErrAvg - float(cc1101::freqErrAvg / 8.0) + float(freqErr / 8.0);  // Mittelwert über Abweichung
 				// freqErrAvg = freqErrAvg - float(freqErrAvg / 10.0) + float(freqErr / 10.0);  // Mittelwert über Abweichung
 				// freqErrAvg = freqErrAvg - float(freqErrAvg / 12.0) + float(freqErr / 12.0);  // Mittelwert über Abweichung
 				cc1101::freqOffAcc += round(cc1101::freqErrAvg);

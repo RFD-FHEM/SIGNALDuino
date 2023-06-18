@@ -78,6 +78,7 @@ SignalDetectorClass musterDec;
 volatile bool blinkLED = false;
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
+bool AfcEnabled = true;
 char IB_1[14]; // Input Buffer one - capture commands
 
 HardwareTimer *Timer1 = new HardwareTimer(TIM1);

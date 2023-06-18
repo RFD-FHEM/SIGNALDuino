@@ -28,9 +28,9 @@ extern char IB_1[14];
 
 namespace cc1101 {
 
-	int8_t freqOffAcc = 0;
-	float freqErrAvg = 0;
-	bool AfcEnabled; // AFC on or off
+	extern int8_t freqOffAcc;
+	extern float freqErrAvg;
+	extern bool AfcEnabled; // AFC on or off
 
 	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101

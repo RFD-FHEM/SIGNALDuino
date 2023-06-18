@@ -21,9 +21,11 @@
   extern SignalDetectorClass musterDec;
   extern bool hasCC1101;
   extern void DBG_PRINTtoHEX(uint8_t b);
-  extern bool cc1101::AfcEnabled;
+  extern bool AfcEnabled;
+  #ifdef CMP_CC1101
   extern int8_t cc1101::freqOffAcc;       
   extern float cc1101::freqErrAvg;        
+  #endif 
 
   #define pulseMin  90
 
@@ -160,7 +162,7 @@ void initEEPROM(void) {
       EEPROM.commit();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &cc1101::AfcEnabled);
+  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
   DBG_PRINTLN(F("done"));
   dumpEEPROM();
 }
