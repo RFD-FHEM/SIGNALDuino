@@ -87,8 +87,8 @@ jobs:
         run: |
           export COMPILE_OUTPUT=$(pio run -e ${{ matrix.envName }} )
           echo "$COMPILE_OUTPUT"
-          FILEEXT=$(find .pio/build/${{ matrix.envName }} -maxdepth 1 \( -name 'SIGNALduino*.bin' -o -name 'SIGNALduino*.hex' \) | while read file; do echo "${file##*.}"; done)
-          FILENAME=$(find .pio/build/${{ matrix.envName }}/ -maxdepth 1 \( -name 'SIGNALduino*.bin' -o -name 'SIGNALduino*.hex' \) -printf "%f" )
+          FILEEXT=$(find .pio/build/${{ matrix.envName }} -maxdepth 1 \( -name 'SIGNALDuino*.bin' -o -name 'SIGNALDuino*.hex' \) | while read file; do echo "${file##*.}"; done)
+          FILENAME=$(find .pio/build/${{ matrix.envName }}/ -maxdepth 1 \( -name 'SIGNALDuino*.bin' -o -name 'SIGNALDuino*.hex' \) -printf "%f" )
           echo "Extension: $FILEEXT"
           echo "FILENAME=$(echo $FILENAME | tr -d '\n')" >> $GITHUB_OUTPUT
           echo "FILEEXT=$(echo $FILEEXT | tr -d '\n')" >> $GITHUB_OUTPUT
@@ -132,4 +132,4 @@ jobs:
           generate_release_notes: true
           draft: true
           files: |
-            ${{steps.download.outputs.download-path}}/SIGNALduino*/SIGNALduino*
+            ${{steps.download.outputs.download-path}}/SIGNALDuino*/SIGNALDuino*
