@@ -78,7 +78,7 @@ jobs:
             boardurl: '--additional-urls=https://github.com/stm32duino/BoardManagerFiles/raw/master/STM32/package_stm_index.json' 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with: 
         submodules: true
 
