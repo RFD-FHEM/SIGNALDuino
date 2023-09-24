@@ -46,7 +46,9 @@ extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 extern uint8_t ccmode;;          // xFSK
-
+#ifdef CMP_CC1101
+extern bool AfcEnabled;
+#endif
 
 namespace commands {
 
@@ -78,13 +80,19 @@ namespace commands {
 
 	inline void getConfig()
 	{
-		MSG_PRINT(FPSTR(TXT_MS)); MSG_PRINT(FPSTR(TXT_EQ));
+		MSG_PRINT(F("MS="));
 		MSG_PRINT(musterDec.MSenabled, DEC);
-		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT(FPSTR(TXT_MU)); MSG_PRINT(FPSTR(TXT_EQ));
+		MSG_PRINT(F(";MU="));
 		MSG_PRINT(musterDec.MUenabled, DEC);
-		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT(FPSTR(TXT_MC)); MSG_PRINT(FPSTR(TXT_EQ));
+		MSG_PRINT(F(";MC="));
 		MSG_PRINT(musterDec.MCenabled, DEC);
-		MSG_PRINT(FPSTR(TXT_FSEP)); MSG_PRINT("Mred"); MSG_PRINT(FPSTR(TXT_EQ));
+		#ifdef CMP_CC1101
+			if (cc1101::ccmode != 3) { // ASK/OOK = 3 (default)
+			MSG_PRINT(F(";MN=1;AFC="));
+			MSG_PRINT(AfcEnabled, DEC);
+			}
+		#endif
+		MSG_PRINT(F(";Mred="));
 		MSG_PRINTLN(musterDec.MredEnabled, DEC);
 	}
 
@@ -107,6 +115,11 @@ namespace commands {
 			case 'R' : //Mreduce
 				bptr = &musterDec.MredEnabled;
 				break;
+			#ifdef CMP_CC1101
+			case 'A' : //Afc
+				bptr = &AfcEnabled;
+				break;
+			#endif
 			default:
 				return;
 		}
@@ -123,7 +136,7 @@ namespace commands {
 				return;
 		}
 
-		storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled);
+		storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
 	}
 
 	inline void configSET()

@@ -16,6 +16,7 @@
 
 extern char IB_1[14];
 
+
 #ifdef ARDUINO_MAPLEMINI_F103CB    // only ARDUINO_MAPLEMINI_F103CB / MAPLE_Mini
 	extern uint8_t radionr;        // xFSK - variant -> Circuit board for four connected cc110x devices
 #endif
@@ -26,6 +27,11 @@ extern char IB_1[14];
 #endif
 
 namespace cc1101 {
+
+	extern int8_t freqOffAcc;
+	extern float freqErrAvg;
+	
+
 	/*
 	#ifdef ARDUINO_AVR_ICT_BOARDS_ICT_BOARDS_AVR_RADINOCC1101
 	#define SS                    8
@@ -201,7 +207,7 @@ namespace cc1101 {
 	void ccFactoryReset();
 	void commandStrobes(void);
 	void getRxFifo(uint16_t Boffs);                                 // xFSK
-  void sendFIFO(char*, char*);                                    // xFSK
+    void sendFIFO(char*, char*);                                    // xFSK
 	void readCCreg(const uint8_t reg);                              // read CC1101 register
 	void readPatable(void);
 	void setIdleMode();

@@ -8,8 +8,11 @@
 uint8_t cc1101::ccmode = 3;          // MDMCFG2–Modem Configuration Bit 6:4 default ASK/OOK
 uint8_t cc1101::revision = 0x01;
 uint8_t ccBuf[ccMaxBuf];             // for cc1101 FIFO, if Circuit board for more cc110x -> ccBuf expand ( ccBuf[radionr][ccMaxBuf] )
+int8_t cc1101::freqOffAcc = 0;
+float cc1101::freqErrAvg = 0;
 extern volatile bool blinkLED;
 extern void MSG_PRINTtoHEX(uint8_t a);
+extern bool AfcEnabled;
 
 const uint8_t cc1101::initVal[] PROGMEM =
 {
@@ -560,14 +563,12 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 		#endif
 
 /*
- * 
  * Ralf ( mode numbering == own selection )
  * cc1101 Mode: 0 - normal ASK/OOK, 1 - FIFO, 2 - FIFO ohne dup, 3 - FIFO LaCrosse, 4 - experimentell, 9 - FIFO mit Debug Ausgaben
  *
  * Sidey ( mode numbering == cc1101 data sheet setting numbering 0x12: MDMCFG2–Modem Configuration )
  * cc1101 Mode: 0 - FIFO LaCrosse, 3 - normal ASK/OOK
  * 
-
     if (ccmode == 4) {
       cc1101::ccStrobe_SIDLE(); // start over syncing
     }
@@ -577,6 +578,14 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 		if (fifoBytes > 0) {
 			uint8_t marcstate;
 			uint8_t RSSI = cc1101::getRSSI();
+			int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
+			if (AfcEnabled == 1) {
+				cc1101::freqErrAvg = cc1101::freqErrAvg - float(cc1101::freqErrAvg / 8.0) + float(freqErr / 8.0);  // Mittelwert über Abweichung
+				// freqErrAvg = freqErrAvg - float(freqErrAvg / 10.0) + float(freqErr / 10.0);  // Mittelwert über Abweichung
+				// freqErrAvg = freqErrAvg - float(freqErrAvg / 12.0) + float(freqErr / 12.0);  // Mittelwert über Abweichung
+				cc1101::freqOffAcc += round(cc1101::freqErrAvg);
+				cc1101::writeReg(0x0C, cc1101::freqOffAcc); // 0x0C: FSCTRL0 – Frequency Synthesizer Control
+			}
 
 /*
  * !!! for DEVELOPMENT and DEBUG only !!!
@@ -590,7 +599,6 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
       #endif
  * 
  */
-
 			if (fifoBytes < 0x80) {                // RXoverflow?
 				if (fifoBytes > ccMaxBuf) {
 					fifoBytes = ccMaxBuf;
@@ -605,8 +613,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 					for (uint8_t i = 0; i < fifoBytes; i++) {
 						MSG_PRINTtoHEX(ccBuf[i]);
 					}
-
-/*
+					
+/* 
  * !!! for DEVELOPMENT and DEBUG only !!!
  * 
           #ifdef DEBUG
@@ -621,6 +629,8 @@ void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
 
 					MSG_PRINT(F(";R="));
 					MSG_PRINT(RSSI);
+					MSG_PRINT(F(";A="));
+					MSG_PRINT(freqErr);
 					MSG_PRINT(';');
 					MSG_PRINT(char(MSG_END));      // SDC_WRITE not work in this scope
 					MSG_PRINT("\n");

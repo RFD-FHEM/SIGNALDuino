@@ -19,6 +19,8 @@ void cli() {};
 void sei() {};
 
 bool hasCC1101=true;
+bool AfcEnabled=true; // AFC on or off
+
 volatile unsigned long lastTime=0;
 volatile bool blinkLED=false;
 
