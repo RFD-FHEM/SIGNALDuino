@@ -76,6 +76,11 @@ jobs:
             ~/.platformio/.cache
           key: ${{ matrix.envName }}-pio
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+           languages: cpp
+    
       - uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -101,6 +106,11 @@ jobs:
           echo "| ENV | Flash | Ram |" >> $GITHUB_STEP_SUMMARY
           echo "|-------|-------|-----|" >> $GITHUB_STEP_SUMMARY
           echo "| ${{ matrix.envName }} | ${{ steps.compile_sketch.outputs.SKETCHSIZE }} | ${{ steps.compile_sketch.outputs.GLOBALRAMUSAGE }} |" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/board:${{matrix.envName}}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v3
