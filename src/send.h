@@ -113,8 +113,8 @@ void send_cmd()
 
 	s_sendcmd command[5];
 
-	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
 #ifdef CMP_CC1101
+	uint8_t ccParamAnz = 0;   // Anzahl der per F= uebergebenen cc1101 Register
 	uint8_t ccReg[6];
 	uint8_t val;
 #endif
@@ -206,10 +206,10 @@ void send_cmd()
 		command[cmdNo].sendclock = strtoul(&msg_beginptr[2], &msg_endptr, 10);
 		DBG_PRINTLN(F("adding sendclock"));
 		}
+#ifdef CMP_CC1101
 		else if (msg_beginptr[0] == 'F' && msg_beginptr[1] == '=')
 		{
 		ccParamAnz = (msg_endptr - msg_beginptr - 1) / 2;
-#ifdef CMP_CC1101
 		if (ccParamAnz > 0 && ccParamAnz <= 5 && hasCC1101) {
 			//uint8_t hex;
 			DBG_PRINT(F("write new ccregs #"));			DBG_PRINTLN(ccParamAnz);
@@ -225,8 +225,8 @@ void send_cmd()
 			}
 			DBG_PRINTLN("");
 		}
-#endif
 		}
+#endif
 		if (msg_endptr == msg_beginptr)
 		{
 			DBG_PRINTLN(F("break loop"));
@@ -277,7 +277,6 @@ void send_cmd()
 	}
 #endif
 
-
 	if (command[0].type == combined && command[0].repeats > 0) {
     /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
 
@@ -301,7 +300,12 @@ void send_cmd()
           else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
           
         #if defined CMP_CC1101
-          else if (command[c].type == xFSK) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) cc1101::sendFIFO(command[cmdNo].datastart, command[c].dataend); }
+          else if (command[c].type == xFSK) {
+            for (uint8_t rep = 0; rep < command[c].repeats; rep++) {
+              if (rep > 0) { cc1101::setTransmitMode(); }
+              cc1101::sendFIFO(command[cmdNo].datastart, command[c].dataend);
+            }
+          }
         #endif
 
           if (command[cmdNo].type != 3) { digitalLow(PIN_SEND); } /* only not xFSK */
@@ -310,6 +314,7 @@ void send_cmd()
 		if (extraDelay) delay(1);
 	}
 
+#ifdef CMP_CC1101
 	if (ccParamAnz > 0) {
 		DBG_PRINT(F("ccreg write back "));
 		//char b[3];
@@ -317,14 +322,12 @@ void send_cmd()
 		{
 			//val = ccReg[i];
 			//sprintf_P(b,PSTR("%02X"), val);
-#ifdef CMP_CC1101
 			cc1101::writeReg(0x0d + i, ccReg[i]);    // gemerkte Registerwerte zurueckschreiben
-#endif
 			//MSG_PRINT(b);
 		}
 		DBG_PRINTLN("");
 	}
-
+#endif
 	DBG_PRINT(IB_1);
 	MSG_PRINT(buf); // echo data of command
 
