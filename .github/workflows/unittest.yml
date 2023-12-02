@@ -13,7 +13,7 @@ jobs:
         with: 
           submodules: true
 
-      - uses: lukka/get-cmake@v3.27.6
+      - uses: lukka/get-cmake@v3.27.9
         with:
           cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
 
@@ -26,7 +26,7 @@ jobs:
           path: |
             ./tests/build/_deps/
           key: cmake-deps
-      
+             
       - name: cmake prepareBuild
         working-directory: ./tests/build
         run: cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -86,6 +86,9 @@ jobs:
           python-version: '3.10'
       - name: Install PlatformIO Core
         run: pip install --upgrade platformio
+
+      - name: Inject slug/short variables
+        uses: rlespinasse/github-slug-action@v4
 
       - name: Run PlatformIO and compile sketch
         id: compile_sketch
