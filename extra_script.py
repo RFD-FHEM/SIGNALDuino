@@ -9,7 +9,7 @@ Import("env")
 #print(env)
 
 ### view all build environment
-print(env.Dump())
+#print(env.Dump())
 
 ### to build date str and buildname
 import datetime
@@ -37,9 +37,9 @@ basetag = (
 )
 
 if (reftype == 'branch') :
-    build_version = basetag+os.environ.get('GITHUB_HEAD_REF')+"+"+date
+    build_version = basetag+os.environ.get('GITHUB_REF_SLUG')+"+"+date
 elif (reftype == 'tag') :
-    build_version = os.environ.get('GITHUB_REF_NAME',basetag+"+"+date)
+    build_version = os.environ.get('GITHUB_REF_SLUG',basetag+"+"+date)
 else:
     build_version = basetag+"+"+date
 
