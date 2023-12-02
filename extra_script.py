@@ -9,7 +9,7 @@ Import("env")
 #print(env)
 
 ### view all build environment
-#print(env.Dump())
+print(env.Dump())
 
 ### to build date str and buildname
 import datetime
