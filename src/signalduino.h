@@ -83,6 +83,7 @@ volatile bool blinkLED = false;
 //String cmdstring = "";
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
+bool AfcEnabled = true;
 char IB_1[14]; // Input Buffer one - capture commands
 
 

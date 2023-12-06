@@ -75,7 +75,7 @@ SimpleFIFO<T,rawSize>::SimpleFIFO() : size(rawSize) {
 }
 template<typename T, int rawSize>
 #if defined(ESP32) || defined(ESP8266)
-bool ICACHE_RAM_ATTR SimpleFIFO<T,rawSize>::enqueue( T element ) {
+bool IRAM_ATTR SimpleFIFO<T,rawSize>::enqueue( T element ) {
 #else
 bool  SimpleFIFO<T,rawSize>::enqueue( T element ) {
 #endif

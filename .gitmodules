@@ -1,10 +1,6 @@
-[submodule "win32arduino"]
-	path = tests/win32arduino
-	url = https://github.com/end2endzone/win32Arduino.git
 [submodule "src/_micro-api/libraries/WIFIManager"]
 	path = src/_micro-api/libraries/WIFIManager
 	url = https://github.com/tzapu/WiFiManager.git
-	branch = ota
 [submodule "src/_micro-api/libraries/ArduinoJson"]
 	path = src/_micro-api/libraries/ArduinoJson
 	url = https://github.com/bblanchon/ArduinoJson.git
