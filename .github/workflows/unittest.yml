@@ -116,7 +116,7 @@ jobs:
           category: "/board:${{matrix.envName}}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.compile_sketch.outputs.FILENAME }}
           path: |
@@ -132,7 +132,7 @@ jobs:
     steps:
       - name: Download artifact
         id: download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: 'Echo download path'
         run: ls -R ${{steps.download.outputs.download-path}}
