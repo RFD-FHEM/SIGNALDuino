@@ -132,7 +132,7 @@ jobs:
     steps:
       - name: Download artifact
         id: download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: 'Echo download path'
         run: ls -R ${{steps.download.outputs.download-path}}
