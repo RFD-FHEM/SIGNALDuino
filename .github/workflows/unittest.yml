@@ -46,13 +46,13 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - envName: nano328s
+          - envName: nano328
           - envName: nanoCC1101
           - envName: radinoCC1101
           - envName: miniculCC1101
-          - envName: promini16s
+          - envName: promini16
           - envName: promini16CC1101
-          - envName: promini8s
+          - envName: promini8
           - envName: promini8CC1101
           - envName: esp32s
           - envName: esp32CC1101
