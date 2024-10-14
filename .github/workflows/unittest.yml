@@ -46,20 +46,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - envName: nano328
-          - envName: nanoCC1101
-          - envName: radinoCC1101
-          - envName: miniculCC1101
-          - envName: promini16
-          - envName: promini16CC1101
-          - envName: promini8
-          - envName: promini8CC1101
           - envName: esp32s
           - envName: esp32sCC1101
           - envName: esp8266s
           - envName: esp8266CC1101
-          - envName: MAPLEMINI_F103CBcc1101
           - envName: MAPLEMINI_F103CBs
+          - envName: MAPLEMINI_F103CBcc1101
+          - envName: nano328
+          - envName: nanoCC1101
+          - envName: miniculCC1101
+          - envName: promini8cc1101
+          - envName: promini16cc1101
+          - envName: promini8s
+          - envName: promini16s
+          - envName: radinoCC1101
+          - envName: wemos_d1_mini_proCC1101
 
     runs-on: ubuntu-latest
     steps:
