@@ -47,9 +47,9 @@ jobs:
       matrix:
         include:
           - envName: esp32s
-          - envName: esp32sCC1101
+          - envName: esp32cc1101
           - envName: esp8266s
-          - envName: esp8266CC1101
+          - envName: esp8266cc1101
           - envName: MAPLEMINI_F103CBs
           - envName: MAPLEMINI_F103CBcc1101
           - envName: nano328
