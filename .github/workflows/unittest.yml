@@ -55,7 +55,7 @@ jobs:
           - envName: promini8
           - envName: promini8CC1101
           - envName: esp32s
-          - envName: esp32CC1101
+          - envName: esp32sCC1101
           - envName: esp8266s
           - envName: esp8266CC1101
           - envName: MAPLEMINI_F103CBcc1101
