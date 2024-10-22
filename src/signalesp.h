@@ -10,10 +10,7 @@
 #define FIFO_LENGTH            200
 #define S_brand                " SIGNALESP "
 #define S_debugPrefix           " DB "
-#define S_ssidpre               "SIGNALESP"
-
 #define ETHERNET_PRINT
-#define WIFI_MANAGER_OVERRIDE_STRINGS
 
 // EEProm Addresscommands
 #define EE_MAGIC_OFFSET        0
@@ -53,7 +50,6 @@ void IRAM_ATTR sosBlink(void *pArg);
 #include <FS.h>
 #include <EEPROM.h>
 #include <DNSServer.h>             // Local DNS Server used for redirecting all requests to the configuration portal
-#include "ArduinoJson.h"           // Local WebServer used to serve the configuration portal
 
 #include "output.h"
 #include "bitstore.h"              // Die wird aus irgend einem Grund zum Compilieren benoetigt.
@@ -71,9 +67,7 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 #include "functions.h"
 #include "send.h"
 #include "FastDelegate.h"
-#define WIFI_MANAGER_OVERRIDE_STRINGS
 #include "wifi-config.h"
-#include "WiFiManager.h"           // https://github.com/tzapu/WiFiManager
 
 
 WiFiServer Server(23);             //  port 23 = telnet
@@ -129,8 +123,6 @@ void IRAM_ATTR sosBlink (void *pArg) {
 
 
 
-WiFiManager wifiManager;
-
 #ifdef ESP8266
   WiFiEventHandler gotIpEventHandler, disconnectedEventHandler;
 #endif
@@ -176,6 +168,8 @@ void setup() {
   }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 #endif
 
+
+
 //ESP.wdtEnable(2000);
 #ifdef ESP32
   blinksos_args.callback = sosBlink;
@@ -190,7 +184,8 @@ void setup() {
 #endif
 
 //WiFi.setAutoConnect(false);
-  WiFi.mode(WIFI_STA);
+//WiFi.mode(WIFI_STA);
+
 
   Serial.setDebugOutput(true);
   Serial.println("\n\n");
@@ -219,188 +214,7 @@ initEEPROM();
   }
 #endif 
 
-wifiManager.setShowStaticFields(true);
-// wifiManager.setCountry("US");
 
-/*
-		1. starts a config portal in access point mode (timeout 60 seconds)
-		2. Ii config portal times out, try connecting to a previous stored ssid in client mode
-		3. if no connection is possible, start wps mode 
-		If wps connection is successfull, ip address is retrieved via dhcp and saved. Otherwise esp is reseted and we start at 1. again  
-
-		ip configuration can be switched between static and dhcp mode
-*/
-IPAddress _ip, _gw, _sn;
-/*
-	DBG_PRINTLN("mounting FS...");
-	
-	if (SPIFFS.begin()) {
-		DBG_PRINTLN("mounted file system");
-		if (SPIFFS.exists("/config.json")) {
-			//file exists, reading and loading
-			DBG_PRINTLN("reading config file");
-			File configFile = SPIFFS.open("/config.json", "r");
-			if (configFile) {
-				DBG_PRINTLN("opened config file");
-				size_t size = configFile.size();
-				// Allocate a buffer to store contents of the file.
-				std::unique_ptr<char[]> buf(new char[size]);
-
-				configFile.readBytes(buf.get(), size);
-				DynamicJsonBuffer jsonBuffer;
-				JsonObject& json = jsonBuffer.parseObject(buf.get());
-				json.printTo(Serial);
-				if (json.success()) {
-					DBG_PRINTLN("\nparsed json");
-					strcpy(cfg_ipmode, json["ipmode"]);
-					if (strcmp(cfg_ipmode, "static")==0)
-					{
-						DBG_PRINT("ipmode: ");
-						DBG_PRINTLN(cfg_ipmode);
-						if (json["ip"]) {
-							//DBG_PRINTLN("load custom ip from config");
-							strcpy(static_ip, json["ip"]);
-							strcpy(static_gw, json["gateway"]);
-							strcpy(static_sn, json["subnet"]);
-							//DBG_PRINTLN(static_ip);
-
-							//  Load static IP to display them in the config portal
-							_ip.fromString(static_ip);
-							_gw.fromString(static_gw);
-							_sn.fromString(static_sn);
-							DBG_PRINTLN("apply static ip from config");
-							wifiManager.setSTAStaticIPConfig(_ip, _gw, _sn);
-
-						} else {
-							DBG_PRINTLN("no custom ip in config");
-						}
-					}
-				} else {
-					DBG_PRINTLN("failed to load json config");
-				}
-				buf.release();
-
-			}
-			configFile.close();
-		}
-	}
-	else {
-		DBG_PRINTLN("failed to mount FS");
-	}
-	//end read
-	*/
-
-	//Todo: Add custom html code to better explain how this input field works
-	
-	//WiFiManagerParameter custom_ipconfig("ipmode", "static or dhcp", cfg_ipmode, 7);
-	//wifiManager.addParameter(&custom_ipconfig);
-
-	//wifiManager.setConfigPortalTimeout(60);
-	//wifiManager.setSaveConfigCallback(saveConfigCallback);
-	//wifiManager.setBreakAfterConfig(true); // Exit the config portal even if there is a wrong config
-
-	//bool wps_successfull=false;
-Serial.println("Starting config portal with SSID: SignalESP");
-wifiManager.setConfigPortalTimeout(120);
-wifiManager.setConfigPortalTimeoutCallback(restart);
-	/*
-	if (!wifiManager.startConfigPortal("NodeDuinoConfig", NULL)) {
-
-		wifiManager.setConfigPortalTimeout(1);
-		if (wifiManager.autoConnect()) {
-			//if you get here you have connected to the WiFi
-			Serial.println("connected...)");
-			Serial.println("local ip");
-			Serial.println(WiFi.localIP());
-			os_timer_disarm(&blinksos);
-			// Blink if we have a connection
-			for (int i = 0; i < 10; i++)
-			{
-				digitalHigh(PIN_LED);
-				delay(1000);
-				digitalLow(PIN_LED);
-			}
-		} else {
-			Serial.println("failed to connect, we now enter WPS Mode");
-			delay(3000);
-			os_timer_disarm(&blinksos);
-			os_timer_setfn(&blinksos, &sosBlink, (void *)sos_sequence);
-			os_timer_arm(&blinksos, 300, true);
-
-			Serial.printf("\nCould not connect to WiFi. state='%d'\n", WiFi.status());
-			Serial.println("Please press WPS button on your router");
-			delay(5000);
-			if (!startWPS()) {
-				Serial.println("Failed to connect with WPS, will restart ESP now :-(");
-				delay(3500);
-
-				//while (1);
-				ESP.restart();
-				ESP.reset();
-			}
-			strcpy(cfg_ipmode, "dhcp");
-			wps_successfull = true;
-			shouldSaveConfig = true;
-			delay(5000);
-		}
-	}
-	*/
-wifiManager.setConnectTimeout(60);
-
-wifiManager.autoConnect("SignalESP",NULL);
-
-	/*
-	if (shouldSaveConfig)
-	{
-		DBG_PRINTLN("saving config");
-		DynamicJsonBuffer jsonBuffer;
-		JsonObject& json = jsonBuffer.createObject();
-		char old_cfg_ipmode[7];
-		strcpy(old_cfg_ipmode, cfg_ipmode);
-
-		if (wps_successfull == false) {
-			json["ipmode"] = custom_ipconfig.getValue();
-			strcpy(cfg_ipmode, json["ipmode"]);
-		} else
-			json["ipmode"] = cfg_ipmode;
-
-		if (strcmp(cfg_ipmode,"static")==0)
-		{
-			DBG_PRINTLN("saving static ip config");
-			json["ip"] = WiFi.localIP().toString();
-			json["gateway"] = WiFi.gatewayIP().toString();
-			json["subnet"] = WiFi.subnetMask().toString();
-
-			strcpy(static_ip, json["ip"]);
-			strcpy(static_gw, json["gateway"]);
-			strcpy(static_sn, json["subnet"]);
-		}
-		File configFile = SPIFFS.open("/config.json", "w");
-		if (!configFile) {
-			DBG_PRINTLN("failed to open config file for writing");
-		}
-
-		json.prettyPrintTo(Serial);
-		json.printTo(configFile);
-		configFile.close();
-		if (strcmp(cfg_ipmode,"dhcp") == 0 && strcmp(old_cfg_ipmode,"dhcp") != 0)
-		{
-			Serial.println("Reenable DHCP client mode. Restarting ESP now");
-			delay(1000);
-			ESP.restart(); // Reset ESP to re-enable DHCP mode
-			ESP.reset();
-			//Todo: Store in eeprom that we restarted so we can skip configportal for one reboot
-
-		}
-		if (strcmp(cfg_ipmode,"static") == 0) {
-			_ip.fromString(static_ip);
-			_gw.fromString(static_gw);
-			_sn.fromString(static_sn);
-			DBG_PRINTLN("update static ip from config");
-			wifiManager.setSTAStaticIPConfig(_ip, _gw, _sn); // This should disable static ip mode for wifimanger and allow dhcp again	}
-		}
-	}
-	*/
 
 #ifdef ESP32
   cronTimer_args.callback = cronjob;
@@ -412,7 +226,9 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-musterDec.setStreamCallback(writeCallback);
+  setupWifi();
+
+  musterDec.setStreamCallback(writeCallback);
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
@@ -428,12 +244,9 @@ musterDec.setStreamCallback(writeCallback);
   }
 #endif
 
+
 MSG_PRINTER.setTimeout(400);
 
-//	WiFi.mode(WIFI_STA);
-  wifiManager.setConfigPortalBlocking( false);
-//	wifiManager.startConfigPortal();
-  wifiManager.startWebPortal();
 #ifdef ESP32
   esp_timer_start_periodic(cronTimer_handle, 31000);
   esp_timer_stop(blinksos_handle);
@@ -500,7 +313,7 @@ void IRAM_ATTR cronjob(void *pArg) {
 
 
 void loop() {
-  wifiManager.process();
+  Portal.handleClient();
 
   static int aktVal = 0;
   bool state;
