@@ -66,6 +66,7 @@ void setupWifi()
   Config.autoReconnect = true;
   Config.reconnectInterval = 2;
   Config.retainPortal = true;   // Keep the captive portal open.
+  Config.principle = AC_PRINCIPLE_RSSI;
 
   Portal.config(Config);
 
