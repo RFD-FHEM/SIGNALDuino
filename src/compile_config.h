@@ -74,11 +74,11 @@
     #define PIN_RECEIVE           3
     #define PIN_MARK433           A0
   #elif ARDUINO_MAPLEMINI_F103CB
-    const uint8_t pinReceive[] = {11, 18, 16, 14};  // compatible to variant -> Circuit board for four connected cc110x devices
+    // https://wiki.fhem.de/wiki/Maple-SignalDuino - CC1101_1 (B) - 433 MHz für OOK/ASK
     #define PIN_LED              33
-    #define PIN_SEND             17                 // GDO Pin TX out
-    #define PIN_RECEIVE          pinReceive[1]      // GDO2
-    #define PIN_WIZ_RST          27                 // for LAN
+    #define PIN_SEND             17   // GD00  (send)
+    #define PIN_RECEIVE          18   // GD02 (Receive)
+    #define PIN_WIZ_RST          27   // for LAN
   #elif defined(ESP8266)
     #define PIN_RECEIVE          5    // D1
     #define PIN_LED              16   // some boards have no LED or this LED has a different PIN defined

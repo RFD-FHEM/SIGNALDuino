@@ -23,8 +23,12 @@
   extern void DBG_PRINTtoHEX(uint8_t b);
   extern bool AfcEnabled;
   #ifdef CMP_CC1101
-  extern int8_t cc1101::freqOffAcc;       
-  extern float cc1101::freqErrAvg;        
+    #if defined (ESP8266) || defined (ESP32)
+      extern bool wmbus;
+      extern bool wmbus_t;
+    #endif 
+    extern int8_t cc1101::freqOffAcc;       
+    extern float cc1101::freqErrAvg;        
   #endif 
 
   #define pulseMin  90
@@ -100,26 +104,45 @@ void disableReceive() {
 
 
 //================================= EEProm commands ======================================
-void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc) {
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+  void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc, int8_t wmbus, int8_t wmbus_t) {
+#else
+  void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc) {
+#endif
   #ifdef CMP_CC1101
-  if (afc == 0) { // reset AFC
-    cc1101::freqOffAcc = 0;
-    cc1101::freqErrAvg = 0;
-    cc1101::writeReg(static_cast<uint8_t>(0x0C), static_cast<uint8_t>(afc) ); // reset 0x0C: FSCTRL0 – Frequency Synthesizer Control
-  }
+    if (afc == 0) { // reset AFC
+      cc1101::freqOffAcc = 0;
+      cc1101::freqErrAvg = 0;
+      cc1101::writeReg(static_cast<uint8_t>(0x0C), static_cast<uint8_t>(afc) ); // reset 0x0C: FSCTRL0 – Frequency Synthesizer Control
+    }
+    #if defined (ESP8266) || defined (ESP32)
+      if (wmbus == 1) { // WMBus
+        mbus_init(wmbus_t + 1); // WMBus mode S or T
+      }
+    #endif
   #endif
   mu = mu << 1;
   mc = mc << 2;
   red = red << 3;
   afc = afc << 4;
-  int8_t dat = ms | mu | mc | red | afc;
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+    wmbus = wmbus << 5;
+    wmbus_t = wmbus_t << 6;
+    int8_t dat = ms | mu | mc | red | afc | wmbus | wmbus_t;
+  #else
+    int8_t dat = ms | mu | mc | red | afc;
+  #endif
   EEPROM.write(addr_features, dat);
   #if defined(ESP8266) || defined(ESP32)
     EEPROM.commit();
   #endif
 }
 
-void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc) {
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+  void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc, bool *wmbus, bool *wmbus_t) {
+#else
+  void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc) {
+#endif
   int8_t dat = EEPROM.read(addr_features);
 
   *ms = bool(dat &(1 << 0));
@@ -127,6 +150,10 @@ void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc) {
   *mc = bool(dat &(1 << 2));
   *red = bool(dat &(1 << 3));
   *afc = bool(dat &(1 << 4));
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+    *wmbus = bool(dat &(1 << 5));
+    *wmbus_t = bool(dat &(1 << 6));
+  #endif
 }
 
 void dumpEEPROM() {
@@ -149,7 +176,11 @@ void initEEPROM(void) {
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
     DBG_PRINT(F("Reading values from ")); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
   } else {
-    storeFunctions(1, 1, 1, 1, 0); // Init EEPROM with all flags enabled, AFC disabled
+    #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+      storeFunctions(1, 1, 1, 1, 0, 0, 0); // Init EEPROM with all flags enabled, AFC, WMBus and WMBus_T disabled
+    #else
+      storeFunctions(1, 1, 1, 1, 0); // Init EEPROM with all flags enabled, AFC disabled
+    #endif
     //hier fehlt evtl ein getFunctions()
     MSG_PRINTLN(F("Init eeprom to defaults after flash"));
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
@@ -162,7 +193,11 @@ void initEEPROM(void) {
       EEPROM.commit();
     #endif
   }
-  getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+    getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled, &wmbus, &wmbus_t);
+  #else
+    getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
+  #endif
   DBG_PRINTLN(F("done"));
   dumpEEPROM();
 }
