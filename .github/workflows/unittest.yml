@@ -89,7 +89,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v4
+        uses: rlespinasse/github-slug-action@v5
 
       - name: Run PlatformIO and compile sketch
         id: compile_sketch
