@@ -24,7 +24,8 @@ WebServer PortalServer(80);
 
 AutoConnect Portal(PortalServer);
 AutoConnectConfig Config;       // Enable autoReconnect supported on v0.9.4
-
+bool connected;
+unsigned long elapsed;
 
 void exitOTAStart() {
   Serial.println("OTA started");
@@ -47,9 +48,9 @@ void onWifiConnect(IPAddress& ip) {
   Serial.println("\tIP: " + WiFi.localIP().toString());
   Config.ota = AC_OTA_BUILTIN;
   Config.otaExtraCaption = PROGVERS;
+  connected=true;
   Portal.config(Config);
 }
-
 
 void setupWifi()
 {
@@ -74,7 +75,6 @@ void setupWifi()
   Portal.onOTAEnd(exitOTAEnd);
   Portal.onOTAProgress(exitOTAProgress);
   Portal.onOTAError(exitOTAError);
-  
 
   //PortalServer.on("/", rootPage);
 

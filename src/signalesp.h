@@ -310,9 +310,24 @@ void IRAM_ATTR cronjob(void *pArg) {
     getUptime();
 }
 
+unsigned long Elapsed;
+
 
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED) {
+    connected = false;
+    Elapsed = millis();
+  }
+
+  if ((WiFi.getMode() & WIFI_AP) && connected) {
+    if (millis() - elapsed > 30000) {
+      WiFi.softAPdisconnect(true);
+      WiFi.enableAP(false);
+    }
+  }
+
+
   Portal.handleClient();
 
   static int aktVal = 0;
