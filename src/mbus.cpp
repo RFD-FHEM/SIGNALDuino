@@ -794,7 +794,6 @@ uint16_t byteSize(uint8_t Smode, uint8_t transmit, uint16_t packetSize)
 //----------------------------------------------------------------------------------
 void encodeTXPacket(uint8_t *pPacket, uint8_t *pData, uint8_t dataSize)
 {
-
   uint8_t loopCnt;
   uint8_t dataRemaining;
   uint8_t dataEncoded;
@@ -1137,7 +1136,6 @@ uint16_t decodeRXBytesSmode(uint8_t *pByte, uint8_t *pPacket, uint16_t packetSiz
 //----------------------------------------------------------------------------------
 uint16_t decodeRXBytesTmode(uint8_t *pByte, uint8_t *pPacket, uint16_t packetSize)
 {
-
   uint16_t bytesRemaining;
   uint16_t bytesEncoded;
   uint16_t decodingStatus;
@@ -1171,7 +1169,6 @@ uint16_t decodeRXBytesTmode(uint8_t *pByte, uint8_t *pPacket, uint16_t packetSiz
 
     else
     {
-
       decodingStatus = decode3outof6(pByte, pPacket, 0);
 
       // Check for valid 3 out of 6 decoding
@@ -1630,7 +1627,6 @@ static uint8_t decodeTab[64] = {0xFF,  //  "3 out of 6" encoded 0x00 decoded
 
 void encode3outof6(uint8_t *uncodedData, uint8_t *encodedData, uint8_t lastByte)
 {
-
   uint8_t data[4];
 
   // - Perform encoding -
@@ -1679,7 +1675,6 @@ void encode3outof6(uint8_t *uncodedData, uint8_t *encodedData, uint8_t lastByte)
 
 uint8_t decode3outof6(uint8_t *encodedData, uint8_t *decodedData, uint8_t lastByte)
 {
-
   uint8_t data[4];
 
   // - Perform decoding on the input data -
