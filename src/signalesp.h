@@ -62,6 +62,7 @@ void IRAM_ATTR sosBlink(void *pArg);
 #ifdef CMP_CC1101
   #include "cc1101.h"
   #include <SPI.h>                 // prevent travis errors
+  #include "mbus.h"
 #endif
 
 SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
@@ -106,8 +107,10 @@ volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool AfcEnabled = true;
 char IB_1[14];                     // Input Buffer one - capture commands
-
-
+#ifdef CMP_CC1101
+  bool wmbus = false;
+  bool wmbus_t = false;
+#endif
 const char sos_sequence[] = "0101010001110001110001110001010100000000";
 const char boot_sequence[] = "00010100111";
 
@@ -137,6 +140,10 @@ void restart(){
 }
 
 void setup() {
+  Serial.begin(BAUDRATE);
+  while (!Serial) {
+    delay(90); // wait for serial port to connect. Needed for native USB
+  }
   //char cfg_ipmode[7] = "dhcp";
   //Server.setNoDelay(true);
 #if defined(ESP8266)
@@ -185,11 +192,7 @@ void setup() {
 //WiFi.setAutoConnect(false);
   WiFi.mode(WIFI_STA);
 
-  Serial.begin(115200);
   Serial.setDebugOutput(true);
-  while (!Serial)
-    delay(90);
-
   Serial.println("\n\n");
 
   pinMode(PIN_RECEIVE, INPUT);
@@ -441,6 +444,11 @@ MSG_PRINTER.setTimeout(400);
 
 pinAsOutput(PIN_SEND);
 digitalLow(PIN_LED);
+#ifdef CMP_CC1101
+  if (wmbus == 1) { // WMBus
+    mbus_init((uint8_t)wmbus_t + 1); // WMBus mode S or T
+  }
+#endif
 }
 
 
@@ -510,7 +518,11 @@ void loop() {
     }
 #ifdef CMP_CC1101
   } else {
-    cc1101::getRxFifo(0);                   // xFSK = 0
+    if (wmbus == 0) {
+      cc1101::getRxFifo(0);                   // xFSK = 0
+    } else {
+      mbus_task();
+    }
   }
 #endif
 }
