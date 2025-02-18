@@ -13,7 +13,7 @@ jobs:
         with: 
           submodules: true
 
-      - uses: lukka/get-cmake@v3.27.9
+      - uses: lukka/get-cmake@v3.31.5
         with:
           cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
 
@@ -21,7 +21,7 @@ jobs:
         working-directory: ./tests
         run:  mkdir -p build
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ./tests/build/_deps/
@@ -46,20 +46,21 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - envName: nano328s
-          - envName: nanoCC1101
-          - envName: radinoCC1101
-          - envName: miniculCC1101
-          - envName: promini16s
-          - envName: promini16CC1101
-          - envName: promini8s
-          - envName: promini8CC1101
           - envName: esp32s
-          - envName: esp32CC1101
+          - envName: esp32cc1101
           - envName: esp8266s
-          - envName: esp8266CC1101
-          - envName: MAPLEMINI_F103CBcc1101
+          - envName: esp8266cc1101
           - envName: MAPLEMINI_F103CBs
+          - envName: MAPLEMINI_F103CBcc1101
+          - envName: nano328
+          - envName: nanoCC1101
+          - envName: miniculCC1101
+          - envName: promini8cc1101
+          - envName: promini16cc1101
+          - envName: promini8s
+          - envName: promini16s
+          - envName: radinoCC1101
+          - envName: wemos_d1_mini_proCC1101
 
     runs-on: ubuntu-latest
     steps:
@@ -69,7 +70,7 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/cache@v3
+      - uses: actions/cache@v4
         with:
           path: |
             ~/.cache/pip
@@ -77,7 +78,7 @@ jobs:
           key: ${{ matrix.envName }}-pio
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
            languages: cpp
     
@@ -88,7 +89,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Inject slug/short variables
-        uses: rlespinasse/github-slug-action@v4
+        uses: rlespinasse/github-slug-action@v5
 
       - name: Run PlatformIO and compile sketch
         id: compile_sketch
@@ -111,12 +112,12 @@ jobs:
           echo "| ${{ matrix.envName }} | ${{ steps.compile_sketch.outputs.SKETCHSIZE }} | ${{ steps.compile_sketch.outputs.GLOBALRAMUSAGE }} |" >> $GITHUB_STEP_SUMMARY
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
         with:
           category: "/board:${{matrix.envName}}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.compile_sketch.outputs.FILENAME }}
           path: |
@@ -132,7 +133,7 @@ jobs:
     steps:
       - name: Download artifact
         id: download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
 
       - name: 'Echo download path'
         run: ls -R ${{steps.download.outputs.download-path}}
@@ -140,7 +141,7 @@ jobs:
       - name: Upload Release Asset
         id: upload-release-asset 
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           draft: true

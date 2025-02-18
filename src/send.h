@@ -100,10 +100,10 @@ struct s_sendcmd {
 
 void send_cmd()
 {
-#define combined 0
-#define manchester 1
-#define raw 2
-#define xFSK 3
+#define SD_combined 0
+#define SD_manchester 1
+#define SD_raw 2
+#define SD_xFSK 3
 	disableReceive();
 
 	uint8_t repeats = 1;  // Default is always one iteration so repeat is 1 if not set
@@ -137,27 +137,27 @@ void send_cmd()
 			if (msg_beginptr[1] == 'C')  // send combined information flag
 			{
 				cmdNo++;
-				command[cmdNo].type = combined;
+				command[cmdNo].type = SD_combined;
 				extraDelay = false;
 			}
 			else if (msg_beginptr[1] == 'M') // send manchester
 			{
 			cmdNo++;
-			command[cmdNo].type = manchester;
+			command[cmdNo].type = SD_manchester;
 			DBG_PRINTLN(F("Adding manchester"));
 
 			}
 			else if (msg_beginptr[1] == 'R') // send raw
 			{
 			cmdNo++;
-			command[cmdNo].type = raw;
+			command[cmdNo].type = SD_raw;
 			DBG_PRINTLN(F("Adding raw"));
 			extraDelay = false;
 			}
         else if (msg_beginptr[1] == 'N') // send xFSK
         {
           cmdNo++;
-          command[cmdNo].type = xFSK;
+          command[cmdNo].type = SD_xFSK;
           DBG_PRINTLN(F("Adding xFSK message"));
         }
 			if (cmdNo == 0) {
@@ -287,7 +287,7 @@ void send_cmd()
 		return;
 	}
 
-	if (command[0].type == combined && command[0].repeats > 0) {
+	if (command[0].type == SD_combined && command[0].repeats > 0) {
     /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
 
        repeats 3 --> SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;  type MC - ASK/OOK
@@ -306,11 +306,11 @@ void send_cmd()
           DBG_PRINT(F(" part ")); DBG_PRINT(c); DBG_PRINT('/'); DBG_PRINT(cmdNo);
           DBG_PRINT(F(" repeats ")); DBG_PRINTLN(command[c].repeats);
 
-          if (command[c].type == raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
-          else if (command[c].type == manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
+          if (command[c].type == SD_raw) { for (uint8_t rep = 0; rep < command[c].repeats; rep++) send_raw(command[c].datastart, command[c].dataend, command[c].buckets); }
+          else if (command[c].type == SD_manchester) { for (uint8_t rep = 0; rep < command[c].repeats; rep++)send_mc(command[c].datastart, command[c].dataend, command[c].sendclock); }
           
         #if defined CMP_CC1101
-          else if (command[c].type == xFSK) {
+          else if (command[c].type == SD_xFSK) {
             for (uint8_t rep = 0; rep < command[c].repeats; rep++) {
               if (rep > 0) { cc1101::setTransmitMode(); }
               cc1101::sendFIFO(command[cmdNo].datastart, command[c].dataend);

@@ -47,7 +47,11 @@ extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
 extern uint8_t ccmode;;          // xFSK
 #ifdef CMP_CC1101
-extern bool AfcEnabled;
+	extern bool AfcEnabled;
+	#if defined (ESP8266) || defined (ESP32)
+		extern bool wmbus;
+		extern bool wmbus_t;
+	#endif
 #endif
 
 namespace commands {
@@ -69,33 +73,40 @@ namespace commands {
 		}
 	}
 
-	/*
-	void printHex2(const byte hex) {   // Todo: printf oder scanf nutzen <<<<----- printf benoetigt mehr Speicher als diese Variante
-		if (hex < 16) {
-			MSG_PRINT("0");
-		}
-		MSG_PRINT(hex, HEX);
-	}
-	*/
-
 	inline void getConfig()
 	{
-		MSG_PRINT(F("MS="));
-		MSG_PRINT(musterDec.MSenabled, DEC);
-		MSG_PRINT(F(";MU="));
-		MSG_PRINT(musterDec.MUenabled, DEC);
-		MSG_PRINT(F(";MC="));
-		MSG_PRINT(musterDec.MCenabled, DEC);
 		#ifdef CMP_CC1101
-			if (cc1101::ccmode != 3) { // ASK/OOK = 3 (default)
-			MSG_PRINT(F(";MN=1;AFC="));
-			MSG_PRINT(AfcEnabled, DEC);
+			if (cc1101::ccmode == 3) { // ASK/OOK = 3 (default)
+				MSG_PRINT(F("MS="));
+				MSG_PRINT(musterDec.MSenabled, DEC);
+				MSG_PRINT(F(";MU="));
+				MSG_PRINT(musterDec.MUenabled, DEC);
+				MSG_PRINT(F(";MC="));
+				MSG_PRINT(musterDec.MCenabled, DEC);
+				MSG_PRINT(F(";Mred="));
+				MSG_PRINTLN(musterDec.MredEnabled, DEC);
+			} else {                   // FSK
+				MSG_PRINT(F("MN=1"));
+				#if defined (ESP8266) || defined (ESP32)
+					MSG_PRINT(F(";WMBus="));
+					MSG_PRINT(wmbus, DEC);
+					MSG_PRINT(F(";WMBus_T="));
+					MSG_PRINT(wmbus_t, DEC);
+				#endif
+				MSG_PRINT(F(";AFC="));
+				MSG_PRINTLN(AfcEnabled, DEC);
 			}
+		#else
+			MSG_PRINT(F("MS="));
+			MSG_PRINT(musterDec.MSenabled, DEC);
+			MSG_PRINT(F(";MU="));
+			MSG_PRINT(musterDec.MUenabled, DEC);
+			MSG_PRINT(F(";MC="));
+			MSG_PRINT(musterDec.MCenabled, DEC);
+			MSG_PRINT(F(";Mred="));
+			MSG_PRINTLN(musterDec.MredEnabled, DEC);
 		#endif
-		MSG_PRINT(F(";Mred="));
-		MSG_PRINTLN(musterDec.MredEnabled, DEC);
 	}
-
 
 	inline void configCMD()
 	{
@@ -119,6 +130,14 @@ namespace commands {
 			case 'A' : //Afc
 				bptr = &AfcEnabled;
 				break;
+			#if defined (ESP8266) || defined (ESP32)
+			case 'W' : //WMBus
+				bptr = &wmbus;
+				break;
+			case 'T' : //WMBus_T
+				bptr = &wmbus_t;
+				break;
+			#endif
 			#endif
 			default:
 				return;
@@ -135,8 +154,11 @@ namespace commands {
 			default:
 				return;
 		}
-
-		storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
+		#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled, wmbus, wmbus_t);
+		#else
+			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
+		#endif
 	}
 
 	inline void configSET()
@@ -377,10 +399,10 @@ namespace commands {
 					}
 				}
 #endif
-			}
 #if defined(ESP32) || defined(ESP8266)
-			EEPROM.commit();    // ToDo: ESP32 | if DEBUG setting, crash many times AND DEBUG off, crash if setting freqency, ICACHE_RAM ???
+				EEPROM.commit();
 #endif
+			}
 		break;
 		case cmd_status:
 #ifdef CMP_CC1101
