@@ -24,6 +24,8 @@ WebServer PortalServer(80);
 
 AutoConnect Portal(PortalServer);
 AutoConnectConfig Config;       // Enable autoReconnect supported on v0.9.4
+AutoConnectAux auxInfo("/info", "System Info", true);
+
 bool connected;
 unsigned long elapsed;
 
@@ -52,8 +54,9 @@ void onWifiConnect(IPAddress& ip) {
   Portal.config(Config);
 }
 
-void rootPage() {
-  String html = "<html><body>";
+
+String onSystemInfoPage(AutoConnectAux& aux, PageArgument& args) {
+  String html = "<html><meta http-equiv='refresh' content='60'><body>";
   html += "<h1>SIGNALDuino System Info</h1>";
   html += "<table style='border-collapse: collapse; font-family: monospace'>";
 
@@ -86,15 +89,13 @@ void rootPage() {
 #ifdef CMP_CC1101
   
   html += "<tr><td><b>CC1101 connected</b></td><td>" + String(hasCC1101) + "</td></tr>";
-  html += "<tr><td><b>Funkchip</b></td><td>" + String(FPSTR(TXT_CC110)) + " " + commands::getCC1101ChipString(cc1101::chipVersion()) + ")</td></tr>";
+  html += "<tr><td><b>Funkchip</b></td><td>" + String(FPSTR(TXT_CC110)) + " " + commands::getCC1101ChipString(cc1101::chipVersion()) + "</td></tr>";
 #endif
 
   html += "</table>";
-  html += "</body></html>";
+  return html;
 
-  PortalServer.send(200, "text/html", html);
 }
-
 
 void setupWifi()
 {
@@ -119,8 +120,14 @@ void setupWifi()
   Portal.onOTAEnd(exitOTAEnd);
   Portal.onOTAProgress(exitOTAProgress);
   Portal.onOTAError(exitOTAError);
+  
+  Portal.onNotFound([]() {
+    auxInfo.redirect("/info");  // optionaler Redirect zur Info-Seite
+  });
+  auxInfo.on(onSystemInfoPage);
+  Portal.join({auxInfo});  // registriere Info Seite
 
-  PortalServer.on("/", rootPage);
+ // PortalServer.on("/", rootPage);
 
   Portal.onConnect(onWifiConnect);
   Portal.begin();
