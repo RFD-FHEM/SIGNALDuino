@@ -73,6 +73,24 @@ namespace commands {
 		}
 	}
 
+	const char* getCC1101ChipString(uint8_t chipVersion) {
+		switch (chipVersion) {
+			case 0x03:
+				return "0";
+			case 0x14:
+			case 0x04:
+				return "1";
+			case 0x05:
+				return "0E";
+			case 0x07:
+			case 0x17:
+				return "L";
+			default:
+				return " unknown";
+		}
+	}
+
+
 	inline void getConfig()
 	{
 		#ifdef CMP_CC1101
@@ -229,25 +247,7 @@ namespace commands {
 #else
 	#ifdef CMP_CC1101
 				MSG_PRINT(FPSTR(TXT_CHIP)); MSG_PRINT(FPSTR(TXT_BLANK)); MSG_PRINT(FPSTR(TXT_CC110));
-				switch (cc1101::chipVersion()) {
-					case 0x03:
-						 MSG_PRINT("0"); 
-						break;
-					case 0x14:
-					case 0x04:
-						 MSG_PRINT("1");
-						break;
-					case 0x05:
-						 MSG_PRINT("0E");
-						break;
-					case 0x07:
- 					case 0x17:
-						 MSG_PRINT("L");
-						break;
-					default:
-						MSG_PRINT(F(" unknown"));
-						break;
-				}
+				MSG_PRINT(getCC1101ChipString(cc1101::chipVersion()));
 				MSG_PRINT(')');
 	#endif
 #endif

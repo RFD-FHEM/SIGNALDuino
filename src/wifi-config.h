@@ -52,6 +52,50 @@ void onWifiConnect(IPAddress& ip) {
   Portal.config(Config);
 }
 
+void rootPage() {
+  String html = "<html><body>";
+  html += "<h1>SIGNALDuino System Info</h1>";
+  html += "<table style='border-collapse: collapse; font-family: monospace'>";
+
+  // Firmware
+  html += "<tr><td><b>Firmware-Version</b></td><td>" + String(PROGVERS) + "</td></tr>";
+  html += "<tr><td><b>Uptime</b></td><td>" + String(getUptime()) + "</td></tr>";
+
+#if defined(ESP8266)
+  html += "<tr><td><b>Plattform</b></td><td>ESP8266</td></tr>";
+  html += "<tr><td><b>Chip-ID</b></td><td>" + String(ESP.getChipId()) + "</td></tr>";
+  html += "<tr><td><b>CPU-Frequenz</b></td><td>" + String(ESP.getCpuFreqMHz()) + " MHz</td></tr>";
+  html += "<tr><td><b>Heap frei</b></td><td>" + String(ESP.getFreeHeap()) + " Bytes</td></tr>";
+  html += "<tr><td><b>Flash-Größe</b></td><td>" + String(ESP.getFlashChipRealSize() / 1024) + " KB</td></tr>";
+  html += "<tr><td><b>SDK-Version</b></td><td>" + String(ESP.getSdkVersion()) + "</td></tr>";
+
+#elif defined(ESP32)
+  html += "<tr><td><b>Plattform</b></td><td>ESP32</td></tr>";
+
+  esp_chip_info_t chip_info;
+  esp_chip_info(&chip_info);
+
+  html += "<tr><td><b>Chip-Revision</b></td><td>" + String(chip_info.revision) + "</td></tr>";
+  html += "<tr><td><b>CPU-Kerne</b></td><td>" + String(chip_info.cores) + "</td></tr>";
+  // html += "<tr><td><b>CPU-Frequenz</b></td><td>" + String(esp_clk_cpu_freq() / 1000000) + " MHz</td></tr>";
+  html += "<tr><td><b>Heap frei</b></td><td>" + String(esp_get_free_heap_size()) + " Bytes</td></tr>";
+  html += "<tr><td><b>Flash-Größe</b></td><td>" + String(spi_flash_get_chip_size() / 1024) + " KB</td></tr>";
+  html += "<tr><td><b>IDF-Version</b></td><td>" + String(esp_get_idf_version()) + "</td></tr>";
+#endif
+
+#ifdef CMP_CC1101
+  
+  html += "<tr><td><b>CC1101 connected</b></td><td>" + String(hasCC1101) + "</td></tr>";
+  html += "<tr><td><b>Funkchip</b></td><td>" + String(FPSTR(TXT_CC110)) + " " + commands::getCC1101ChipString(cc1101::chipVersion()) + ")</td></tr>";
+#endif
+
+  html += "</table>";
+  html += "</body></html>";
+
+  PortalServer.send(200, "text/html", html);
+}
+
+
 void setupWifi()
 {
   Config.title = S_brand;
@@ -76,7 +120,7 @@ void setupWifi()
   Portal.onOTAProgress(exitOTAProgress);
   Portal.onOTAError(exitOTAError);
 
-  //PortalServer.on("/", rootPage);
+  PortalServer.on("/", rootPage);
 
   Portal.onConnect(onWifiConnect);
   Portal.begin();
