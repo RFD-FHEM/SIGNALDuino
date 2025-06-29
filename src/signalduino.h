@@ -49,7 +49,7 @@
 // EEProm Address
 #define EE_MAGIC_OFFSET        0
 #define addr_features          0xff
-
+#define EEPROM_RESERVED_SIZE   512
 
 // Predeclation
 void serialEvent();

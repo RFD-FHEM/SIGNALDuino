@@ -113,6 +113,7 @@ void setupWifi()
   Config.reconnectInterval = 2;
   Config.retainPortal = true;   // Keep the captive portal open.
   Config.principle = AC_PRINCIPLE_RSSI;
+  Config.boundaryOffset = EEPROM_RESERVED_SIZE;
 
   Portal.config(Config);
 

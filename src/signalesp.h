@@ -15,7 +15,9 @@
 // EEProm Addresscommands
 #define EE_MAGIC_OFFSET        0
 #define addr_features          0xff
+#define EEPROM_RESERVED_SIZE   512
 #define MAX_SRV_CLIENTS        2
+
 
 #include "compile_config.h"
 
