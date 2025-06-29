@@ -268,7 +268,7 @@ digitalLow(PIN_LED);
 
 void IRAM_ATTR cronjob(void *pArg) {
   cli();
-  static uint8_t cnt = 0;
+  static uint16_t cnt = 0; // approximately every 34 minutes
 
   const unsigned long  duration = micros() - lastTime;
   long timerTime = maxPulse - duration + 1000;
@@ -306,8 +306,12 @@ void IRAM_ATTR cronjob(void *pArg) {
 
   sei();
   // Infrequent time uncritical jobs (~ every 2 hours)
-  if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+  // Workaround for ESP RSSI issues
+  if (cnt++ == 0) { // approximately every 34 minutes
     getUptime();
+    musterDec.reset();
+    FiFo.flush();
+  }
 }
 
 unsigned long Elapsed;
