@@ -171,7 +171,7 @@ void dumpEEPROM() {
 
 void initEEPROM(void) { 
   #if defined(ESP8266) || defined(ESP32)
-  EEPROM.begin(512); //Max bytes of eeprom to use
+  EEPROM.begin(EEPROM_RESERVED_SIZE); //Max bytes of eeprom to use
   #endif
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
     DBG_PRINT(F("Reading values from ")); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
