@@ -141,8 +141,6 @@ void resetwifi() {
 #elif defined(ESP32)
 	ESP.restart();
 #endif
-
-	
 }
 
 #endif
