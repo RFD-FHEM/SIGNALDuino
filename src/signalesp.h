@@ -313,6 +313,7 @@ void IRAM_ATTR cronjob(void *pArg) {
     getUptime();
     musterDec.reset();
     FiFo.flush();
+    cc1101::CCinit(); // Reinitialize CC1101
   }
 }
 
