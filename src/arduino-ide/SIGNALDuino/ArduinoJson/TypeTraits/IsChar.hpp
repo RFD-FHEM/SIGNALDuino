@@ -1,1 +1,0 @@
-../../../../_micro-api/libraries/ArduinoJson/src/ArduinoJson/TypeTraits/IsChar.hpp
