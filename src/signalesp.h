@@ -53,7 +53,6 @@ void IRAM_ATTR sosBlink(void *pArg);
 #include <FS.h>
 #include <EEPROM.h>
 #include <DNSServer.h>             // Local DNS Server used for redirecting all requests to the configuration portal
-#include "ArduinoJson.h"           // Local WebServer used to serve the configuration portal
 
 #include "output.h"
 #include "bitstore.h"              // Die wird aus irgend einem Grund zum Compilieren benoetigt.
