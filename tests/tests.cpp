@@ -201,7 +201,7 @@ namespace arduino {
 			ooDecode.MSenabled = true;
 			ooDecode.MCenabled = true;
 			ooDecode.MUenabled = true;
-			ooDecode.setStreamCallback(&writeCallback);
+			// ooDecode.setStreamCallback(&writeCallback);
 			ooDecode.MredEnabled = false;
 			duration = 0;
 			state = false;
