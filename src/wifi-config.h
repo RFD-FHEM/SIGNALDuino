@@ -10,7 +10,6 @@
 #include <esp_wifi.h>  
 #endif 
 
-#include "ArduinoJson.h"
 #include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
 
 extern WiFiManager wifiManager;
