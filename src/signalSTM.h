@@ -47,7 +47,6 @@ void cronjob();
 int freeRam();
 void configSET();
 uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 extern char _estack;
 extern char _Min_Stack_Size;
@@ -61,7 +60,6 @@ extern "C" char *sbrk(int i);
   bool watchRes = false;
 #endif
 
-#include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
@@ -73,8 +71,9 @@ extern "C" char *sbrk(int i);
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
 #include <EEPROM.h>
-#include "cc1101.h"
-
+#ifdef CMP_CC1101
+  #include "cc1101.h"
+#endif
 volatile bool blinkLED = false;
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
@@ -111,7 +110,7 @@ void setup() {
   // CC1101
 
   #ifdef CMP_CC1101
-    cc1101::setup();
+    cc1101::setup(); // set pins input/output, init SPI
   #endif
 
   initEEPROM();
@@ -119,13 +118,10 @@ void setup() {
   #ifdef CMP_CC1101
     cc1101::CCinit();                   // CC1101 init
     hasCC1101 = cc1101::checkCC1101();  // Check for cc1101
-
+    musterDec.hasCC1101 = hasCC1101;
     if (hasCC1101)
     {
       DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
-      musterDec.setRSSICallback(&cc1101::getRSSI);          // Provide the RSSI Callback
-    } else {
-      musterDec.setRSSICallback(&rssiCallback);             // Provide the RSSI Callback
     }
   #endif
 
@@ -143,8 +139,6 @@ void setup() {
   MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
   MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
   //cmdstring.reserve(40);
-
-  musterDec.setStreamCallback(&writeCallback);
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
@@ -240,23 +234,6 @@ void loop() {
   }
 #endif
 }
-
-
-
-//============================== Write callback =========================================
-size_t writeCallback(const uint8_t *buf, uint8_t len)
-{
-  while (!MSG_PRINTER.availableForWrite() )
-  yield();
-  //DBG_PRINTLN("Called writeCallback");
-
-  //MSG_PRINT(*buf);
-  //MSG_WRITE(buf, len);
-  return MSG_PRINTER.write(buf,len);
-
-  //serverClient.write("test");
-}
-
 
 
 //================================= Serielle verarbeitung ======================================

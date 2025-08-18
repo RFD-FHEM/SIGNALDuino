@@ -82,11 +82,17 @@
   #define DEBUG 1
 #endif
 
-#ifdef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
+#ifndef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
   #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
     #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
+    #ifdef CMP_CC1101
+      #include "../../../../cc1101.h"
+    #endif
   #else
     #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
+    #ifdef CMP_CC1101
+      #include "cc1101.h"
+    #endif
   #endif
 #endif
 
@@ -104,21 +110,33 @@
  */
 #endif
 
-/* for Unittest - output object over callback */
-#define SDC_PRINT(...)    write(__VA_ARGS__)
-#define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+#ifdef ETHERNET_PRINT
+  #include <WiFiClient.h>
+  extern WiFiClient serverClient;
+  #define MSG_PRINTER serverClient
+#else
+  #define MSG_PRINTER Serial
+#endif
+
+#ifdef ETHERNET_DEBUG         // variable is not defined
+  #define DBG_PRINTER Client  // now used ???
+#else
+  #define DBG_PRINTER Serial
+#endif
+
+#define SDC_PRINT(...)    MSG_PRINTER.write(__VA_ARGS__)
+#define SDC_WRITE(b)      MSG_PRINTER.write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  MSG_PRINTER.write(__VA_ARGS__); MSG_PRINTER.write(char(0xA));
 
 #ifndef F 
   #define F(V1) V1
 #endif
 
 #include "bitstore.h"         /* Dependency is needed */
-#include "FastDelegate.h"     /* Dependency is needed */
 
 #define maxNumPattern 8
 #define maxMsgSize 254
-#define minMessageLen 40
+#define minMessageLen 40 // Mindestanzahl Pulse
 #define syncMinFact 6
 #define syncMaxFact 44
 #define syncMaxMicros 17000
@@ -147,18 +165,11 @@ public:
 	SignalDetectorClass() : first(buffer), last(nullptr), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
-																		 MredEnabled = 1;      // 1 = compress printmsg 
-																		 mcdecoder = nullptr;
 																		};
 
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
-	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
-	typedef fastdelegate::FastDelegate2<const uint8_t*, uint8_t, size_t> Func2pRetuint8t;
-
-	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
-	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
 
 	//private:
   void SDC_PRINT_intToHex(unsigned int numberToPrint);
@@ -167,7 +178,8 @@ public:
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
-	bool MredEnabled;                       // 1 = compress printMsgRaw
+	bool MredEnabled;                       // compress printMsgRaw
+	bool hasCC1101;
 	uint8_t MsMoveCount;
 
 	uint8_t histo[maxNumPattern];
@@ -198,11 +210,7 @@ public:
 											//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
-	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
-	FuncRetuint8t _rssiCallback= nullptr;	// Holds the pointer to a callback Function
-	Func2pRetuint8t _streamCallback=nullptr;// Holds the pointer to a callback Function
-	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
-
+	uint8_t rssiValue;					// Holds the RSSI value retrieved via a rssi callback
 
 	void addData(const int8_t value);
 	void addPattern();
