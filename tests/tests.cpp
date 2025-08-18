@@ -61,7 +61,7 @@
 #define NOSTRING
 #endif
 
-#include <signalDecoder.h>
+// #include <signalDecoder.h>
 
 
 namespace arduino { 
