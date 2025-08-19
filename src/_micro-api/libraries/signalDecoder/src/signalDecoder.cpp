@@ -1350,6 +1350,7 @@ void ManchesterpatternDecoder::HEX_twoDigits(char* cbuffer, uint8_t val)
 *
 * ()
 */
+/*
 void ManchesterpatternDecoder::printMessageHexStr()
 {
 	//char hexStr[] = "00"; // Not really needed
@@ -1374,6 +1375,7 @@ void ManchesterpatternDecoder::printMessageHexStr()
 
 	//pdec->write(cbuffer);
 }
+*/
 
 
 /** @brief (one liner)
