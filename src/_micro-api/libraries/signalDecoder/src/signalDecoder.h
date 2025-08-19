@@ -255,7 +255,7 @@ public:
 	void getMessageClockStr(String* str);
 	void getMessageLenStr(String* str);
 #endif
-	void printMessageHexStr();
+	// void printMessageHexStr();
 	char nibble_to_HEX(uint8_t nibble);
 	void HEX_twoDigits(char* cbuffer, uint8_t val);
 
