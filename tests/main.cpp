@@ -19,7 +19,6 @@ void cli() {};
 void sei() {};
 
 // bool hasCC1101=true;
-bool hasCC1101=false;
 bool AfcEnabled=true; // AFC on or off
 
 volatile unsigned long lastTime=0;
