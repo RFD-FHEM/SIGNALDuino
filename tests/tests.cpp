@@ -1479,11 +1479,10 @@ namespace arduino {
 				//if (i==2) 			ASSERT_TRUE(state);
 
 			}
-			// int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
-			// int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
-			// std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
+			int msgStartPos = outputStr.find_first_of(MSG_START) + 1;
+			int msgEndPos = outputStr.find_first_of(MSG_END, msgStartPos);
+			std::string Message = outputStr.substr(msgStartPos, msgEndPos - msgStartPos);
 			std::string bstr = "MS;P0=488;P1=-8055;P2=-2049;P3=-3956;D=0101020203020202020202030202030202030202020303030203030202020202020202020202020203030203;CP=0;SP=1;O;m2;";
-			std::string Message = "MS;P0=488;P1=-8055;P2=-2049;P3=-3956;D=0101020203020202020202030202030202030202020303030203030202020202020202020202020203030203;CP=0;SP=1;O;m2;";
 			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
 		}
 
