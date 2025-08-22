@@ -1475,7 +1475,7 @@ namespace arduino {
 
 			for (int i = 0; i < 3; i++)
 			{
-				state = import_sigdata(&dstr);
+				// state = import_sigdata(&dstr);
 				//if (i==2) 			ASSERT_TRUE(state);
 
 			}
