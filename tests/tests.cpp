@@ -109,7 +109,7 @@ namespace arduino {
 					buckets[counter] = atoi(cmdstring->substr(startpos + 3, endpos).c_str());
 					if (raw_mode)
 					{
-						ooDecode.pattern[counter] = buckets[counter];
+						ooDecode.addpattern[counter] = buckets[counter];
 					}
 
 				}
