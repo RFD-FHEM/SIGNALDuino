@@ -124,7 +124,7 @@ namespace arduino {
 
 						//state = DigitalSimulate(buckets[cmdstring->substring(i, i + 1).toInt()]);
 						if (!raw_mode) {
-							//state = ooDecode.decode(&buckets[ipulse]);
+							state = ooDecode.decode(&buckets[ipulse]); // SEGFAULT bei pull request Library fastdelegate removed
 
 							//Serial.println(buckets[ipulse]);
 						}
