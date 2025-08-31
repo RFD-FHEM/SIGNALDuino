@@ -128,7 +128,6 @@ void setup() {
       musterDec.setCallback(&rssiCallback);             // Provide the RSSI Callback
     }
 
-    }
   #endif
 
   pinAsOutput(PIN_SEND);
