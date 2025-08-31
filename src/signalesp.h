@@ -209,10 +209,10 @@ initEEPROM();
   {
     DBG_PRINT(FPSTR(TXT_CC1101));
     DBG_PRINTLN(FPSTR(TXT_FOUND));
-    musterDec.setRSSICallback(&cc1101::getRSSI);   // Provide the RSSI Callback
+    musterDec.setCallback(&cc1101::getRSSI);   // Provide the RSSI Callback
   }
   else {
-    musterDec.setRSSICallback(&rssiCallback);      // Provide the RSSI Callback
+    musterDec.setCallback(&rssiCallback);      // Provide the RSSI Callback
   }
 #endif 
 
@@ -409,7 +409,7 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-musterDec.setStreamCallback(writeCallback);
+musterDec.setCallback(writeCallback);
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {

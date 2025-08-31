@@ -135,6 +135,11 @@ enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
 char* myitoa(int num, char* str);   // selfmade myitoa function
 
+// Create a type for the callback functions
+typedef  uint8_t (*rssiCallback_t)();  
+typedef  size_t (*streamCallback_t)(const uint8_t*, uint8_t);  
+
+
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
 
@@ -146,16 +151,22 @@ public:
 	SignalDetectorClass() : first(buffer), last(nullptr), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
- 																		 MredEnabled = 1;      // 1 = compress printmsg 
+																		 MredEnabled = 1;      // 1 = compress printmsg 
 																		 mcdecoder = nullptr;
+																		 _streamCallback = nullptr;
+ 																		 _rssiCallback = nullptr;
 																		};
+
 
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
+	// register the callback functions
+	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; }
+	void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
 
 	//private:
-  void SDC_PRINT_intToHex(unsigned int numberToPrint);
+  	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
@@ -193,9 +204,9 @@ public:
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
-	uint8_t (*_rssiCallback)= nullptr;		// Holds the pointer to a callback Function
-	uint8_t (*_streamCallback)=nullptr;		// Holds the pointer to a callback Function
 
+	rssiCallback_t _rssiCallback;			// Holds the pointer to a callback Function
+	streamCallback_t _streamCallback;		// Holds the pointer to a callback Function
 
 
 	void addData(const int8_t value);
