@@ -139,7 +139,6 @@ void setup() {
   #ifdef CMP_CC1101
     cc1101::CCinit();                    // CC1101 init
     hasCC1101 = cc1101::checkCC1101();   // Check for cc1101
-    musterDec.hasCC1101 = hasCC1101;
     if (hasCC1101)
     {
       DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND)); 
