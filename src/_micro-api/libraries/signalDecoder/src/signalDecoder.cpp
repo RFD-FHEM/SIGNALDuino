@@ -30,10 +30,7 @@
 
 */
 #include "signalDecoder.h"
-#include <EEPROM.h> // PlatformIO src\_micro-api\libraries\signalDecoder\src\../../../../cc1101.h:13:10: fatal error: EEPROM.h: No such file or directory
-#if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_MAPLEMINI_F103CB)
-	#include <SPI.h> // PlatformIO src/_micro-api/libraries/signalDecoder/src/../../../../cc1101.h:26:11: fatal error: SPI.h: No such file or directory
-#endif
+
 // TODO: Update lib with this content to to src\_micro-api\libraries\signalDecoder and use this one instead of a local copy for testing!
 
 // Ony on ESP8266 needed:
@@ -217,12 +214,8 @@ inline void SignalDetectorClass::doDetect()
 		}
 	}
 	else if (messageLen == minMessageLen) {
-		#ifdef CMP_CC1101
-			if (hasCC1101) {
-				rssiValue = cc1101::getRSSI();
-			}
-		#endif
 		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
+		rssiValue = _rssiCallback();
 	}
 
 	int8_t fidx = findpatt(*first);
@@ -513,12 +506,8 @@ void SignalDetectorClass::processMessage()
 					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂    ;C2;S4;    RF1;O;m2;␃
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(";S"); SDC_PRINT(sync + 48); SDC_PRINT(';');
 
-					#ifdef CMP_CC1101
-						if (hasCC1101) {
-							//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
-							SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
-						}
-					#endif
+					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
+					SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 				}
 				else {
 					SDC_PRINT("MS;");
@@ -541,12 +530,8 @@ void SignalDetectorClass::processMessage()
 					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434    ;CP=3;SP=2;    R=35;m2;␃
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
           
-					#ifdef CMP_CC1101
-						if (hasCC1101) {
-							//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
-							SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-						}
-					#endif
+					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
+					SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 				}
 
 				if (m_overflow) {
@@ -683,30 +668,13 @@ MUOutput:
 						SDC_PRINT(";SH="); SDC_PRINT(myitoa(pattern[mcdecoder->shorthigh], buf));
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525    ;D=AFF1FFA1;C=1476;L=32;    R=0;␃
-						// ToDo MC - damit macht der ESP32 Neustarts
-						// MSG_PRINT(";D="); mcdecoder->printMessageHexStr();
-						SDC_PRINT(";D=");
-						char cbuffer[3];
-						uint8_t idx;
-						// Bytes are stored from left to right in our buffer. We reverse them for better readability
-						for (idx = 0; idx <= mcdecoder->ManchesterBits.bytecount - 1; ++idx) {
-							mcdecoder->HEX_twoDigits(cbuffer, mcdecoder->getMCByte(idx));
-							SDC_PRINT(cbuffer);
-						}
-						SDC_PRINT(mcdecoder->nibble_to_HEX(mcdecoder->getMCByte(idx) >> 4 & 0xF));
-						if (mcdecoder->ManchesterBits.valcount % 8 > 4 || mcdecoder->ManchesterBits.valcount % 8 == 0) {
-							SDC_PRINT(mcdecoder->nibble_to_HEX(mcdecoder->getMCByte(idx) & 0xF));
-						}
+						SDC_PRINT(";D="); mcdecoder->printMessageHexStr();
 						SDC_PRINT(";C="); SDC_PRINT(myitoa(mcdecoder->clock, buf));
 						SDC_PRINT(";L="); SDC_PRINT(myitoa(mcdecoder->ManchesterBits.valcount, buf));
 						SDC_PRINT(';');
 
-						#ifdef CMP_CC1101
-							if (hasCC1101) {
-								//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
-								SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-							}
-						#endif
+						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
+						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
 						SDC_PRINT(MSG_END);
@@ -791,12 +759,8 @@ MUOutput:
 					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT    ;C7;    R21;␃
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
-					#ifdef CMP_CC1101
-						if (hasCC1101) {
-							//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
-							SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
-						}
-					#endif
+					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
+					SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 				}
 				else {
 				
@@ -823,12 +787,8 @@ MUOutput:
 					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430    ;CP=3;    R=25;␃
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
-					#ifdef CMP_CC1101
-						if (hasCC1101) {
-							//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
-							SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-						}
-					#endif
+					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
+					SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 				}
 
 				if (m_overflow) {
@@ -987,6 +947,27 @@ void SignalDetectorClass::printOut()
 #endif
 }
 
+/*
+const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
+{
+	if (_streamCallback == nullptr)
+		return 0;
+	return _streamCallback(buf, size);
+}
+
+
+const size_t SignalDetectorClass::write(const char *str) {
+	if (str == nullptr)
+		return 0;
+	return write((const uint8_t*)str, strlen(str));
+}
+
+
+const size_t SignalDetectorClass::write(uint8_t b)
+{
+	return write(&b, 1);
+}
+*/
 
 int8_t SignalDetectorClass::findpatt(const int val)
 {
@@ -1273,9 +1254,9 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 {
 	char hexStr[] = "00" ; // Not really needed
 	#ifndef NOSTRING
-		message->reserve((ManchesterBits.valcount /4)+2);
 		if (!message)
 			return;
+		message->reserve((ManchesterBits.valcount /4)+2);
 	#else
 		char *message = (char*)malloc((sizeof(char)*ManchesterBits.valcount / 4) + 2);
 		char *mptr=message;
@@ -1350,7 +1331,6 @@ void ManchesterpatternDecoder::HEX_twoDigits(char* cbuffer, uint8_t val)
 *
 * ()
 */
-/*
 void ManchesterpatternDecoder::printMessageHexStr()
 {
 	//char hexStr[] = "00"; // Not really needed
@@ -1360,22 +1340,22 @@ void ManchesterpatternDecoder::printMessageHexStr()
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
 		HEX_twoDigits(cbuffer, getMCByte(idx));
-		pdec->write(cbuffer);
+		pdec->streamObject->write(cbuffer);
 	}
 
 		//sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
-		pdec->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
+		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
 		//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
 		//sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
-		pdec->write(nibble_to_HEX(getMCByte(idx) & 0xF));
+		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) & 0xF));
 	}
 	//pdec->msgPort->print(cbuffer);
 
 	//pdec->write(cbuffer);
 }
-*/
+
 
 
 /** @brief (one liner)

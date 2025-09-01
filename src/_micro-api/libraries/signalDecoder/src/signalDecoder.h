@@ -85,14 +85,8 @@
 #ifndef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
   #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
     #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
-    #ifdef CMP_CC1101
-      #include "../../../../cc1101.h"
-    #endif
   #else
     #include "compile_config.h"               /* Arduino IDE  - need for right options in output.h */
-    #ifdef CMP_CC1101
-      #include "cc1101.h"
-    #endif
   #endif
 #endif
 
@@ -110,23 +104,10 @@
  */
 #endif
 
-#ifdef ETHERNET_PRINT
-  #include <WiFiClient.h>
-  extern WiFiClient serverClient;
-  #define MSG_PRINTER serverClient
-#else
-  #define MSG_PRINTER Serial
-#endif
 
-#ifdef ETHERNET_DEBUG         // variable is not defined
-  #define DBG_PRINTER Client  // now used ???
-#else
-  #define DBG_PRINTER Serial
-#endif
-
-#define SDC_PRINT(...)    MSG_PRINTER.write(__VA_ARGS__)
-#define SDC_WRITE(b)      MSG_PRINTER.write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  MSG_PRINTER.write(__VA_ARGS__); MSG_PRINTER.write(char(0xA));
+#define SDC_PRINT(...)    stremObject->write(__VA_ARGS__)
+#define SDC_WRITE(b)      stremObject->write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  stremObject->write(__VA_ARGS__); stremObject->write(char(0xA));
 
 #ifndef F 
   #define F(V1) V1
@@ -154,6 +135,10 @@ enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
 char* myitoa(int num, char* str);   // selfmade myitoa function
 
+// Create a type for the callback functions
+typedef  uint8_t (*rssiCallback_t)();  
+typedef  size_t (*streamCallback_t)(const uint8_t*, uint8_t);  
+
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
 
@@ -165,21 +150,29 @@ public:
 	SignalDetectorClass() : first(buffer), last(nullptr), message(4) { 
 																		 buffer[0] = 0; reset(); mcMinBitLen = 17; 	
 																		 MsMoveCount = 0; 
+																		 MredEnabled = 1;      // 1 = compress printmsg 
+																		 mcdecoder = nullptr;
 																		};
 
+
+	
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
+	// register the callback functions
+	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; };
+	static uint8_t default_rssiValue() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
+	//void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
+	Stream *streamObject = nullptr;  // Pointer to a Stream object, if output should be done via a stream object
 
 	//private:
-  void SDC_PRINT_intToHex(unsigned int numberToPrint);
+  	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
 	bool MredEnabled;                       // compress printMsgRaw
-	bool hasCC1101;
 	uint8_t MsMoveCount;
 
 	uint8_t histo[maxNumPattern];
@@ -190,7 +183,7 @@ public:
 	uint8_t mstart;						  // Holds starting point for message
 	uint8_t mend;						  // Holds end point for message if detected
 	bool success;                         // True if a valid coding was found
-	bool m_truncated;					// Identify if message has been truncated
+	bool m_truncated;					  // Identify if message has been truncated
 	bool m_overflow;
 	void bufferMove(const uint8_t start);
 
@@ -210,7 +203,11 @@ public:
 											//String postamble;
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
-	uint8_t rssiValue;					// Holds the RSSI value retrieved via a rssi callback
+	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
+
+	rssiCallback_t _rssiCallback = &SignalDetectorClass::default_rssiValue;			// Holds the pointer to a callback Function
+	streamCallback_t _streamCallback = nullptr;										// Holds the pointer to a callback Function
+
 
 	void addData(const int8_t value);
 	void addPattern();
@@ -227,10 +224,11 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
+	/*
 	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
 	const size_t write(const char *str);                      // for the return value
 	const size_t write(uint8_t b);                            // for the return value
-
+	*/
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
@@ -255,7 +253,7 @@ public:
 	void getMessageClockStr(String* str);
 	void getMessageLenStr(String* str);
 #endif
-	// void printMessageHexStr();
+	void printMessageHexStr();
 	char nibble_to_HEX(uint8_t nibble);
 	void HEX_twoDigits(char* cbuffer, uint8_t val);
 

@@ -56,12 +56,14 @@
 #include "tests.h"
 #include <string>
 #include "arduino-mock/Arduino.h"
+#include <arduino-mock/Serial.h>
+
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
 #define NOSTRING
 #endif
 
-// #include <signalDecoder.h>
+#include <signalDecoder.h>
 
 
 namespace arduino { 
@@ -201,7 +203,9 @@ namespace arduino {
 			ooDecode.MSenabled = true;
 			ooDecode.MCenabled = true;
 			ooDecode.MUenabled = true;
-			// ooDecode.setStreamCallback(&writeCallback);
+			// ooDecode.setCallback(&writeCallback);
+		    SerialMock* serialMock = serialMockInstance();
+			ooDecode->streamObject = &serialMock;
 			ooDecode.MredEnabled = false;
 			duration = 0;
 			state = false;
@@ -523,7 +527,7 @@ namespace arduino {
 			  ASSERT_STREQ(mcStr, base.c_str()); // may not compile or give warning
 		  }
 
-/*
+
 		  TEST_F(Tests, testMCosv2)
 		  {
 	
@@ -780,8 +784,8 @@ namespace arduino {
 			  ASSERT_EQ(mcdecoder.ManchesterBits.valcount, 169); // Oder 158?
 
 		  }
-*/
-      
+
+
 		  TEST_F(Tests, mcOSV2THGR228N)
 		  {
 			  // THGR228N_41_2  T: 15.6 H : 38 BAT : ok     MC;LL=-994;LH=956;SL=-517;SH=463;;D=AAAAAAAA66959A6555659559556999955556A55669A5A696;L=191;;C=488;
@@ -810,7 +814,7 @@ namespace arduino {
 			  // std::cout << geFullMCString();
 		  }
 
-/*
+
 		  TEST_F(Tests, msNCWS)
 		  {
 			bool state;
@@ -848,8 +852,10 @@ namespace arduino {
 			}
 			//std::cout << outputStr.c_str();
 			std::string base = "MS;P0=-3886;P1=481;P2=-1938;P3=-9200;D=13121012101010101010121012101212121212121210101212121012121212101010101212;CP=1;SP=3;O;m2;";
+			printf(outputStr.c_str());
 			ASSERT_STREQ(outputStr.substr(outputStr.find_first_of(MSG_START)+1, outputStr.find_first_of(MSG_END)- outputStr.find_first_of(MSG_START)-1).c_str() , base.c_str());
 			ASSERT_FALSE(state);
+			
 		  }
 
 
@@ -970,7 +976,7 @@ namespace arduino {
 
 		  
 		  }
-*/      
+     
       
 		TEST_F(Tests,mcLong1)
 		{
@@ -1038,7 +1044,7 @@ namespace arduino {
 			ASSERT_EQ(false, result);
 			ASSERT_EQ(0, mcdecoder.ManchesterBits.valcount);
 		}
-/*
+
 		TEST_F(Tests,mcLong2) //Maverick et733
 		{
 				const int pause = 5000;
@@ -1070,7 +1076,7 @@ namespace arduino {
 				mcStr=mcdecoder.getMessageHexStr();
 				ASSERT_STREQ(mcStr.c_str(), dstr2.c_str()); // may not compile or give warning
 		}
-*/
+
 
 		TEST_F(Tests, mcMaverick1)
 		{
@@ -1176,7 +1182,7 @@ namespace arduino {
 				ASSERT_STREQ(mcStr.c_str(), mcHex.c_str()); // may not compile or give warning
 
 		}
-/*
+
 		TEST_F(Tests, mcHideki2)
 		{
 			// protocol not invert
@@ -1289,7 +1295,7 @@ namespace arduino {
 			ASSERT_STREQ(mcdecoder.getMessageLenStr(), lenRef.c_str());
 			ASSERT_STREQ(mcdecoder.getMessageHexStr(), hexRef.c_str());
 		}
-*/
+
 		TEST_F(Tests, mcInvalidMC)
 		{
 			// FS20
@@ -1307,7 +1313,7 @@ namespace arduino {
 		}
 
 
-/*
+
 		TEST_F(Tests, mc_calcHistodebug)
 		{
 			// OSV2
@@ -1318,7 +1324,7 @@ namespace arduino {
 			ASSERT_TRUE(ooDecode.success);
 			// std::cout << outputStr;
 		}
-*/
+
 		TEST_F(Tests, mcInvalidMC2)
 		{
 			std::string dstr = "DMC;P0=32001;P1=-24044;P2=404;P3=-384;P4=596;P5=-600;P6=-9660;D=01232323232323232323232323454523232345454523234545452323452323234545454545232345232323232323234523452345454545232345462323232323232323232323234545232323454545232345454523234523232345454545452323452323232323232345234523454545452323454623232323232323232323;";
@@ -1407,7 +1413,7 @@ namespace arduino {
 			//ASSERT_FALSE(mcdecoder.isManchester());
 			ASSERT_FALSE(state);
 		}
-/*		
+		
 		TEST_F(Tests, msHeidemann)
 		{	
 			unsigned int DMSG = 0x610;
@@ -1592,7 +1598,7 @@ namespace arduino {
 			std::string bstr = "MS;P1=988;P2=-342;P3=335;P4=-1007;P5=-10281;D=35121212121212121212121212121212123434343412341234;CP=3;SP=5;m2;";
 			ASSERT_STREQ(Message.c_str(), bstr.c_str());  
 		}
-*/		
+		
 
 	  //--------------------------------------------------------------------------------------------------
 	  /*
