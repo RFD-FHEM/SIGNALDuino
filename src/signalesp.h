@@ -28,8 +28,8 @@ inline void ethernetEvent();
 //void enDisPrint(bool enDis);
 //void getFunctions(bool *ms, bool *mu, bool *mc);
 //void initEEPROM(void);
-uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
+//uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
+//size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
@@ -210,9 +210,7 @@ initEEPROM();
     DBG_PRINTLN(FPSTR(TXT_FOUND));
     musterDec.setCallback(&cc1101::getRSSI);   // Provide the RSSI Callback
   }
-  else {
-    musterDec.setCallback(&rssiCallback);      // Provide the RSSI Callback
-  }
+
 #endif 
 
 wifiManager.setShowStaticFields(true);
@@ -408,7 +406,10 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-musterDec.setCallback(writeCallback);
+//musterDec.setCallback(writeCallback);
+musterDec.stremObject = &MSG_PRINTER;  // Set the Stream object for output
+
+
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
@@ -535,6 +536,7 @@ void loop() {
   uint8_t writeBuffer[writeBufferSize];
 #endif
 
+/*
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
@@ -590,6 +592,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   //serverClient.write("test");
 #endif
 }
+*/
 
 inline void ethernetEvent()
 {

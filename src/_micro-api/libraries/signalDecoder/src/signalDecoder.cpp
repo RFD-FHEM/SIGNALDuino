@@ -215,8 +215,7 @@ inline void SignalDetectorClass::doDetect()
 	}
 	else if (messageLen == minMessageLen) {
 		state = detecting;  // Set state to detecting, because we have more than minMessageLen data gathered, so this is no noise
-		if (_rssiCallback != nullptr) 
-			rssiValue = _rssiCallback();
+		rssiValue = _rssiCallback();
 	}
 
 	int8_t fidx = findpatt(*first);
@@ -507,11 +506,8 @@ void SignalDetectorClass::processMessage()
 					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂    ;C2;S4;    RF1;O;m2;␃
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(";S"); SDC_PRINT(sync + 48); SDC_PRINT(';');
 
-					if (_rssiCallback != nullptr)
-					{
-						//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
-						SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
-					}
+					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
+					SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 				}
 				else {
 					SDC_PRINT("MS;");
@@ -534,11 +530,8 @@ void SignalDetectorClass::processMessage()
 					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434    ;CP=3;SP=2;    R=35;m2;␃
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
           
-					if (_rssiCallback != nullptr)
-					{
-						//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
-						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-					}
+					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
+					SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 				}
 
 				if (m_overflow) {
@@ -680,11 +673,8 @@ MUOutput:
 						SDC_PRINT(";L="); SDC_PRINT(myitoa(mcdecoder->ManchesterBits.valcount, buf));
 						SDC_PRINT(';');
 
-						if (_rssiCallback != nullptr)
-						{
-							//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
-							SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-						}
+						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
+						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
 						SDC_PRINT(MSG_END);
@@ -769,11 +759,8 @@ MUOutput:
 					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT    ;C7;    R21;␃
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
-					if (_rssiCallback != nullptr)
-					{
-						//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
-						SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
-					}
+					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
+					SDC_PRINT('R'); SDC_PRINT_intToHex(rssiValue); SDC_PRINT(';');
 				}
 				else {
 				
@@ -800,11 +787,8 @@ MUOutput:
 					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430    ;CP=3;    R=25;␃
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
-					if (_rssiCallback != nullptr)
-					{
-						//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
-						SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
-					}
+					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
+					SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
 				}
 
 				if (m_overflow) {
@@ -963,7 +947,7 @@ void SignalDetectorClass::printOut()
 #endif
 }
 
-
+/*
 const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
 {
 	if (_streamCallback == nullptr)
@@ -983,7 +967,7 @@ const size_t SignalDetectorClass::write(uint8_t b)
 {
 	return write(&b, 1);
 }
-
+*/
 
 int8_t SignalDetectorClass::findpatt(const int val)
 {
@@ -1270,9 +1254,9 @@ const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 {
 	char hexStr[] = "00" ; // Not really needed
 	#ifndef NOSTRING
-		message->reserve((ManchesterBits.valcount /4)+2);
 		if (!message)
 			return;
+		message->reserve((ManchesterBits.valcount /4)+2);
 	#else
 		char *message = (char*)malloc((sizeof(char)*ManchesterBits.valcount / 4) + 2);
 		char *mptr=message;
@@ -1356,16 +1340,16 @@ void ManchesterpatternDecoder::printMessageHexStr()
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
 		HEX_twoDigits(cbuffer, getMCByte(idx));
-		pdec->write(cbuffer);
+		pdec->streamObject->write(cbuffer);
 	}
 
 		//sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
-		pdec->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
+		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
 		//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
 		//sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
-		pdec->write(nibble_to_HEX(getMCByte(idx) & 0xF));
+		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) & 0xF));
 	}
 	//pdec->msgPort->print(cbuffer);
 

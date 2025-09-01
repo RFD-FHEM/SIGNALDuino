@@ -56,6 +56,8 @@
 #include "tests.h"
 #include <string>
 #include "arduino-mock/Arduino.h"
+#include <arduino-mock/Serial.h>
+
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
 #define NOSTRING
@@ -201,7 +203,9 @@ namespace arduino {
 			ooDecode.MSenabled = true;
 			ooDecode.MCenabled = true;
 			ooDecode.MUenabled = true;
-			ooDecode.setCallback(&writeCallback);
+			// ooDecode.setCallback(&writeCallback);
+		    SerialMock* serialMock = serialMockInstance();
+			ooDecode->streamObject = &serialMock;
 			ooDecode.MredEnabled = false;
 			duration = 0;
 			state = false;
@@ -848,8 +852,10 @@ namespace arduino {
 			}
 			//std::cout << outputStr.c_str();
 			std::string base = "MS;P0=-3886;P1=481;P2=-1938;P3=-9200;D=13121012101010101010121012101212121212121210101212121012121212101010101212;CP=1;SP=3;O;m2;";
+			printf(outputStr.c_str());
 			ASSERT_STREQ(outputStr.substr(outputStr.find_first_of(MSG_START)+1, outputStr.find_first_of(MSG_END)- outputStr.find_first_of(MSG_START)-1).c_str() , base.c_str());
 			ASSERT_FALSE(state);
+			
 		  }
 
 

@@ -46,8 +46,8 @@ void serialEvent();
 void cronjob();
 int freeRam();
 void configSET();
-uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
-size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
+//uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
+//size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 extern char _estack;
@@ -124,9 +124,7 @@ void setup() {
     {
       DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
       musterDec.setCallback(&cc1101::getRSSI);          // Provide the RSSI Callback
-    } else {
-      musterDec.setCallback(&rssiCallback);             // Provide the RSSI Callback
-    }
+    } 
 
   #endif
 
@@ -145,7 +143,8 @@ void setup() {
   MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
   //cmdstring.reserve(40);
 
-  musterDec.setCallback(&writeCallback);
+  //musterDec.setCallback(&writeCallback);
+  musterDec.stremObject = &MSG_PRINTER;  // Set the Stream object for output
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
@@ -245,6 +244,7 @@ void loop() {
 
 
 //============================== Write callback =========================================
+/*
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
   while (!MSG_PRINTER.availableForWrite() )
@@ -258,7 +258,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   //serverClient.write("test");
 }
 
-
+*/
 
 
 //================================= Serielle verarbeitung ======================================
