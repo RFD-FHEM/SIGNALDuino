@@ -88,7 +88,7 @@ include_directories(
     ../src/_micro-api/libraries/output/src/
     ../src/_micro-api/libraries/output/src/
     ../src/_micro-api/libraries/bitstore/
-    ../src/_micro-api/libraries/fastdelegate/src/
+    #../src/_micro-api/libraries/fastdelegate/src/
     ../src/_micro-api/libraries/signalDecoder/src/
     ../src/_micro-api/libraries/bitstore/src/
     ../src/_micro-api/libraries/fastdelegate/src/
