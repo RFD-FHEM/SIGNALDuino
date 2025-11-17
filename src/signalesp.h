@@ -407,7 +407,7 @@ wifiManager.autoConnect("SignalESP",NULL);
 #endif
 
 //musterDec.setCallback(writeCallback);
-musterDec.stremObject = &MSG_PRINTER;  // Set the Stream object for output
+musterDec.streamObject = &MSG_PRINTER;  // Set the Stream object for output
 
 
 

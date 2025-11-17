@@ -105,9 +105,9 @@
 #endif
 
 
-#define SDC_PRINT(...)    stremObject->write(__VA_ARGS__)
-#define SDC_WRITE(b)      stremObject->write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  stremObject->write(__VA_ARGS__); stremObject->write(char(0xA));
+#define SDC_PRINT(...)    streamObject->write(__VA_ARGS__)
+#define SDC_WRITE(b)      streamObject->write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  streamObject->write(__VA_ARGS__); streamObject->write(char(0xA));
 
 #ifndef F 
   #define F(V1) V1
