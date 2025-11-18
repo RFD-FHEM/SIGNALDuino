@@ -1,9 +1,9 @@
 #pragma once
 
 #include <gtest/gtest.h>
+#include <Stream.h> // Annahme: Stream ist über diesen Pfad oder einen ähnlichen verfügbar, um die Basisklasse zu finden
+#include "TestStream.h" // Beibehalten, falls TestStream.h für andere Dinge benötigt wird, aber die Klasse wird hier definiert
 #include <signalDecoder.h>
-
-
 
 
 namespace arduino {
@@ -19,6 +19,8 @@ namespace arduino {
 		SignalDetectorClass ooDecode;
 		ManchesterpatternDecoder mcdecoder;
 
+		Stream* _mockStream = new TestStream(); // Ersetzt StreamMock
+		
 		#define MSG_START char(0x2)		// this is a non printable Char
 		#define MSG_END   char(0x3)			// this is a non printable Char
 

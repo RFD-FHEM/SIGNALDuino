@@ -57,6 +57,8 @@
 #include <string>
 #include "arduino-mock/Arduino.h"
 #include <arduino-mock/Serial.h>
+#include <Stream.h>
+#include "TestStream.h" // Beibehalten, falls TestStream.h für andere Dinge benötigt wird, aber die Klasse wird hier definiert
 
 #if defined(GTEST_OS_WINDOWS)
 #define ARDUINO 101
@@ -204,8 +206,7 @@ namespace arduino {
 			ooDecode.MCenabled = true;
 			ooDecode.MUenabled = true;
 			// ooDecode.setCallback(&writeCallback);
-		    SerialMock* serialMock = serialMockInstance();
-			ooDecode->streamObject = &serialMock;
+			ooDecode.streamObject = _mockStream;
 			ooDecode.MredEnabled = false;
 			duration = 0;
 			state = false;

@@ -114,6 +114,7 @@
 #endif
 
 #include "bitstore.h"         /* Dependency is needed */
+#include "Stream.h"		   /* Dependency is needed */
 
 #define maxNumPattern 8
 #define maxMsgSize 254
