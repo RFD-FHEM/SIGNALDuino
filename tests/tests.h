@@ -2,7 +2,7 @@
 
 #include <gtest/gtest.h>
 #include <Stream.h> // Annahme: Stream ist über diesen Pfad oder einen ähnlichen verfügbar, um die Basisklasse zu finden
-#include "TestStream.h" // Beibehalten, falls TestStream.h für andere Dinge benötigt wird, aber die Klasse wird hier definiert
+//#include "TestStream.h" // Beibehalten, falls TestStream.h für andere Dinge benötigt wird, aber die Klasse wird hier definiert
 #include <signalDecoder.h>
 
 
@@ -13,13 +13,17 @@ namespace arduino {
 
 	  class Tests : public ::testing::Test
 	  {
+
 	  public:
 		Tests() : mcdecoder(&ooDecode) { } ;
+		
 
 		SignalDetectorClass ooDecode;
 		ManchesterpatternDecoder mcdecoder;
 
-		Stream* _mockStream = new TestStream(); // Ersetzt StreamMock
+		StreamMock _mockStream; // Ersetzt StreamMock TestStream
+		StreamMock* _mockStreamPtr = &_mockStream; // Ersetzt StreamMock TestStream
+
 		
 		#define MSG_START char(0x2)		// this is a non printable Char
 		#define MSG_END   char(0x3)			// this is a non printable Char
@@ -31,13 +35,9 @@ namespace arduino {
 		bool import_mcdata(std::string *cmdstring, const uint8_t startpos, const uint8_t endpos, const int16_t clock);
 		std::string geFullMCString();
 
-
-		virtual void SetUp();
-		virtual void TearDown();
-
-		static void SetUpTestCase() {
+		void SetUp() override;
+		void TearDown() override;
 	
-		};
 	  };
 
 	}; // End namespace test
