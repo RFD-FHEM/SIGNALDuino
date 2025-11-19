@@ -123,10 +123,12 @@
 #define syncMaxFact 44
 #define syncMaxMicros 17000
 #define maxPulse 32001  // Magic Pulse Length
+#define RSSI_NOT_AVAILABLE 255 // UINT8_MAX, used to indicate that no RSSI value is provided
 
 constexpr const uint8_t SERIAL_DELIMITER = 59;
 constexpr const uint8_t MSG_START = 2;
 constexpr const uint8_t MSG_END = 3;
+
 
 //#define SERIAL_DELIMITER  59 //char(';')
 //#define MSG_START char(0x2)		// this is a non printable Char
@@ -138,7 +140,7 @@ char* myitoa(int num, char* str);   // selfmade myitoa function
 
 // Create a type for the callback functions
 typedef  uint8_t (*rssiCallback_t)();  
-typedef  size_t (*streamCallback_t)(const uint8_t*, uint8_t);  
+
 
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
@@ -162,7 +164,7 @@ public:
 	const status getState();
 	// register the callback functions
 	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; };
-	static uint8_t default_rssiValue() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
+	static uint8_t default_rssiValue() { return RSSI_NOT_AVAILABLE; };	// Dummy return if no rssi value can be retrieved from receiver
 	//void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
 	Stream *streamObject = nullptr;  // Pointer to a Stream object, if output should be done via a stream object
 
@@ -207,7 +209,6 @@ public:
 	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
 
 	rssiCallback_t _rssiCallback = &SignalDetectorClass::default_rssiValue;			// Holds the pointer to a callback Function
-	streamCallback_t _streamCallback = nullptr;										// Holds the pointer to a callback Function
 
 
 	void addData(const int8_t value);
