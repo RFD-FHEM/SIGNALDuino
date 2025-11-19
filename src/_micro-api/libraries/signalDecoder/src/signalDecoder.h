@@ -220,6 +220,8 @@ public:
 	void calcHisto(const uint8_t startpos = 0, uint8_t endpos = 0);
 	bool getClock(); // Searches a clock in a given signal
 	bool getSync();	 // Searches clock and sync in given Signal
+	void writeRSSI();
+
 	//int8_t printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble = NULL, const String *postamble = NULL);
 	//void printMsgStr(const String *first, const String *second, const String *third);
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range

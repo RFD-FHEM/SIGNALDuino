@@ -507,7 +507,8 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(";S"); SDC_PRINT(sync + 48); SDC_PRINT(';');
 
 					//␂Ms;��;��;���;��;D$$!!!###!#!#!!!!#!##!##!!##!!!!!!!!!!!!!!#!!␂;C2;S4;    RF1;    O;m2;␃
-					if (rssiValue != RSSI_NOT_AVAILABLE) { SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';'); }
+					
+					writeRSSI();
 
 				}
 				else {
@@ -532,7 +533,7 @@ void SignalDetectorClass::processMessage()
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(";SP="); SDC_PRINT(sync + 48); SDC_PRINT(';');
           
 					//␂MS;P2=-14273;P3=371;P4=-1430;P5=1285;P6=-540;D=32345634563456345634563456345634565656343434343434;CP=3;SP=2;    R=35;    m2;␃
-					if (rssiValue != RSSI_NOT_AVAILABLE) { SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';'); }
+					writeRSSI();
 				}
 
 				if (m_overflow) {
@@ -675,7 +676,7 @@ MUOutput:
 						SDC_PRINT(';');
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
-						if (rssiValue != RSSI_NOT_AVAILABLE) { SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';'); }
+						writeRSSI();
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
 						SDC_PRINT(MSG_END);
@@ -761,7 +762,7 @@ MUOutput:
 					SDC_PRINT(";C"); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
 					//␂Mu;���;�؁;���;���;���;�Å;���;�܅;D␁#$TgTTgggggggggggTgggT;C7;    R21;    ␃
-					if (rssiValue != RSSI_NOT_AVAILABLE) { SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';'); }
+					writeRSSI();
 				}
 				else {
 				
@@ -789,7 +790,7 @@ MUOutput:
 					SDC_PRINT(";CP="); SDC_PRINT(clock + 48); SDC_PRINT(';');
 
 					//␂MU;P0=-32001;P3=373;P4=-1432;P5=1287;P6=-540;D=34563456345634563456345634563456565634343434343430;CP=3;    R=25;    ␃
-					if (rssiValue != RSSI_NOT_AVAILABLE) { SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';'); }
+					writeRSSI();
 				}
 
 				if (m_overflow) {
@@ -1150,8 +1151,14 @@ int8_t SignalDetectorClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, co
 }
 */
 
-
-
+void SignalDetectorClass::writeRSSI() {
+	if (rssiValue != RSSI_NOT_AVAILABLE) {
+		char buf[8];
+		SDC_PRINT("R=");
+		SDC_PRINT(myitoa(rssiValue, buf));
+		SDC_PRINT(';');
+	}
+}
 
 
 
