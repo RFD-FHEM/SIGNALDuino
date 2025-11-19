@@ -849,13 +849,6 @@ MUOutput:
 }
 
 
-/* function to convert to HEX without a leading zero */
-void SignalDetectorClass::SDC_PRINT_intToHex(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
-  if (numberToPrint >= 16)
-    SDC_PRINT_intToHex(numberToPrint / 16);
-  /* line is needed, no line - no output !!! */
-  SDC_PRINT("0123456789ABCDEF"[numberToPrint % 16]);
-}
 
 
 void SignalDetectorClass::reset()

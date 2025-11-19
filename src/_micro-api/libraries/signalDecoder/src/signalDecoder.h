@@ -113,8 +113,8 @@
   #define F(V1) V1
 #endif
 
-#include "bitstore.h"         /* Dependency is needed */
-#include "Stream.h"		   /* Dependency is needed */
+#include "bitstore.h"        	/* Dependency is needed */
+#include "Stream.h"		   		/* Dependency is needed */
 
 #define maxNumPattern 8
 #define maxMsgSize 254
@@ -169,7 +169,6 @@ public:
 	Stream *streamObject = nullptr;  // Pointer to a Stream object, if output should be done via a stream object
 
 	//private:
-  	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
@@ -226,11 +225,6 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
-	/*
-	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
-	const size_t write(const char *str);                      // for the return value
-	const size_t write(uint8_t b);                            // for the return value
-	*/
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
