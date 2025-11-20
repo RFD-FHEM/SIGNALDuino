@@ -1154,7 +1154,10 @@ int8_t SignalDetectorClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, co
 void SignalDetectorClass::writeRSSI() {
 	if (rssiValue != RSSI_NOT_AVAILABLE) {
 		char buf[8];
-		SDC_PRINT("R=");
+		SDC_PRINT("R");
+		if (!MredEnabled) {
+			SDC_PRINT("=");
+		}
 		SDC_PRINT(myitoa(rssiValue, buf));
 		SDC_PRINT(';');
 	}
