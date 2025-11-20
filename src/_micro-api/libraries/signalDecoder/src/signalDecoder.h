@@ -169,6 +169,7 @@ public:
 	Stream *streamObject = nullptr;  // Pointer to a Stream object, if output should be done via a stream object
 
 	//private:
+  	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;

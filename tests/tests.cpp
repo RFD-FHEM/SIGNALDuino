@@ -215,6 +215,7 @@ namespace arduino
 		{
 		}
 
+
 		TEST_F(Tests, testInTolerance)
 		{
 			ASSERT_FALSE(ooDecode.inTol(-1061, 908, 212));
@@ -312,6 +313,40 @@ namespace arduino
 			i--;
 			ASSERT_EQ(i, 1);
 		}
+
+		TEST_F(Tests, testWriteRSSI) {
+			EXPECT_CALL(_mockStream, write(Matcher<uint8_t>(_)))
+				.WillRepeatedly([](const uint8_t buf)
+							   {
+								outputStr.append((char*)&buf, 1);
+								return 1; 
+							   });
+			EXPECT_CALL(_mockStream, write(Matcher<const char *>(_)))
+				.WillRepeatedly([](const char *buf)
+							   { outputStr.append(buf); return 1; });
+
+ 		    ooDecode.rssiValue = 150;
+			ooDecode.writeRSSI();
+			ASSERT_EQ(outputStr, "R=150;");
+			outputStr.clear();
+			
+ 		    ooDecode.rssiValue = 255;
+			ooDecode.writeRSSI();
+			ASSERT_EQ(outputStr, "");
+			outputStr.clear();
+
+ 		    ooDecode.rssiValue = 101;
+			ooDecode.writeRSSI();
+			ASSERT_EQ(outputStr, "R=101;");
+			outputStr.clear();
+
+			ooDecode.MredEnabled = true;
+		    ooDecode.rssiValue = 106;
+			ooDecode.writeRSSI();
+			ASSERT_EQ(outputStr, "R6A;");
+			outputStr.clear();
+		}
+
 
 		TEST_F(Tests, testMCbasic1)
 		{
@@ -2070,6 +2105,7 @@ namespace arduino
 			ASSERT_STREQ(Message.c_str(), bstr.c_str());
 		}
 
+		
 		//--------------------------------------------------------------------------------------------------
 		/*
 		TEST_F(Tests, testDigitalPinString)

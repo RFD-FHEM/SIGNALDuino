@@ -849,6 +849,13 @@ MUOutput:
 	//SDC_PRINTLN("process finished");
 }
 
+/* function to convert to HEX without a leading zero */
+void SignalDetectorClass::SDC_PRINT_intToHex(unsigned int numberToPrint) {  // smaller memory variant for sprintf hex output ( sprintf(buf, "R%X;", value) )
+  if (numberToPrint >= 16)
+    SDC_PRINT_intToHex(numberToPrint / 16);
+  /* line is needed, no line - no output !!! */
+  SDC_PRINT("0123456789ABCDEF"[numberToPrint % 16]);
+}
 
 
 
@@ -1153,12 +1160,15 @@ int8_t SignalDetectorClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, co
 
 void SignalDetectorClass::writeRSSI() {
 	if (rssiValue != RSSI_NOT_AVAILABLE) {
-		char buf[8];
 		SDC_PRINT("R");
-		if (!MredEnabled) {
+		if (MredEnabled) {
+			SDC_PRINT_intToHex(rssiValue);
+		} else {
+			char buf[8];
 			SDC_PRINT("=");
+			myitoa(rssiValue, buf);
+			SDC_PRINT(buf);
 		}
-		SDC_PRINT(myitoa(rssiValue, buf));
 		SDC_PRINT(';');
 	}
 }
