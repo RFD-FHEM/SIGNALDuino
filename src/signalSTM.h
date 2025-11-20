@@ -144,7 +144,6 @@ void setup() {
   //cmdstring.reserve(40);
 
   musterDec.setCallback(&writeCallback);
-  musterDec.streamObject = &MSG_PRINTER;  // Set the Stream object for output
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {

@@ -407,8 +407,6 @@ wifiManager.autoConnect("SignalESP",NULL);
 #endif
 
 musterDec.setCallback(writeCallback);
-musterDec.streamObject = &MSG_PRINTER;  // Set the Stream object for output
-
 
 
 #ifdef CMP_CC1101
