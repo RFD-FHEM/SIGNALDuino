@@ -80,6 +80,14 @@ namespace arduino
 	{
 		std::string outputStr = "";
 		//============================== Write callback =========================================
+		size_t writeCallback(const uint8_t *buf, uint8_t len = 1)
+		{
+			const char *c = (const char*)buf;
+			outputStr.append(c, len);
+			return len;
+		}
+
+
 		bool Tests::DigitalSimulate(const int pulse)
 		{
 			bool state = false;
@@ -203,7 +211,7 @@ namespace arduino
 			ooDecode.MSenabled = true;
 			ooDecode.MCenabled = true;
 			ooDecode.MUenabled = true;
-			ooDecode.streamObject = &_mockStream;
+			ooDecode.setCallback(&writeCallback);
 			ooDecode.MredEnabled = false;
 			duration = 0;
 			state = false;
