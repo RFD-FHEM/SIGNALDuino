@@ -949,7 +949,7 @@ void SignalDetectorClass::printOut()
 #endif
 }
 
-/*
+
 const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
 {
 	if (_streamCallback == nullptr)
@@ -969,7 +969,7 @@ const size_t SignalDetectorClass::write(uint8_t b)
 {
 	return write(&b, 1);
 }
-*/
+
 
 int8_t SignalDetectorClass::findpatt(const int val)
 {
@@ -1128,35 +1128,6 @@ bool SignalDetectorClass::getSync()
 	return false;
 }
 
-/*
-void SignalDetectorClass::printMsgStr(const String * first, const String * second, const String * third)
-{
-	SDC_PRINT(*first);
-	SDC_PRINT(*second);
-	SDC_PRINT(*third);
-
-}
-*/
-/*
-int8_t SignalDetectorClass::printMsgRaw(uint8_t m_start, const uint8_t m_end, const String * preamble, const String * postamble)
-{
-	SDC_PRINT(*preamble);
-	//String msg;
-	//msg.reserve(m_end-mstart);
-
-	for (; m_start <= m_end; m_start++)
-	{
-		//msg + =message[m_start];
-		//SDC_PRINT((100*message[m_start])+(10*message[m_start])+message[m_start]);
-		SDC_PRINT(message[m_start]);
-
-	}
-	//SDC_PRINT(msg);
-	SDC_PRINT(*postamble);
-	yield();
-
-}
-*/
 
 void SignalDetectorClass::writeRSSI() {
 	if (rssiValue != RSSI_NOT_AVAILABLE) {
@@ -1354,16 +1325,16 @@ void ManchesterpatternDecoder::printMessageHexStr()
 	// Bytes are stored from left to right in our buffer. We reverse them for better readability
 	for (idx = 0; idx <= ManchesterBits.bytecount - 1; ++idx) {
 		HEX_twoDigits(cbuffer, getMCByte(idx));
-		pdec->streamObject->write(cbuffer);
+		pdec->write(cbuffer);
 	}
 
 		//sprintf(cbuffer, "%01X", getMCByte(idx) >> 4 & 0xf);
-		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
+		pdec->write(nibble_to_HEX(getMCByte(idx) >> 4 & 0xf));
 		//pdec->write(hexStr);
 	if (ManchesterBits.valcount % 8 > 4 || ManchesterBits.valcount % 8 == 0)
 	{
 		//sprintf(cbuffer +1, "%01X", getMCByte(idx) & 0xF);
-		pdec->streamObject->write(nibble_to_HEX(getMCByte(idx) & 0xF));
+		pdec->write(nibble_to_HEX(getMCByte(idx) & 0xF));
 	}
 	//pdec->msgPort->print(cbuffer);
 

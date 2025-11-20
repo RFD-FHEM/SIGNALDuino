@@ -29,7 +29,7 @@ inline void ethernetEvent();
 //void getFunctions(bool *ms, bool *mu, bool *mc);
 //void initEEPROM(void);
 //uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
-//size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
@@ -406,7 +406,7 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-//musterDec.setCallback(writeCallback);
+musterDec.setCallback(writeCallback);
 musterDec.streamObject = &MSG_PRINTER;  // Set the Stream object for output
 
 
@@ -536,7 +536,7 @@ void loop() {
   uint8_t writeBuffer[writeBufferSize];
 #endif
 
-/*
+
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
@@ -592,7 +592,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   //serverClient.write("test");
 #endif
 }
-*/
+
 
 inline void ethernetEvent()
 {

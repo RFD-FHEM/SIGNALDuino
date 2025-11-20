@@ -105,9 +105,10 @@
 #endif
 
 
-#define SDC_PRINT(...)    streamObject->write(__VA_ARGS__)
-#define SDC_WRITE(b)      streamObject->write((const uint8_t*)b,(uint8_t) 1) 
-#define SDC_PRINTLN(...)  streamObject->write(__VA_ARGS__); streamObject->write(char(0xA));
+#define SDC_PRINT(...)    write(__VA_ARGS__)
+#define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
+#define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+
 
 #ifndef F 
   #define F(V1) V1
@@ -140,7 +141,7 @@ char* myitoa(int num, char* str);   // selfmade myitoa function
 
 // Create a type for the callback functions
 typedef  uint8_t (*rssiCallback_t)();  
-
+typedef  size_t (*streamCallback_t)(const uint8_t*, uint8_t);  
 
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
@@ -164,10 +165,9 @@ public:
 	const status getState();
 	// register the callback functions
 	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; };
+	void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
 	static uint8_t default_rssiValue() { return RSSI_NOT_AVAILABLE; };	// Dummy return if no rssi value can be retrieved from receiver
-	//void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
-	Stream *streamObject = nullptr;  // Pointer to a Stream object, if output should be done via a stream object
-
+	
 	//private:
   	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
@@ -209,6 +209,7 @@ public:
 	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
 
 	rssiCallback_t _rssiCallback = &SignalDetectorClass::default_rssiValue;			// Holds the pointer to a callback Function
+	streamCallback_t _streamCallback = nullptr;	// Holds the pointer to a callback Function
 
 
 	void addData(const int8_t value);
@@ -228,6 +229,9 @@ public:
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
+	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
+	const size_t write(const char *str);                      // for the return value
+	const size_t write(uint8_t b);                            // for the return value
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
