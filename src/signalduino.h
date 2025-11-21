@@ -56,6 +56,9 @@ void serialEvent();
 void cronjob();
 int freeRam();
 void configSET();
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
+
+
 
 //Includes
 //#include <avr/wdt.h>
@@ -128,17 +131,17 @@ void setup() {
   //wdt_reset();
 
   #ifdef CMP_CC1101
-    cc1101::setup(); // set pins input/output, init SPI
+    cc1101::setup();
   #endif
   initEEPROM();
 
   #ifdef CMP_CC1101
     cc1101::CCinit();                    // CC1101 init
     hasCC1101 = cc1101::checkCC1101();   // Check for cc1101
-    musterDec.hasCC1101 = hasCC1101;
     if (hasCC1101)
     {
-      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND)); 
+      musterDec.setCallback(&cc1101::getRSSI);                 // Provide the RSSI Callback
     }
   #endif 
 
@@ -153,6 +156,8 @@ void setup() {
   MSG_PRINT("MU:"); 	MSG_PRINTLN(musterDec.MUenabled);
   MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
   //cmdstring.reserve(40);
+
+  musterDec.setCallback(&writeCallback);
 
   #ifdef CMP_CC1101
     if (!hasCC1101 || cc1101::regCheck()) {
@@ -229,6 +234,24 @@ void loop() {
     }
   #endif
 }
+
+
+
+//============================== Write callback =========================================
+
+size_t writeCallback(const uint8_t *buf, uint8_t len)
+{
+  while (!MSG_PRINTER.availableForWrite() )
+  yield();
+  //DBG_PRINTLN("Called writeCallback");
+
+  //MSG_PRINT(*buf);
+  //MSG_WRITE(buf, len);
+  return MSG_PRINTER.write(buf,len);
+
+  //serverClient.write("test");
+}
+
 
 
 //================================= Serielle verarbeitung ======================================

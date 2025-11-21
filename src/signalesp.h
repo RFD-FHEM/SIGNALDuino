@@ -28,6 +28,8 @@ inline void ethernetEvent();
 //void enDisPrint(bool enDis);
 //void getFunctions(bool *ms, bool *mu, bool *mc);
 //void initEEPROM(void);
+//uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
+size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
@@ -201,12 +203,14 @@ initEEPROM();
 #ifdef CMP_CC1101
   cc1101::CCinit();                                // CC1101 init
   hasCC1101 = cc1101::checkCC1101();               // Check for cc1101
-  musterDec.hasCC1101 = hasCC1101;
+
   if (hasCC1101)
   {
     DBG_PRINT(FPSTR(TXT_CC1101));
     DBG_PRINTLN(FPSTR(TXT_FOUND));
+    musterDec.setCallback(&cc1101::getRSSI);   // Provide the RSSI Callback
   }
+
 #endif 
 
 wifiManager.setShowStaticFields(true);
@@ -402,6 +406,9 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
+musterDec.setCallback(writeCallback);
+
+
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
 #endif
@@ -512,6 +519,75 @@ void loop() {
       mbus_task();
     }
   }
+#endif
+}
+
+
+
+//============================== Write callback =========================================
+
+#define _USE_WRITE_BUFFER
+
+#ifdef _USE_WRITE_BUFFER
+  const size_t writeBufferSize = 512;
+  size_t writeBufferCurrent = 0;
+  uint8_t writeBuffer[writeBufferSize];
+#endif
+
+
+size_t writeCallback(const uint8_t *buf, uint8_t len)
+{
+#ifdef _USE_WRITE_BUFFER
+  if (!serverClient || !serverClient.connected())
+    return 0;
+
+  size_t result = 0;
+
+  while (len > 0) {
+    size_t copy = (len > writeBufferSize - writeBufferCurrent ? writeBufferSize - writeBufferCurrent : len);
+    if (copy > 0)
+    {
+      memcpy(writeBuffer + writeBufferCurrent, buf, copy);
+      writeBufferCurrent = writeBufferCurrent + copy;
+    }
+    // Buffer full or \n detected - force send
+    if ((len == 1 && *buf == char(0xA)) || (writeBufferCurrent == writeBufferSize))
+    {
+      size_t byteswritten = 0;
+      if (serverClient && serverClient.connected()) {
+        byteswritten = serverClient.write(writeBuffer, writeBufferCurrent);
+      }
+
+      if (byteswritten < writeBufferCurrent) {
+        memmove(writeBuffer, writeBuffer + byteswritten, writeBufferCurrent - byteswritten);
+        writeBufferCurrent -= byteswritten;
+      } else {
+        writeBufferCurrent = 0;
+      }
+      result += byteswritten;
+    }
+
+    // buffer full
+    len = len - copy;
+    if (len > 0)
+    {
+      memmove((void*)buf, buf + copy, len);
+    }
+  }
+  return len;
+
+#else
+
+  while (!serverClient.accept()) {
+    yield();
+    if (!serverClient.connected()) return 0;
+  }
+  DBG_PRINTLN("Called writeCallback");
+
+  memccpy()
+
+  return serverClient.write(buf, len);
+  //serverClient.write("test");
 #endif
 }
 
