@@ -56,14 +56,12 @@ void serialEvent();
 void cronjob();
 int freeRam();
 void configSET();
-uint8_t rssiCallback() { return 0; };	// Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 
 
 
 //Includes
 //#include <avr/wdt.h>
-#include "FastDelegate.h"
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
@@ -75,10 +73,11 @@ size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
 
-
 #include <EEPROM.h>
-#include "cc1101.h"
 
+#ifdef CMP_CC1101
+  #include "cc1101.h"
+#endif
 volatile bool blinkLED = false;
 //String cmdstring = "";
 volatile unsigned long lastTime = micros();
@@ -139,14 +138,10 @@ void setup() {
   #ifdef CMP_CC1101
     cc1101::CCinit();                    // CC1101 init
     hasCC1101 = cc1101::checkCC1101();   // Check for cc1101
-
-
     if (hasCC1101)
     {
-      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
-      musterDec.setRSSICallback(&cc1101::getRSSI);                 // Provide the RSSI Callback
-    } else {
-      musterDec.setRSSICallback(&rssiCallback);                    // Provide the RSSI Callback
+      DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND)); 
+      musterDec.setCallback(&cc1101::getRSSI);                 // Provide the RSSI Callback
     }
   #endif 
 
@@ -154,7 +149,7 @@ void setup() {
   DBG_PRINTLN(F("Starting timerjob"));
   delay(50);
 
-  Timer1.initialize(32001); //Interrupt wird jede 32001 Millisekunden ausgeloest
+  Timer1.initialize(32001); //Interrupt wird jede 32001 Mikrosekunden ausgeloest
   Timer1.attachInterrupt(cronjob);
 
   /*MSG_PRINT("MS:"); 	MSG_PRINTLN(musterDec.MSenabled);
@@ -162,7 +157,7 @@ void setup() {
   MSG_PRINT("MC:"); 	MSG_PRINTLN(musterDec.MCenabled);*/
   //cmdstring.reserve(40);
 
-  musterDec.setStreamCallback(&writeCallback);
+  musterDec.setCallback(&writeCallback);
 
   #ifdef CMP_CC1101
     if (!hasCC1101 || cc1101::regCheck()) {
@@ -243,6 +238,7 @@ void loop() {
 
 
 //============================== Write callback =========================================
+
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
   while (!MSG_PRINTER.availableForWrite() )

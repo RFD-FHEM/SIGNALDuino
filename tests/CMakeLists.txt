@@ -37,7 +37,7 @@ FetchContent_Declare(googletest
 
 FetchContent_Declare(arduino_mock
     GIT_REPOSITORY https://github.com/sidey79/arduino-mock.git
-    GIT_TAG sidey79-patch-3
+    GIT_TAG feat/add-mockstream-to-arduino-mock
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
@@ -88,7 +88,6 @@ include_directories(
     ../src/_micro-api/libraries/output/src/
     ../src/_micro-api/libraries/output/src/
     ../src/_micro-api/libraries/bitstore/
-    ../src/_micro-api/libraries/fastdelegate/src/
     ../src/_micro-api/libraries/signalDecoder/src/
     ../src/_micro-api/libraries/bitstore/src/
     ../src/_micro-api/libraries/fastdelegate/src/
