@@ -676,7 +676,9 @@ MUOutput:
 						SDC_PRINT(';');
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;    R=0;    ␃
-						writeRSSI();
+						if (rssiValue != RSSI_NOT_AVAILABLE) {
+							SDC_PRINT("R="); SDC_PRINT(myitoa(rssiValue, buf)); SDC_PRINT(';');
+						}
 
 						//␂MC;LL=-2926;LH=2935;SL=-1472;SH=1525;D=AFF1FFA1;C=1476;L=32;R=0;    ␃
 						SDC_PRINT(MSG_END);
