@@ -20,8 +20,6 @@
 #define addr_features          0xff
 #define MAX_SRV_CLIENTS        2
 
-#include "compile_config.h"
-
 void serialEvent();
 void IRAM_ATTR cronjob(void *pArg);
 int freeRam();
@@ -30,7 +28,7 @@ inline void ethernetEvent();
 //void enDisPrint(bool enDis);
 //void getFunctions(bool *ms, bool *mu, bool *mc);
 //void initEEPROM(void);
-uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
+//uint8_t rssiCallback() { return 0; }; // Dummy return if no rssi value can be retrieved from receiver
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
 void IRAM_ATTR sosBlink(void *pArg);
 
@@ -69,7 +67,6 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 #include "commands.h"
 #include "functions.h"
 #include "send.h"
-#include "FastDelegate.h"
 #define WIFI_MANAGER_OVERRIDE_STRINGS
 #include "wifi-config.h"
 #include "WiFiManager.h"           // https://github.com/tzapu/WiFiManager
@@ -198,7 +195,7 @@ void setup() {
   pinMode(PIN_LED, OUTPUT);
 
 #ifdef CMP_CC1101
-  cc1101::setup();
+  cc1101::setup(); // set pins for input/output, init SPI
 #endif
 
 initEEPROM();
@@ -211,11 +208,9 @@ initEEPROM();
   {
     DBG_PRINT(FPSTR(TXT_CC1101));
     DBG_PRINTLN(FPSTR(TXT_FOUND));
-    musterDec.setRSSICallback(&cc1101::getRSSI);   // Provide the RSSI Callback
+    musterDec.setCallback(&cc1101::getRSSI);   // Provide the RSSI Callback
   }
-  else {
-    musterDec.setRSSICallback(&rssiCallback);      // Provide the RSSI Callback
-  }
+
 #endif 
 
 wifiManager.setShowStaticFields(true);
@@ -411,7 +406,8 @@ wifiManager.autoConnect("SignalESP",NULL);
   os_timer_setfn(&cronTimer, &cronjob, 0);
 #endif
 
-musterDec.setStreamCallback(writeCallback);
+musterDec.setCallback(writeCallback);
+
 
 #ifdef CMP_CC1101
   if (!hasCC1101 || cc1101::regCheck()) {
@@ -538,6 +534,7 @@ void loop() {
   uint8_t writeBuffer[writeBufferSize];
 #endif
 
+
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
@@ -593,6 +590,7 @@ size_t writeCallback(const uint8_t *buf, uint8_t len)
   //serverClient.write("test");
 #endif
 }
+
 
 inline void ethernetEvent()
 {

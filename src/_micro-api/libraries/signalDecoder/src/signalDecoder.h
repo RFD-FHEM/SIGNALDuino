@@ -82,7 +82,7 @@
   #define DEBUG 1
 #endif
 
-#ifdef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
+#ifndef _COMPILE_CONFIG_h                      /* to break Dependency, _COMPILE_CONFIG_h is only available in the SIGNALduino project */
   #ifdef PLATFORMIO                           /* intern variable only in software PlatformIO (example 40304), in Arduino IDE undef */
     #include "../../../../compile_config.h"   /* PlatformIO   - need for right options in output.h */
   #else
@@ -104,29 +104,31 @@
  */
 #endif
 
-/* for Unittest - output object over callback */
+
 #define SDC_PRINT(...)    write(__VA_ARGS__)
 #define SDC_WRITE(b)      write((const uint8_t*)b,(uint8_t) 1) 
 #define SDC_PRINTLN(...)  write(__VA_ARGS__); write(char(0xA));
+
 
 #ifndef F 
   #define F(V1) V1
 #endif
 
-#include "bitstore.h"         /* Dependency is needed */
-#include "FastDelegate.h"     /* Dependency is needed */
+#include "bitstore.h"        	/* Dependency is needed */
 
 #define maxNumPattern 8
 #define maxMsgSize 254
-#define minMessageLen 40
+#define minMessageLen 40 // Mindestanzahl Pulse
 #define syncMinFact 6
 #define syncMaxFact 44
 #define syncMaxMicros 17000
 #define maxPulse 32001  // Magic Pulse Length
+#define RSSI_NOT_AVAILABLE 255 // UINT8_MAX, used to indicate that no RSSI value is provided
 
 constexpr const uint8_t SERIAL_DELIMITER = 59;
 constexpr const uint8_t MSG_START = 2;
 constexpr const uint8_t MSG_END = 3;
+
 
 //#define SERIAL_DELIMITER  59 //char(';')
 //#define MSG_START char(0x2)		// this is a non printable Char
@@ -135,6 +137,10 @@ constexpr const uint8_t MSG_END = 3;
 enum status { searching, clockfound, syncfound, detecting, mcdecoding };
 
 char* myitoa(int num, char* str);   // selfmade myitoa function
+
+// Create a type for the callback functions
+typedef  uint8_t (*rssiCallback_t)();  
+typedef  size_t (*streamCallback_t)(const uint8_t*, uint8_t);  
 
 class ManchesterpatternDecoder;
 class SignalDetectorClass;
@@ -151,23 +157,24 @@ public:
 																		 mcdecoder = nullptr;
 																		};
 
+
+	
 	void reset();
 	bool decode(const int* pulse);
 	const status getState();
-	typedef fastdelegate::FastDelegate0<uint8_t> FuncRetuint8t;
-	typedef fastdelegate::FastDelegate2<const uint8_t*, uint8_t, size_t> Func2pRetuint8t;
-
-	void setRSSICallback(FuncRetuint8t callbackfunction) { _rssiCallback = callbackfunction; }
-	void setStreamCallback(Func2pRetuint8t callbackfunction) { _streamCallback = callbackfunction; }
-
+	// register the callback functions
+	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; };
+	void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
+	static uint8_t default_rssiValue() { return RSSI_NOT_AVAILABLE; };	// Dummy return if no rssi value can be retrieved from receiver
+	
 	//private:
-  void SDC_PRINT_intToHex(unsigned int numberToPrint);
+  	void SDC_PRINT_intToHex(unsigned int numberToPrint);
 
 	int8_t clock;                           // index to clock in pattern
 	bool MUenabled;
 	bool MCenabled;
 	bool MSenabled;
-	bool MredEnabled;                       // 1 = compress printMsgRaw
+	bool MredEnabled;                       // compress printMsgRaw
 	uint8_t MsMoveCount;
 
 	uint8_t histo[maxNumPattern];
@@ -178,7 +185,7 @@ public:
 	uint8_t mstart;						  // Holds starting point for message
 	uint8_t mend;						  // Holds end point for message if detected
 	bool success;                         // True if a valid coding was found
-	bool m_truncated;					// Identify if message has been truncated
+	bool m_truncated;					  // Identify if message has been truncated
 	bool m_overflow;
 	void bufferMove(const uint8_t start);
 
@@ -199,9 +206,9 @@ public:
 	bool mcDetected;						// MC Signal alread detected flag
 	uint8_t mcMinBitLen;					// min bit Length
 	uint8_t rssiValue=0;					// Holds the RSSI value retrieved via a rssi callback
-	FuncRetuint8t _rssiCallback= nullptr;	// Holds the pointer to a callback Function
-	Func2pRetuint8t _streamCallback=nullptr;// Holds the pointer to a callback Function
-	//Stream * msgPort;						// Holds a pointer to a stream object for outputting
+
+	rssiCallback_t _rssiCallback = &SignalDetectorClass::default_rssiValue;			// Holds the pointer to a callback Function
+	streamCallback_t _streamCallback = nullptr;	// Holds the pointer to a callback Function
 
 
 	void addData(const int8_t value);
@@ -214,6 +221,8 @@ public:
 	void calcHisto(const uint8_t startpos = 0, uint8_t endpos = 0);
 	bool getClock(); // Searches a clock in a given signal
 	bool getSync();	 // Searches clock and sync in given Signal
+	void writeRSSI();
+
 	//int8_t printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble = NULL, const String *postamble = NULL);
 	//void printMsgStr(const String *first, const String *second, const String *third);
 	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
@@ -222,7 +231,6 @@ public:
 	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
 	const size_t write(const char *str);                      // for the return value
 	const size_t write(uint8_t b);                            // for the return value
-
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
 	const bool checkMBuffer(const uint8_t begin = 0);
