@@ -1508,7 +1508,6 @@ const bool ManchesterpatternDecoder::doDecode() {
 			}
 			else
 				bit = bit ^ 1; // umdrehen, da es erneut beim dekodieren umgedreht wird 
-
 		}
 
 		// Decoding occures here
