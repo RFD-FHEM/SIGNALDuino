@@ -23,7 +23,7 @@
   extern void DBG_PRINTtoHEX(uint8_t b);
   extern bool AfcEnabled;
   #ifdef CMP_CC1101
-    #if defined (ESP8266) || defined (ESP32)
+    #if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
       extern bool wmbus;
       extern bool wmbus_t;
     #endif 
@@ -32,7 +32,6 @@
   #endif 
 
   #define pulseMin  90
-
 
   #if !defined(ESP8266) && !defined(ESP32)
     #define IRAM_ATTR 
@@ -84,7 +83,6 @@ void IRAM_ATTR handleInterrupt() {
 
 
 void enableReceive() {
-  // ToDo MR if(cc1101::ccmode == 0) ???
   attachInterrupt(digitalPinToInterrupt(PIN_RECEIVE), handleInterrupt, CHANGE);
   #ifdef CMP_CC1101
     if (hasCC1101) cc1101::setReceiveMode();
@@ -93,18 +91,16 @@ void enableReceive() {
 
 
 void disableReceive() {
-  // ToDo MR if(cc1101::ccmode == 0) ???
   detachInterrupt(digitalPinToInterrupt(PIN_RECEIVE));
 
   #ifdef CMP_CC1101
     if (hasCC1101) cc1101::setIdleMode();
   #endif
-  FiFo.flush();
 }
 
 
 //================================= EEProm commands ======================================
-#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
   void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc, int8_t wmbus, int8_t wmbus_t) {
 #else
   void storeFunctions(const int8_t ms, int8_t mu, int8_t mc, int8_t red, int8_t afc) {
@@ -125,7 +121,7 @@ void disableReceive() {
   mc = mc << 2;
   red = red << 3;
   afc = afc << 4;
-  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
     wmbus = wmbus << 5;
     wmbus_t = wmbus_t << 6;
     int8_t dat = ms | mu | mc | red | afc | wmbus | wmbus_t;
@@ -138,7 +134,7 @@ void disableReceive() {
   #endif
 }
 
-#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
   void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc, bool *wmbus, bool *wmbus_t) {
 #else
   void getFunctions(bool *ms, bool *mu, bool *mc, bool *red, bool *afc) {
@@ -150,7 +146,7 @@ void disableReceive() {
   *mc = bool(dat &(1 << 2));
   *red = bool(dat &(1 << 3));
   *afc = bool(dat &(1 << 4));
-  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
     *wmbus = bool(dat &(1 << 5));
     *wmbus_t = bool(dat &(1 << 6));
   #endif
@@ -176,13 +172,12 @@ void initEEPROM(void) {
   if (EEPROM.read(EE_MAGIC_OFFSET) == VERSION_1 && EEPROM.read(EE_MAGIC_OFFSET + 1) == VERSION_2) {
     DBG_PRINT(F("Reading values from ")); DBG_PRINT(FPSTR(TXT_EEPROM)); DBG_PRINT(FPSTR(TXT_DOT)); DBG_PRINT(FPSTR(TXT_DOT));
   } else {
-    #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+    #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
       storeFunctions(1, 1, 1, 1, 0, 0, 0); // Init EEPROM with all flags enabled, AFC, WMBus and WMBus_T disabled
     #else
       storeFunctions(1, 1, 1, 1, 0); // Init EEPROM with all flags enabled, AFC disabled
     #endif
-    //hier fehlt evtl ein getFunctions()
-    MSG_PRINTLN(F("Init eeprom to defaults after flash"));
+    MSG_PRINTLN(F("Init eeprom to defaults after clear eeprom"));
     EEPROM.write(EE_MAGIC_OFFSET, VERSION_1);
     EEPROM.write(EE_MAGIC_OFFSET + 1, VERSION_2);
     #ifdef CMP_CC1101
@@ -193,7 +188,7 @@ void initEEPROM(void) {
       EEPROM.commit();
     #endif
   }
-  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+  #if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
     getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled, &wmbus, &wmbus_t);
   #else
     getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);

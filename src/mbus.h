@@ -12,7 +12,8 @@
 
 // #define debug_mbus
 
-#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
+
 #include <Arduino.h>
 #include "cc1101.h"
 
@@ -21,17 +22,11 @@
 // extern String cmdstring; // for send
 // extern uint8_t radionr; // for send nur bei mehreren CC110x
 extern volatile bool blinkLED;
-// extern bool LEDenabled;
-extern String msg;                                  // RAW (nur für serial/telnet, keine HTML Ausgabe) & Serial Input
-extern uint32_t msgCount;                           // Nachrichtenzähler über alle empfangenen Nachrichten
-extern int8_t freqErr;                              // CC110x automatic Frequency Synthesizer Control
-// extern uint8_t rssi;
-// extern uint8_t revision;
 extern bool AfcEnabled;
-extern void CC110x_readFreqErr();
-extern void msgOutput_MN(uint8_t * data, uint16_t lenData, uint8_t wmbusFrameTypeA, uint8_t lqi, uint8_t rssi, int8_t freqErr);
 extern void MSG_PRINTtoHEX(uint8_t a);
-extern void DBG_PRINTtoHEX(uint8_t b);
+#ifdef DEBUG
+	extern void DBG_PRINTtoHEX(uint8_t b);
+#endif
 
 void mbus_init(uint8_t wmBusMode);
 void mbus_task();
@@ -68,13 +63,6 @@ typedef struct RXinfoDescr {
 #define TX_OCCUPIED_FIF0        32    // Occupied space
 #define TX_AVAILABLE_FIFO       32    // Free space
 #define TX_FIFO_SIZE            64
-
-#define FIXED_PACKET_LENGTH     0x00
-#define INFINITE_PACKET_LENGTH  0x02
-#define INFINITE                0
-#define FIXED                   1
-#define MAX_FIXED_LENGTH        256
-
 #define TX_OK                   0
 #define TX_LENGTH_ERROR         1
 #define TX_TO_IDLE1_ERROR       2
