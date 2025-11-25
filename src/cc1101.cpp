@@ -320,9 +320,7 @@ void cc1101::setup() {
 	pinAsInput(misoPin);
 #endif
 
-#ifndef ARDUINO_MAPLEMINI_F103CB
-	pinAsOutput(csPin);                // set pins for SPI communication
-#endif
+pinAsOutput(csPin);                // set pins for SPI communication
 
 #ifdef PIN_MARK433
 	pinAsInputPullUp(PIN_MARK433);
@@ -337,9 +335,7 @@ void cc1101::setup() {
 #elif ARDUINO_MAPLEMINI_F103CB
 	SPI_2.begin();                     // Initialize the SPI_2 port
 	SPI_2.beginTransaction(SPISettings(4000000, MSBFIRST, SPI_MODE0));
-
-	pinAsOutput(radioCsPin[1]);        // standard value 1 = B ( only for using one cc1101 )
-	digitalHigh(radioCsPin[1]);
+	digitalHigh(csPin);
 #else
 	SPI.setDataMode(SPI_MODE0);
 	SPI.setBitOrder(MSBFIRST);
