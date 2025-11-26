@@ -30,12 +30,6 @@
 #define BAUDRATE               115200
 #define FIFO_LENGTH            170
 
-#ifdef ARDUINO_MAPLEMINI_F103CB
-  uint8_t radionr = 1;                            // variant -> Circuit board for four connected cc110x devices - standard value 1 = B (defSelRadio)
-  uint8_t radio_bank[4];                          // variant -> Circuit board for four connected cc110x devices
-#endif
-
-
 // EEProm Address
 #define EE_MAGIC_OFFSET      0
 #define addr_features        0xff
@@ -62,6 +56,11 @@ extern "C" char *sbrk(int i);
   bool watchRes = false;
 #endif
 
+#ifdef CMP_CC1101
+  #include "cc1101.h"
+  #include "mbus.h"
+#endif
+
 #include "output.h"
 #include "bitstore.h"
 #include "signalDecoder.h"
@@ -73,13 +72,13 @@ extern "C" char *sbrk(int i);
 SimpleFIFO<int,FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 SignalDetectorClass musterDec;
 #include <EEPROM.h>
-#ifdef CMP_CC1101
-  #include "cc1101.h"
-#endif
+
 volatile bool blinkLED = false;
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool AfcEnabled = true;
+bool wmbus = false;
+bool wmbus_t = false;
 char IB_1[14]; // Input Buffer one - capture commands
 
 HardwareTimer *Timer1 = new HardwareTimer(TIM1);
@@ -125,7 +124,6 @@ void setup() {
       DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(FPSTR(TXT_FOUND));
       musterDec.setCallback(&cc1101::getRSSI);          // Provide the RSSI Callback
     } 
-
   #endif
 
   pinAsOutput(PIN_SEND);
@@ -158,21 +156,20 @@ void setup() {
   }
 #endif
   MSG_PRINTER.setTimeout(400);
+#ifdef CMP_CC1101
+  if (wmbus == 1) { // WMBus
+    mbus_init((uint8_t)wmbus_t + 1); // WMBus mode S or T
+  }
+#endif
 }
 
 
 
 void cronjob() {
   noInterrupts();
-  static uint8_t cnt = 0;
+  static uint16_t cnt = 0;
   const unsigned long  duration = micros() - lastTime;
-  long timerTime = maxPulse - duration;
 
-  if (timerTime < 1000)
-    timerTime=1000;
-
-  // Timer1->pause();         // ToDo: Timer stopt, why ??? -> no blinkLED action
-  Timer1->setOverflow(timerTime, MICROSEC_FORMAT);
   if (duration > maxPulse) {  // Auf Maximalwert pruefen.
     int sDuration = maxPulse;
     if (isLow(PIN_RECEIVE)) { // Wenn jetzt low ist, ist auch weiterhin low
@@ -189,31 +186,16 @@ void cronjob() {
   #endif
 
   blinkLED = false;
-  interrupts();
 
-  // Infrequent time uncritical jobs (~ every 2 hours)
-  if (cnt++ == 0)  // if cnt is 0 at start or during rollover
+  // Infrequent time uncritical jobs
+  if (cnt == 0 || cnt == 32768) { // approximately every 17,5 minutes
     getUptime();
+    musterDec.reset();
+    FiFo.flush();
+  }
+  cnt++;
+  interrupts();
 }
-
-
-
-	/*
-		* not used now !
-		* these are preparations if the project can be expanded to 4 cc110x
-
-uint16_t getBankOffset(uint8_t tmpBank) {
-	uint16_t bankOffs;
-	if (tmpBank == 0) {
-		bankOffs = 0;
-	}
-	else {
-	bankOffs = 0x100 + ((tmpBank - 1) * 0x40);
-	}
-	return bankOffs;
-}
-
-	*/
 
 
 
@@ -235,7 +217,11 @@ void loop() {
     }
 #ifdef CMP_CC1101
   } else {
-    cc1101::getRxFifo(0);                   // xFSK = 0
+    if (wmbus == 0) {
+      cc1101::getRxFifo(0);                   // xFSK = 0
+    } else {
+      mbus_task();
+    }
   }
 #endif
 }

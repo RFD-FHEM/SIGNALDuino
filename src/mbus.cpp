@@ -8,7 +8,7 @@
 */
 
 #include "compile_config.h"
-#if defined(CMP_CC1101) && (defined(ESP8266) || defined(ESP32))
+#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
 #include "mbus.h"
 
 // Buffers
@@ -325,8 +325,7 @@ void mbus_task()
     uint8_t rssi = 0;
     uint8_t lqi = 0;
     mbus_readRXFIFO(RXinfo.pByteIndex, (uint8_t)RXinfo.bytesLeft, &rssi, &lqi);
-    // CC110x_readFreqErr();
-		int8_t freqErr = cc1101::readReg(0x32, CC1101_READ_BURST); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
+		int8_t freqErr = cc1101::readReg(0x32, CC1101_STATUS); // 0x32 (0xF2): FREQEST – Frequency Offset Estimate from Demodulator
 		if (AfcEnabled == 1) {
 			cc1101::freqErrAvg = cc1101::freqErrAvg - float(cc1101::freqErrAvg / 8.0) + float(freqErr / 8.0);  // Mittelwert über Abweichung
 			// freqErrAvg = freqErrAvg - float(freqErrAvg / 10.0) + float(freqErr / 10.0);  // Mittelwert über Abweichung
@@ -434,8 +433,7 @@ void mbus_task()
 			MSG_PRINT(F(";A="));
 			MSG_PRINT(freqErr);
 			MSG_PRINT(';');
-			MSG_PRINT(char(MSG_END));
-			MSG_PRINT("\n");
+			MSG_PRINTLN(char(MSG_END));
     }
     RXinfo.state = 0;
     return;
@@ -662,14 +660,14 @@ void mbus_readRXFIFO(uint8_t *data, uint8_t length, uint8_t *rssi, uint8_t *lqi)
   cc1101_Select();                                    // select CC1101
   cc1101::sendSPI(CC1101_RXFIFO | CC1101_READ_BURST); // send register address
   for (uint8_t i = 0; i < length; i++)
-    data[i] = SPI.transfer(0); // read result
+    data[i] = cc1101::sendSPI(0);        // read result
   // Optionally, two status bytes (see Table 27 and Table 28) with RSSI value, Link Quality Indication, and CRC status can be appended in the RX FIFO.
   if (rssi)
   {
-    *rssi = SPI.transfer(0);
+    *rssi = cc1101::sendSPI(0);        // read result
     if (lqi)
     {
-      *lqi = SPI.transfer(0) & 0x7F;
+      *lqi = cc1101::sendSPI(0) & 0x7F; // read result
     }
   }
   cc1101_Deselect();

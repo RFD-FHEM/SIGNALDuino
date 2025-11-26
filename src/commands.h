@@ -24,14 +24,14 @@ void MSG_PRINTtoHEX(uint8_t a) { // this function is the alternative to sprintf(
   MSG_PRINT(a , HEX);
 }
 
-void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf(b, "%02x", yyy(i));
 #ifdef DEBUG
+void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf(b, "%02x", yyy(i));
   if(b < 16) {
     DBG_PRINT(0);
   }
   DBG_PRINT(b , HEX);
-#endif
 }
+#endif
 
 /* Help functions END */
 
@@ -45,10 +45,10 @@ extern char IB_1[14];
 extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
-extern uint8_t ccmode;;          // xFSK
+extern uint8_t ccmode;          // xFSK
 #ifdef CMP_CC1101
 	extern bool AfcEnabled;
-	#if defined (ESP8266) || defined (ESP32)
+	#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
 		extern bool wmbus;
 		extern bool wmbus_t;
 	#endif
@@ -87,7 +87,7 @@ namespace commands {
 				MSG_PRINTLN(musterDec.MredEnabled, DEC);
 			} else {                   // FSK
 				MSG_PRINT(F("MN=1"));
-				#if defined (ESP8266) || defined (ESP32)
+	  			#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
 					MSG_PRINT(F(";WMBus="));
 					MSG_PRINT(wmbus, DEC);
 					MSG_PRINT(F(";WMBus_T="));
@@ -130,7 +130,7 @@ namespace commands {
 			case 'A' : //Afc
 				bptr = &AfcEnabled;
 				break;
-			#if defined (ESP8266) || defined (ESP32)
+			#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
 			case 'W' : //WMBus
 				bptr = &wmbus;
 				break;
@@ -154,7 +154,7 @@ namespace commands {
 			default:
 				return;
 		}
-		#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32))
+		#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
 			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled, wmbus, wmbus_t);
 		#else
 			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
@@ -220,7 +220,6 @@ namespace commands {
 			if (hasCC1101) {
 				MSG_PRINT(FPSTR(TXT_CC1101));
 				MSG_PRINT('(');
-
 #endif
 #ifdef PIN_MARK433
 				MSG_PRINT(FPSTR(isLow(PIN_MARK433) ? TXT_433 : TXT_868));
@@ -326,6 +325,7 @@ namespace commands {
 					MSG_PRINT(F(" :"));
 					for (uint8_t i = 0; i < 16; i++) {
 						const uint8_t val = EEPROM.read(reg + i);
+						MSG_PRINT(F(" "));
 						MSG_PRINTtoHEX(val);
 					}
 				}
@@ -342,6 +342,13 @@ namespace commands {
 			{
 				#ifdef CMP_CC1101
 				cc1101::commandStrobes();
+					#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
+					if (IB_1[3] == '4') { // 0x34 SRX Enable RX.
+						if (wmbus == 1) { // WMBus
+							mbus_init(wmbus_t + 1); // WMBus mode S or T
+						}
+					}
+					#endif
 				#endif
 			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
 				char b[3];
@@ -373,8 +380,7 @@ namespace commands {
 						// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
 						if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
 							val = 0x56;          // FREND1 = 0x56
-						}
-						else {
+						} else {
 							val = 0xB6;         // FREND1 = 0xB6
 						}
 						EEPROM.write(reg, val);
@@ -388,8 +394,7 @@ namespace commands {
 						// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
 						if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
 							val = 0x47;          // FIFOTHR = 0x47
-						}
-						else {
+						} else {
 							val = 0x07;           // FIFOTHR = 0x07
 						}
 						EEPROM.write(reg, val);

@@ -16,12 +16,6 @@
 
 extern char IB_1[14];
 
-
-#ifdef ARDUINO_MAPLEMINI_F103CB    // only ARDUINO_MAPLEMINI_F103CB / MAPLE_Mini
-	extern uint8_t radionr;        // xFSK - variant -> Circuit board for four connected cc110x devices
-#endif
-
-
 #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_MAPLEMINI_F103CB)
 	#include <SPI.h>
 #endif
@@ -46,8 +40,7 @@ namespace cc1101 {
 /*
 	https://forum.fhem.de/index.php/topic,106278.0.html | https://forum.fhem.de/index.php/topic,109220.0.html
 */
-	const uint8_t radioCsPin[] = {31, 12, 15, 3};  // PINs from Circuit board for 4 cc110x
-	#define csPin   12                             // CSN  out - SPI2 , default PIN radionbank 1 -> compatible with other project
+	#define csPin   12                             // CSN  out - SPI2
 	#define mosiPin 28                             // MOSI out - SPI2
 	#define misoPin 29                             // MISO in  - SPI2
 	#define sckPin  30                             // SCLK out - SPI2
@@ -147,13 +140,8 @@ namespace cc1101 {
 	#define wait_Miso()       { uint8_t miso_count = 255; while(isHigh(misoPin)) { delay(1); if(miso_count == 0) return      ; miso_count--; } }    // wait until SPI MISO line goes low
 	#define wait_Miso_rf()    { uint8_t miso_count = 255; while(isHigh(misoPin)) { delay(1); if(miso_count == 0) return false; miso_count--; } }    // wait until SPI MISO line goes low
 
-#ifdef ARDUINO_MAPLEMINI_F103CB
-	#define cc1101_Select()   digitalLow(cc1101::radioCsPin[radionr])  // select (SPI) CC1101 | variant from array, Circuit board for 4 cc110x
-	#define cc1101_Deselect() digitalHigh(cc1101::radioCsPin[radionr])
-#else
 	#define cc1101_Select()   digitalLow(csPin)                        // select (SPI) CC1101
 	#define cc1101_Deselect() digitalHigh(csPin)
-#endif
 
 	#define EE_CC1101_CFG        2
 	#define EE_CC1101_CFG_SIZE   0x29
@@ -188,7 +176,7 @@ namespace cc1101 {
 
 
 
-	byte hex2int(byte hex);                                         // convert a hexdigit to int    // Todo: printf oder scanf nutzen
+	byte hex2int(byte hex);                                         // convert a hexdigit to int
 	uint8_t chipVersion();
 	uint8_t chipVersionRev();
 	uint8_t cmdStrobe(const uint8_t cmd);
