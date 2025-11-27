@@ -19,16 +19,16 @@
   extern volatile unsigned long lastTime;
   extern SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
   extern SignalDetectorClass musterDec;
-  extern bool hasCC1101;
   extern void DBG_PRINTtoHEX(uint8_t b);
   extern bool AfcEnabled;
+  extern bool hasCC1101;
   #ifdef CMP_CC1101
+    extern int8_t cc1101::freqOffAcc;
+    extern float cc1101::freqErrAvg;
     #if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
       extern bool wmbus;
       extern bool wmbus_t;
     #endif 
-    extern int8_t cc1101::freqOffAcc;       
-    extern float cc1101::freqErrAvg;        
   #endif 
 
   #define pulseMin  90
@@ -212,5 +212,34 @@ inline unsigned long getUptime() {
   return (0xFFFFFFFF / 1000) * times_rolled + (now / 1000);
 }
 
+#if defined (ESP8266) || defined (ESP32)
+// This function will read IPAddress (4 byte) from the eeprom at the specified address to address + 3.
+IPAddress EEPROM_read_ipaddress(int address) {
+  IPAddress ip;
+  for (uint8_t x = 0; x < 4; x++) {
+    ip[x] = EEPROM.read(address + x);
+  }
+  #ifdef DEBUG
+    Serial.print(F("EEPROM read IPAddress at address: "));
+    Serial.print(address);
+    Serial.print(F(" - "));
+    Serial.println(ip);
+  #endif
+  return ip;
+}
 
+// This function will write IPAddress (4 byte) to the eeprom at the specified address to address + 3.
+void EEPROM_write_ipaddress(int address, IPAddress ip) {
+  #ifdef DEBUG
+    Serial.print(F("EEPROM write IPAddress at address: "));
+    Serial.print(address);
+    Serial.print(F(" - "));
+    Serial.println(ip);
+  #endif
+  for (uint8_t x = 0; x < 4; x++) {
+    EEPROM.write(address + x, ip[x]);
+  }
+  EEPROM.commit();
+}
+#endif
 #endif // endif _FUNCTIONS_h
