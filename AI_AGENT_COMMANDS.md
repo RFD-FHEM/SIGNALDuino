@@ -21,7 +21,7 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 | Syntax | Funktion | Antwort | Beispiel |
 | :--- | :--- | :--- | :--- |
 | `CG` | Konfiguration lesen | Gibt aktuelle Decodereinstellungen aus (MS, MU, MC, Mred, AFC, WMBus) | `CG` -> `MS=1;MU=1;MC=1;Mred=1` |
-| `C<FLAG><CMD>` | Decoder konfigurieren | Aktiviert/Deaktiviert Decoder (FLAG: E=Enable, D=Disable; CMD: S=MS, U=MU, C=MC, R=Mred, A=AFC) | `CER` -> (Einschalten der Datenkomprimierung (config: Mred=1)) |
+| `C<FLAG><CMD>` | Decoder konfigurieren | Aktiviert/Deaktiviert Decoder (FLAG: E=Enable, D=Disable; CMD: S=MS, U=MU, C=MC, R=Mred, A=AFC T=WMBus_T) | `CER` -> (Einschalten der Datenkomprimierung (config: Mred=1)) |
 | `CSmcmbl=<val>` | MC Min Bit Length setzen | Setzt minimale Bitlänge für Manchester-Decoding | `CSmcmbl=20` -> `20 bits set` |
 | `C<reg>` | CC1101 Register lesen | Liest Wert eines CC1101-Registers (hex) | `C0D` -> (Liest Register 0x0D) |
 | `W<reg><val>` | EEPROM/CC1101 schreiben | Schreibt Wert in EEPROM und CC1101 Register (reg/val als 2-stellige Hex-Strings) | `W0001` -> (Schreibt 0x01 nach Reg 0x00) |
@@ -36,9 +36,11 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 *   `WS3A`: **SFRX** - Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
 *   `WS34`: **SRX** - Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1.
 
-### WMBus Konfiguration
+### FSK/WMBus Konfiguration
 
-Die Konfiguration für WMBus erfolgt ausschließlich durch direktes Schreiben der entsprechenden CC1101 Register mittels des `W<reg><val>` Befehls. Es gibt keine speziellen `C` Befehle für die WMBus Konfiguration.
+Die Konfiguration für FSK/WMBus erfolgt ausschließlich durch direktes Schreiben der entsprechenden CC1101 Register mittels des Befehls `W<reg><val>`.
+Der WMBus-Modus wird anschließend durch den Befehl CEW eingeschaltet. 
+Die Auswahl WMBus_S/WMBus_T erfolgt mit dem Befehl `CDT` oder `CET`.
 
 Details zu den Registern finden sich im CC1101 Datenblatt von Texas Instruments:
 https://www.ti.com/lit/ds/symlink/cc1101.pdf
