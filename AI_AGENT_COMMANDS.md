@@ -21,14 +21,20 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 | Syntax | Funktion | Antwort | Beispiel |
 | :--- | :--- | :--- | :--- |
 | `CG` | Konfiguration lesen | Gibt aktuelle Decodereinstellungen aus (MS, MU, MC, Mred, AFC, WMBus) | `CG` -> `MS=1;MU=1;MC=1;Mred=1` |
-| `C<CMD><FLAG>` | Decoder konfigurieren | Aktiviert/Deaktiviert Decoder (CMD: S=MS, U=MU, C=MC, R=Mred, A=AFC, W=WMBus, T=WMBus_T; FLAG: E=Enable, D=Disable) | `CSE` -> (aktiviert MS) |
+| `C<FLAG><CMD>` | Decoder konfigurieren | Aktiviert/Deaktiviert Decoder (FLAG: E=Enable, D=Disable; CMD: S=MS, U=MU, C=MC, R=Mred, A=AFC, W=WMBus, T=WMBus_T) | `CER` -> (Einschalten der Datenkomprimierung (config: Mred=1)) |
 | `CSmcmbl=<val>` | MC Min Bit Length setzen | Setzt minimale Bitlänge für Manchester-Decoding | `CSmcmbl=20` -> `20 bits set` |
 | `C<reg>` | CC1101 Register lesen | Liest Wert eines CC1101-Registers (hex) | `C0D` -> (Liest Register 0x0D) |
 | `W<reg><val>` | EEPROM/CC1101 schreiben | Schreibt Wert in EEPROM und CC1101 Register (reg/val als 2-stellige Hex-Strings) | `W0001` -> (Schreibt 0x01 nach Reg 0x00) |
-| `WS34` | WMBus Init (CC1101) | Initialisiert WMBus Modus (Strobe 0x34 SRX) | `WS34` |
+| `WS<id>` | WMBus Init (CC1101) | Sendet ein strobe command zum cc1101 (Strobe 0x36 SIDLE, 0x3A SFRX, 0x34 SRX) | `WS34` |
 | `r<addr>` | EEPROM lesen | Liest Byte an EEPROM-Adresse (hex) | `r00` -> `EEPROM 00 = 33` |
 | `r<addr>n` | EEPROM Block lesen | Liest 16 Bytes ab EEPROM-Adresse | `r00n` -> `EEPROM 00 : 33 1D ...` |
 | `x<val>` | PA Table schreiben | Schreibt Wert in CC1101 PA Table (Sendeleistung) | `x12` -> `Write 12 to patable` |
+
+### Bedeutung der Strobe commands
+
+*   `WS36`: **SIDLE** - Exit RX / TX, turn off frequency synthesizer
+*   `WS3A`: **SFRX** - Flush the RX FIFO buffer. Only issue SFRX in IDLE or RXFIFO_OVERFLOW states.
+*   `WS34`: **SRX** - Enable RX. Perform calibration first if coming from IDLE and MCSM0.FS_AUTOCAL=1.
 
 ## Sendebefehle
 
