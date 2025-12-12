@@ -138,7 +138,7 @@ void setup() {
   gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
   {
     Server.begin();  // start telnet server
-    Server.setNoDelay(false); // With nodelay set to true, this function will to disable Nagle algorithm (https://en.wikipedia.org/wiki/Nagle%27s_algorithm).
+    Server.setNoDelay(true); // With nodelay set to true, this function will to disable Nagle algorithm (https://en.wikipedia.org/wiki/Nagle%27s_algorithm).
   });
 
   disconnectedEventHandler = WiFi.onStationModeDisconnected([](const WiFiEventStationModeDisconnected & event)
@@ -150,7 +150,7 @@ void setup() {
 #elif defined(ESP32)
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.begin();  // start telnet server
-    Server.setNoDelay(false);
+    Server.setNoDelay(true);
   }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_CONNECTED);
 
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
