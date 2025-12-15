@@ -3,11 +3,11 @@
 #ifndef _CC1101_h
 #define _CC1101_h
 
-//#if defined(ARDUINO) && ARDUINO >= 100
+#if defined(ARDUINO) && ARDUINO >= 100
 	#include "Arduino.h"
-//#else
+#else
 //	#include "WProgram.h"
-//#endif
+#endif
 #include "compile_config.h"
 
 #include <EEPROM.h>
