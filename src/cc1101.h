@@ -175,7 +175,7 @@ namespace cc1101 {
 	#endif
 
 
-
+  String dec2hex(uint8_t val);                                    // convert one byte to hex string, return hex string "00" from dec 0
 	byte hex2int(byte hex);                                         // convert a hexdigit to int
 	uint8_t chipVersion();
 	uint8_t chipVersionRev();
