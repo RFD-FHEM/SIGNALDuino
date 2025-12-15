@@ -117,7 +117,7 @@ jobs:
           category: "/board:${{matrix.envName}}"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ steps.compile_sketch.outputs.FILENAME }}
           path: |
