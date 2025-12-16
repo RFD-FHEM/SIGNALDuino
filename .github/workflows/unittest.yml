@@ -13,7 +13,7 @@ jobs:
         with: 
           submodules: true
 
-      - uses: lukka/get-cmake@v4.2.0
+      - uses: lukka/get-cmake@v4.2.1
         with:
           cmakeVersion: "~3.25.0"  # <--= optional, use most recent 3.25.x version
 
