@@ -63,6 +63,7 @@ const uint8_t cc1101::initVal[] PROGMEM =
 0x00, // 28 RCCTRL0
 };
 
+#ifdef ETHERNET_PRINT
 String cc1101::dec2hex(uint8_t val) { // convert one byte to hex string, return hex string "00" from dec 0
   char ret[3];
   ret[0] = (val >> 4);
@@ -72,6 +73,7 @@ String cc1101::dec2hex(uint8_t val) { // convert one byte to hex string, return 
   ret[2] = '\0';
   return ret;
 }
+#endif
 
 byte cc1101::hex2int(byte hex) {    // convert a hexdigit to int (smallest variant, sketch is bigger with printf or scanf)
 	if (hex >= '0' && hex <= '9') hex = hex - '0';
