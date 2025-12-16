@@ -45,7 +45,7 @@
 */
 
 #ifndef PROGVERS
-  #define PROGVERS               "4.0.3+20230814"   // platformio will set this to the correct value (lateste tag with commits since latest tag)
+  #define PROGVERS               "4.0.4+20230814"   // platformio will set this to the correct value (lateste tag with commits since latest tag)
 #endif
 
 #ifdef OTHER_BOARD_WITH_CC1101
@@ -80,32 +80,32 @@
     #define PIN_RECEIVE          18   // GD02 (Receive)
     #define PIN_WIZ_RST          27   // for LAN
   #elif defined(ESP8266)
-    #define PIN_RECEIVE          5    // D1
     #define PIN_LED              16   // some boards have no LED or this LED has a different PIN defined
-    #define PIN_SEND             4    // D2  // gdo0Pin TX out
+    #define PIN_SEND             4    // D2  // GDO0 Pin TX out
+    #define PIN_RECEIVE          5    // D1  // GDO2 Pin RX in
     #define ETHERNET_PRINT
     //#define PIN_LED_INVERSE           // use this setting for the LED_BUILTIN on WEMOS boards
   #elif defined(ESP32)
-    #define PIN_RECEIVE          13   // D13 | G13 (depending on type / clone / seller) --> old 16, not good (serial) and not all boards n.c.
     #define PIN_LED              2    // D2  | G2 (depending on type / clone / seller)
     #define PIN_SEND             4    // D4  | G4 (depending on type / clone / seller) // GDO0 Pin TX out
+    #define PIN_RECEIVE          13   // D13 | G13 (depending on type / clone / seller) --> old 16, not good (serial) and not all boards n.c.
     #define ETHERNET_PRINT
   #else
     #define PIN_LED              9
-    #define PIN_SEND             3    // gdo0Pin TX out
-    #define PIN_RECEIVE          2
+    #define PIN_SEND             3    // GDO0 Pin TX out
+    #define PIN_RECEIVE          2    // GDO2 Pin RX in
   #endif
 #else
   #ifdef ESP8266
-    #define PIN_RECEIVE          5    // D1
     #define PIN_LED              16   // some boards have no LED or this LED has a different PIN defined
-    #define PIN_SEND             4    // D2  // gdo0Pin TX out
+    #define PIN_SEND             4    // D2 TX out
+    #define PIN_RECEIVE          5    // D1 RX in
     #define ETHERNET_PRINT
     //#define PIN_LED_INVERSE           // use this setting for the LED_BUILTIN on WEMOS boards
   #elif defined(ESP32)
-    #define PIN_RECEIVE          16   // D16 | G16 (depending on type / clone / seller)
     #define PIN_LED              2    // D2  | G2 (depending on type / clone / seller)
     #define PIN_SEND             4    // D4  | G4 (depending on type / clone / seller) // GDO0 Pin TX out
+    #define PIN_RECEIVE          13   // D13 | G13 (depending on type / clone / seller) --> old 16, not good (serial) and not all boards n.c.
     #define ETHERNET_PRINT
   #elif ARDUINO_MAPLEMINI_F103CB
     #define PIN_LED              33
@@ -113,9 +113,9 @@
     #define PIN_RECEIVE          18   // gdo2
     #define PIN_WIZ_RST          27   // for LAN
   #else
-    #define PIN_RECEIVE          2
     #define PIN_LED              13   // Message-LED
     #define PIN_SEND             11
+    #define PIN_RECEIVE          2
   #endif
 #endif
 
