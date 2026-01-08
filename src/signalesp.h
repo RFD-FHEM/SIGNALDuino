@@ -270,7 +270,8 @@ digitalLow(PIN_LED);
 
 void IRAM_ATTR cronjob(void *pArg) {
   cli();
-  static uint16_t cnt = 0; // approximately every 34 minutes
+  static uint16_t cnt = 0;         // approximately every 34 minutes
+  static unsigned long stuckRxTime = 0; // for stuck RX detection
 
   const unsigned long  duration = micros() - lastTime;
   long timerTime = maxPulse - duration + 1000;
@@ -298,6 +299,32 @@ void IRAM_ATTR cronjob(void *pArg) {
     //os_timer_arm(&cronTimer, 20, true);
   }
 
+#ifdef CMP_CC1101
+  // Stuck RX detection logic
+  if (hasCC1101 && cc1101::ccmode == 0) { // Only run if CC1101 is present and in xFSK (mode 0)
+    // Read MARCSTATE and PKTSTATUS registers
+    uint8_t marcstate = cc1101::readReg(CC1101_MARCSTATE) & 0x1F; // mask state bits
+    uint8_t pktstatus = cc1101::readReg(CC1101_PKTSTATUS);
+
+    // Trigger condition: Duration > maxPulse && MARCSTATE == 0x0D (RX Mode) && PKTSTATUS bit 6 set (Carrier Sense active) && PKTSTATUS bit 3 clear (Sync Word NOT detected)
+    if (duration > maxPulse && marcstate == 0x0D && (pktstatus & 0x40) && !(pktstatus & 0x08)) {
+      if (stuckRxTime == 0) {
+        // First detection
+        stuckRxTime = millis();
+      } else if (millis() - stuckRxTime > 100) {
+        // Condition persists for > 100ms (0.1s)
+        DBG_PRINTLN(F("Resetting RX State (Calibrate)..."));
+        cc1101::cmdStrobe(CC1101_SIDLE);
+        delayMicroseconds(100);
+        cc1101::cmdStrobe(CC1101_SRX);
+        stuckRxTime = 0; // Reset timer
+      }
+    } else {
+      stuckRxTime = 0; // Reset timer if condition is false
+    }
+  }
+#endif
+
 #ifdef PIN_LED_INVERSE
 	digitalWrite(PIN_LED, !blinkLED);
 #else
@@ -318,8 +345,6 @@ void IRAM_ATTR cronjob(void *pArg) {
 }
 
 unsigned long Elapsed;
-
-
 
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
