@@ -64,6 +64,7 @@ namespace cc1101 {
 	#define CC1101_READ_SINGLE    0x80
 	#define CC1101_CONFIG         CC1101_READ_SINGLE
 	#define CC1101_STATUS         CC1101_READ_BURST
+	#define CC1101_PKTSTATUS      0xF8   // Current GDOx status and packet status
 
 	#define CC1101_FREQ2       0x0D  // Frequency control word, high byte
 	#define CC1101_FREQ1       0x0E  // Frequency control word, middle byte
@@ -100,7 +101,7 @@ namespace cc1101 {
 	#define CC1101_SFRX     0x3A  // Flush the RX FIFO buffer | Underflow and # of bytes in TXFIFO / CC1101_TXBYTES
 	#define CC1101_SFTX     0x3B  // Flush the TX FIFO buffer | Overflow and # of bytes in RXFIFO / CC1101_RXBYTES
 	#define CC1101_SNOP     0x3D  // No operation. May be used to get access to the chip status byte.
-  #define CC1101_TXFIFO   0x3F
+  	#define CC1101_TXFIFO   0x3F
 	#define CC1101_RXFIFO   0x3F
 
   enum CC1101_MarcState {

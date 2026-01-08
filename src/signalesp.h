@@ -25,6 +25,7 @@ void serialEvent();
 void IRAM_ATTR cronjob(void *pArg);
 int freeRam();
 inline void ethernetEvent();
+void telnetClientEvent();
 //unsigned long getUptime();
 //void enDisPrint(bool enDis);
 //void getFunctions(bool *ms, bool *mu, bool *mc);
@@ -47,11 +48,39 @@ void IRAM_ATTR sosBlink(void *pArg);
   #include "esp_task_wdt.h"
   #include <WiFi.h>
   #include <WiFiType.h>
+  #include "driver/gpio.h"
 #endif
 
 #include <FS.h>
 #include <EEPROM.h>
 #include <DNSServer.h>             // Local DNS Server used for redirecting all requests to the configuration portal
+
+#include <Stream.h>
+
+class MultiClientPrinter : public Stream {
+public:
+  size_t write(uint8_t c) override {
+    return writeCallback(&c, 1);
+  }
+  size_t write(const uint8_t *buffer, size_t size) override {
+    size_t n = 0;
+    while (size > 0) {
+      uint8_t chunk = (size > 255) ? 255 : (uint8_t)size;
+      writeCallback(buffer + n, chunk);
+      n += chunk;
+      size -= chunk;
+    }
+    return n;
+  }
+
+  // Stream interface stubs
+  int available() override { return 0; }
+  int read() override { return -1; }
+  int peek() override { return -1; }
+};
+
+extern MultiClientPrinter _MultiClientPrinterInstance;
+extern Stream &TelnetPrint;
 
 #include "output.h"
 #include "bitstore.h"              // Die wird aus irgend einem Grund zum Compilieren benoetigt.
@@ -73,7 +102,7 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 
 
 WiFiServer Server(23);             //  port 23 = telnet
-WiFiClient serverClient;
+extern WiFiClient serverClient[MAX_SRV_CLIENTS];
 
 SignalDetectorClass musterDec;
 
@@ -103,6 +132,9 @@ volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool AfcEnabled = true;
 char IB_1[14];                     // Input Buffer one - capture commands
+#define CMD_BUFFER_SIZE 14
+char IB_Telnet[MAX_SRV_CLIENTS][CMD_BUFFER_SIZE];
+uint8_t IB_Telnet_idx[MAX_SRV_CLIENTS] = {0};
 #ifdef CMP_CC1101
   bool wmbus = false;
   bool wmbus_t = false;
@@ -140,6 +172,11 @@ void setup() {
   }
   //char cfg_ipmode[7] = "dhcp";
   //Server.setNoDelay(true);
+
+#ifdef ESP32
+  gpio_install_isr_service(0);
+#endif
+
 #if defined(ESP8266)
   gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
   {
@@ -247,7 +284,7 @@ initEEPROM();
 #endif
 
 
-MSG_PRINTER.setTimeout(400);
+Serial.setTimeout(400);
 
 #ifdef ESP32
   esp_timer_start_periodic(cronTimer_handle, 31000);
@@ -303,11 +340,11 @@ void IRAM_ATTR cronjob(void *pArg) {
   // Stuck RX detection logic
   if (hasCC1101 && cc1101::ccmode == 0) { // Only run if CC1101 is present and in xFSK (mode 0)
     // Read MARCSTATE and PKTSTATUS registers
-    uint8_t marcstate = cc1101::readReg(CC1101_MARCSTATE) & 0x1F; // mask state bits
-    uint8_t pktstatus = cc1101::readReg(CC1101_PKTSTATUS);
+    uint8_t marcstate = cc1101::readReg(CC1101_MARCSTATE_REV01,CC1101_STATUS) & 0x1F; // mask state bits
+    uint8_t pktstatus = cc1101::readReg(CC1101_PKTSTATUS,CC1101_STATUS);
 
     // Trigger condition: Duration > maxPulse && MARCSTATE == 0x0D (RX Mode) && PKTSTATUS bit 6 set (Carrier Sense active) && PKTSTATUS bit 3 clear (Sync Word NOT detected)
-    if (duration > maxPulse && marcstate == 0x0D && (pktstatus & 0x40) && !(pktstatus & 0x08)) {
+    if (marcstate == 0x0D && (pktstatus & 0x40) && !(pktstatus & 0x08)) {
       if (stuckRxTime == 0) {
         // First detection
         stuckRxTime = millis();
@@ -340,7 +377,7 @@ void IRAM_ATTR cronjob(void *pArg) {
     getUptime();
     musterDec.reset();
     FiFo.flush();
-    cc1101::CCinit(); // Reinitialize CC1101
+    //cc1101::CCinit(); // Reinitialize CC1101
   }
 }
 
@@ -365,6 +402,7 @@ void loop() {
   static int aktVal = 0;
   bool state;
   serialEvent();
+  telnetClientEvent();
   ethernetEvent();
 
 #ifdef CMP_CC1101
@@ -395,112 +433,127 @@ void loop() {
 
 #ifdef _USE_WRITE_BUFFER
   const size_t writeBufferSize = 512;
-  size_t writeBufferCurrent = 0;
-  uint8_t writeBuffer[writeBufferSize];
+  size_t writeBufferCurrent[MAX_SRV_CLIENTS] = { 0 };
+  uint8_t writeBuffer[MAX_SRV_CLIENTS][writeBufferSize];
 #endif
 
 size_t writeCallback(const uint8_t *buf, uint8_t len)
 {
 #ifdef _USE_WRITE_BUFFER
-  if (!serverClient || !serverClient.connected())
-    return 0;
+  // Broadcast to all clients
+  for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+    if (!serverClient[i] || !serverClient[i].connected())
+      continue;
 
-  size_t result = 0;
+    // Need to use a temporary copy of len and buf for each client's consumption loop
+    size_t currentLen = len;
+    const uint8_t *currentBuf = buf;
 
-  while (len > 0) {
-    size_t copy = (len > writeBufferSize - writeBufferCurrent ? writeBufferSize - writeBufferCurrent : len);
-    if (copy > 0)
-    {
-      memcpy(writeBuffer + writeBufferCurrent, buf, copy);
-      writeBufferCurrent = writeBufferCurrent + copy;
-    }
-    // Buffer full or \n detected - force send
-    if ((len == 1 && *buf == char(0xA)) || (writeBufferCurrent == writeBufferSize))
-    {
-      size_t byteswritten = 0;
-      if (serverClient && serverClient.connected()) {
-        byteswritten = serverClient.write(writeBuffer, writeBufferCurrent);
+    while (currentLen > 0) {
+      size_t copy = (currentLen > writeBufferSize - writeBufferCurrent[i] ? writeBufferSize - writeBufferCurrent[i] : currentLen);
+      
+      if (copy > 0)
+      {
+        memcpy(writeBuffer[i] + writeBufferCurrent[i], currentBuf, copy);
+        writeBufferCurrent[i] += copy;
       }
 
-      if (byteswritten < writeBufferCurrent) {
-        memmove(writeBuffer, writeBuffer + byteswritten, writeBufferCurrent - byteswritten);
-        writeBufferCurrent -= byteswritten;
-      } else {
-        writeBufferCurrent = 0;
+      // Check for forced send condition (newline or buffer full)
+      bool forceSend = (writeBufferCurrent[i] == writeBufferSize);
+      if (copy > 0 && currentBuf[copy - 1] == char(0xA)) {
+          forceSend = true;
       }
-      result += byteswritten;
-    }
 
-    // buffer full
-    len = len - copy;
-    if (len > 0)
-    {
-      memmove((void*)buf, buf + copy, len);
+      if (forceSend)
+      {
+        size_t byteswritten = serverClient[i].write(writeBuffer[i], writeBufferCurrent[i]);
+        
+        if (byteswritten < writeBufferCurrent[i]) {
+          memmove(writeBuffer[i], writeBuffer[i] + byteswritten, writeBufferCurrent[i] - byteswritten);
+          writeBufferCurrent[i] -= byteswritten;
+        } else {
+          writeBufferCurrent[i] = 0;
+        }
+      }
+
+      currentLen -= copy;
+      currentBuf += copy;
+    }
+  }
+
+  // The original implementation returned `len` on success. We keep this for compatibility.
+  return len; 
+
+#else
+  // Non-buffered write (broadcast)
+  for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+    if (serverClient[i] && serverClient[i].connected()) {
+      serverClient[i].write(buf, len);
     }
   }
   return len;
-
-#else
-
-  while (!serverClient.accept()) {
-    yield();
-    if (!serverClient.connected()) return 0;
-  }
-  DBG_PRINTLN("Called writeCallback");
-
-  memccpy()
-
-  return serverClient.write(buf, len);
-  //serverClient.write("test");
 #endif
 }
 
 inline void ethernetEvent()
 {
-  //check if there are any new clients
+  // Check if there are any new clients
   if (Server.hasClient()) {
-    if (!serverClient || !serverClient.connected()) {
-      if (serverClient) serverClient.stop();
-      serverClient = Server.accept();
-      serverClient.flush();
-      //DBG_PRINTLN("New client: ");
-      //DBG_PRINTLN(serverClient.remoteIP());
-    } else {
+    bool accepted = false;
+    for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+      if (!serverClient[i] || !serverClient[i].connected()) {
+        if (serverClient[i]) serverClient[i].stop();
+        serverClient[i] = Server.accept();
+        serverClient[i].flush();
+        DBG_PRINT(F("New client accepted on slot "));
+        DBG_PRINTLN(i);
+        //DBG_PRINTLN(serverClient[i].remoteIP());
+        accepted = true;
+        break;
+      }
+    }
+
+    if (!accepted) {
       WiFiClient rejectClient = Server.accept();
       rejectClient.stop();
-      //DBG_PRINTLN("Reject new Client: ");
-      //DBG_PRINTLN(rejectClient.remoteIP());
+      DBG_PRINT(F("Reject new Client: "));
+      DBG_PRINTLN(rejectClient.remoteIP());
     }
   }
 
-  if(serverClient && !serverClient.connected())
-  {
-    //DBG_PRINTLN("Client disconnected: ");
-    //DBG_PRINTLN(serverClient.remoteIP());
-    serverClient.stop();
+  // Check for disconnected clients
+  for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+    if(serverClient[i] && !serverClient[i].connected())
+    {
+      DBG_PRINT(F("Client disconnected from slot "));
+      DBG_PRINT(i);
+      DBG_PRINT(F(": "));
+      //DBG_PRINTLN(serverClient[i].remoteIP());
+      serverClient[i].stop();
+    }
   }
 }
 
 
 
-//================================= Serielle verarbeitung ======================================
-void serialEvent()
+//================================= Serielle verarbeitung und Telnet ======================================
+
+void handleStreamInput(Stream &input, char *inputBuffer, uint8_t &idx)
 {
-  static uint8_t idx = 0;
-  while (MSG_PRINTER.connected() > 0 && MSG_PRINTER.available())
+  while (input.available())
   {
-    if (idx == 14) {
+    if (idx >= CMD_BUFFER_SIZE - 1) { // CMD_BUFFER_SIZE is 14
       // Short buffer is now full
       MSG_PRINT(F("Command to long: "));
-      MSG_PRINTLN(IB_1);
+      MSG_PRINTLN(inputBuffer);
       idx = 0;
       return;
     } else {
-      IB_1[idx] = (char)MSG_PRINTER.read();
+      inputBuffer[idx] = (char)input.read();
       // DBG_PRINTLN(idx);
-      // DBG_PRINT(IB_1[idx]);
+      // DBG_PRINT(inputBuffer[idx]);
 
-      switch (IB_1[idx])
+      switch (inputBuffer[idx])
       {
         case '\n':
         case '\r':
@@ -516,13 +569,19 @@ void serialEvent()
 
           if (idx > 0) {
             // DBG_PRINT("HSC");
+            // Copy command to global IB_1 buffer before calling shared command handlers
+            memcpy(IB_1, inputBuffer, idx);
+            IB_1[idx] = '\0';
             commands::HandleShortCommand();  // Short command received and can be processed now
           }
           idx = 0;
           return; //Exit function
         case ';':
-          DBG_PRINT("send cmd detected ");
+          DBG_PRINT(F("send cmd detected "));
           // DBG_PRINTLN(idx);
+          
+          // Copy command to global IB_1 buffer before calling shared command handlers
+          memcpy(IB_1, inputBuffer, idx + 1);
           IB_1[idx + 1] = '\0';
           if (idx > 0)
             send_cmd();
@@ -533,6 +592,23 @@ void serialEvent()
     }
     yield();
   }
+}
+
+void telnetClientEvent()
+{
+  // Handle commands from all connected Telnet clients
+  for (int i = 0; i < MAX_SRV_CLIENTS; i++) {
+    if (serverClient[i] && serverClient[i].connected() && serverClient[i].available()) {
+      handleStreamInput(serverClient[i], IB_Telnet[i], IB_Telnet_idx[i]);
+    }
+  }
+}
+
+void serialEvent()
+{
+  // Handle commands from the Serial port
+  static uint8_t serial_idx = 0;
+  handleStreamInput(Serial, IB_1, serial_idx);
 }
 
 
