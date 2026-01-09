@@ -418,22 +418,46 @@ void mbus_task()
       }
       // msgOutput_MN(uint8_t * data, uint16_t lenData, uint8_t wmbusFrameTypeA, uint8_t lqi, uint8_t rssi, int8_t freqErr);
       // msgOutput_MN(MBpacket, rxLength, wmbusFrameTypeB, lqi, rssi, freqErr); // MN - Nachricht erstellen und ausgeben
-			MSG_PRINT(char(MSG_START));
-			MSG_PRINT(F("MN;D="));
-      if (wmbusFrameTypeB) {
-        MSG_PRINT(F("Y")); // special marker for frame type B
-      }
-      for (uint16_t i = 0; i < rxLength; i++) {
-        MSG_PRINTtoHEX(MBpacket[i]);
-      }
-      MSG_PRINTtoHEX(lqi);
-      MSG_PRINTtoHEX(rssi);
-			MSG_PRINT(F(";R="));
-			MSG_PRINT(rssi);
-			MSG_PRINT(F(";A="));
-			MSG_PRINT(freqErr);
-			MSG_PRINT(';');
-			MSG_PRINTLN(char(MSG_END));
+      #ifdef ETHERNET_PRINT
+        String msg = "";
+        msg.reserve(624); // 291 * 2 = 582 % 16 = 592 + 32 = 624 (32 Byte for "MN;D=;R=239;A=-255" etc) 
+        msg += char(MSG_START);
+        msg += F("MN;D=");
+        if (wmbusFrameTypeB) {
+          msg += "Y"; // special marker for frame type B
+        }
+        for (uint16_t i = 0; i < rxLength; i++) {
+          msg += cc1101::dec2hex(MBpacket[i]); // uint8_t MBpacket[291];
+        }
+        msg += cc1101::dec2hex(lqi);
+        msg += cc1101::dec2hex(rssi);
+        msg += F(";R=");
+        msg += rssi;
+        msg += F(";A=");
+        msg += freqErr;
+        msg += ";";
+        msg += char(MSG_END);
+        msg += "\n";
+        MSG_PRINT(msg);
+      #else
+				MSG_PRINT(char(MSG_START));
+				MSG_PRINT(F("MN;D="));
+				if (wmbusFrameTypeB) {
+					MSG_PRINT(F("Y")); // special marker for frame type B
+				}
+				for (uint16_t i = 0; i < rxLength; i++) {
+					MSG_PRINTtoHEX(MBpacket[i]);
+				}
+				MSG_PRINTtoHEX(lqi);
+				MSG_PRINTtoHEX(rssi);
+				MSG_PRINT(F(";R="));
+				MSG_PRINT(rssi);
+				MSG_PRINT(F(";A="));
+				MSG_PRINT(freqErr);
+				MSG_PRINT(';');
+        MSG_PRINT(char(MSG_END));
+        MSG_PRINT("\n");
+      #endif
     }
     RXinfo.state = 0;
     return;
