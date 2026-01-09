@@ -196,8 +196,8 @@ namespace cc1101 {
 	void CCinit(void);                                              // initialize CC1101
 	void ccFactoryReset();
 	void commandStrobes(void);
-	void getRxFifo(uint16_t Boffs);                                 // xFSK
-    void sendFIFO(char*, char*);                                    // xFSK
+	void getRxFifo();                                               // xFSK
+  void sendFIFO(char*, char*);                                    // xFSK
 	void readCCreg(const uint8_t reg);                              // read CC1101 register
 	void readPatable(void);
 	void setIdleMode();

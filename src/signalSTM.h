@@ -218,7 +218,7 @@ void loop() {
 #ifdef CMP_CC1101
   } else {
     if (wmbus == 0) {
-      cc1101::getRxFifo(0);                   // xFSK = 0
+      cc1101::getRxFifo();                   // xFSK = 0
     } else {
       mbus_task();
     }
