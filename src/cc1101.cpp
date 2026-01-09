@@ -559,9 +559,8 @@ void cc1101::CCinit(void) {                                // initialize CC1101
 }
 
 
-void cc1101::getRxFifo(uint16_t Boffs) {           // xFSK
+void cc1101::getRxFifo() {           // xFSK
 	uint8_t fifoBytes;
-	bool dup;                                      // true bei identischen Wiederholungen bei readRXFIFO
 
 	if (isHigh(PIN_RECEIVE)) {                     // wait for CC1100_FIFOTHR given bytes to arrive in FIFO
 		#ifdef PIN_LED_INVERSE
