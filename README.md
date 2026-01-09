@@ -1,6 +1,4 @@
-# SIGNALDuino uC v3.5.0 with cc1101 support 
-Development: ![unittest](https://github.com/RFD-FHEM/SIGNALDuino/workflows/unittest/badge.svg?branch=dev-r3.5_xFSK)
-
+# SIGNALDuino uC v4.0.0 with cc1101 support 
 Master: ![unittest](https://github.com/RFD-FHEM/SIGNALDuino/workflows/unittest/badge.svg?branch=master)
 ### Getting started
 
