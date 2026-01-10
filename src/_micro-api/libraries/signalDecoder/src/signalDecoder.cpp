@@ -234,7 +234,7 @@ inline void SignalDetectorClass::doDetect()
 				processMessage();
 				calcHisto();
 			}
-			for (uint8_t i = messageLen - 1 ; i >= 0 && histo[pattern_pos] > 0 && messageLen>0; --i)
+			for (uint8_t i = messageLen - 1 ; histo[pattern_pos] > 0 && messageLen > 0; --i)
 			{
 				if (message[i] == pattern_pos) // Finde den letzten Verweis im Array auf den Index der gleich ueberschrieben wird
 				{
@@ -1091,7 +1091,7 @@ bool SignalDetectorClass::getSync()
 
 		for (int8_t p = patternLen - 1; p >= 0; --p)  // Schleife fuer langen Syncpuls
 		{
-			uint16_t syncabs = abs(pattern[p]);
+			int16_t syncabs = abs(pattern[p]);
 			if ((pattern[p] < 0) &&
 				(syncabs < syncMaxMicros && syncabs / pattern[clock] <= syncMaxFact) &&
 				(syncabs > syncMinFact*pattern[clock]) &&
