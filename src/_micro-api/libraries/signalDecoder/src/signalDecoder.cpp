@@ -78,7 +78,7 @@ char* myitoa(int num, char *str) {
 
 
 //Helper function to check buffer for bad data
-const bool SignalDetectorClass::checkMBuffer(const uint8_t begin)
+bool SignalDetectorClass::checkMBuffer(const uint8_t begin)
 {
 	for (uint8_t i = begin; i < messageLen-1; i++)
 	{
@@ -887,13 +887,13 @@ void SignalDetectorClass::reset()
 }
 
 
-const status SignalDetectorClass::getState()
+status SignalDetectorClass::getState()
 {
 	return status();
 }
 
 
-const bool SignalDetectorClass::inTol(const int val, const int set, const int tolerance)
+bool SignalDetectorClass::inTol(const int val, const int set, const int tolerance)
 {
 	// tolerance = tolerance == 0 ? tol : tolerance;
 	//return (abs(val - set) <= tolerance == 0 ? tol: tolerance);
@@ -952,7 +952,7 @@ void SignalDetectorClass::printOut()
 }
 
 
-const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
+size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
 {
 	if (_streamCallback == nullptr)
 		return 0;
@@ -960,14 +960,14 @@ const size_t SignalDetectorClass::write(const uint8_t *buf, size_t size)
 }
 
 
-const size_t SignalDetectorClass::write(const char *str) {
+size_t SignalDetectorClass::write(const char *str) {
 	if (str == nullptr)
 		return 0;
 	return write((const uint8_t*)str, strlen(str));
 }
 
 
-const size_t SignalDetectorClass::write(uint8_t b)
+size_t SignalDetectorClass::write(uint8_t b)
 {
 	return write(&b, 1);
 }
@@ -1213,7 +1213,7 @@ void ManchesterpatternDecoder::setMinBitLen(const uint8_t len)
 *
 * (documentation goes here)
 */
-const bool ManchesterpatternDecoder::isLong(const uint8_t pulse_idx)
+bool ManchesterpatternDecoder::isLong(const uint8_t pulse_idx)
 {
 	return (pulse_idx == longlow || pulse_idx == longhigh);
 }
@@ -1223,7 +1223,7 @@ const bool ManchesterpatternDecoder::isLong(const uint8_t pulse_idx)
 *
 * (documentation goes here)
 */
-const bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
+bool ManchesterpatternDecoder::isShort(const uint8_t pulse_idx)
 {
 	return (pulse_idx == shortlow || pulse_idx == shorthigh);
 }
@@ -1439,7 +1439,7 @@ unsigned char ManchesterpatternDecoder::getMCByte(const uint8_t idx) {
 *
 * (Call only after ismanchester returned true)
 */
-const bool ManchesterpatternDecoder::doDecode() {
+bool ManchesterpatternDecoder::doDecode() {
 	//SDC_PRINT("bitcnt:");SDC_PRINTLN(bitcnt);
 	uint8_t i = 0;
 	pdec->m_truncated = false;
@@ -1671,7 +1671,7 @@ const bool ManchesterpatternDecoder::doDecode() {
 *
 * (Check signal based on patternLen, histogram and pattern store for valid manchester style.Provides key indexes for the 4 signal states for later decoding)
 */
-const bool ManchesterpatternDecoder::isManchester()
+bool ManchesterpatternDecoder::isManchester()
 {
 	// Durchsuchen aller Musterpulse und prueft ob darin eine clock vorhanden ist
 	#if DEBUGDETECT >= 1

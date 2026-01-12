@@ -161,7 +161,7 @@ public:
 	
 	void reset();
 	bool decode(const int* pulse);
-	const status getState();
+	status getState();
 	// register the callback functions
 	void setCallback(rssiCallback_t callbackfunction) { _rssiCallback = callbackfunction; };
 	void setCallback(streamCallback_t callbackfunction) { _streamCallback = callbackfunction; }
@@ -225,15 +225,15 @@ public:
 
 	//int8_t printMsgRaw(uint8_t m_start, const uint8_t m_end, const String *preamble = NULL, const String *postamble = NULL);
 	//void printMsgStr(const String *first, const String *second, const String *third);
-	const bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
+	bool inTol(const int val, const int set, const int tolerance); // checks if a value is in tolerance range
 
 	void printOut();
-	const size_t write(const uint8_t *buffer, size_t size);   // for the return value
-	const size_t write(const char *str);                      // for the return value
-	const size_t write(uint8_t b);                            // for the return value
+	size_t write(const uint8_t *buffer, size_t size);   // for the return value
+	size_t write(const char *str);                      // for the return value
+	size_t write(uint8_t b);                            // for the return value
 	int8_t findpatt(const int val);              // Finds a pattern in our pattern store. returns -1 if te pattern is not found
 												 //bool validSequence(const int *a, const int *b);     // checks if two pulses are basically valid in terms of on-off signals
-	const bool checkMBuffer(const uint8_t begin = 0);
+	bool checkMBuffer(const uint8_t begin = 0);
 };
 
 
@@ -242,7 +242,7 @@ class ManchesterpatternDecoder
 public:
 	ManchesterpatternDecoder(SignalDetectorClass *ref_dec) : ManchesterBits(1), longlow(-1), longhigh(-1), shorthigh(-1), shortlow(-1) { pdec = ref_dec; 	reset(); };
 	~ManchesterpatternDecoder();
-	const bool doDecode();
+	bool doDecode();
 	void setMinBitLen(const uint8_t len);
 #ifdef NOSTRING
 	const char* getMessageHexStr();
@@ -259,7 +259,7 @@ public:
 	char nibble_to_HEX(uint8_t nibble);
 	void HEX_twoDigits(char* cbuffer, uint8_t val);
 
-	const bool isManchester();
+	bool isManchester();
 	void reset();
 #ifndef UNITTEST
 	//private:
@@ -276,8 +276,8 @@ public:
 	bool mc_start_found = false;
 	bool mc_sync = false;
 
-	const bool isLong(const uint8_t pulse_idx);
-	const bool isShort(const uint8_t pulse_idx);
+	bool isLong(const uint8_t pulse_idx);
+	bool isShort(const uint8_t pulse_idx);
 	unsigned char getMCByte(const uint8_t idx); // Returns one Manchester byte in correct order. This is a helper function to retrieve information out of the buffer
 };
 
