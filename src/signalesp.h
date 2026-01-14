@@ -135,7 +135,7 @@ void setup() {
   }
   
 #if defined(ESP8266)
-  gotIpEventHandler = WiFi.onStationModeGotIP([](const WiFiEventStationModeGotIP& event)
+  gotIpEventHandler = WiFi.onStationModeGotIP([](__attribute__((unused)) const WiFiEventStationModeGotIP& event)
   {
     Server.begin();  // start telnet server
     Server.setNoDelay(true); // With nodelay set to true, this function will to disable Nagle algorithm (https://en.wikipedia.org/wiki/Nagle%27s_algorithm).
@@ -254,7 +254,7 @@ initEEPROM();
   esp_timer_create(&cronTimer_args, &cronTimer_handle);
 #elif defined(ESP8266)
   os_timer_disarm(&cronTimer);
-  os_timer_setfn(&cronTimer, &cronjob, 0);
+  os_timer_setfn(&cronTimer, &cronjob, NULL);
 #endif
 
 musterDec.setCallback(writeCallback);
@@ -294,7 +294,7 @@ digitalLow(PIN_LED);
 
 
 
-void IRAM_ATTR cronjob(void *pArg) {
+void IRAM_ATTR cronjob(__attribute__((unused)) void *pArg) {
   cli();
   static uint16_t cnt = 0; // approximately every 35 minutes
 
