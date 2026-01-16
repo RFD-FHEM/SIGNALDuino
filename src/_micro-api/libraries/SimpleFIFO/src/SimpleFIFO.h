@@ -60,11 +60,13 @@ private:
 	volatile SIMPLEFIFO_SIZE_TYPE numberOfElements;
 	volatile SIMPLEFIFO_SIZE_TYPE nextIn;
 	volatile SIMPLEFIFO_SIZE_TYPE nextOut;
+	volatile SIMPLEFIFO_SIZE_TYPE out;
 	volatile T raw[rawSize];
 #else
 	SIMPLEFIFO_SIZE_TYPE numberOfElements;
 	SIMPLEFIFO_SIZE_TYPE nextIn;
 	SIMPLEFIFO_SIZE_TYPE nextOut;
+	SIMPLEFIFO_SIZE_TYPE out;
 	T raw[rawSize];
 #endif
 };
@@ -73,6 +75,7 @@ template<typename T, int rawSize>
 SimpleFIFO<T,rawSize>::SimpleFIFO() : size(rawSize) {
 	flush();
 }
+
 template<typename T, int rawSize>
 #if defined(ESP32) || defined(ESP8266)
 bool IRAM_ATTR SimpleFIFO<T,rawSize>::enqueue( T element ) {
@@ -80,24 +83,35 @@ bool IRAM_ATTR SimpleFIFO<T,rawSize>::enqueue( T element ) {
 bool  SimpleFIFO<T,rawSize>::enqueue( T element ) {
 #endif
 	if ( count() >= rawSize ) { return false; }
-	numberOfElements++;
+	numberOfElements = numberOfElements + 1;
 	nextIn %= size;
 	raw[nextIn] = element;
-	nextIn++; //advance to next index
+	nextIn = nextIn + 1; // advance to next index
 	return true;
 }
+
 template<typename T, int rawSize>
+#if defined(ESP32) || defined(ESP8266)
+T IRAM_ATTR SimpleFIFO<T, rawSize>::dequeue() {
+#else
 T SimpleFIFO<T,rawSize>::dequeue() {
-	numberOfElements--;
+#endif
+	numberOfElements = numberOfElements - 1;
 	nextOut %= size;
-	return raw[ nextOut++];
+	out = nextOut;
+	nextOut = nextOut + 1;
+	return raw[out];
 }
+
 template<typename T, int rawSize>
 T SimpleFIFO<T,rawSize>::peek() const {
 	return raw[ nextOut % size];
 }
+
 template<typename T, int rawSize>
 void SimpleFIFO<T,rawSize>::flush() {
-	nextIn = nextOut = numberOfElements = 0;
+  nextIn = 0;
+  nextOut =  0;
+  numberOfElements = 0;
 }
 #endif
