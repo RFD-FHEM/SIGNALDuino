@@ -22,11 +22,9 @@
 #define MAX_SRV_CLIENTS        2
 
 void serialEvent();
-void IRAM_ATTR cronjob(void *pArg);
 int freeRam();
 inline void ethernetEvent();
 size_t writeCallback(const uint8_t *buf, uint8_t len = 1);
-void IRAM_ATTR sosBlink(void *pArg);
 
 #if defined(ESP8266)
   extern "C" {
@@ -127,6 +125,38 @@ void IRAM_ATTR sosBlink (void *pArg) {
 void restart(){
   ESP.restart();
 }
+
+void IRAM_ATTR cronjob(__attribute__((unused)) void *pArg) {
+  cli();
+  static uint16_t cnt = 0; // approximately every 35 minutes
+
+  const unsigned long  duration = micros() - lastTime;
+
+  if (duration > maxPulse) {       // Auf Maximalwert pruefen.
+    int sDuration = maxPulse;
+    if (isLow(PIN_RECEIVE)) {      // Wenn jetzt low ist, ist auch weiterhin low
+      sDuration = -sDuration;
+    }
+    FiFo.enqueue(sDuration);
+    lastTime = micros();
+  }
+#ifdef PIN_LED_INVERSE
+  digitalWrite(PIN_LED, !blinkLED);
+#else
+  digitalWrite(PIN_LED, blinkLED);
+#endif
+  blinkLED = false;
+
+  // Infrequent time uncritical jobs
+  if (cnt == 0 || cnt == 32768) { // approximately every 17,5 minutes
+    getUptime();
+    musterDec.reset();
+    FiFo.flush();
+  }
+  cnt++;
+  sei();
+}
+
 
 void setup() {
   Serial.begin(BAUDRATE);
@@ -294,39 +324,6 @@ digitalLow(PIN_LED);
 
 
 
-void IRAM_ATTR cronjob(__attribute__((unused)) void *pArg) {
-  cli();
-  static uint16_t cnt = 0; // approximately every 35 minutes
-
-  const unsigned long  duration = micros() - lastTime;
-
-  if (duration > maxPulse) {       // Auf Maximalwert pruefen.
-    int sDuration = maxPulse;
-    if (isLow(PIN_RECEIVE)) {      // Wenn jetzt low ist, ist auch weiterhin low
-      sDuration = -sDuration;
-    }
-    FiFo.enqueue(sDuration);
-    lastTime = micros();
-  }
-#ifdef PIN_LED_INVERSE
-	digitalWrite(PIN_LED, !blinkLED);
-#else
-	digitalWrite(PIN_LED, blinkLED);
-#endif
-  blinkLED = false;
-
-  // Infrequent time uncritical jobs
-  if (cnt == 0 || cnt == 32768) { // approximately every 17,5 minutes
-    getUptime();
-    musterDec.reset();
-    FiFo.flush();
-  }
-  cnt++;
-  sei();
-}
-
-
-
 void loop() {
   wifiManager.process();
 
@@ -435,7 +432,15 @@ inline void ethernetEvent()
     if (!serverClient || !serverClient.connected()) {
       if (serverClient) serverClient.stop();
       serverClient = Server.accept();
-      serverClient.flush();
+      #ifdef ESP32
+        #if ESP_IDF_VERSION_MAJOR < 5 // PLATFORMIO
+          serverClient.flush(); // Platformio 'class WiFiClient' has no member named 'clear'
+        #else
+          serverClient.clear(); // Arduino warning: 'virtual void NetworkClient::flush()' is deprecated: Use clear() instead. [-Wdeprecated-declarations]
+        #endif
+      #elif defined(ESP8266)
+        serverClient.flush();
+      #endif
     } else {
       WiFiClient rejectClient = Server.accept();
       rejectClient.stop();
