@@ -1029,7 +1029,6 @@ bool SignalDetectorClass::getSync()
 				(histo[p] < message.valcount * 0.08) && (histo[p] > 1)
 				)
 			{
-
 				// Pruefen ob der gefundene Sync auch als message [clock, p] vorkommt
 				uint8_t c = 0;
 				while (c < max_search)
