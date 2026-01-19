@@ -181,7 +181,6 @@ public:
 	//uint8_t message[maxMsgSize];
 	ManchesterpatternDecoder *mcdecoder;  // Pointer to mcdecoder object
 
-	uint8_t messageLen;					  // Todo, kann durch message.valcount ersetzt werden
 	uint8_t mstart;						  // Holds starting point for message
 	uint8_t mend;						  // Holds end point for message if detected
 	bool success;                         // True if a valid coding was found
