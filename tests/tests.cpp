@@ -258,10 +258,10 @@ namespace arduino
 			pulse = 1000;
 			state = ooDecode.decode(&pulse);
 			ASSERT_EQ(ooDecode.patternLen, 2);
-			ASSERT_EQ(ooDecode.messageLen, 2);
+			ASSERT_EQ(ooDecode.message.valcount, 2);
 			state = ooDecode.decode(&pulse);
 			ASSERT_EQ(ooDecode.patternLen, 1);
-			ASSERT_EQ(ooDecode.messageLen, 1);
+			ASSERT_EQ(ooDecode.message.valcount, 1);
 
 			ASSERT_FALSE(state);
 		}
@@ -1438,7 +1438,7 @@ namespace arduino
 			std::string dstr2 = "0B0F9FFA555AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAA";
 			state = import_mcdata(&dstr2, 0, dstr2.length(), 450);
 			ASSERT_FALSE(mcdecoder.isManchester());
-			ASSERT_EQ(253, ooDecode.messageLen);
+			ASSERT_EQ(253, ooDecode.message.valcount);
 
 			ooDecode.calcHisto();
 			ooDecode.printOut();
@@ -1448,7 +1448,7 @@ namespace arduino
 
 			bool result = mcdecoder.doDecode();
 			ASSERT_EQ(226, mcdecoder.ManchesterBits.valcount - 1);
-			ASSERT_EQ(0, ooDecode.messageLen); // in doDecode wird bufferMove ausgeführt, und das löst einen reset aus, da wir am Ende sind.
+			ASSERT_EQ(0, ooDecode.message.valcount); // in doDecode wird bufferMove ausgeführt, und das löst einen reset aus, da wir am Ende sind.
 			ASSERT_FALSE(mcdecoder.pdec->mcDetected);
 			ASSERT_TRUE(result);
 
@@ -1472,7 +1472,7 @@ namespace arduino
 			state = import_sigdata(&dstr2, false);
 			// std::cout << outputStr << "\n";
 
-			ASSERT_EQ(254, ooDecode.messageLen);
+			ASSERT_EQ(254, ooDecode.message.valcount);
 			ooDecode.calcHisto();
 			ooDecode.printOut();
 			ASSERT_TRUE(mcdecoder.isManchester());
@@ -1487,7 +1487,7 @@ namespace arduino
 			state = import_sigdata(&dstr2, false);
 			// std::cout << outputStr << "\n";
 
-			ASSERT_EQ(254, ooDecode.messageLen);
+			ASSERT_EQ(254, ooDecode.message.valcount);
 			ooDecode.calcHisto();
 			ooDecode.printOut();
 			ASSERT_TRUE(mcdecoder.isManchester());
@@ -1524,7 +1524,7 @@ namespace arduino
 
 			// std::cout << outputStr << "\n";
 
-			ASSERT_EQ(147, ooDecode.messageLen);
+			ASSERT_EQ(147, ooDecode.message.valcount);
 			ooDecode.calcHisto();
 			//ooDecode.printOut();
 			ASSERT_TRUE(mcdecoder.isManchester());
@@ -1545,7 +1545,7 @@ namespace arduino
 			import_sigdata(&dstr);
 			ooDecode.printOut();
 
-			ASSERT_EQ(142, ooDecode.messageLen);
+			ASSERT_EQ(142, ooDecode.message.valcount);
 			ooDecode.calcHisto();
 			ASSERT_TRUE(mcdecoder.isManchester());
 			ASSERT_TRUE(mcdecoder.doDecode());
@@ -1567,7 +1567,7 @@ namespace arduino
 			DigitalSimulate(1);
 			ooDecode.printOut();
 			ASSERT_FALSE(state);
-			ASSERT_EQ(4, ooDecode.messageLen); // 254+3 is the number of pulses.
+			ASSERT_EQ(4, ooDecode.message.valcount); // 254+3 is the number of pulses.
 			ASSERT_TRUE(ooDecode.mcDetected);
 			ASSERT_EQ(223, mcdecoder.ManchesterBits.valcount - 1); // 254+3 is the number of pulses. At this time, we have processed only the buffer after bufferoverflow which is equal to 224 bits
 
