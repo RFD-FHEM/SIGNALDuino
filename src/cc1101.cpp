@@ -422,7 +422,11 @@ void cc1101::setReceiveMode()
 	while (maxloop-- && (cmdStrobe(CC1101_SRX) & CC1101_STATUS_STATE_BM) != CC1101_STATE_RX) // RX enable
 		delay(1);
 #ifdef CMP_CC1101
-  if (maxloop == 0) { DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting RX failed")); }
+  if (maxloop == 0) { 
+	DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting RX failed")); 
+	// ToDo only for test output faulty msg in FHEM
+	MSG_PRINT(TXT_MU); MSG_PRINT(TXT_FSEP); MSG_PRINT(FPSTR(TXT_CC1101)); MSG_PRINT(F(": Setting RX failed"));  MSG_PRINTLN(TXT_FSEP);
+   }
 #endif
 	pinAsInput(PIN_SEND);
 }
@@ -610,7 +614,7 @@ void cc1101::getRxFifo() {           // xFSK
 					msg += RSSI;
 					msg += F(";A=");
 					msg += freqErr;
-					msg += ";";
+					msg += TXT_FSEP;
 					msg += char(MSG_END);
 					msg += "\n";
 					MSG_PRINT(msg);
@@ -624,15 +628,20 @@ void cc1101::getRxFifo() {           // xFSK
 					MSG_PRINT(RSSI);
 					MSG_PRINT(F(";A="));
 					MSG_PRINT(freqErr);
-					MSG_PRINT(';');
+					MSG_PRINT(TXT_FSEP);
 					MSG_PRINT(char(MSG_END));
 					MSG_PRINT("\n");
 				#endif
 			}
+
 			marcstate = cc1101::getMARCSTATE();
-      if (marcstate == 17 || cc1101::ccmode != 3) {   // RXoverflow oder nicht ASK/OOK
+      		if (marcstate == 17 || cc1101::ccmode != 3) {   // RXoverflow oder nicht ASK/OOK
 				if (cc1101::flushrx()) {                    // Flush the RX FIFO buffer
 					cc1101::setReceiveMode();
+				} else {
+				    // ToDo only for test output faulty msg in FHEM
+		 			MSG_PRINT(TXT_MU); MSG_PRINT(TXT_FSEP); MSG_PRINT("After failed flush fifobytes="); fifoBytes = cc1101::getRXBYTES(); MSG_PRINT(TXT_FSEP);
+					MSG_PRINT(TXT_FSEP); MSG_PRINT("marcstate=") MSG_PRINT(marcstate); MSG_PRINTLN(marcstate);
 				}
 			}
 		}
