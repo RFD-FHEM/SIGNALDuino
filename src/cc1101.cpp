@@ -423,10 +423,11 @@ void cc1101::setReceiveMode()
 		delay(1);
 #ifdef CMP_CC1101
   if (maxloop == 0) { 
-	DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting RX failed")); 
-	// ToDo only for test output faulty msg in FHEM
-	MSG_PRINT(TXT_MU); MSG_PRINT(TXT_FSEP); MSG_PRINT(FPSTR(TXT_CC1101)); MSG_PRINT(F(": Setting RX failed"));  MSG_PRINTLN(TXT_FSEP);
-   }
+	  DBG_PRINT(FPSTR(TXT_CC1101)); DBG_PRINTLN(F(": Setting RX failed")); 
+	  // ToDo only for test output faulty msg in FHEM
+    MSG_PRINT(char(MSG_START)); MSG_PRINT(F("MN;CC1101 Setting RX failed;"));
+    MSG_PRINT(char(MSG_END)); MSG_PRINT("\n");
+  }
 #endif
 	pinAsInput(PIN_SEND);
 }
@@ -614,7 +615,7 @@ void cc1101::getRxFifo() {           // xFSK
 					msg += RSSI;
 					msg += F(";A=");
 					msg += freqErr;
-					msg += TXT_FSEP;
+					msg += ";";
 					msg += char(MSG_END);
 					msg += "\n";
 					MSG_PRINT(msg);
@@ -628,7 +629,7 @@ void cc1101::getRxFifo() {           // xFSK
 					MSG_PRINT(RSSI);
 					MSG_PRINT(F(";A="));
 					MSG_PRINT(freqErr);
-					MSG_PRINT(TXT_FSEP);
+					MSG_PRINT(";");
 					MSG_PRINT(char(MSG_END));
 					MSG_PRINT("\n");
 				#endif
@@ -639,9 +640,12 @@ void cc1101::getRxFifo() {           // xFSK
 				if (cc1101::flushrx()) {                    // Flush the RX FIFO buffer
 					cc1101::setReceiveMode();
 				} else {
-				    // ToDo only for test output faulty msg in FHEM
-		 			MSG_PRINT(TXT_MU); MSG_PRINT(TXT_FSEP); MSG_PRINT("After failed flush fifobytes="); fifoBytes = cc1101::getRXBYTES(); MSG_PRINT(TXT_FSEP);
-					MSG_PRINT(TXT_FSEP); MSG_PRINT("marcstate=") MSG_PRINT(marcstate); MSG_PRINTLN(marcstate);
+				  // ToDo only for test output faulty msg in FHEM
+          fifoBytes = cc1101::getRXBYTES();
+          MSG_PRINT(char(MSG_START)); MSG_PRINT("MN;");
+          MSG_PRINT(F("After failed flush fifobytes=")); MSG_PRINT(fifoBytes); MSG_PRINT(";");
+          MSG_PRINT(F("marcstate=0x")); MSG_PRINTtoHEX(marcstate); MSG_PRINT(";");
+          MSG_PRINT(char(MSG_END)); MSG_PRINT("\n");
 				}
 			}
 		}
