@@ -214,3 +214,5 @@ __vm/
 ./.vscode/
 .pio/
 *.sln
+.vscode/launch.json
+.vscode/c_cpp_properties.json

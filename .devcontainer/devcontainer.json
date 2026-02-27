@@ -1,0 +1,14 @@
+{
+  "name": "SIGNALDuino Devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "platformio.platformio-ide",
+        "ms-vscode.cmake-tools"
+      ]
+    }
+  }
+}
