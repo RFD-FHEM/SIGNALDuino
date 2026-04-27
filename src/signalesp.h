@@ -186,8 +186,10 @@ void setup() {
   WiFi.onEvent([](WiFiEvent_t event, WiFiEventInfo_t info) {
     Server.stop();  // end telnet server
     Serial.print("WiFi lost connection. Reason: ");
-    Serial.println(info.wps_fail_reason);
-    
+    // WiFiEventInfo_t ist eine Union — beim STA_DISCONNECTED-Event liegt der
+    // Reason-Code in wifi_sta_disconnected.reason, nicht in wps_fail_reason
+    // (das gehoert zu einem anderen Event-Typ).
+    Serial.println(info.wifi_sta_disconnected.reason);
   }, WiFiEvent_t::ARDUINO_EVENT_WIFI_STA_DISCONNECTED);
 #endif
 
