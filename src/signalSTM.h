@@ -179,6 +179,27 @@ void cronjob() {
     lastTime = micros();
   }
 
+#ifdef CMP_CC1101
+  // Stuck RX detection logic, only run if CC1101 is present and in RX mode and FSCAL1 = 0x3F (PLL not locked)
+  if (hasCC1101 && (cc1101::currentMode() == 0x0D) && (cc1101::readReg(0x25, CC1101_READ_SINGLE) == 0x3F)) {
+    cc1101::setReceiveMode(); // set CC1101 idle then RX to calibrate frequency synthesizer
+    // ToDo only for test output faulty msg in FHEM
+    // 2026.01.22 16:37:51 3: sduinoESP8266: Parse_MU, faulty msg: MU;CC1101 PLL WAS NOT LOCKED, CALIBRATION STARTED;
+    String msg = "";
+    msg.reserve(64);
+    msg += char(MSG_START);
+    if (cc1101::ccmode == 3) { // ASK/OOK = 3 (default)
+      msg += F("MU");
+    } else {
+      msg += F("MN");
+    }
+    msg += F(";CC1101 PLL WAS NOT LOCKED, CALIBRATION STARTED;");
+    msg += char(MSG_END);
+    msg += "\n";
+    MSG_PRINT(msg);
+  }
+#endif
+
   #ifdef PIN_LED_INVERSE
     digitalWrite(PIN_LED, !blinkLED);
   #else
