@@ -45,7 +45,7 @@
 */
 
 #ifndef PROGVERS
-  #define PROGVERS               "4.0.11+20230814"   // platformio will set this to the correct value (lateste tag with commits since latest tag)
+  #define PROGVERS               "4.0.12+20260122"   // platformio will set this to the correct value (lateste tag with commits since latest tag)
 #endif
 
 #ifdef OTHER_BOARD_WITH_CC1101
