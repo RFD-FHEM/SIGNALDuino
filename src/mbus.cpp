@@ -166,6 +166,21 @@ void mbus_task()
         }
         RXinfo.lengthField = bytesDecoded[0];
         RXinfo.length = byteSize(1, 0, (packetSize(RXinfo.lengthField)));
+        
+        // Gesamtzahl der echten M-Bus Bytes (Längenbyte + Inhalt)
+        uint16_t total_clean_bytes = 1 + RXinfo.lengthField; 
+        
+        // Umrechnung in die Anzahl der benötigten rohen 3-of-6 Funkbytes
+        // Formel: ceil(total_clean_bytes / 2) * 3
+        RXinfo.length = ((total_clean_bytes + 1) / 2) * 3;
+        
+        // Da wir bereits 3 Bytes aus dem FIFO gelesen haben, ziehen wir diese ab
+        RXinfo.bytesLeft = RXinfo.length - 3;
+        RXinfo.pByteIndex += 3; // Pointer im Puffer nach vorne schieben
+        
+        RXinfo.state = 3; // Wechsel in den Zustand zum kontinuierlichen FIFO-Leeren
+        break;
+
       }
       else
       { // End WMBUS_SMODE
