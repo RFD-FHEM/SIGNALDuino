@@ -22,9 +22,12 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 | :--- | :--- | :--- | :--- |
 | `CG` | Konfiguration lesen | Gibt aktuelle Decodereinstellungen aus (MS, MU, MC, Mred, AFC, WMBus) | `CG` -> `MS=1;MU=1;MC=1;Mred=1` |
 | `C<FLAG><CMD>` | Decoder konfigurieren | Aktiviert/Deaktiviert Decoder (FLAG: E=Enable, D=Disable; CMD: S=MS, U=MU, C=MC, R=Mred, A=AFC T=WMBus_T) | `CER` -> (Einschalten der Datenkomprimierung (config: Mred=1)) |
+| `CV<FLAG><CMD>` | Decoder nur temporär konfigurieren | Wie `C<FLAG><CMD>`, schreibt aber nicht ins EEPROM; gilt bis zum Neustart oder `WR` | `CVEW` -> (WMBus temporär einschalten) |
 | `CSmcmbl=<val>` | MC Min Bit Length setzen | Setzt minimale Bitlänge für Manchester-Decoding | `CSmcmbl=20` -> `20 bits set` |
 | `C<reg>` | CC1101 Register lesen | Liest Wert eines CC1101-Registers (hex) | `C0D` -> (Liest Register 0x0D) |
 | `W<reg><val>` | EEPROM/CC1101 schreiben | Schreibt Wert in EEPROM und CC1101 Register (reg/val als 2-stellige Hex-Strings) | `W0001` -> (Schreibt 0x01 nach Reg 0x00) |
+| `w<reg><val>` | CC1101 Register temporär schreiben | Wie `W<reg><val>`, schreibt aber nur in den CC1101 und nicht ins EEPROM (nur mit CC1101) | `w1400` |
+| `WR` | Konfiguration aus EEPROM neu laden | Verwirft Änderungen durch `w` und `CV`, lädt CC1101 Register und Decodereinstellungen aus dem EEPROM (nur mit CC1101) | `WR` |
 | `WS<id>` | WMBus Init (CC1101) | Sendet ein strobe command zum cc1101 (Strobe 0x36 SIDLE, 0x3A SFRX, 0x34 SRX) | `WS34` |
 | `r<addr>` | EEPROM lesen | Liest Byte an EEPROM-Adresse (hex) | `r00` -> `EEPROM 00 = 33` |
 | `r<addr>n` | EEPROM Block lesen | Liest 16 Bytes ab EEPROM-Adresse | `r00n` -> `EEPROM 00 : 33 1D ...` |
@@ -41,6 +44,8 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 Die Konfiguration für FSK/WMBus erfolgt ausschließlich durch direktes Schreiben der entsprechenden CC1101 Register mittels des Befehls `W<reg><val>`.
 Der WMBus-Modus wird anschließend durch den Befehl CEW eingeschaltet. 
 Die Auswahl WMBus_S/WMBus_T erfolgt mit dem Befehl `CDT` oder `CET`.
+
+Soll nur zeitweise auf einen anderen Modus umgeschaltet werden, z. B. regelmäßig für einige Sekunden auf WMBus, werden stattdessen `w<reg><val>` und `CVEW`/`CVET` verwendet. Damit wird das EEPROM (bei ESP8266/ESP32 der Flash) nicht bei jedem Umschalten beschrieben. `WR` stellt danach die gespeicherte Konfiguration wieder her, nach einem Neustart gilt sie ohnehin.
 
 Details zu den Registern finden sich im CC1101 Datenblatt von Texas Instruments:
 https://www.ti.com/lit/ds/symlink/cc1101.pdf
