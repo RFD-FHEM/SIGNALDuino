@@ -233,6 +233,9 @@ void send_cmd()
 			break; // break the loop now
 
 		}
+		else if (cmdNo == 255 && msg_beginptr[0] != ';'){
+			msg_beginptr += 1; // Move IB until cmdNO is not 255 anymore bit or the occurence of ';' 
+		}
 		else {
 			if (msg_endptr != buf)
 				msg_endptr++;
@@ -276,6 +279,13 @@ void send_cmd()
 	  cc1101::setTransmitMode();
 	}
 #endif
+	//Check if command is valid otherwise return	
+	if(cmdNo == 255){
+		MSG_PRINT(FPSTR(TXT_SENDCMD));
+		MSG_PRINTLN(FPSTR(TXT_CORRUPT));
+		DBG_PRINTLN(F("RETURN"));
+		return;
+	}
 
 	if (command[0].type == SD_combined && command[0].repeats > 0) {
     /* only on combined message typ (MC) / ARDUINO IDE - LineEnd = NEW Line
