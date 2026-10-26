@@ -41,6 +41,11 @@ FetchContent_Declare(arduino_mock
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 
+# googletest 1.10.0 lacks #include <cstdint>, which newer GCC (ubuntu-latest) no longer pulls in transitively
+if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -include cstdint")
+endif()
+
 FetchContent_MakeAvailable(arduino_mock googletest)
 
 file( GLOB ARDUINO_LIBRARY_SOURCE_FILES
