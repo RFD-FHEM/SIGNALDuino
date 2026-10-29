@@ -109,12 +109,14 @@ namespace commands {
 	}
 
 	// C<E|D><flag> stores the flag in EEPROM, CV<E|D><flag> changes it only until the next reset
-	inline void configCMD(const bool persist = true)
+	inline void configCMD()
 	{
 		bool *bptr;
-		const uint8_t pos = persist ? 1 : 2;
+		const bool persist = (IB_1[1] != 'V');
+		const uint8_t modeIdx = persist ? 1 : 2;	// 'E' / 'D'
+		const uint8_t flagIdx = modeIdx + 1;		// 'S', 'U', 'C', ...
 
-		switch (IB_1[pos + 1])
+		switch (IB_1[flagIdx])
 		{
 			case 'S' : //MS
 				bptr = &musterDec.MSenabled;
@@ -145,7 +147,7 @@ namespace commands {
 				return;
 		}
 
-		switch (IB_1[pos])
+		switch (IB_1[modeIdx])
 		{
 			case 'E':
 				*bptr = true;
@@ -383,13 +385,11 @@ namespace commands {
 					break;
 				case 'E':
 				case 'D':
+				case 'V':
 					configCMD();
 					break;
 				case 'S':
 					configSET();
-					break;
-				case 'V':
-					configCMD(false);
 					break;
 	#ifdef CMP_CC1101
 				default:
