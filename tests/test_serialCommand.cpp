@@ -157,3 +157,52 @@ TEST(serial, registerWrite1) {
     //releaseSerialMock();
     releaseEEPROMMock();
 }
+
+TEST(serial, registerWriteVolatile) {
+    EEPROMMock* eepromMock = EEPROMMockInstance();
+    strcpy(IB_1, "w1400");
+    blinkLED = false;
+
+    EXPECT_CALL(*eepromMock,write)
+        .Times(0);
+
+    // call processing
+    commands::HandleShortCommand();
+    EXPECT_TRUE(blinkLED); // unsupported commands return before blinkLED is set
+
+    releaseEEPROMMock();
+}
+
+TEST(serial, configVolatile) {
+    EEPROMMock* eepromMock = EEPROMMockInstance();
+    musterDec.MUenabled = false;
+    strcpy(IB_1, "CVEU");
+
+    EXPECT_CALL(*eepromMock,write)
+        .Times(0);
+
+    // call processing
+    commands::HandleShortCommand();
+    EXPECT_TRUE(musterDec.MUenabled);
+
+    strcpy(IB_1, "CVDU");
+    commands::HandleShortCommand();
+    EXPECT_FALSE(musterDec.MUenabled);
+
+    releaseEEPROMMock();
+}
+
+TEST(serial, configPersistent) {
+    EEPROMMock* eepromMock = EEPROMMockInstance();
+    musterDec.MUenabled = false;
+    strcpy(IB_1, "CEU");
+
+    EXPECT_CALL(*eepromMock,write)
+        .Times(1);
+
+    // call processing
+    commands::HandleShortCommand();
+    EXPECT_TRUE(musterDec.MUenabled);
+
+    releaseEEPROMMock();
+}
