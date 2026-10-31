@@ -39,8 +39,12 @@ SignalDetectorClass musterDec;
 
 namespace serialtest {
 // Runs a short command through the firmware command dispatcher.
-inline void runShortCommand(const char* cmd) {
-    ASSERT_TRUE(loadCommand(cmd)) << "command does not fit into IB_1: " << cmd;
+// Like serialEvent() in the firmware, the line terminator stays in IB_1,
+// so "\n" is appended unless terminate is false.
+inline void runShortCommand(const char* cmd, bool terminate = true) {
+    std::string line(cmd);
+    if (terminate) line += '\n';
+    ASSERT_TRUE(loadCommand(line.c_str())) << "command does not fit into IB_1: " << cmd;
     commands::HandleShortCommand();
 }
 } // namespace serialtest
