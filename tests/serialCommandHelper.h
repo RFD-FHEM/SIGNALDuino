@@ -21,8 +21,11 @@
 
 #include <string>
 #include <cstring>
+#include <algorithm>
+#include <vector>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <arduino-mock/Arduino.h>
 #include <arduino-mock/Serial.h>
 
 extern char IB_1[14];
@@ -127,6 +130,40 @@ public:
 
     ~SerialCapture() { releaseSerialMock(); }
 
+    // Provides bytes for Serial.available / read / readBytes / readBytesUntil,
+    // i.e. the rest of a send command that is still in the serial buffer.
+    void setInput(const std::string& in) {
+        using ::testing::_;
+        using ::testing::AnyNumber;
+        in_ = in;
+        inPos_ = 0;
+        readCalls_ = 0;
+        EXPECT_CALL(*mock_, available()).Times(AnyNumber())
+            .WillRepeatedly([this]() { return static_cast<uint8_t>(std::min<size_t>(255, in_.size() - inPos_)); });
+        EXPECT_CALL(*mock_, read()).Times(AnyNumber())
+            .WillRepeatedly([this]() { return inPos_ < in_.size() ? static_cast<uint8_t>(in_[inPos_++]) : static_cast<uint8_t>(0xFF); });
+        EXPECT_CALL(*mock_, readBytes(_, _)).Times(AnyNumber())
+            .WillRepeatedly([this](char buf[], uint8_t len) {
+                readCalls_++;
+                uint8_t n = 0;
+                while (n < len && inPos_ < in_.size()) buf[n++] = in_[inPos_++];
+                return n;
+            });
+        EXPECT_CALL(*mock_, readBytesUntil(_, _, _)).Times(AnyNumber())
+            .WillRepeatedly([this](uint8_t term, const char[], uint8_t len) {
+                // consumes the bytes like Stream::readBytesUntil (terminator is discarded)
+                uint8_t n = 0;
+                while (n < len && inPos_ < in_.size()) {
+                    const char c = in_[inPos_++];
+                    if (static_cast<uint8_t>(c) == term) break;
+                    n++;
+                }
+                return n;
+            });
+    }
+    size_t inputLeft() const { return in_.size() - inPos_; }
+    unsigned readCalls() const { return readCalls_; }
+
     SerialCapture(const SerialCapture&) = delete;
     SerialCapture& operator=(const SerialCapture&) = delete;
 
@@ -140,6 +177,76 @@ private:
 
     SerialMock* mock_;
     std::string out_;
+    std::string in_;
+    size_t inPos_ = 0;
+    unsigned readCalls_ = 0;
+};
+
+// ---------------------------------------------------------------------------
+// Fake microsecond clock for the send functions.
+// The arduino-mock micros() always returns 0, which would make the busy-wait
+// loops in send_raw()/send_mc() endless. test_serialCommand.cpp maps micros()
+// to fakeMicros() for send.h only (preprocessor, no firmware change).
+// Every call advances the clock by 1 us, so a busy wait for d us ends exactly
+// d us after it started.
+// ---------------------------------------------------------------------------
+inline unsigned long& fakeMicrosCounter() {
+    static unsigned long counter = 0;
+    return counter;
+}
+inline unsigned long fakeMicros() { return fakeMicrosCounter()++; }
+
+// One level change on the send pin
+struct PinEvent {
+    uint8_t level;      // HIGH / LOW
+    unsigned long time; // fake micros at the time of the change
+};
+
+// Records level changes of the send pin (digitalLow/digitalHigh map to
+// pinMode(pin, LOW/HIGH) in the native build, see output.h) and delay() calls.
+class SendRecorder {
+public:
+    explicit SendRecorder(uint8_t pin) : mock_(arduinoMockInstance()) {
+        using ::testing::_;
+        using ::testing::AnyNumber;
+        fakeMicrosCounter() = 0;
+        EXPECT_CALL(*mock_, pinMode(_, _)).Times(AnyNumber())
+            .WillRepeatedly([this, pin](uint8_t p, uint8_t level) {
+                if (p == pin) events_.push_back(PinEvent{ level, fakeMicrosCounter() - 1 });
+                else otherPinCalls_++;
+            });
+        EXPECT_CALL(*mock_, delay(_)).Times(AnyNumber())
+            .WillRepeatedly([this](int) { delayCalls_++; });
+        EXPECT_CALL(*mock_, digitalWrite(_, _)).Times(AnyNumber());
+    }
+    ~SendRecorder() { releaseArduinoMock(); }
+
+    SendRecorder(const SendRecorder&) = delete;
+    SendRecorder& operator=(const SendRecorder&) = delete;
+
+    const std::vector<PinEvent>& events() const { return events_; }
+
+    // Signal as "+high_us" / "-low_us" durations between level changes.
+    // Consecutive changes to the same level are merged.
+    std::vector<long> signal() const {
+        std::vector<long> out;
+        for (size_t i = 0; i + 1 < events_.size(); i++) {
+            const long d = static_cast<long>(events_[i + 1].time - events_[i].time);
+            const long v = events_[i].level == HIGH ? d : -d;
+            if (!out.empty() && ((out.back() > 0) == (v > 0)) && v != 0) out.back() += v;
+            else if (d != 0) out.push_back(v);
+        }
+        return out;
+    }
+    uint8_t lastLevel() const { return events_.empty() ? 0xFF : events_.back().level; }
+    unsigned delayCalls() const { return delayCalls_; }
+    unsigned otherPinCalls() const { return otherPinCalls_; }
+
+private:
+    ArduinoMock* mock_;
+    std::vector<PinEvent> events_;
+    unsigned delayCalls_ = 0;
+    unsigned otherPinCalls_ = 0;
 };
 
 // Copies cmd into IB_1 (zero padded) and returns false if it does not fit

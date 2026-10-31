@@ -33,9 +33,14 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 
 SignalDetectorClass musterDec;
 
-#include <send.h>
-#include <commands.h>
 #include "serialCommandHelper.h"
+
+// The arduino-mock micros() always returns 0; the busy-wait loops in send.h
+// would never end. Map micros() to the fake clock for send.h only.
+#define micros() serialtest::fakeMicros()
+#include <send.h>
+#undef micros
+#include <commands.h>
 
 namespace serialtest {
 // Runs a short command through the firmware command dispatcher.
