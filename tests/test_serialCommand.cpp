@@ -35,6 +35,65 @@ SignalDetectorClass musterDec;
 
 #include <send.h>
 #include <commands.h>
+#include "serialCommandHelper.h"
+
+namespace serialtest {
+// Runs a short command through the firmware command dispatcher.
+inline void runShortCommand(const char* cmd) {
+    ASSERT_TRUE(loadCommand(cmd)) << "command does not fit into IB_1: " << cmd;
+    commands::HandleShortCommand();
+}
+} // namespace serialtest
+
+// ---------------------------------------------------------------------------
+// Self tests for the serial test helpers (no firmware involved)
+// ---------------------------------------------------------------------------
+TEST(serialHelper, captureStringsAndChars) {
+    serialtest::SerialCapture cap;
+    Serial.print("ab");
+    Serial.print('c');
+    Serial.println("d");
+    Serial.println();
+    EXPECT_EQ("abcd\n\n", cap.output());
+}
+
+TEST(serialHelper, captureNumbersLikeArduinoPrint) {
+    serialtest::SerialCapture cap;
+    Serial.print(0, DEC);
+    Serial.print(' ');
+    Serial.print(-42, DEC);
+    Serial.print(' ');
+    Serial.print((unsigned char)0x0a, HEX);
+    Serial.print(' ');
+    Serial.print(255u, HEX);
+    Serial.print(' ');
+    Serial.print(5L, BIN);
+    Serial.print(' ');
+    Serial.println(4294967295UL, DEC);
+    EXPECT_EQ("0 -42 A FF 101 4294967295\n", cap.output());
+}
+
+TEST(serialHelper, captureFlashStrings) {
+    serialtest::SerialCapture cap;
+    Serial.print(FPSTR(TXT_EEPROM));
+    Serial.println(FPSTR(TXT_BLANK));
+    EXPECT_EQ("EEPROM \n", cap.output());
+}
+
+TEST(serialHelper, loadCommandRespectsBufferSize) {
+    EXPECT_TRUE(serialtest::loadCommand("1234567890123"));   // 13 chars + '\0' fit
+    EXPECT_STREQ("1234567890123", IB_1);
+    EXPECT_FALSE(serialtest::loadCommand("12345678901234")); // 14 chars do not fit
+    EXPECT_TRUE(serialtest::loadCommand("P"));
+    EXPECT_EQ('\0', IB_1[1]) << "buffer must be zero padded";
+}
+
+// Wiring check: helper + real command dispatcher
+TEST(serialHelper, runShortCommandReachesDispatcher) {
+    serialtest::SerialCapture cap;
+    serialtest::runShortCommand("P");
+    EXPECT_EQ("OK\n", cap.output());
+}
 
 // static size_t println(int, int = DEC);
 TEST(serial, println1) {
