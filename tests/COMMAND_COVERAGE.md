@@ -3,7 +3,9 @@
 Grundlage: die in [`AI_AGENT_COMMANDS.md`](../AI_AGENT_COMMANDS.md) dokumentierten Kommandos.
 Getestet wird im nativen Testbuild (`tests/CMakeLists.txt`, GoogleTest + arduino-mock) ohne Änderungen an der Firmware.
 
-Legende Status: ✅ getestet · ⏳ geplant · 🔒 im nativen Build nicht kompiliert (benötigt `CMP_CC1101`)
+Legende Status: ✅ getestet · ⛔ im nativen Build nicht testbar
+
+Die CC1101-Kommandos (Schritt 4) laufen in einem eigenen Test-Programm `TestProjectCC1101`, das mit `CMP_CC1101` gebaut wird. Dort läuft das unveränderte `src/cc1101.cpp` gegen ein CC1101-Modell (`tests/fakeCC1101.h`), das über die AVR-SPI-Register angesprochen wird.
 
 Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = CC1101-Kommandos (eigenes Test-Target).
 
@@ -11,14 +13,14 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 
 | Kommando | Gutfall | Fehler-/Grenzfälle | Schritt | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| `V` | Versionsstring `V <PROGVERS><PROGNAME> - compiled at …` | Zusatzzeichen nach `V` | 2 | ✅ |
-| `?` | Liste `? Use one of V R t X S P C r W s` | Zusatzzeichen nach `?` | 2 | ✅ |
+| `V` | Versionsstring `V <PROGVERS><PROGNAME> - compiled at …`; mit CC1101 inkl. `cc1101 (chip CC110x)` | Zusatzzeichen, Chipversionen 03/04/14/05/07/17/unbekannt, `hasCC1101` aus | 2 / 4 | ✅ |
+| `?` | Liste `? Use one of V R t X S P C r W s`, mit CC1101 zusätzlich `x e` | Zusatzzeichen, `hasCC1101` aus | 2 / 4 | ✅ |
 | `R` | freier RAM (`freeRam()`) | Zusatzzeichen | 2 | ✅ |
 | `t` | Uptime in Sekunden (Wert gegen `millis()` des Mocks geprüft) | Überlauf nicht testbar: der arduino-mock leitet `millis()` aus der Systemzeit ab | 2 | ✅ |
 | `P` | `OK` | Zusatzzeichen | 2 | ✅ |
-| `s` | ohne `CMP_CC1101` keine Ausgabe | – | 2 | ✅ |
+| `s` | ohne `CMP_CC1101` keine Ausgabe; mit CC1101: `OK` bzw. Hinweis auf Factory Reset (PKTCTRL0/IOCFG2 geprüft) | falsches PKTCTRL0, falsches IOCFG2, `hasCC1101` aus | 2 / 4 | ✅ |
 | `XQ` / `XE` | Empfänger aus/an | `X` allein, `Xz` (unbekanntes Flag) | 2 | ✅ |
-| `e` | Factory Reset | – | 4 | 🔒 |
+| `e` | Factory Reset: EEPROM- und Chip-Register = `initVal`, PATABLE, SRES, danach RX | `hasCC1101` aus, anschließend `s` = `OK` | 4 | ✅ |
 | unbekannt | `Unsupported short command` | leerer Puffer, Steuerzeichen | 2 | ✅ |
 
 ## Konfigurationsbefehle
@@ -27,14 +29,16 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | :--- | :--- | :--- | :---: | :---: |
 | `CG` | `MS=…;MU=…;MC=…;Mred=…` | – | 2 | ✅ |
 | `CE<x>` / `CD<x>` (S, U, C, R) | Flag gesetzt/gelöscht | unbekanntes `<x>`, fehlendes `<x>` | 2 | ✅ |
-| `CEA`/`CDA`, `CEW`/`CDW`, `CET`/`CDT` | AFC / WMBus / WMBus_T | nativ geprüft: werden ignoriert ✅ | 4 | 🔒 |
+| `CEA`/`CDA` | AFC an/aus, bei aus FSCTRL0 = 0 und Offset zurückgesetzt | – | 4 | ✅ |
+| `CEW`/`CDW`, `CET`/`CDT` | WMBus / WMBus_T | werden nativ ignoriert (geprüft) | – | ⛔ benötigt zusätzlich ESP8266/ESP32/MAPLEMINI |
+| `CG` (FSK) | `MN=1;AFC=<0/1>` bei `ccmode` ≠ 3 | – | 4 | ✅ |
 | `CSmcmbl=<val>` | `<val> bits set` | kein Wert, negativ, nicht numerisch, sehr groß, falscher Schlüssel | 2 | ✅ |
-| `C<reg>` | CC1101-Register lesen | kein Hex, eine Stelle | 4 | 🔒 |
-| `W<reg><val>` | EEPROM-Schreibzugriff | ungültiges Hex, zu kurz, `00`/`FF` | 2 | ✅ |
-| `WS<id>` | Strobe-Kommando | – | 4 | 🔒 (nativ geprüft: kein EEPROM-Schreibzugriff ✅) |
+| `C<reg>` | Config- (`00`–`2E`) und Statusregister (`2F`–`3D`), `C3E` PATABLE, `C99` alle, `C<reg>n<x>` Bereich | Kleinbuchstaben, eine Stelle, kein Hex, `3F`/`98`/`FF`, `n` mit ungültiger Anzahl, Bereich über `2F`, `hasCC1101` aus | 4 | ✅ |
+| `W<reg><val>` | EEPROM-Schreibzugriff; mit CC1101 zusätzlich Register `<reg>-2` und Antwort `W<reg><val>` | ungültiges Hex, zu kurz, `00`/`01`/`40`/`FF`, MDMCFG2 → `ccmode`, MDMCFG4 → FREND1/FIFOTHR (Grenzen `56`/`57`, `C6`/`C7`), `hasCC1101` aus | 2 / 4 | ✅ |
+| `WS<id>` | Strobe + Chip-Status `cmdStrobeReg <id> chipStatus <s> delay1 <s>` | `WS3`, `WS3G`, `WS3E`/`WS3F`, `WS2F`, Kleinbuchstaben, `hasCC1101` aus | 2 / 4 | ✅ |
 | `r<addr>` | `EEPROM <addr> = <val>` | ungültiges Hex, eine Stelle, `FF` | 2 | ✅ |
 | `r<addr>n` | 16 Bytes ab `<addr>` | Adresse am Ende des Bereichs | 2 | ✅ |
-| `x<val>` | PA Table | – | 4 | 🔒 |
+| `x<val>` | PATABLE in EEPROM und Chip, `write <val> to PATABLE done` | `00`/`FF`, eine Stelle, kein Hex, `hasCC1101` aus | 4 | ✅ |
 
 ## Sendebefehle
 
@@ -43,18 +47,19 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | `SR` | Rohsequenz mit `P0`…`P7` und `D=`, Echo, Pegel am Sendepin | `R=0`, `R=256`/`R=257` (Überlauf), `P8` (ignoriert), ±32767 µs, Abbruch ohne Daten / mitten im Teil / ohne Zeilenende, längstes akzeptiertes (261 Zeichen) und zu langes Kommando (262) | 3 | ✅ |
 | `SM` | Manchester mit `C=` und `D=`, Echo, `delay(1)` | `R=2`, `0`/`F`, Kleinbuchstaben, ungültiges Hex (`G`), fehlendes `C=` | 3 | ✅ |
 | `SC` | kombinierte Sequenz mit `R=` | `R=0`, ohne `R=`, Abbruch | 3 | ✅ |
-| `SN` | ohne `CMP_CC1101`: Echo + `no supported device to send` | – | 3 (CC1101: 4) | ✅ / 🔒 |
+| `SN` | ohne `CMP_CC1101`: Echo + `no supported device to send`; mit CC1101: Daten über TX-FIFO, STX, danach RX | Wiederholungen, Kleinbuchstaben, `N=`, ungerade Anzahl Hexziffern, `hasCC1101` aus | 3 / 4 | ✅ |
+| `F=` (bei `SR`/`SM`/`SC`) | bis zu 5 Register ab FREQ2 setzen und nach dem Senden zurückschreiben | 5 Register, 6 Register, `hasCC1101` aus | 4 | ✅ |
 
 Nicht getestet, weil der aktuelle Code dabei undefiniertes Verhalten hat (ein Test würde zufällig bestehen oder abstürzen):
 
 - Sendekommando ohne `D=` oder Abbruch mit `\n` vor dem ersten `D=`: `datastart`/`dataend` sind nicht initialisiert (`s_sendcmd` in `src/send.h`).
 - `D=` mit Index eines nicht gesetzten Patterns oder Ziffer ≥ 8 (`buckets` nicht initialisiert bzw. Zugriff außerhalb des Arrays in `send_raw()`).
 
-Die Tests für Schritt 2 stehen in `tests/test_serialCommand_system.cpp` (Fixture `ShortCommandTest`, parametrisiert `DecoderFlagTest`), die für Schritt 3 in `tests/test_serialCommand_send.cpp` (Fixture `SendCommandTest`).
+Die Tests für Schritt 2 stehen in `tests/test_serialCommand_system.cpp` (Fixture `ShortCommandTest`, parametrisiert `DecoderFlagTest`), die für Schritt 3 in `tests/test_serialCommand_send.cpp` (Fixture `SendCommandTest`) und die für Schritt 4 in `tests/test_serialCommand_cc1101.cpp` (Fixture `Cc1101Test`, Programm `TestProjectCC1101`).
 
 ## Auffälligkeiten im aktuellen Verhalten
 
-Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Doku ab oder sind bei Grenzwerten auffällig (Fundstellen in `src/commands.h` bzw. `src/send.h`):
+Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Doku ab oder sind bei Grenzwerten auffällig (Fundstellen in `src/commands.h`, `src/send.h` bzw. `src/cc1101.cpp`):
 
 | Kommando | Beobachtung | Fundstelle | Test |
 | :--- | :--- | :--- | :--- |
@@ -69,8 +74,19 @@ Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Do
 | `SM` | ungültige Hexzeichen werden ohne Fehlermeldung als Nibble gesendet (`G` → `0`) | `send_mc()` | `manchesterInvalidHexIsSentAsZeroNibble` |
 | `S…` | nach `send cmd corrupt` / `send cmd to long` kehrt `send_cmd()` vor `enableReceive()` zurück, nachdem es am Anfang `disableReceive()` aufgerufen hat. Ob der Empfänger an anderer Stelle wieder eingeschaltet wird, ist nicht geprüft (nur im Code gelesen, nativ nicht beobachtbar) | `send_cmd()`, `return` vor `enableReceive()` | – |
 | `S…` | Meldung lautet `to long` statt `too long` | `TXT_TOLONG` in `output.h` | `rawTooLongCommandIsRejected` |
+| `e` | Antwort ist `ccFactoryReset done` (Doku: `Init eeprom to defaults...`) | `cc1101::ccFactoryReset()` | `factoryResetWritesDefaultsToEepromAndChip` |
+| `x<val>` | Antwort ist `write 12 to PATABLE done` (Doku: `Write 12 to patable`) | `cmd_patable`, `TXT_WRITE`/`TXT_TPATAB` | `patableWrite` |
+| `C<reg>n<x>` | Bereich wird nicht auf die Config-Register begrenzt: ab Adresse `30` wird mit Single-Read-Header gelesen, das ist für den CC1101 ein Strobe (`C2En1` sendet SRES) | `cc1101::readCCreg()`, nur `reg < 0x2F` geprüft | `readRegisterRangeBeyond0x2FSendsStrobe` |
+| `W30…W3F` | EEPROM `30`–`37` ist der PATABLE-Speicher, wird aber zusätzlich an Chip-Adresse `2E`–`3D` geschrieben; `30`–`3D` sind Strobes (`W3201` sendet SRES) | `cc1101::writeCCreg()`, Bedingung `reg < 0x40` | `writeEepromPatableAreaSendsStrobe` |
+| `WS<id>` | prüft `hasCC1101` nicht (anders als `C`, `x`, `e`) | `cmd_write`, Zweig `WS3` | `strobeIgnoresMissingCC1101Hardware` |
+| `SN` | Parameter `N=` aus dem Doku-Beispiel wird nicht ausgewertet | `send_cmd()` kennt kein `N=` | `xfskIgnoresUnknownParameterN` |
+| `SN` | bei ungerader Anzahl Hexziffern wird das letzte Nibble mit `;` kombiniert (`D=91C` → `91 FB`) | `cc1101::sendFIFO()`, `hex2int()` | `xfskOddNumberOfHexDigits` |
+| `SN` | ohne `hasCC1101` wird der TX-FIFO trotzdem beschrieben (nur `setTransmitMode()` entfällt) | `send_cmd()` | `xfskWithoutCC1101HardwareStillWritesFifo` |
+| `F=` | wird `F=` nicht angewendet (mehr als 5 Register oder `hasCC1101` aus), schreibt `send_cmd()` trotzdem nicht initialisierte Werte aus `ccReg[]` in die Register ab `0D` zurück | `send_cmd()`, `ccParamAnz` wird vor der Prüfung gesetzt | `frequencyRegisters*ButWrittenBack` |
 
 ## Testhelfer
+
+`tests/fakeCC1101.h` (nur `TestProjectCC1101`): Modell des CC1101 am SPI. `SPDR`/`SPSR`/`SPCR` werden per Präprozessor auf ein Fake-Register umgeleitet, Chip-Select kommt über `pinMode(csPin, LOW/HIGH)`. Das Modell bildet Config-, Status- und PATABLE-Zugriffe, Strobes (Status-Byte vor Ausführung) und den TX-FIFO nach dem CC1101-Datenblatt ab.
 
 `tests/serialCommandHelper.h`:
 
