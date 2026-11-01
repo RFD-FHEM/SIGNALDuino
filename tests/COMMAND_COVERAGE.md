@@ -3,7 +3,7 @@
 Grundlage: die in [`AI_AGENT_COMMANDS.md`](../AI_AGENT_COMMANDS.md) dokumentierten Kommandos.
 Getestet wird im nativen Testbuild (`tests/CMakeLists.txt`, GoogleTest + arduino-mock) ohne Änderungen an der Firmware.
 
-Legende Status: ✅ getestet · ⏳ geplant · 🔒 im nativen Build nicht kompiliert (benötigt `CMP_CC1101`)
+Legende Status: ✅ getestet · ⏳ geplant · ⏸ Test vorhanden, aber deaktiviert (wartet auf Fix) · 🔒 im nativen Build nicht kompiliert (benötigt `CMP_CC1101`)
 
 Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = CC1101-Kommandos (eigenes Test-Target).
 
@@ -44,10 +44,12 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | `SM` | Manchester mit `C=` und `D=`, Echo, `delay(1)` | `R=2`, `0`/`F`, Kleinbuchstaben, ungültiges Hex (`G`), fehlendes `C=` | 3 | ✅ |
 | `SC` | kombinierte Sequenz mit `R=` | `R=0`, ohne `R=`, Abbruch | 3 | ✅ |
 | `SN` | ohne `CMP_CC1101`: Echo + `no supported device to send` | – | 3 (CC1101: 4) | ✅ / 🔒 |
+| `S…` ohne führendes `S` | Müllzeichen vor `SR;…` wird übersprungen, Kommando wird mit seinen `R=` gesendet; ohne `S` im Kommando `send cmd corrupt` ([#267](https://github.com/RFD-FHEM/SIGNALDuino/issues/267), Fix [#268](https://github.com/RFD-FHEM/SIGNALDuino/pull/268)) | `X;P0=500;D=0;`, nur `;` | 3 | ⏸ (Tests vorhanden, `DISABLED_` bis #268 gemergt ist) |
 
 Nicht getestet, weil der aktuelle Code dabei undefiniertes Verhalten hat (ein Test würde zufällig bestehen oder abstürzen):
 
 - Sendekommando ohne `D=` oder Abbruch mit `\n` vor dem ersten `D=`: `datastart`/`dataend` sind nicht initialisiert (`s_sendcmd` in `src/send.h`).
+- Sendekommando, dessen erster Teil in `IB_1` nicht mit `S` beginnt (z. B. `<Müll>SR;…`): `cmdNo` bleibt 255 und `command[255]` liegt außerhalb des Arrays (`command[5]`), im Ergebnis Endlosschleife mit `repeats` = 255 (Issue #267). Die Tests dazu (`DISABLED_garbagePrefix…`, `DISABLED_onlySemicolon…`, `DISABLED_validCommandStillWorksAfterRejectedOne`) hängen ohne den Fix aus PR #268 und sind deshalb deaktiviert.
 - `D=` mit Index eines nicht gesetzten Patterns oder Ziffer ≥ 8 (`buckets` nicht initialisiert bzw. Zugriff außerhalb des Arrays in `send_raw()`).
 
 Die Tests für Schritt 2 stehen in `tests/test_serialCommand_system.cpp` (Fixture `ShortCommandTest`, parametrisiert `DecoderFlagTest`), die für Schritt 3 in `tests/test_serialCommand_send.cpp` (Fixture `SendCommandTest`).
