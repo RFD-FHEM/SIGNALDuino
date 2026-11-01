@@ -23,6 +23,7 @@
 #include <cstring>
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <arduino-mock/Arduino.h>
@@ -201,7 +202,21 @@ inline unsigned long& fakeMicrosCounter() {
     static unsigned long counter = 0;
     return counter;
 }
-inline unsigned long fakeMicros() { return fakeMicrosCounter()++; }
+// Number of micros() calls since the last reset. A busy wait that does not end
+// would hang the test run; after this many calls the clock throws instead, so
+// the test fails with a message (the longest regular test needs < 10^6 calls).
+constexpr unsigned long fakeMicrosCallLimit = 50000000UL;
+inline unsigned long& fakeMicrosCalls() {
+    static unsigned long calls = 0;
+    return calls;
+}
+struct BusyWaitDoesNotEnd : std::runtime_error {
+    BusyWaitDoesNotEnd() : std::runtime_error("busy wait in send.h does not end (micros() called too often)") {}
+};
+inline unsigned long fakeMicros() {
+    if (++fakeMicrosCalls() > fakeMicrosCallLimit) throw BusyWaitDoesNotEnd();
+    return fakeMicrosCounter()++;
+}
 
 // ---------------------------------------------------------------------------
 // Receiver state as switched by send_cmd(). test_serialCommand.cpp maps
@@ -232,6 +247,7 @@ public:
         using ::testing::_;
         using ::testing::AnyNumber;
         fakeMicrosCounter() = 0;
+        fakeMicrosCalls() = 0;
         EXPECT_CALL(*mock_, pinMode(_, _)).Times(AnyNumber())
             .WillRepeatedly([this, pin](uint8_t p, uint8_t level) {
                 if (p == pin) events_.push_back(PinEvent{ level, fakeMicrosCounter() - 1 });

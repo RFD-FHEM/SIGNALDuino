@@ -283,20 +283,30 @@ void send_cmd()
 			//MSG_PRINTER.setTimeout(1000);
 			//msg_endptr = MSG_PRINTER.readBytesUntil(';', msg_endptr, 128) + msg_beginptr ;
 			uint8_t l = 0;
+			bool bufferFull = false;
 			do {
 				msg_endptr += l;
 				buffer_left -= l;
+				// buffer_left does not count the ';' of parts that stay in buf, so
+				// check the position itself: keep room for one character and '\0'
+				if (msg_endptr >= buf + sizeof(buf) - 1) {
+					bufferFull = true;
+					break;
+				}
 				l = MSG_PRINTER.readBytes(msg_endptr, 1);
 				if (l == 0) {
 					DBG_PRINTLN(F("TOUT"));  break;
 				}
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
-			if (l == 0)
+			if (!bufferFull && l == 0)
 			{
 				err = SD_ERR_CORRUPT;
 				break;
 			}
-			if (buffer_left == 0)
+			if (!bufferFull && msg_endptr[0] == '\n') {
+				lineEnd = true;   // the line end is already read, nothing left to discard
+			}
+			if (bufferFull || buffer_left == 0)
 			{
 				err = SD_ERR_TOLONG;
 				break;

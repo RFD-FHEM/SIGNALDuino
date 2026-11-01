@@ -65,6 +65,7 @@ using serialtest::signalNear;
 using serialtest::repeatSignal;
 using serialtest::receiveState;
 using serialtest::fakeMicrosCounter;
+using serialtest::fakeMicrosCalls;
 
 
 // ---------------------------------------------------------------------------
@@ -375,6 +376,55 @@ TEST_F(SendCommandTest, serialTimeoutRestIsNotSentAsNewCommand) {
     EXPECT_TRUE(rec.events().empty());
 }
 
+// --- buf[256] limit with parts that stay in buf ---------------------------------
+// buffer_left does not count the ';' of parts that stay in buf (C=, D=, F=,
+// unknown parts, all parts after the first S part). Before the fix the write
+// position ran behind buf (stack overflow).
+TEST_F(SendCommandTest, manchesterLongestDataThatFitsIntoBuf) {
+    // buf: "C=400;D=" + 245 x 'A' + ";\n" = 255 bytes + '\0'
+    const std::string cmd = "SM;C=400;D=" + std::string(245, 'A') + ";\n";
+    run(cmd);
+    EXPECT_EQ(cmd, cap.output());
+    // 'A' = 1010, see manchesterEncodesBits
+    EXPECT_TRUE(signalNear(rec.signal(), repeatSignal({ -400, 800, -800, 800, -400 }, 245)));
+}
+
+TEST_F(SendCommandTest, manchesterDataBeyondBufIsTooLong) {
+    // one character more: '\n' would be at buf[255], '\0' at buf[256]
+    run("SM;C=400;D=" + std::string(246, 'A') + ";\n");
+    EXPECT_EQ("SM;send cmd to long \n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+    EXPECT_EQ("", cap.remainingInput());
+    EXPECT_TRUE(receiveState().enabled);
+}
+
+TEST_F(SendCommandTest, manyShortPartsBeyondBufAreTooLong) {
+    std::string parts;
+    for (int i = 0; i < 140; i++) parts += "X;";
+    run("SR;P0=-4;P1=8;" + parts + "D=01;\n");
+    EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+    EXPECT_EQ("", cap.remainingInput());
+}
+
+// The old code also answered "to long" here, but only after writing behind buf;
+// only a build with -fsanitize=address detects that regression.
+TEST_F(SendCommandTest, combinedPartsBeyondBufAreTooLong) {
+    run("SC;SR;P0=1;P1=1;D=01;SM;C=1;D=" + std::string(240, 'A') + ";\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd to long \n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+    EXPECT_EQ("", cap.remainingInput());
+}
+
+TEST_F(SendCommandTest, tooLongAtLineEndKeepsNextCommand) {
+    // the line end is read exactly when the length limit is reached: the next
+    // command must not be discarded
+    const std::string next = "SR;P0=-400;P1=800;D=0101;\n";
+    run("SR;P0=-4;P1=8;D=" + std::string(244, '0') + "\n" + next);
+    EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
+    EXPECT_EQ(next, cap.remainingInput());
+}
+
 TEST_F(SendCommandTest, veryLongCommandIsDiscardedCompletely) {
     // the whole rest of the line is discarded, not only 255 further bytes
     run("SR;P0=-4;P1=8;D=" + std::string(600, '0') + ";\n");
@@ -496,11 +546,25 @@ TEST_F(SendCommandTest, manchesterNegativeClockSendsWithoutDelay) {
 }
 
 TEST_F(SendCommandTest, manchesterNegativeClockDoesNotBlock) {
-    // directly after start or after a micros() overflow (micros() < 400) the stop
-    // time wrapped to the maximum value: before the fix the busy wait did not end
-    // (on the device up to ~71 minutes)
-    run("SM;C=-400;D=A;\n");
-    SUCCEED();
+    // directly after start or after a micros() overflow (micros() smaller than
+    // |C| * number of half bits) the stop time wrapped to the maximum value: before
+    // the fix the busy wait did not end (on the device up to ~71 minutes). The fake
+    // clock starts at 0; a busy wait that does not end throws BusyWaitDoesNotEnd.
+    ASSERT_EQ(0u, fakeMicrosCounter());
+    try {
+        run("SM;C=-400;D=A;\n");
+    } catch (const serialtest::BusyWaitDoesNotEnd& e) {
+        FAIL() << e.what();
+    }
+    EXPECT_EQ("SM;C=-400;D=A;\n", cap.output());
+    // A = 1010: low/high, high/low, low/high, high/low without any wait, then low
+    std::vector<uint8_t> levels;
+    for (const auto& e : rec.events()) levels.push_back(e.level);
+    const std::vector<uint8_t> expected = { LOW, HIGH, HIGH, LOW, LOW, HIGH, HIGH, LOW, LOW };
+    EXPECT_EQ(expected, levels);
+    for (long d : rec.signal()) EXPECT_LE(std::labs(d), 3);
+    EXPECT_LT(fakeMicrosCalls(), 100u) << "no busy wait";
+    EXPECT_TRUE(receiveState().enabled);
 }
 
 // --- micros() overflow (every 2^32 us = ~71.6 min on the device) --------------
