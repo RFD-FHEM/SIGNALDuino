@@ -63,9 +63,12 @@ Spalte "vorher" beschreibt das Verhalten vor den Fixes in `src/send.h`.
 | Timeout | Rest kommt erst nach dem Timeout | wird als Kommando ohne `S` abgelehnt | Endlosschleife | `serialTimeoutRestIsNotSentAsNewCommand` |
 | Timeout | Pause direkt vor `\n` | vollständiges Kommando wird verworfen, `\n` mit verworfen | `\n` blieb im Puffer | `serialTimeoutBeforeLineEndDropsCompleteCommand` |
 | Länge | Kommando mit 600 Datenzeichen | `send cmd to long`, die ganze Zeile wird verworfen | nur 255 weitere Bytes verworfen, 102 Bytes blieben im Puffer | `veryLongCommandIsDiscardedCompletely` |
+| Länge | Zeilenende genau an der Längengrenze, danach ein weiteres Kommando | `send cmd to long`, das folgende Kommando bleibt erhalten | das folgende Kommando wurde mit verworfen | `tooLongAtLineEndKeepsNextCommand` |
+| Länge | Teile, die in `buf` bleiben (`C=`, `D=`, `F=`, unbekannte Teile, Teile nach dem ersten `S`-Teil) | Grenze über die Schreibposition: höchstens 255 Bytes + `\0` in `buf`, sonst `send cmd to long`. `SM;C=400;D=` hat höchstens 245 Datenzeichen | `buffer_left` zählte das `;` dieser Teile nicht, Schreibzugriff hinter `buf[256]` | `manchesterLongestDataThatFitsIntoBuf`, `manchesterDataBeyondBufIsTooLong`, `manyShortPartsBeyondBufAreTooLong`, `combinedPartsBeyondBufAreTooLong` (der letzte erkennt den alten Fehler nur unter ASan) |
 | Zeilenende | `\r\n` | wird akzeptiert | gleich | `rawCrLfLineEndIsAccepted` |
 | Zeilenende | nur `\r` | `send cmd corrupt` (Timeout) | gleich, Empfänger blieb aus | `rawCarriageReturnOnlyIsCorrupt` |
 | Zeilenende | `D=0101` ohne abschließendes `;` | `send cmd corrupt` | Segmentation fault | `rawLastPartWithoutSemicolonIsRejected` |
+| Zeilenende | Zeichen außer `\r` zwischen letztem `;` und `\n` (z. B. `…;D=0101; \n`) | `send cmd corrupt` | gesendet, der Rest wurde ignoriert | `rawLastPartWithoutSemicolonIsRejected` (nur Fall ohne `;`) |
 | leerer Teil | `…;D=0101;;\n` | wird gesendet, Rest der Zeile verworfen, Echo mit Zeilenende | Echo ohne Zeilenende, `\n` blieb im Puffer | `rawEmptyPartAfterDataEndsCommand` |
 | leerer Teil | `…;;D=0101;\n` | `send cmd corrupt` | Segmentation fault | `rawEmptyPartBeforeDataIsRejected` |
 | leerer Teil | `D=;` | nichts gesendet | Bytes hinter dem `;` als Pattern-Index gesendet | `rawEmptyDataPartSendsNothing` |
