@@ -10,19 +10,22 @@ namespace serialtest {
 
 class SendCommandTest : public ::testing::Test {
 protected:
-    SendCommandTest() : rec(PIN_SEND) {}
-    void run(const std::string& full);
+    SendCommandTest() : rec(PIN_SEND) { receiveState() = ReceiveState(); }
+    void run(const std::string& full, size_t gapAt = std::string::npos);
     SerialCapture cap;
     SendRecorder rec;
 };
 
 // Splits a complete send command like serialEvent() does: everything up to and
 // including the first ';' is in IB_1, the rest is still in the serial buffer.
-inline void runSendCommand(SerialCapture& cap, const std::string& full) {
+// gapAt (position in full) simulates a serial timeout before that byte.
+inline void runSendCommand(SerialCapture& cap, const std::string& full,
+                           size_t gapAt = std::string::npos) {
     const size_t semi = full.find(';');
     ASSERT_NE(std::string::npos, semi);
     ASSERT_TRUE(loadCommand(full.substr(0, semi + 1).c_str()));
-    cap.setInput(full.substr(semi + 1));
+    ASSERT_TRUE(gapAt == std::string::npos || gapAt > semi);
+    cap.setInput(full.substr(semi + 1), gapAt == std::string::npos ? gapAt : gapAt - semi - 1);
     send_cmd();
 }
 // Compares a recorded signal with the expected durations. The fake clock
@@ -53,13 +56,15 @@ inline std::vector<long> repeatSignal(const std::vector<long>& s, int n) {
     return out;
 }
 
-inline void SendCommandTest::run(const std::string& full) { runSendCommand(cap, full); }
+inline void SendCommandTest::run(const std::string& full, size_t gapAt) { runSendCommand(cap, full, gapAt); }
 
 } // namespace serialtest
 
 using serialtest::SendCommandTest;
 using serialtest::signalNear;
 using serialtest::repeatSignal;
+using serialtest::receiveState;
+using serialtest::fakeMicrosCounter;
 
 
 // ---------------------------------------------------------------------------
@@ -297,4 +302,210 @@ TEST_F(SendCommandTest, DISABLED_validCommandStillWorksAfterRejectedOne) {
     run(cmd);
     EXPECT_EQ(cmd, cap.output());
     EXPECT_FALSE(rec.signal().empty());
+}
+
+// ===========================================================================
+// Faulty transmissions, timing and unusual send commands
+// ===========================================================================
+// Tests without DISABLED_ describe the current firmware behaviour (also where it
+// is questionable, see tests/COMMAND_COVERAGE.md). DISABLED_ tests crash or hang
+// with the current firmware; they describe the proposed behaviour and can be run
+// with --gtest_also_run_disabled_tests.
+
+// --- receiver state ---------------------------------------------------------
+TEST_F(SendCommandTest, receiverIsEnabledAgainAfterSend) {
+    run("SR;P0=-400;P1=800;D=0101;\n");
+    EXPECT_EQ(1u, receiveState().disables);
+    EXPECT_EQ(1u, receiveState().enables);
+    EXPECT_TRUE(receiveState().enabled);
+}
+
+TEST_F(SendCommandTest, corruptCommandLeavesReceiverDisabled) {
+    // current behaviour: send_cmd() returns before enableReceive()
+    run("SR;");
+    EXPECT_EQ("SR;send cmd corrupt\n", cap.output());
+    EXPECT_EQ(1u, receiveState().disables);
+    EXPECT_EQ(0u, receiveState().enables);
+    EXPECT_FALSE(receiveState().enabled) << "receiver stays off until XE or restart";
+}
+
+TEST_F(SendCommandTest, tooLongCommandLeavesReceiverDisabled) {
+    run("SR;P0=-4;P1=8;D=" + std::string(244, '0') + ";\n");
+    EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
+    EXPECT_FALSE(receiveState().enabled) << "receiver stays off until XE or restart";
+}
+
+// --- serial timeouts (race between host and firmware) -------------------------
+TEST_F(SendCommandTest, serialTimeoutInsideCommandLeavesRestInBuffer) {
+    // the host sends the command in two TCP packets / with a pause (> setTimeout)
+    const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
+    run(cmd, cmd.find("P1="));
+    EXPECT_EQ("SR;P0=-400;send cmd corrupt\n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+    // the rest is processed by serialEvent() as a new command; it does not start
+    // with 'S' (see issue #267 and the DISABLED_ test below)
+    EXPECT_EQ("P1=800;D=0101;\n", cap.remainingInput());
+    EXPECT_FALSE(receiveState().enabled);
+}
+
+TEST_F(SendCommandTest, serialTimeoutBeforeLineEndDropsCompleteCommand) {
+    const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
+    run(cmd, cmd.size() - 1);
+    EXPECT_EQ("SR;P0=-400;P1=800;send cmd corrupt\n", cap.output());
+    EXPECT_TRUE(rec.events().empty()) << "complete command is not sent";
+    EXPECT_EQ("\n", cap.remainingInput());
+}
+
+TEST_F(SendCommandTest, DISABLED_serialTimeoutRestIsNotSentAsNewCommand) {
+    // second half of serialTimeoutInsideCommandLeavesRestInBuffer: serialEvent()
+    // passes "P1=800;" to send_cmd(). Hangs without the fix of PR #268.
+    run("P1=800;D=0101;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, veryLongCommandLeavesRestInBuffer) {
+    // "too long" discards at most 255 further bytes; the rest stays in the buffer
+    // and is parsed by serialEvent() (its last part "000...0;" has no leading 'S')
+    run("SR;P0=-4;P1=8;D=" + std::string(600, '0') + ";\n");
+    EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
+    EXPECT_EQ(std::string(100, '0') + ";\n", cap.remainingInput());
+}
+
+// --- line endings and empty parts -------------------------------------------
+TEST_F(SendCommandTest, rawCrLfLineEndIsAccepted) {
+    const std::string cmd = "SR;P0=-400;P1=800;D=0101;\r\n";
+    run(cmd);
+    EXPECT_EQ(cmd, cap.output());
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
+}
+
+TEST_F(SendCommandTest, rawCarriageReturnOnlyIsCorrupt) {
+    // '\r' does not end a send command; the next read times out
+    run("SR;P0=-400;P1=800;D=0101;\r");
+    EXPECT_EQ("SR;P0=-400;P1=800;send cmd corrupt\n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+    EXPECT_FALSE(receiveState().enabled);
+}
+
+TEST_F(SendCommandTest, rawEmptyPartAfterDataEndsCommandEarly) {
+    // ";;" ends the parsing; the echo has no line end and "\n" stays in the buffer
+    run("SR;P0=-400;P1=800;D=0101;;\n");
+    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;;", cap.output());
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
+    EXPECT_EQ("\n", cap.remainingInput());
+}
+
+TEST_F(SendCommandTest, DISABLED_rawEmptyPartBeforeDataIsRejected) {
+    // currently: segmentation fault (D= is never parsed, datastart/dataend are
+    // not initialised)
+    run("SR;P0=-400;P1=800;;D=0101;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, DISABLED_rawLastPartWithoutSemicolonIsRejected) {
+    // common typing error "D=0101" + line end; currently: segmentation fault
+    // (a part ended by '\n' is never parsed)
+    run("SR;P0=-400;P1=800;D=0101\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, DISABLED_rawEmptyDataPartSendsNothing) {
+    // currently: memchr() for the end of "D=" starts behind the ';', the bytes
+    // after it are sent as pattern indices (read outside of buckets[])
+    run("SR;P0=-400;P1=800;D=;\n");
+    EXPECT_TRUE(rec.signal().empty());
+}
+
+// --- value ranges -------------------------------------------------------------
+TEST_F(SendCommandTest, rawRepeatNegativeBecomes255) {
+    // strtoul("-1") wraps, repeats is uint8_t
+    run("SR;R=-1;P0=-4;P1=8;D=01;\n");
+    EXPECT_EQ(510u, rec.signal().size());
+    EXPECT_TRUE(signalNear(rec.signal(), repeatSignal({ -4, 8 }, 255)));
+}
+
+TEST_F(SendCommandTest, rawRepeatWithoutValueSendsNothing) {
+    run("SR;R=;P0=-4;P1=8;D=01;\n");
+    EXPECT_EQ("SR;R=;P0=-4;P1=8;D=01;\n", cap.output());
+    EXPECT_TRUE(rec.signal().empty());
+}
+
+TEST_F(SendCommandTest, rawPatternAboveInt16FlipsLevel) {
+    // P0=40000 is stored as int16_t -25536: sent as LOW instead of HIGH
+    run("SR;P0=40000;P1=400;D=01;\n");
+    EXPECT_TRUE(signalNear(rec.signal(), { -25536, 400 }));
+}
+
+TEST_F(SendCommandTest, manchesterClockAboveInt16Wraps) {
+    // C=70000 is stored as int16_t 4464
+    run("SM;C=70000;D=8;\n");
+    EXPECT_TRUE(signalNear(rec.signal(), { -4464, 8928, -4464, 4464, -4464, 4464, -4464 }));
+}
+
+TEST_F(SendCommandTest, manchesterNegativeClockSendsWithoutDelay) {
+    // stoptime += -400 moves the stop time into the past: no wait at all
+    fakeMicrosCounter() = 1000000;
+    run("SM;C=-400;D=A;\n");
+    EXPECT_EQ(9u, rec.events().size());
+    for (long d : rec.signal()) EXPECT_LE(std::labs(d), 3);
+}
+
+TEST_F(SendCommandTest, DISABLED_manchesterNegativeClockDoesNotBlock) {
+    // directly after start or after a micros() overflow (micros() < 400) the stop
+    // time wraps to the maximum value: the busy wait does not end (on the device
+    // it lasts up to ~71 minutes). Currently hangs.
+    run("SM;C=-400;D=A;\n");
+    SUCCEED();
+}
+
+// --- micros() overflow (every 2^32 us = ~71.6 min on the device) --------------
+// The fake clock is unsigned long like on the device; on the 64 bit host it
+// wraps at 2^64, the comparison "stoptime > micros()" behaves the same.
+TEST_F(SendCommandTest, rawMicrosOverflowShortensPulses) {
+    fakeMicrosCounter() = ULONG_MAX - 1000;
+    run("SR;P0=-400;P1=800;D=0101;\n");
+    const std::vector<long> sig = rec.signal();
+    ASSERT_EQ(4u, sig.size());
+    EXPECT_NEAR(-400, sig[0], 3);
+    // current behaviour: after the stop time wrapped, the wait ends at once
+    for (size_t i = 1; i < sig.size(); i++) EXPECT_LE(std::labs(sig[i]), 3) << i;
+}
+
+TEST_F(SendCommandTest, manchesterMicrosOverflowShortensBits) {
+    fakeMicrosCounter() = ULONG_MAX - 1000;
+    run("SM;C=400;D=A5;\n");
+    const std::vector<long> sig = rec.signal();
+    ASSERT_EQ(10u, sig.size());
+    EXPECT_NEAR(-400, sig[0], 3);
+    EXPECT_NEAR(400, sig[1], 3);
+    for (size_t i = 2; i < sig.size(); i++) EXPECT_LE(std::labs(sig[i]), 3) << i;
+}
+
+// --- several parts -------------------------------------------------------------
+TEST_F(SendCommandTest, rawSecondSendPartWithoutCombinedIsSentToo) {
+    // a second S part without SC is accepted and sent like a combined message
+    const std::string cmd = "SR;P0=-400;P1=800;D=01;SR;P0=-200;P1=200;D=10;\n";
+    run(cmd);
+    EXPECT_EQ(cmd, cap.output());
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -2, 200, -200 }));
+}
+
+TEST_F(SendCommandTest, combinedFivePartsIsTheMaximum) {
+    // command[5]: SC plus four send parts
+    const std::string cmd = "SC;SR;P0=-10;P1=10;D=01;SR;P0=-20;P1=20;D=01;"
+                            "SR;P0=-30;P1=30;D=01;SR;P0=-40;P1=40;D=01;\n";
+    run(cmd);
+    EXPECT_EQ(cmd, cap.output());
+    EXPECT_TRUE(signalNear(rec.signal(), { -10, 10, -20, 20, -30, 30, -40, 40 }));
+}
+
+TEST_F(SendCommandTest, DISABLED_combinedMoreThanFivePartsIsRejected) {
+    // currently: the sixth part is written to command[5] (outside of the array)
+    run("SC;SR;P0=-10;P1=10;D=01;SR;P0=-20;P1=20;D=01;SR;P0=-30;P1=30;D=01;"
+        "SR;P0=-40;P1=40;D=01;SR;P0=-50;P1=50;D=01;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));
+    EXPECT_TRUE(rec.events().empty());
 }

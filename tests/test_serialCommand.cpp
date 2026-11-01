@@ -37,8 +37,18 @@ SignalDetectorClass musterDec;
 
 // The arduino-mock micros() always returns 0; the busy-wait loops in send.h
 // would never end. Map micros() to the fake clock for send.h only.
+// disableReceive()/enableReceive() are recorded for send.h only, so the tests
+// can check whether send_cmd() switches the receiver on again.
+namespace serialtest {
+inline void recordDisableReceive() { receiveState().disables++; receiveState().enabled = false; disableReceive(); }
+inline void recordEnableReceive() { receiveState().enables++; receiveState().enabled = true; enableReceive(); }
+} // namespace serialtest
 #define micros() serialtest::fakeMicros()
+#define disableReceive() serialtest::recordDisableReceive()
+#define enableReceive() serialtest::recordEnableReceive()
 #include <send.h>
+#undef enableReceive
+#undef disableReceive
 #undef micros
 #include <commands.h>
 

@@ -51,9 +51,44 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | `S…` ohne führendes `S` | Müllzeichen vor `SR;…` wird übersprungen, Kommando wird mit seinen `R=` gesendet; ohne `S` im Kommando `send cmd corrupt` ([#267](https://github.com/RFD-FHEM/SIGNALDuino/issues/267), Fix [#268](https://github.com/RFD-FHEM/SIGNALDuino/pull/268)) | `X;P0=500;D=0;`, nur `;` | 3 | ⏸ (Tests vorhanden, `DISABLED_` bis #268 gemergt ist) |
 | `F=` (bei `SR`/`SM`/`SC`) | bis zu 5 Register ab FREQ2 setzen und nach dem Senden zurückschreiben | 5 Register, 6 Register, `hasCC1101` aus | 4 | ✅ |
 
+### Fehlerhafte Übertragungen, Timing und ungewöhnliche Sendekommandos
+
+Ohne `DISABLED_` halten die Tests das aktuelle Verhalten fest, auch wenn es fragwürdig ist. Mit `DISABLED_` stürzen sie ab oder hängen. Sie beschreiben das vorgeschlagene Verhalten und laufen mit `--gtest_also_run_disabled_tests`.
+
+| Bereich | Fall | Aktuelles Verhalten | Test | Status |
+| :--- | :--- | :--- | :--- | :---: |
+| Empfänger | erfolgreiches Senden | `disableReceive()` am Anfang, `enableReceive()` am Ende | `receiverIsEnabledAgainAfterSend` | ✅ |
+| Empfänger | `send cmd corrupt` / `send cmd to long` | Empfänger bleibt aus (bis `XE` oder Neustart) | `corruptCommandLeavesReceiverDisabled`, `tooLongCommandLeavesReceiverDisabled`, `rawCarriageReturnOnlyIsCorrupt` | ✅ |
+| Timeout | Pause im Kommando (z. B. zwei TCP-Pakete) | `send cmd corrupt`, der Rest bleibt im Puffer und wird von `serialEvent()` als neues Kommando ohne `S` gelesen (#267) | `serialTimeoutInsideCommandLeavesRestInBuffer` | ✅ |
+| Timeout | Rest nach Timeout als neues Kommando | hängt ohne Fix aus #268 | `DISABLED_serialTimeoutRestIsNotSentAsNewCommand` | ⏸ (#268) |
+| Timeout | Pause direkt vor `\n` | vollständiges Kommando wird verworfen, `\n` bleibt im Puffer | `serialTimeoutBeforeLineEndDropsCompleteCommand` | ✅ |
+| Länge | Kommando mit 600 Datenzeichen | `send cmd to long`, verworfen werden höchstens 255 weitere Bytes, 102 Bytes bleiben im Puffer (letzter Teil `000…0;` ohne `S`) | `veryLongCommandLeavesRestInBuffer` | ✅ |
+| Zeilenende | `\r\n` | wird akzeptiert | `rawCrLfLineEndIsAccepted` | ✅ |
+| Zeilenende | nur `\r` | `send cmd corrupt` (Timeout) | `rawCarriageReturnOnlyIsCorrupt` | ✅ |
+| Zeilenende | `D=0101` ohne abschließendes `;` | Segmentation fault | `DISABLED_rawLastPartWithoutSemicolonIsRejected` | ⏸ |
+| leerer Teil | `…;D=0101;;\n` | wird gesendet, Echo ohne Zeilenende, `\n` bleibt im Puffer | `rawEmptyPartAfterDataEndsCommandEarly` | ✅ |
+| leerer Teil | `…;;D=0101;\n` | Segmentation fault | `DISABLED_rawEmptyPartBeforeDataIsRejected` | ⏸ |
+| leerer Teil | `D=;` | Bytes hinter dem `;` werden als Pattern-Index gesendet (Lesezugriff außerhalb von `buckets[]`) | `DISABLED_rawEmptyDataPartSendsNothing` | ⏸ |
+| Wertebereich | `R=-1` | 255 Wiederholungen | `rawRepeatNegativeBecomes255` | ✅ |
+| Wertebereich | `R=` ohne Wert | nichts gesendet, keine Meldung | `rawRepeatWithoutValueSendsNothing` | ✅ |
+| Wertebereich | `P0=40000` | als `int16_t` −25536 gespeichert, also LOW statt HIGH | `rawPatternAboveInt16FlipsLevel` | ✅ |
+| Wertebereich | `C=70000` | als `int16_t` 4464 gespeichert | `manchesterClockAboveInt16Wraps` | ✅ |
+| Wertebereich | `C=-400` | keine Wartezeit, Bits ohne Dauer | `manchesterNegativeClockSendsWithoutDelay` | ✅ |
+| Wertebereich | `C=-400` bei `micros()` < 400 (nach Start / Überlauf) | Warteschleife endet nicht (auf dem Gerät bis ~71 min) | `DISABLED_manchesterNegativeClockDoesNotBlock` | ⏸ |
+| Timing | `micros()`-Überlauf während des Sendens (alle 2³² µs ≈ 71,6 min) | Pulse nach dem Überlauf schrumpfen auf ~0 µs | `rawMicrosOverflowShortensPulses`, `manchesterMicrosOverflowShortensBits` | ✅ |
+| mehrere Teile | zweiter `SR`-Teil ohne `SC` | wird wie `SC` gesendet | `rawSecondSendPartWithoutCombinedIsSentToo` | ✅ |
+| mehrere Teile | `SC` + 4 Teile | Maximum, wird gesendet | `combinedFivePartsIsTheMaximum` | ✅ |
+| mehrere Teile | `SC` + 5 Teile | Schreibzugriff auf `command[5]` (außerhalb des Arrays), zufälliges Signal | `DISABLED_combinedMoreThanFivePartsIsRejected` | ⏸ |
+
+Nur im Code gelesen, im nativen Build nicht kompiliert (`serialEvent()` in `signalduino.h`, `signalSTM.h`, `signalesp.h`):
+
+- ESP: `IB_1[idx + 1] = '\0'` schreibt bei `;` an Position 13 nach `IB_1[14]`, also ein Byte hinter den Puffer.
+- AVR/STM: ein `;` an Position 0 (Zeile beginnt mit `;`) ruft `send_cmd()` auf. ESP prüft vorher `idx > 0`. Folge wie #267.
+- Bei Timeouts oder zu langen Kommandos landen Reste im Puffer, wie oben beschrieben. `serialEvent()` liest sie als neue Kommandos. Kommt darin ein `;`, wird `send_cmd()` mit einem Teil ohne `S` aufgerufen (#267).
+
 Nicht getestet, weil der aktuelle Code dabei undefiniertes Verhalten hat (ein Test würde zufällig bestehen oder abstürzen):
 
-- Sendekommando ohne `D=` oder Abbruch mit `\n` vor dem ersten `D=`: `datastart`/`dataend` sind nicht initialisiert (`s_sendcmd` in `src/send.h`).
+- Sendekommando ohne `D=` oder Abbruch mit `\n` vor dem ersten `D=`: `datastart`/`dataend` sind nicht initialisiert (`s_sendcmd` in `src/send.h`). Zwei Ausprägungen sind reproduzierbar und als `DISABLED_` erfasst (Segmentation fault): letzter Teil ohne `;` und leerer Teil `;;` vor `D=`.
 - Sendekommando, dessen erster Teil in `IB_1` nicht mit `S` beginnt (z. B. `<Müll>SR;…`): `cmdNo` bleibt 255 und `command[255]` liegt außerhalb des Arrays (`command[5]`), im Ergebnis Endlosschleife mit `repeats` = 255 (Issue #267). Die Tests dazu (`DISABLED_garbagePrefix…`, `DISABLED_onlySemicolon…`, `DISABLED_validCommandStillWorksAfterRejectedOne`) hängen ohne den Fix aus PR #268 und sind deshalb deaktiviert.
 - `D=` mit Index eines nicht gesetzten Patterns oder Ziffer ≥ 8 (`buckets` nicht initialisiert bzw. Zugriff außerhalb des Arrays in `send_raw()`).
 
@@ -74,7 +109,8 @@ Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Do
 | `SR`/`SM`/`SC` | `R=` ist `uint8_t`: `R=256` sendet nichts, `R=257` einmal | `strtoul` → `repeats` | `rawRepeatOverflowWraps*` |
 | `SC` | `R=0` wird ignoriert, es wird einmal gesendet | `command[0].repeats > 0` | `combinedRepeatZeroSendsOnce` |
 | `SM` | ungültige Hexzeichen werden ohne Fehlermeldung als Nibble gesendet (`G` → `0`) | `send_mc()` | `manchesterInvalidHexIsSentAsZeroNibble` |
-| `S…` | nach `send cmd corrupt` / `send cmd to long` kehrt `send_cmd()` vor `enableReceive()` zurück, nachdem es am Anfang `disableReceive()` aufgerufen hat. Ob der Empfänger an anderer Stelle wieder eingeschaltet wird, ist nicht geprüft (nur im Code gelesen, nativ nicht beobachtbar) | `send_cmd()`, `return` vor `enableReceive()` | – |
+| `S…` | nach `send cmd corrupt` / `send cmd to long` kehrt `send_cmd()` vor `enableReceive()` zurück, nachdem es am Anfang `disableReceive()` aufgerufen hat. Der Empfänger bleibt aus. `enableReceive()` steht sonst nur im Setup und bei `XE` | `send_cmd()`, `return` vor `enableReceive()` | `corruptCommandLeavesReceiverDisabled`, `tooLongCommandLeavesReceiverDisabled` |
+| `S…` | Wartezeiten mit `while (stoptime > micros())` sind nicht überlaufsicher | `send_raw()`, `send_mc()` | `*MicrosOverflow*` |
 | `S…` | Meldung lautet `to long` statt `too long` | `TXT_TOLONG` in `output.h` | `rawTooLongCommandIsRejected` |
 | `e` | Antwort ist `ccFactoryReset done` (Doku: `Init eeprom to defaults...`) | `cc1101::ccFactoryReset()` | `factoryResetWritesDefaultsToEepromAndChip` |
 | `x<val>` | Antwort ist `write 12 to PATABLE done` (Doku: `Write 12 to patable`) | `cmd_patable`, `TXT_WRITE`/`TXT_TPATAB` | `patableWrite` |
@@ -95,7 +131,8 @@ Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Do
 - `serialtest::SerialCapture` zeichnet alle Ausgaben über `Serial` (`MSG_PRINT`, `MSG_PRINTLN`, `MSG_WRITE`) als String auf. `println` hängt `\n` an, Zahlen werden wie in der Arduino-`Print`-Klasse formatiert.
 - `serialtest::loadCommand(cmd)` kopiert ein Kommando mit Längenprüfung in `IB_1` (max. 13 Zeichen).
 - `serialtest::runShortCommand(cmd)` (in `test_serialCommand.cpp`) hängt wie `serialEvent()` ein `\n` an und ruft `commands::HandleShortCommand()` auf.
-- `SerialCapture::setInput(str)` liefert Bytes für `Serial.readBytes()` usw., also den Rest eines Sendekommandos.
+- `SerialCapture::setInput(str, gapAt)` liefert Bytes für `Serial.readBytes()` usw., also den Rest eines Sendekommandos. Mit `gapAt` liefert der erste Lesezugriff an dieser Stelle nichts. Das simuliert einen Serial-Timeout, die restlichen Bytes bleiben im Puffer (`remainingInput()`).
+- `serialtest::receiveState()` zählt die Aufrufe von `disableReceive()`/`enableReceive()` in `send.h`. Sie werden wie `micros()` per Präprozessor nur für `send.h` umgeleitet und rufen die echten Funktionen auf.
 - `serialtest::fakeMicros()` ersetzt beim Einbinden von `send.h` per Präprozessor `micros()` (der arduino-mock liefert immer 0, die Warteschleifen in `send_raw()`/`send_mc()` würden nie enden). Jeder Aufruf zählt 1 µs weiter.
 - `serialtest::SendRecorder` zeichnet die Pegelwechsel am Sendepin (`digitalLow`/`digitalHigh` → `pinMode(pin, LOW/HIGH)` im nativen Build) mit Zeitstempel auf und liefert das Signal als Dauern (`-` = low, `+` = high).
-- `runSendCommand(cap, cmd)` (in `test_serialCommand_send.cpp`) teilt das Kommando wie `serialEvent()`: bis zum ersten `;` in `IB_1`, der Rest kommt über `Serial`.
+- `runSendCommand(cap, cmd, gapAt)` (in `test_serialCommand_send.cpp`) teilt das Kommando wie `serialEvent()`: bis zum ersten `;` in `IB_1`, der Rest kommt über `Serial`.

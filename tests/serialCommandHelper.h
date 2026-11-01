@@ -132,12 +132,16 @@ public:
 
     // Provides bytes for Serial.available / read / readBytes / readBytesUntil,
     // i.e. the rest of a send command that is still in the serial buffer.
-    void setInput(const std::string& in) {
+    // gapAt: simulates a serial timeout (e.g. a delayed TCP packet). The first
+    // read that would deliver the byte at this position returns nothing; the
+    // remaining bytes stay in the buffer and are delivered by later reads.
+    void setInput(const std::string& in, size_t gapAt = std::string::npos) {
         using ::testing::_;
         using ::testing::AnyNumber;
         in_ = in;
         inPos_ = 0;
         readCalls_ = 0;
+        gapAt_ = gapAt;
         EXPECT_CALL(*mock_, available()).Times(AnyNumber())
             .WillRepeatedly([this]() { return static_cast<uint8_t>(std::min<size_t>(255, in_.size() - inPos_)); });
         EXPECT_CALL(*mock_, read()).Times(AnyNumber())
@@ -145,6 +149,7 @@ public:
         EXPECT_CALL(*mock_, readBytes(_, _)).Times(AnyNumber())
             .WillRepeatedly([this](char buf[], uint8_t len) {
                 readCalls_++;
+                if (inPos_ == gapAt_) { gapAt_ = std::string::npos; return static_cast<uint8_t>(0); }
                 uint8_t n = 0;
                 while (n < len && inPos_ < in_.size()) buf[n++] = in_[inPos_++];
                 return n;
@@ -162,6 +167,7 @@ public:
             });
     }
     size_t inputLeft() const { return in_.size() - inPos_; }
+    std::string remainingInput() const { return in_.substr(inPos_); }
     unsigned readCalls() const { return readCalls_; }
 
     SerialCapture(const SerialCapture&) = delete;
@@ -179,6 +185,7 @@ private:
     std::string out_;
     std::string in_;
     size_t inPos_ = 0;
+    size_t gapAt_ = std::string::npos;
     unsigned readCalls_ = 0;
 };
 
@@ -195,6 +202,21 @@ inline unsigned long& fakeMicrosCounter() {
     return counter;
 }
 inline unsigned long fakeMicros() { return fakeMicrosCounter()++; }
+
+// ---------------------------------------------------------------------------
+// Receiver state as switched by send_cmd(). test_serialCommand.cpp maps
+// disableReceive()/enableReceive() to these wrappers for send.h only
+// (preprocessor, no firmware change); they call the real functions.
+// ---------------------------------------------------------------------------
+struct ReceiveState {
+    unsigned disables = 0;
+    unsigned enables = 0;
+    bool enabled = true;
+};
+inline ReceiveState& receiveState() {
+    static ReceiveState state;
+    return state;
+}
 
 // One level change on the send pin
 struct PinEvent {
