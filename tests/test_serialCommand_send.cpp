@@ -257,3 +257,44 @@ TEST_F(SendCommandTest, xfskWithoutCC1101SupportIsNotSent) {
     EXPECT_EQ(cmd + "no supported device to send\n", cap.output());
     EXPECT_TRUE(rec.events().empty());
 }
+
+// ---------------------------------------------------------------------------
+// Send command that does not start with 'S' (issue #267, fix in PR #268)
+// ---------------------------------------------------------------------------
+// FHEM/telnet sometimes prepends a stray character: "<x>SR;R=3;...". The
+// dispatcher still treats it as send command (it is recognised by the ';'), but
+// IB_1 does not start with 'S', so cmdNo stays 255 and the following parts are
+// written to command[255] (array holds 5 entries); the result is an endless loop.
+// Without the fix of PR #268 these tests hang (endless loop), therefore they are
+// DISABLED_ until it is merged: remove the prefix then (run with
+// --gtest_also_run_disabled_tests to try them).
+// Without the fix of PR #268 these tests hang. With the fix, characters are
+// skipped until an 'S' is found; without any 'S' the message is rejected.
+TEST_F(SendCommandTest, DISABLED_garbagePrefixIsSkippedAndCommandSentWithItsRepeats) {
+    run("\x01SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;\n");
+    // R=3 must be honoured (not 255): three repetitions of the regular signal
+    EXPECT_TRUE(signalNear(rec.signal(),
+        repeatSignal({ 500, -2000, 500, -4000, 500, -2000, 500 }, 3), 40)) << cap.output();
+    EXPECT_EQ(0u, cap.inputLeft());
+}
+
+TEST_F(SendCommandTest, DISABLED_garbagePrefixWithoutValidPartIsRejectedAsCorrupt) {
+    run("X;P0=500;D=0;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, DISABLED_onlySemicolonIsRejectedAsCorrupt) {
+    run(";\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, DISABLED_validCommandStillWorksAfterRejectedOne) {
+    run("X;P0=500;D=0;\n");
+    cap.clear();
+    const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
+    run(cmd);
+    EXPECT_EQ(cmd, cap.output());
+    EXPECT_FALSE(rec.signal().empty());
+}
