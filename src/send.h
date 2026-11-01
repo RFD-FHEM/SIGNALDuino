@@ -31,13 +31,13 @@ void send_raw(char *startpos, char *endpos, const int16_t *buckets)
 #ifdef ESP8266
 		yield();
 #endif
-		while (stoptime > micros()) {
+		while ((long)(micros() - stoptime) < 0) {   // overflow safe
 			;
 		}
 		isLow ? digitalLow(PIN_SEND) : digitalHigh(PIN_SEND);
 		stoptime += dur;
 	}
-	while (stoptime > micros()) {
+	while ((long)(micros() - stoptime) < 0) {   // overflow safe
 		;
 	}
 }
@@ -63,7 +63,7 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 					digitalHigh(PIN_SEND);
 
 				stoptime += clock;
-				while (stoptime > micros())
+				while ((long)(micros() - stoptime) < 0)   // overflow safe, also for clock < 0
 				{
 #ifdef ESP8266
 					yield();
@@ -89,14 +89,26 @@ void send_mc(const char *startpos, const char *endpos, const int16_t clock)
 // SN;R=13;N=2;D=91C6496AFAAC7070151E465B;                                                          # xFSK Lacrosse
 
 #define maxNumPattern 8
+#define maxNumSendParts 5
 struct s_sendcmd {
 	int16_t sendclock = 0;
 	uint8_t type;
-	char    *datastart;
-	char    *dataend;
+	char    *datastart = nullptr;
+	char    *dataend = nullptr;
 	int16_t buckets[maxNumPattern];
+	uint8_t bucketsSet = 0;    // bit n set: buckets[n] was set with Pn=
 	uint8_t repeats = 1;
 };
+
+// Discards the rest of the current line from the serial buffer, so it is not
+// parsed as a new command by serialEvent() (e.g. after a timeout or a too long
+// command).
+void send_discardLine(char *buf)
+{
+	while (MSG_PRINTER.readBytesUntil('\n', buf, 255) == 255) {
+		;
+	}
+}
 
 void send_cmd()
 {
@@ -120,12 +132,26 @@ void send_cmd()
 #endif
 
 	uint8_t cmdNo = 255;
+#define SD_ERR_NONE 0
+#define SD_ERR_CORRUPT 1
+#define SD_ERR_TOLONG 2
+	uint8_t err = SD_ERR_NONE;
+	bool lineEnd = false;
 
 	char buf[256] = {}; // Second Buffer 256 Bytes 0-255
 	char *msg_beginptr = IB_1;
 	char *msg_endptr = buf;
 	uint8_t buffer_left = 255;
-	do
+
+	// skip characters in front of the first 'S' (e.g. a stray byte from telnet, issue #267)
+	for (uint8_t i = 0; i < sizeof(IB_1) - 1 && msg_beginptr[0] != 'S' && msg_beginptr[0] != ';' && msg_beginptr[0] != '\0'; i++) {
+		msg_beginptr++;
+	}
+	if (msg_beginptr[0] != 'S') {
+		err = SD_ERR_CORRUPT;
+	}
+
+	while (err == SD_ERR_NONE)
 	{
 
 		//if (cmdNo == 255)  msg_part = IB_1;
@@ -134,6 +160,13 @@ void send_cmd()
 		//DBG_PRINT(msg_beginptr);
 		if (msg_beginptr[0] == 'S')
 		{
+			if (cmdNo != 255 && cmdNo >= maxNumSendParts - 1 &&
+				(msg_beginptr[1] == 'C' || msg_beginptr[1] == 'M' || msg_beginptr[1] == 'R' || msg_beginptr[1] == 'N'))
+			{
+				DBG_PRINTLN(F("too many parts"));
+				err = SD_ERR_CORRUPT;
+				break;
+			}
 			if (msg_beginptr[1] == 'C')  // send combined information flag
 			{
 				cmdNo++;
@@ -162,16 +195,22 @@ void send_cmd()
         }
 			if (cmdNo == 0) {
 				DBG_PRINTLN(F("rearrange beginptr"));
-				MSG_WRITE(IB_1,3); // ccho command, only 3 chars string is not null terminated!
+				MSG_WRITE(msg_beginptr,3); // echo command, only 3 chars string is not null terminated!
 				msg_endptr = buf; // rearrange to beginning of buf
 				msg_beginptr = nullptr;
 			}
+		}
+		else if (cmdNo == 255) // part before a valid send type (e.g. "SX;P0=...")
+		{
+			err = SD_ERR_CORRUPT;
+			break;
 		}
 		else if (msg_beginptr[0] == 'P' && msg_beginptr[2] == '=') // Do some basic detection if data matches what we expect
 		{
 			counter = msg_beginptr[1] - '0'; // Convert to dec value
 			if (counter < maxNumPattern) {
 				command[cmdNo].buckets[counter] = strtol(&msg_beginptr[3], &msg_endptr, 10);
+				command[cmdNo].bucketsSet |= (1 << counter);
 				//*(msg_endptr + 1) = '\0';
 				DBG_PRINTLN(F("Adding bucket"));
 				if (cmdNo == 0) {
@@ -193,7 +232,11 @@ void send_cmd()
 		}
 		else if (msg_beginptr[0] == 'D' && msg_beginptr[1] == '=') {
 		command[cmdNo].datastart = msg_beginptr + 2;
-		command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 3, ';', buf + 255 - msg_beginptr + 3);
+		command[cmdNo].dataend = msg_endptr = (char*)memchr(msg_beginptr + 2, ';', buf + sizeof(buf) - (msg_beginptr + 2));
+		if (msg_endptr == nullptr) {
+			err = SD_ERR_CORRUPT;
+			break;
+		}
 		//if (command[cmdNo].dataend != NULL) command[cmdNo].dataend= command[cmdNo].dataend-1;
 		DBG_PRINT(F("locating data start:"));
 		DBG_PRINT(command[cmdNo].datastart);
@@ -250,26 +293,70 @@ void send_cmd()
 			} while (msg_endptr[0] != ';' && msg_endptr[0] != '\n' && buffer_left > 0);
 			if (l == 0)
 			{
-				MSG_PRINT(FPSTR(TXT_SENDCMD));
-				MSG_PRINTLN(FPSTR(TXT_CORRUPT));
-				return;
+				err = SD_ERR_CORRUPT;
+				break;
 			}
 			if (buffer_left == 0)
 			{
-				delayMicroseconds(300);
-				MSG_PRINTER.readBytesUntil('\n', buf, 255);
-				MSG_PRINT(FPSTR(TXT_SENDCMD));
-				MSG_PRINTLN(FPSTR(TXT_TOLONG));
-				return;
-			}
-			if (msg_endptr[0] == '\n') { // End of command
+				err = SD_ERR_TOLONG;
 				break;
 			}
 
 			*(msg_endptr + 1) = '\0'; // Nullterminate the string
 
+			if (msg_endptr[0] == '\n') { // End of command
+				lineEnd = true;
+				// a last part without ';' (e.g. "D=0101\n") is not parsed: reject it
+				const uint8_t partLen = msg_endptr - msg_beginptr;
+				if (partLen > 1 || (partLen == 1 && msg_beginptr[0] != '\r')) {
+					err = SD_ERR_CORRUPT;
+				}
+				break;
+			}
 		}
-	} while (msg_beginptr != NULL);
+	}
+
+	// every send part needs data, raw data may only use patterns that are set
+	for (uint8_t c = 0; err == SD_ERR_NONE && cmdNo != 255 && c <= cmdNo; c++)
+	{
+		if (command[c].type == SD_combined) continue;
+		if (command[c].datastart == nullptr || command[c].dataend == nullptr) {
+			err = SD_ERR_CORRUPT;
+		}
+		else if (command[c].type == SD_raw) {
+			for (const char *d = command[c].datastart; d < command[c].dataend; d++) {
+				const uint8_t index = *d - '0';
+				if (index >= maxNumPattern || !(command[c].bucketsSet & (1 << index))) {
+					err = SD_ERR_CORRUPT;
+					break;
+				}
+			}
+		}
+	}
+	if (err == SD_ERR_NONE && cmdNo == 255) {
+		err = SD_ERR_CORRUPT;
+	}
+
+	if (err != SD_ERR_NONE)
+	{
+		if (!lineEnd) send_discardLine(buf);
+		MSG_PRINT(FPSTR(TXT_SENDCMD));
+		if (err == SD_ERR_TOLONG) {
+			MSG_PRINTLN(FPSTR(TXT_TOLONG));
+		} else {
+			MSG_PRINTLN(FPSTR(TXT_CORRUPT));
+		}
+#ifdef CMP_CC1101
+		if (ccParamAnz > 0) {
+			for (uint8_t i = 0; i < ccParamAnz; i++) {
+				cc1101::writeReg(0x0d + i, ccReg[i]);    // gemerkte Registerwerte zurueckschreiben
+			}
+		}
+#endif
+		enableReceive();  // enable the receiver again
+		return;
+	}
+	if (!lineEnd) send_discardLine(buf);   // e.g. "...;D=01;;\n": discard the rest of the line
 
 #ifdef CMP_CC1101
 	if (hasCC1101) {
@@ -330,6 +417,7 @@ void send_cmd()
 #endif
 	DBG_PRINT(IB_1);
 	MSG_PRINT(buf); // echo data of command
+	if (!lineEnd) MSG_PRINTLN("");
 
   if (command[cmdNo].type != 3) // not xFSK
   {

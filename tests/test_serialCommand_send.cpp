@@ -97,17 +97,15 @@ TEST_F(SendCommandTest, rawAllEightPatterns) {
 
 TEST_F(SendCommandTest, rawPatternIndexAboveSevenIsIgnored) {
     run("SR;P8=100;P0=-400;P1=800;D=0101;\n");
-    // P8 is neither stored nor echoed; current behaviour: the skipped part shifts
-    // the echo buffer, so a stale rest of "P0=-400;" is echoed after the line end
-    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;\n0=-400;", cap.output());
+    // P8 is neither stored nor echoed
+    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;\n", cap.output());
     EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
 }
 
-TEST_F(SendCommandTest, rawEchoContainsStaleBytesWhenDataPartIsShorter) {
-    // current behaviour: the data part is written over the previous part in the
-    // echo buffer and not null terminated, so a rest of "P1=800;" is echoed
+TEST_F(SendCommandTest, rawEchoHasNoStaleBytesWhenDataPartIsShorter) {
+    // the echo buffer is null terminated after the line end
     run("SR;P0=-400;P1=800;D=01;\n");
-    EXPECT_EQ("SR;P0=-400;P1=800;D=01;\n;", cap.output());
+    EXPECT_EQ("SR;P0=-400;P1=800;D=01;\n", cap.output());
     EXPECT_TRUE(signalNear(rec.signal(), { -400, 800 }));
 }
 
@@ -268,14 +266,11 @@ TEST_F(SendCommandTest, xfskWithoutCC1101SupportIsNotSent) {
 // ---------------------------------------------------------------------------
 // FHEM/telnet sometimes prepends a stray character: "<x>SR;R=3;...". The
 // dispatcher still treats it as send command (it is recognised by the ';'), but
-// IB_1 does not start with 'S', so cmdNo stays 255 and the following parts are
-// written to command[255] (array holds 5 entries); the result is an endless loop.
-// Without the fix of PR #268 these tests hang (endless loop), therefore they are
-// DISABLED_ until it is merged: remove the prefix then (run with
-// --gtest_also_run_disabled_tests to try them).
-// Without the fix of PR #268 these tests hang. With the fix, characters are
-// skipped until an 'S' is found; without any 'S' the message is rejected.
-TEST_F(SendCommandTest, DISABLED_garbagePrefixIsSkippedAndCommandSentWithItsRepeats) {
+// IB_1 does not start with 'S'. Before the fix cmdNo stayed 255, the following
+// parts were written to command[255] (array holds 5 entries) and the firmware
+// hung in an endless loop. Now characters in front of the first 'S' are skipped;
+// without any 'S' the message is rejected.
+TEST_F(SendCommandTest, garbagePrefixIsSkippedAndCommandSentWithItsRepeats) {
     run("\x01SR;R=3;P0=500;P1=-9000;P2=-4000;P3=-2000;D=0302030;\n");
     // R=3 must be honoured (not 255): three repetitions of the regular signal
     EXPECT_TRUE(signalNear(rec.signal(),
@@ -283,19 +278,31 @@ TEST_F(SendCommandTest, DISABLED_garbagePrefixIsSkippedAndCommandSentWithItsRepe
     EXPECT_EQ(0u, cap.inputLeft());
 }
 
-TEST_F(SendCommandTest, DISABLED_garbagePrefixWithoutValidPartIsRejectedAsCorrupt) {
+TEST_F(SendCommandTest, garbagePrefixIsNotEchoed) {
+    run("\x01SR;P0=-400;P1=800;D=0101;\n");
+    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;\n", cap.output());
+}
+
+TEST_F(SendCommandTest, unknownSendTypeIsRejected) {
+    run("SX;P0=-400;P1=800;D=0101;\n");
+    EXPECT_EQ("send cmd corrupt\n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+    EXPECT_EQ("", cap.remainingInput());
+}
+
+TEST_F(SendCommandTest, garbagePrefixWithoutValidPartIsRejectedAsCorrupt) {
     run("X;P0=500;D=0;\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
     EXPECT_TRUE(rec.events().empty());
 }
 
-TEST_F(SendCommandTest, DISABLED_onlySemicolonIsRejectedAsCorrupt) {
+TEST_F(SendCommandTest, onlySemicolonIsRejectedAsCorrupt) {
     run(";\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
     EXPECT_TRUE(rec.events().empty());
 }
 
-TEST_F(SendCommandTest, DISABLED_validCommandStillWorksAfterRejectedOne) {
+TEST_F(SendCommandTest, validCommandStillWorksAfterRejectedOne) {
     run("X;P0=500;D=0;\n");
     cap.clear();
     const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
@@ -307,10 +314,9 @@ TEST_F(SendCommandTest, DISABLED_validCommandStillWorksAfterRejectedOne) {
 // ===========================================================================
 // Faulty transmissions, timing and unusual send commands
 // ===========================================================================
-// Tests without DISABLED_ describe the current firmware behaviour (also where it
-// is questionable, see tests/COMMAND_COVERAGE.md). DISABLED_ tests crash or hang
-// with the current firmware; they describe the proposed behaviour and can be run
-// with --gtest_also_run_disabled_tests.
+// Before the fix in send.h several of these cases crashed, hung, left the
+// receiver switched off or left the rest of the line in the serial buffer
+// (see tests/COMMAND_COVERAGE.md).
 
 // --- receiver state ---------------------------------------------------------
 TEST_F(SendCommandTest, receiverIsEnabledAgainAfterSend) {
@@ -320,32 +326,30 @@ TEST_F(SendCommandTest, receiverIsEnabledAgainAfterSend) {
     EXPECT_TRUE(receiveState().enabled);
 }
 
-TEST_F(SendCommandTest, corruptCommandLeavesReceiverDisabled) {
-    // current behaviour: send_cmd() returns before enableReceive()
+TEST_F(SendCommandTest, corruptCommandEnablesReceiverAgain) {
     run("SR;");
     EXPECT_EQ("SR;send cmd corrupt\n", cap.output());
     EXPECT_EQ(1u, receiveState().disables);
-    EXPECT_EQ(0u, receiveState().enables);
-    EXPECT_FALSE(receiveState().enabled) << "receiver stays off until XE or restart";
+    EXPECT_EQ(1u, receiveState().enables);
+    EXPECT_TRUE(receiveState().enabled);
 }
 
-TEST_F(SendCommandTest, tooLongCommandLeavesReceiverDisabled) {
+TEST_F(SendCommandTest, tooLongCommandEnablesReceiverAgain) {
     run("SR;P0=-4;P1=8;D=" + std::string(244, '0') + ";\n");
     EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
-    EXPECT_FALSE(receiveState().enabled) << "receiver stays off until XE or restart";
+    EXPECT_TRUE(receiveState().enabled);
 }
 
 // --- serial timeouts (race between host and firmware) -------------------------
-TEST_F(SendCommandTest, serialTimeoutInsideCommandLeavesRestInBuffer) {
-    // the host sends the command in two TCP packets / with a pause (> setTimeout)
+TEST_F(SendCommandTest, serialTimeoutInsideCommandDiscardsRestOfLine) {
+    // the host sends the command in two TCP packets / with a pause (> setTimeout):
+    // the rest of the line is discarded instead of being parsed as a new command
     const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
     run(cmd, cmd.find("P1="));
     EXPECT_EQ("SR;P0=-400;send cmd corrupt\n", cap.output());
     EXPECT_TRUE(rec.events().empty());
-    // the rest is processed by serialEvent() as a new command; it does not start
-    // with 'S' (see issue #267 and the DISABLED_ test below)
-    EXPECT_EQ("P1=800;D=0101;\n", cap.remainingInput());
-    EXPECT_FALSE(receiveState().enabled);
+    EXPECT_EQ("", cap.remainingInput());
+    EXPECT_TRUE(receiveState().enabled);
 }
 
 TEST_F(SendCommandTest, serialTimeoutBeforeLineEndDropsCompleteCommand) {
@@ -353,23 +357,22 @@ TEST_F(SendCommandTest, serialTimeoutBeforeLineEndDropsCompleteCommand) {
     run(cmd, cmd.size() - 1);
     EXPECT_EQ("SR;P0=-400;P1=800;send cmd corrupt\n", cap.output());
     EXPECT_TRUE(rec.events().empty()) << "complete command is not sent";
-    EXPECT_EQ("\n", cap.remainingInput());
+    EXPECT_EQ("", cap.remainingInput());
 }
 
-TEST_F(SendCommandTest, DISABLED_serialTimeoutRestIsNotSentAsNewCommand) {
-    // second half of serialTimeoutInsideCommandLeavesRestInBuffer: serialEvent()
-    // passes "P1=800;" to send_cmd(). Hangs without the fix of PR #268.
+TEST_F(SendCommandTest, serialTimeoutRestIsNotSentAsNewCommand) {
+    // if the rest arrives later than the timeout, serialEvent() passes "P1=800;"
+    // to send_cmd(): rejected, no endless loop (issue #267)
     run("P1=800;D=0101;\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
     EXPECT_TRUE(rec.events().empty());
 }
 
-TEST_F(SendCommandTest, veryLongCommandLeavesRestInBuffer) {
-    // "too long" discards at most 255 further bytes; the rest stays in the buffer
-    // and is parsed by serialEvent() (its last part "000...0;" has no leading 'S')
+TEST_F(SendCommandTest, veryLongCommandIsDiscardedCompletely) {
+    // the whole rest of the line is discarded, not only 255 further bytes
     run("SR;P0=-4;P1=8;D=" + std::string(600, '0') + ";\n");
     EXPECT_EQ("SR;P0=-4;P1=8;send cmd to long \n", cap.output());
-    EXPECT_EQ(std::string(100, '0') + ";\n", cap.remainingInput());
+    EXPECT_EQ("", cap.remainingInput());
 }
 
 // --- line endings and empty parts -------------------------------------------
@@ -385,41 +388,73 @@ TEST_F(SendCommandTest, rawCarriageReturnOnlyIsCorrupt) {
     run("SR;P0=-400;P1=800;D=0101;\r");
     EXPECT_EQ("SR;P0=-400;P1=800;send cmd corrupt\n", cap.output());
     EXPECT_TRUE(rec.events().empty());
-    EXPECT_FALSE(receiveState().enabled);
+    EXPECT_TRUE(receiveState().enabled);
 }
 
-TEST_F(SendCommandTest, rawEmptyPartAfterDataEndsCommandEarly) {
-    // ";;" ends the parsing; the echo has no line end and "\n" stays in the buffer
+TEST_F(SendCommandTest, rawEmptyPartAfterDataEndsCommand) {
+    // ";;" ends the parsing: sent, the rest of the line is discarded and the echo
+    // gets a line end
     run("SR;P0=-400;P1=800;D=0101;;\n");
-    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;;", cap.output());
+    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;;\n", cap.output());
     EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
-    EXPECT_EQ("\n", cap.remainingInput());
+    EXPECT_EQ("", cap.remainingInput());
 }
 
-TEST_F(SendCommandTest, DISABLED_rawEmptyPartBeforeDataIsRejected) {
-    // currently: segmentation fault (D= is never parsed, datastart/dataend are
-    // not initialised)
+TEST_F(SendCommandTest, rawEmptyPartBeforeDataIsRejected) {
+    // before the fix: segmentation fault (D= was never parsed, datastart/dataend
+    // were not initialised)
     run("SR;P0=-400;P1=800;;D=0101;\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));
     EXPECT_TRUE(rec.events().empty());
 }
 
-TEST_F(SendCommandTest, DISABLED_rawLastPartWithoutSemicolonIsRejected) {
-    // common typing error "D=0101" + line end; currently: segmentation fault
-    // (a part ended by '\n' is never parsed)
+TEST_F(SendCommandTest, rawLastPartWithoutSemicolonIsRejected) {
+    // common typing error "D=0101" + line end; before the fix: segmentation fault
+    // (a part ended by '\n' is not parsed)
     run("SR;P0=-400;P1=800;D=0101\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));
     EXPECT_TRUE(rec.events().empty());
 }
 
-TEST_F(SendCommandTest, DISABLED_rawEmptyDataPartSendsNothing) {
-    // currently: memchr() for the end of "D=" starts behind the ';', the bytes
-    // after it are sent as pattern indices (read outside of buckets[])
+TEST_F(SendCommandTest, rawEmptyDataPartSendsNothing) {
+    // before the fix: memchr() for the end of "D=" started behind the ';', the
+    // bytes after it were sent as pattern indices (read outside of buckets[])
     run("SR;P0=-400;P1=800;D=;\n");
     EXPECT_TRUE(rec.signal().empty());
 }
 
-// --- value ranges -------------------------------------------------------------
+TEST_F(SendCommandTest, rawUnsetPatternIsRejected) {
+    // before the fix: buckets[2] was not initialised (random pulse length)
+    run("SR;P0=-400;P1=800;D=012;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, rawInvalidPatternIndexIsRejected) {
+    // before the fix: ' ' - '0' and '8' read outside of buckets[]
+    run("SR;P0=-400;P1=800;D= 01;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    cap.clear();
+    run("SR;P0=-400;P1=800;D=018;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, rawWithoutDataPartIsRejected) {
+    // before the fix: datastart/dataend were not initialised
+    run("SR;P0=-400;P1=800;\n");
+    EXPECT_EQ("SR;P0=-400;P1=800;send cmd corrupt\n", cap.output());
+    EXPECT_TRUE(rec.events().empty());
+}
+
+TEST_F(SendCommandTest, combinedPartWithoutPatternsIsRejected) {
+    // example from the comment in send.h: the last SR part has no Pn= of its own
+    run("SC;R=4;SM;C=400;D=AFFFFFFFFE;SR;P0=-2500;P1=400;D=010;SM;D=AB6180;SR;D=101;\n");
+    EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n")) << cap.output();
+    EXPECT_TRUE(rec.events().empty());
+}
+
+// --- value ranges (unchanged behaviour) ----------------------------------------
 TEST_F(SendCommandTest, rawRepeatNegativeBecomes255) {
     // strtoul("-1") wraps, repeats is uint8_t
     run("SR;R=-1;P0=-4;P1=8;D=01;\n");
@@ -453,10 +488,10 @@ TEST_F(SendCommandTest, manchesterNegativeClockSendsWithoutDelay) {
     for (long d : rec.signal()) EXPECT_LE(std::labs(d), 3);
 }
 
-TEST_F(SendCommandTest, DISABLED_manchesterNegativeClockDoesNotBlock) {
+TEST_F(SendCommandTest, manchesterNegativeClockDoesNotBlock) {
     // directly after start or after a micros() overflow (micros() < 400) the stop
-    // time wraps to the maximum value: the busy wait does not end (on the device
-    // it lasts up to ~71 minutes). Currently hangs.
+    // time wrapped to the maximum value: before the fix the busy wait did not end
+    // (on the device up to ~71 minutes)
     run("SM;C=-400;D=A;\n");
     SUCCEED();
 }
@@ -464,24 +499,17 @@ TEST_F(SendCommandTest, DISABLED_manchesterNegativeClockDoesNotBlock) {
 // --- micros() overflow (every 2^32 us = ~71.6 min on the device) --------------
 // The fake clock is unsigned long like on the device; on the 64 bit host it
 // wraps at 2^64, the comparison "stoptime > micros()" behaves the same.
-TEST_F(SendCommandTest, rawMicrosOverflowShortensPulses) {
+// Before the fix the pulses after the overflow shrank to ~0 us.
+TEST_F(SendCommandTest, rawMicrosOverflowKeepsPulseLengths) {
     fakeMicrosCounter() = ULONG_MAX - 1000;
     run("SR;P0=-400;P1=800;D=0101;\n");
-    const std::vector<long> sig = rec.signal();
-    ASSERT_EQ(4u, sig.size());
-    EXPECT_NEAR(-400, sig[0], 3);
-    // current behaviour: after the stop time wrapped, the wait ends at once
-    for (size_t i = 1; i < sig.size(); i++) EXPECT_LE(std::labs(sig[i]), 3) << i;
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
 }
 
-TEST_F(SendCommandTest, manchesterMicrosOverflowShortensBits) {
+TEST_F(SendCommandTest, manchesterMicrosOverflowKeepsBitLengths) {
     fakeMicrosCounter() = ULONG_MAX - 1000;
     run("SM;C=400;D=A5;\n");
-    const std::vector<long> sig = rec.signal();
-    ASSERT_EQ(10u, sig.size());
-    EXPECT_NEAR(-400, sig[0], 3);
-    EXPECT_NEAR(400, sig[1], 3);
-    for (size_t i = 2; i < sig.size(); i++) EXPECT_LE(std::labs(sig[i]), 3) << i;
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -800, 800, -400, 400, -800, 800, -800, 400 }));
 }
 
 // --- several parts -------------------------------------------------------------
@@ -502,8 +530,8 @@ TEST_F(SendCommandTest, combinedFivePartsIsTheMaximum) {
     EXPECT_TRUE(signalNear(rec.signal(), { -10, 10, -20, 20, -30, 30, -40, 40 }));
 }
 
-TEST_F(SendCommandTest, DISABLED_combinedMoreThanFivePartsIsRejected) {
-    // currently: the sixth part is written to command[5] (outside of the array)
+TEST_F(SendCommandTest, combinedMoreThanFivePartsIsRejected) {
+    // before the fix: the sixth part was written to command[5] (outside of the array)
     run("SC;SR;P0=-10;P1=10;D=01;SR;P0=-20;P1=20;D=01;SR;P0=-30;P1=30;D=01;"
         "SR;P0=-40;P1=40;D=01;SR;P0=-50;P1=50;D=01;\n");
     EXPECT_NE(std::string::npos, cap.output().find("send cmd corrupt\n"));

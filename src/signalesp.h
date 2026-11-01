@@ -495,7 +495,7 @@ void serialEvent()
         case ';':
           DBG_PRINT("send cmd detected ");
           // DBG_PRINTLN(idx);
-          IB_1[idx + 1] = '\0';
+          if (idx + 1 < (uint8_t)sizeof(IB_1)) IB_1[idx + 1] = '\0';  // ';' at the last position: no room for '\0'
           if (idx > 0)
             send_cmd();
           idx = 0; // increments to 1
