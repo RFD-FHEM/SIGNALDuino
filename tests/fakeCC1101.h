@@ -76,36 +76,7 @@ public:
 
     uint8_t transfer(uint8_t b) {
         if (!selected) { unselectedBytes++; return 0xFF; }
-        if (inHeader) {
-            const uint8_t statusByte = static_cast<uint8_t>(state << 4);
-            addr = b & 0x3F;
-            read = (b & 0x80) != 0;
-            burst = (b & 0x40) != 0;
-            patIndex = 0;
-            if (addr >= 0x30 && addr <= 0x3D && !burst) {
-                strobe(addr);
-                inHeader = true;   // a strobe has no data bytes
-            } else {
-                inHeader = false;
-            }
-            return statusByte;
-        }
-        // data byte
-        uint8_t ret = 0;
-        if (addr < 0x30) {
-            if (read) ret = cfg[addr];
-            else { cfg[addr] = b; writes.push_back(RegWrite{ addr, b }); }
-            if (burst) addr++;
-        } else if (addr <= 0x3D) {
-            ret = status[addr - 0x30];   // status registers are read only
-        } else if (addr == 0x3E) {
-            if (read) ret = patable[patIndex & 7];
-            else patable[patIndex & 7] = b;
-            if (burst) patIndex++;
-        } else {                         // 0x3F FIFO
-            if (!read) txFifo.push_back(b);
-        }
-        return ret;
+        return inHeader ? headerByte(b) : dataByte(b);
     }
 
     uint8_t cfg[0x30];
@@ -119,6 +90,42 @@ public:
     unsigned unselectedBytes = 0;
 
 private:
+    uint8_t headerByte(uint8_t b) {
+        const uint8_t statusByte = static_cast<uint8_t>(state << 4);
+        addr = b & 0x3F;
+        read = (b & 0x80) != 0;
+        burst = (b & 0x40) != 0;
+        patIndex = 0;
+        const bool isStrobe = addr >= 0x30 && addr <= 0x3D && !burst;
+        if (isStrobe) strobe(addr);
+        inHeader = isStrobe;   // a strobe has no data bytes
+        return statusByte;
+    }
+
+    uint8_t dataByte(uint8_t b) {
+        if (addr < 0x30) return configByte(b);
+        if (addr <= 0x3D) return status[addr - 0x30];   // status registers are read only
+        if (addr == 0x3E) return patableByte(b);
+        if (!read) txFifo.push_back(b);                  // 0x3F FIFO
+        return 0;
+    }
+
+    uint8_t configByte(uint8_t b) {
+        uint8_t ret = 0;
+        if (read) ret = cfg[addr];
+        else { cfg[addr] = b; writes.push_back(RegWrite{ addr, b }); }
+        if (burst) addr++;
+        return ret;
+    }
+
+    uint8_t patableByte(uint8_t b) {
+        uint8_t ret = 0;
+        if (read) ret = patable[patIndex & 7];
+        else patable[patIndex & 7] = b;
+        if (burst) patIndex++;
+        return ret;
+    }
+
     void strobe(uint8_t s) {
         strobes.push_back(s);
         switch (s) {
