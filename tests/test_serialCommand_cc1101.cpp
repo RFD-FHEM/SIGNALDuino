@@ -64,6 +64,7 @@ protected:
         blinkLED = false;
     }
     void TearDown() override {
+        EXPECT_EQ(0u, fakecc::chip().unselectedBytes) << "SPI byte without chip select";
         hasCC1101 = savedHasCC1101_;
         AfcEnabled = savedAfc_;
         cc1101::ccmode = savedCcmode_;
@@ -108,6 +109,7 @@ inline std::string hexList(const std::vector<uint8_t>& v) {
 } // namespace cc1101test
 
 using cc1101test::Cc1101Test;
+using cc1101test::hexList;
 
 
 static const uint8_t kInitValSize = 0x29;
@@ -130,6 +132,12 @@ TEST_F(Cc1101Test, helpWithoutCC1101HardwareOmitsCC1101Commands) {
 // V - version with chip type
 // ---------------------------------------------------------------------------
 struct ChipVersionCase { uint8_t version; const char* name; };
+// stable test names in ctest/gtest output (default: raw bytes incl. the pointer)
+inline void PrintTo(const ChipVersionCase& c, std::ostream* os) {
+    char b[8];
+    snprintf(b, sizeof(b), "0x%02X", c.version);
+    *os << b << " CC110" << c.name;
+}
 
 class Cc1101VersionTest : public Cc1101Test,
                           public ::testing::WithParamInterface<ChipVersionCase> {};
@@ -155,6 +163,22 @@ INSTANTIATE_TEST_SUITE_P(serialCommand, Cc1101VersionTest, ::testing::Values(
     snprintf(b, sizeof(b), "v%02X", info.param.version);
     return std::string(b);
 });
+
+TEST_F(Cc1101Test, versionReadsOldAddressWhenChipReturns00OrFF) {
+    // current behaviour: with VERSION 0x00/0xFF chipVersion() switches to revision 0
+    // and reads 0x31 with a single read header (0xB1). On the CC1101 this is the
+    // command strobe SFSTXON (data sheet, table 42), not the VERSION register.
+    for (uint8_t v : { (uint8_t)0x00, (uint8_t)0xFF }) {
+        chip().reset();
+        cc1101::revision = 0x01;
+        chip().status[0x31 - 0x30] = v;
+        runShort("V");
+        EXPECT_EQ(0x00, cc1101::revision) << (int)v;
+        EXPECT_NE(chip().strobes.end(), std::find(chip().strobes.begin(), chip().strobes.end(), 0x31))
+            << "SFSTXON strobe, version " << (int)v;
+        cap.clear();
+    }
+}
 
 TEST_F(Cc1101Test, versionWithoutCC1101Hardware) {
     hasCC1101 = false;
@@ -281,10 +305,36 @@ TEST_F(Cc1101Test, readRegisterRange) {
     EXPECT_EQ("C06n04=3D043200\n", cap.output());
 }
 
-TEST_F(Cc1101Test, readRegisterRangeLargestCount) {
+TEST_F(Cc1101Test, readRegisterRangeLargestOneDigitCount) {
     for (uint8_t i = 0; i < 0x2F; i++) chip().cfg[i] = i;
     runShort("C00nF");   // 0x0F + 2 = 17 registers
     EXPECT_EQ("C00n11=000102030405060708090A0B0C0D0E0F10\n", cap.output());
+}
+
+TEST_F(Cc1101Test, readRegisterRangeCountHasMoreDigits) {
+    // current behaviour: strtol reads all hex digits of the count, not only one
+    for (uint8_t i = 0; i < 0x2F; i++) chip().cfg[i] = i;
+    runShort("C00n1F");   // 0x1F + 2 = 33 registers
+    std::string expected = "C00n21=";
+    for (uint8_t i = 0; i < 0x21; i++) { char b[4]; snprintf(b, sizeof(b), "%02X", i); expected += b; }
+    EXPECT_EQ(expected + "\n", cap.output());
+}
+
+TEST_F(Cc1101Test, readRegisterRangeAcrossStatusAreaSendsAllStrobes) {
+    // current behaviour: C2Dn10 reads 0x2D..0x3E with single read headers;
+    // 0x30..0x3D are the command strobes, among them SRES, SPWD and SFTX
+    runShort("C2Dn10");
+    std::vector<uint8_t> expected;
+    for (uint8_t i = 0x30; i <= 0x3D; i++) expected.push_back(i);
+    EXPECT_EQ(hexList(expected), hexList(chip().strobes));
+}
+
+TEST_F(Cc1101Test, readRegisterRangeCountOverflowDoesNotEnd) {
+    // current behaviour: n (uint8_t) = 0xEE + 2 = 0xF0, the loop
+    // "for (uint8_t i = reg; i < reg + n; i++)" runs until i reaches 0x100, which
+    // an uint8_t never does: the firmware hangs. The fake chip stops it after
+    // transferLimit SPI bytes.
+    EXPECT_THROW(runShort("C10nEE"), fakecc::TooManyTransfers);
 }
 
 TEST_F(Cc1101Test, readRegisterRangeEndingAtLastConfigRegister) {
@@ -487,6 +537,14 @@ TEST_F(Cc1101Test, strobeInvalidIsIgnored) {
     EXPECT_TRUE(chip().strobes.empty());
 }
 
+TEST_F(Cc1101Test, strobeWithMoreDigitsUsesLowByte) {
+    // current behaviour: strtol reads all digits, only the low byte is used:
+    // WS3412 sends 0x12 (a config register address, no strobe) to the chip
+    runShort("WS3412");
+    EXPECT_EQ("cmdStrobeReg 12 chipStatus 00 delay1 00\n", cap.output());
+    EXPECT_EQ("3D ", hexList(chip().strobes)) << "only the SNOP for delay1, 0x12 is no strobe";
+}
+
 TEST_F(Cc1101Test, strobeIgnoresMissingCC1101Hardware) {
     // current behaviour: unlike C, x and e, WS does not check hasCC1101
     hasCC1101 = false;
@@ -561,6 +619,63 @@ TEST_F(Cc1101Test, disableAfcResetsFrequencyOffset) {
     EXPECT_EQ(0, eeprom.data[addr_features]);
 }
 
+TEST_F(Cc1101Test, afcFlagIsCaseSensitive) {
+    AfcEnabled = false;
+    musterDec.MSenabled = musterDec.MUenabled = musterDec.MCenabled = musterDec.MredEnabled = false;
+    runShort("CEa");
+    runShort("Cea");
+    EXPECT_FALSE(AfcEnabled);
+    EXPECT_TRUE(eeprom.writes.empty());
+    AfcEnabled = true;
+    runShort("CDa");
+    EXPECT_TRUE(AfcEnabled);
+    EXPECT_TRUE(eeprom.writes.empty());
+    EXPECT_EQ("", cap.output());
+}
+
+TEST_F(Cc1101Test, enableAfcWithoutCC1101Hardware) {
+    // the flag is stored, the chip is not accessed (AFC on does not touch FSCTRL0)
+    hasCC1101 = false;
+    AfcEnabled = false;
+    musterDec.MSenabled = musterDec.MUenabled = musterDec.MCenabled = musterDec.MredEnabled = false;
+    runShort("CEA");
+    EXPECT_TRUE(AfcEnabled);
+    EXPECT_EQ(0u, chip().selectCount);
+}
+
+TEST_F(Cc1101Test, decoderFlagWithAfcOffWritesFsctrl0) {
+    // current behaviour: every CE<x>/CD<x> calls storeFunctions(); with AFC off it
+    // resets the frequency offset and writes FSCTRL0 = 0, also without CC1101 hardware
+    for (bool hw : { true, false }) {
+        chip().reset();
+        hasCC1101 = hw;
+        AfcEnabled = false;
+        cc1101::freqOffAcc = 3;
+        runShort("CES");
+        EXPECT_EQ(0, cc1101::freqOffAcc) << hw;
+        ASSERT_EQ(1u, chip().writes.size()) << hw;
+        EXPECT_EQ(0x0C, chip().writes[0].addr) << hw;
+    }
+}
+
+TEST_F(Cc1101Test, getConfigInFskModeIgnoresTrailingCharacters) {
+    cc1101::ccmode = 0;
+    AfcEnabled = true;
+    runShort("CGxyz");
+    EXPECT_EQ("MN=1;AFC=1\n", cap.output());
+}
+
+TEST_F(Cc1101Test, readEepromNeedsCC1101Hardware) {
+    // current behaviour: r<addr> reads only the EEPROM, but is only answered with hasCC1101
+    eeprom.data[0x10] = 0x42;
+    runShort("r10");
+    EXPECT_EQ("EEPROM 10 = 42\n", cap.output());
+    cap.clear();
+    hasCC1101 = false;
+    runShort("r10");
+    EXPECT_EQ("", cap.output());
+}
+
 TEST_F(Cc1101Test, getConfigInFskMode) {
     cc1101::ccmode = 0;
     AfcEnabled = true;
@@ -633,6 +748,35 @@ TEST_F(Cc1101Test, xfskWithoutCC1101HardwareStillWritesFifo) {
     EXPECT_EQ(chip().strobes.end(), std::find(chip().strobes.begin(), chip().strobes.end(), 0x35)) << "no STX";
 }
 
+TEST_F(Cc1101Test, xfskCombinedPartsUseDataOfLastPart) {
+    // current behaviour: send_cmd() calls sendFIFO(command[cmdNo].datastart,
+    // command[c].dataend) with cmdNo instead of c, so the first SN part is not sent
+    // (expected: 91 C6)
+    runSend("SC;R=1;SN;D=91;SN;D=C6;\n");
+    EXPECT_EQ("C6 ", hexList(chip().txFifo));
+}
+
+TEST_F(Cc1101Test, transmitModeFailureIsNotDetected) {
+    // current behaviour: after "while (maxloop-- && ...)" maxloop is 255, not 0, when
+    // the chip never reaches TX, so setTransmitMode() does not report the failure and
+    // still switches PIN_SEND to output; the message is sent anyway
+    chip().stuckStrobe = 0x35;   // STX does not switch to TX
+    runSend("SR;P0=-400;P1=800;D=01;\n");
+    EXPECT_EQ(255, std::count(chip().strobes.begin(), chip().strobes.end(), 0x35)) << "255 STX tries";
+    const auto& dirs = fakecc::pinDirections().calls;
+    EXPECT_NE(dirs.end(), std::find(dirs.begin(), dirs.end(), std::make_pair((uint8_t)PIN_SEND, (uint8_t)1)))
+        << "PIN_SEND set to output";
+    EXPECT_EQ(3u, sendEvents.size()) << "the message is sent";
+}
+
+TEST_F(Cc1101Test, receiveModeFailureIsNotDetected) {
+    // same in setReceiveMode(): 255 SRX tries, no error is reported
+    chip().stuckStrobe = 0x34;   // SRX does not switch to RX
+    runSend("SR;P0=-400;P1=800;D=01;\n");
+    EXPECT_EQ(255, std::count(chip().strobes.begin(), chip().strobes.end(), 0x34)) << "255 SRX tries";
+    EXPECT_EQ((int)fakecc::FakeChip::STATE_IDLE, (int)chip().state);
+}
+
 TEST_F(Cc1101Test, rawSendSwitchesChipToTxAndBack) {
     const std::string cmd = "SR;P0=-400;P1=800;D=0101;\n";
     runSend(cmd);
@@ -656,8 +800,15 @@ TEST_F(Cc1101Test, frequencyRegistersAreSetForSendAndRestored) {
 }
 
 TEST_F(Cc1101Test, frequencyRegistersMaximumFive) {
+    for (uint8_t i = 0; i < 5; i++) chip().cfg[0x0D + i] = 0xA0 + i;
     runSend("SR;P0=-400;P1=800;D=01;F=1122334455;\n");
-    EXPECT_EQ(10u, chip().writes.size()) << "5 written + 5 restored";
+    ASSERT_EQ(10u, chip().writes.size()) << "5 written + 5 restored";
+    for (uint8_t i = 0; i < 5; i++) {
+        EXPECT_EQ(0x0D + i, chip().writes[i].addr) << (int)i;
+        EXPECT_EQ(0x11 * (i + 1), chip().writes[i].value) << (int)i;
+        EXPECT_EQ(0x0D + i, chip().writes[5 + i].addr) << (int)i;
+        EXPECT_EQ(0xA0 + i, chip().writes[5 + i].value) << "restored " << (int)i;
+    }
 }
 
 // Current behaviour: when F= is not applied (more than 5 registers or no CC1101
@@ -681,4 +832,20 @@ TEST_F(Cc1101Test, frequencyRegistersWithoutCC1101HardwareAreNotSetButWrittenBac
     runSend("SR;P0=-400;P1=800;D=01;F=10AB85;\n");
     const std::vector<uint8_t> expected = { 0x0D, 0x0E, 0x0F };
     EXPECT_EQ(expected, writeAddresses(chip())) << "only the write back, with uninitialised values";
+}
+
+// The following F= cases read ccReg[] beyond its 6 entries (stack, undefined
+// behaviour, ASan: stack-buffer-overflow in send_cmd()). They describe the
+// proposed behaviour and are disabled until send_cmd() is fixed; run them with
+// --gtest_also_run_disabled_tests.
+TEST_F(Cc1101Test, DISABLED_frequencyRegistersSevenAreNotWrittenBack) {
+    runSend("SR;P0=-400;P1=800;D=01;F=11223344556677;\n");
+    EXPECT_TRUE(chip().writes.empty()) << "F= is not applied, nothing to restore";
+}
+
+TEST_F(Cc1101Test, DISABLED_frequencyRegistersLongListDoesNotResetChip) {
+    // 36 registers: the write back reaches 0x30 = SRES (writeReg(0x30, ...))
+    runSend("SR;P0=-400;P1=800;D=01;F=" + std::string(72, '1') + ";\n");
+    EXPECT_EQ(chip().strobes.end(), std::find(chip().strobes.begin(), chip().strobes.end(), 0x30)) << "no SRES";
+    EXPECT_TRUE(chip().writes.empty());
 }

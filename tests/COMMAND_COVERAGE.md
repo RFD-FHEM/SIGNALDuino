@@ -13,7 +13,7 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 
 | Kommando | Gutfall | Fehler-/Grenzfälle | Schritt | Status |
 | :--- | :--- | :--- | :---: | :---: |
-| `V` | Versionsstring `V <PROGVERS><PROGNAME> - compiled at …`; mit CC1101 inkl. `cc1101 (chip CC110x)` | Zusatzzeichen, Chipversionen 03/04/14/05/07/17/unbekannt, `hasCC1101` aus | 2 / 4 | ✅ |
+| `V` | Versionsstring `V <PROGVERS><PROGNAME> - compiled at …`; mit CC1101 inkl. `cc1101 (chip CC110x)` | Zusatzzeichen, Chipversionen 03/04/14/05/07/17/unbekannt, Version `00`/`FF` (Rückfall auf Revision 0), `hasCC1101` aus | 2 / 4 | ✅ |
 | `?` | Liste `? Use one of V R t X S P C r W s`, mit CC1101 zusätzlich `x e` | Zusatzzeichen, `hasCC1101` aus | 2 / 4 | ✅ |
 | `R` | freier RAM (`freeRam()`) | Zusatzzeichen | 2 | ✅ |
 | `t` | Uptime in Sekunden (Wert gegen `millis()` des Mocks geprüft) | Überlauf nicht testbar: der arduino-mock leitet `millis()` aus der Systemzeit ab | 2 | ✅ |
@@ -29,14 +29,14 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | :--- | :--- | :--- | :---: | :---: |
 | `CG` | `MS=…;MU=…;MC=…;Mred=…` | – | 2 | ✅ |
 | `CE<x>` / `CD<x>` (S, U, C, R) | Flag gesetzt/gelöscht | unbekanntes `<x>`, fehlendes `<x>` | 2 | ✅ |
-| `CEA`/`CDA` | AFC an/aus, bei aus FSCTRL0 = 0 und Offset zurückgesetzt | – | 4 | ✅ |
+| `CEA`/`CDA` | AFC an/aus, bei aus FSCTRL0 = 0 und Offset zurückgesetzt | Kleinbuchstaben (`CEa`, `Cea`, `CDa`), `hasCC1101` aus; jedes `CE<x>`/`CD<x>` schreibt bei AFC aus FSCTRL0 | 4 | ✅ |
 | `CEW`/`CDW`, `CET`/`CDT` | WMBus / WMBus_T | werden nativ ignoriert (geprüft) | – | ⛔ benötigt zusätzlich ESP8266/ESP32/MAPLEMINI |
-| `CG` (FSK) | `MN=1;AFC=<0/1>` bei `ccmode` ≠ 3 | – | 4 | ✅ |
+| `CG` (FSK) | `MN=1;AFC=<0/1>` bei `ccmode` ≠ 3 | Zusatzzeichen | 4 | ✅ |
 | `CSmcmbl=<val>` | `<val> bits set` | kein Wert, negativ, nicht numerisch, sehr groß, falscher Schlüssel | 2 | ✅ |
-| `C<reg>` | Config- (`00`–`2E`) und Statusregister (`2F`–`3D`), `C3E` PATABLE, `C99` alle, `C<reg>n<x>` Bereich | Kleinbuchstaben, eine Stelle, kein Hex, `3F`/`98`/`FF`, `n` mit ungültiger Anzahl, Bereich über `2F`, `hasCC1101` aus | 4 | ✅ |
+| `C<reg>` | Config- (`00`–`2E`) und Statusregister (`30`–`3D`; die Firmware liest ab `2F` als Status), `C3E` PATABLE, `C99` alle, `C<reg>n<x>` Bereich | Kleinbuchstaben, eine Stelle, kein Hex, `3F`/`98`/`FF`, `n` mit Nicht-Hex (`nG`), mehrstellige Anzahl (`n1F`), Bereich über `2F` und über den ganzen Statusbereich, Überlauf der Anzahl (`C10nEE`, Endlosschleife), `hasCC1101` aus | 4 | ✅ |
 | `W<reg><val>` | EEPROM-Schreibzugriff; mit CC1101 zusätzlich Register `<reg>-2` und Antwort `W<reg><val>` | ungültiges Hex, zu kurz, `00`/`01`/`40`/`FF`, MDMCFG2 → `ccmode`, MDMCFG4 → FREND1/FIFOTHR (Grenzen `56`/`57`, `C6`/`C7`), `hasCC1101` aus | 2 / 4 | ✅ |
-| `WS<id>` | Strobe + Chip-Status `cmdStrobeReg <id> chipStatus <s> delay1 <s>` | `WS3`, `WS3G`, `WS3E`/`WS3F`, `WS2F`, Kleinbuchstaben, `hasCC1101` aus | 2 / 4 | ✅ |
-| `r<addr>` | `EEPROM <addr> = <val>` | ungültiges Hex, eine Stelle, `FF` | 2 | ✅ |
+| `WS<id>` | Strobe + Chip-Status `cmdStrobeReg <id> chipStatus <s> delay1 <s>` | `WS3`, `WS3G`, `WS3E`/`WS3F`, `WS2F`, mehr Ziffern (`WS3412`), Kleinbuchstaben, `hasCC1101` aus | 2 / 4 | ✅ |
+| `r<addr>` | `EEPROM <addr> = <val>` | ungültiges Hex, eine Stelle, `FF`; im CC1101-Build mit und ohne `hasCC1101` | 2 / 4 | ✅ |
 | `r<addr>n` | 16 Bytes ab `<addr>` | Adresse am Ende des Bereichs | 2 | ✅ |
 | `x<val>` | PATABLE in EEPROM und Chip, `write <val> to PATABLE done` | `00`/`FF`, eine Stelle, kein Hex, `hasCC1101` aus | 4 | ✅ |
 
@@ -47,9 +47,9 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | `SR` | Rohsequenz mit `P0`…`P7` und `D=`, Echo, Pegel am Sendepin | `R=0`, `R=256`/`R=257` (Überlauf), `P8` (ignoriert), ±32767 µs, Abbruch ohne Daten / mitten im Teil / ohne Zeilenende, längstes akzeptiertes (261 Zeichen) und zu langes Kommando (262) | 3 | ✅ |
 | `SM` | Manchester mit `C=` und `D=`, Echo, `delay(1)` | `R=2`, `0`/`F`, Kleinbuchstaben, ungültiges Hex (`G`), fehlendes `C=` | 3 | ✅ |
 | `SC` | kombinierte Sequenz mit `R=` | `R=0`, ohne `R=`, Abbruch | 3 | ✅ |
-| `SN` | ohne `CMP_CC1101`: Echo + `no supported device to send`; mit CC1101: Daten über TX-FIFO, STX, danach RX | Wiederholungen, Kleinbuchstaben, `N=`, ungerade Anzahl Hexziffern, `hasCC1101` aus | 3 / 4 | ✅ |
+| `SN` | ohne `CMP_CC1101`: Echo + `no supported device to send`; mit CC1101: Daten über TX-FIFO, STX, danach RX | Wiederholungen, Kleinbuchstaben, `N=`, ungerade Anzahl Hexziffern, zwei `SN`-Teile in `SC`, `hasCC1101` aus, STX/SRX schlägt fehl | 3 / 4 | ✅ |
 | `S…` ohne führendes `S` | Müllzeichen vor `SR;…` wird übersprungen, Kommando wird mit seinen `R=` gesendet; ohne `S` im Kommando `send cmd corrupt` ([#267](https://github.com/RFD-FHEM/SIGNALDuino/issues/267), Fix [#268](https://github.com/RFD-FHEM/SIGNALDuino/pull/268)) | `X;P0=500;D=0;`, nur `;` | 3 | ⏸ (Tests vorhanden, `DISABLED_` bis #268 gemergt ist) |
-| `F=` (bei `SR`/`SM`/`SC`) | bis zu 5 Register ab FREQ2 setzen und nach dem Senden zurückschreiben | 5 Register, 6 Register, `hasCC1101` aus | 4 | ✅ |
+| `F=` (bei `SR`/`SM`/`SC`) | bis zu 5 Register ab FREQ2 setzen und nach dem Senden zurückschreiben | 5 Register (Adressen und Werte), 6 Register, `hasCC1101` aus; 7 und 36 Register als `DISABLED_` (Lesezugriff außerhalb von `ccReg[6]`) | 4 | ✅ / ⏸ |
 
 ### Fehlerhafte Übertragungen, Timing und ungewöhnliche Sendekommandos
 
@@ -121,10 +121,27 @@ Die Tests halten das aktuelle Verhalten fest. Folgende Punkte weichen von der Do
 | `SN` | bei ungerader Anzahl Hexziffern wird das letzte Nibble mit `;` kombiniert (`D=91C` → `91 FB`) | `cc1101::sendFIFO()`, `hex2int()` | `xfskOddNumberOfHexDigits` |
 | `SN` | ohne `hasCC1101` wird der TX-FIFO trotzdem beschrieben (nur `setTransmitMode()` entfällt) | `send_cmd()` | `xfskWithoutCC1101HardwareStillWritesFifo` |
 | `F=` | wird `F=` nicht angewendet (mehr als 5 Register oder `hasCC1101` aus), schreibt `send_cmd()` trotzdem nicht initialisierte Werte aus `ccReg[]` in die Register ab `0D` zurück | `send_cmd()`, `ccParamAnz` wird vor der Prüfung gesetzt | `frequencyRegisters*ButWrittenBack` |
+| `F=` | ab 7 Registern liest das Zurückschreiben außerhalb von `ccReg[6]` (Stack; ASan: `stack-buffer-overflow`), ab 36 Registern erreicht es Adresse `30` = SRES und setzt den Chip zurück | `send_cmd()`, Schleife über `ccParamAnz` ohne Obergrenze | `DISABLED_frequencyRegistersSevenAreNotWrittenBack`, `DISABLED_frequencyRegistersLongListDoesNotResetChip` |
+| `C<reg>n<x>` | die Anzahl wird mit `strtol` über alle Hexziffern gelesen (`C00n1F` liest 33 Register); `n + 2` läuft im `uint8_t` über, und `for (uint8_t i = reg; i < reg + n; i++)` endet nicht, wenn `reg + n` 256 erreicht (`C10nEE`: Firmware hängt) | `cc1101::readCCreg()` | `readRegisterRangeCountHasMoreDigits`, `readRegisterRangeCountOverflowDoesNotEnd` |
+| `C<reg>n<x>` | `C2Dn10` liest `2D`–`3E` mit Single-Read-Headern und löst dabei alle Strobes `30`–`3D` aus (u. a. SRES, SPWD, SFTX) | `cc1101::readCCreg()` | `readRegisterRangeAcrossStatusAreaSendsAllStrobes` |
+| `V` | liefert der Chip als VERSION `00`/`FF`, liest `chipVersion()` mit Revision 0 Adresse `31` mit Single-Read-Header (`B1`); das ist der Strobe SFSTXON, nicht das VERSION-Register | `cc1101::chipVersion()`, `CC1101_VERSION_REV00` | `versionReadsOldAddressWhenChipReturns00OrFF` |
+| `WS<id>` | `strtol` liest alle Ziffern, verwendet wird das untere Byte: `WS3412` schickt `12` (Config-Adresse, kein Strobe) an den Chip | `cc1101::commandStrobes()` | `strobeWithMoreDigitsUsesLowByte` |
+| `CE<x>`/`CD<x>` | bei AFC aus schreibt jedes `CE<x>`/`CD<x>` FSCTRL0 = 0 und setzt den Frequenz-Offset zurück, auch ohne `hasCC1101` | `storeFunctions()`, Bedingung `afc == 0` | `decoderFlagWithAfcOffWritesFsctrl0` |
+| `SC` mit `SN` | `sendFIFO(command[cmdNo].datastart, command[c].dataend)` verwendet `cmdNo` statt `c`: bei zwei `SN`-Teilen wird nur der letzte gesendet (`…SN;D=91;SN;D=C6;` → TX-FIFO `C6`) | `send_cmd()`, xFSK-Zweig | `xfskCombinedPartsUseDataOfLastPart` |
+| `S…` mit CC1101 | schlägt der Wechsel nach TX bzw. RX fehl, wird das nicht erkannt: nach `while (maxloop-- && …)` ist `maxloop` 255, nicht 0. `setTransmitMode()` schaltet `PIN_SEND` trotzdem auf Ausgang, die Nachricht wird gesendet | `cc1101::setTransmitMode()`, `cc1101::setReceiveMode()` | `transmitModeFailureIsNotDetected`, `receiveModeFailureIsNotDetected` |
 
 ## Testhelfer
 
-`tests/fakeCC1101.h` (nur `TestProjectCC1101`): Modell des CC1101 am SPI. `SPDR`/`SPSR`/`SPCR` werden per Präprozessor auf ein Fake-Register umgeleitet, Chip-Select kommt über `pinMode(csPin, LOW/HIGH)`. Das Modell bildet Config-, Status- und PATABLE-Zugriffe, Strobes (Status-Byte vor Ausführung) und den TX-FIFO nach dem CC1101-Datenblatt ab.
+`tests/fakeCC1101.h` (nur `TestProjectCC1101`): Modell des CC1101 am SPI. `SPDR`/`SPSR`/`SPCR` werden per Präprozessor auf ein Fake-Register umgeleitet, Chip-Select kommt über `pinMode(csPin, LOW/HIGH)`. Das Modell bildet das SPI-Zugriffsschema des CC1101-Datenblatts ab (Header-Byte mit Lese- und Burst-Bit, Config-, Status- und PATABLE-Zugriffe, Strobes mit Status-Byte vor Ausführung, Schreiben in den TX-FIFO). Es ist ein vereinfachtes Modell. Nicht nachgebildet sind:
+
+- MISO / CHIP_RDYn: MISO ist immer low, die Timeout-Pfade von `wait_Miso()`/`waitTo_Miso()` laufen nie.
+- MARCSTATE folgt nicht dem Zustand (bleibt `01`), das Warten auf das Ende des Sendens in `sendFIFO()` endet sofort.
+- FIFO-Füllstand im Status-Byte (immer 0).
+- Reset-Werte: SRES setzt alle Config-Register auf 0.
+- SFTX/SFRX: `txFifo` ist ein Protokoll aller in den TX-FIFO geschriebenen Bytes.
+- Adresse `2F` wird wie ein Config-Register behandelt.
+
+Für Fehlerfälle gibt es `stuckStrobe` (dieser Strobe ändert den Zustand nicht, z. B. ein STX, das fehlschlägt). Jedes SPI-Byte wird gezählt. Nach `transferLimit` Bytes wirft das Modell `fakecc::TooManyTransfers`, eine Endlosschleife in der Firmware lässt den Test also fehlschlagen statt den Lauf hängen zu lassen. Nach jedem Test wird geprüft, dass kein SPI-Byte ohne Chip-Select übertragen wurde.
 
 `tests/serialCommandHelper.h`:
 
