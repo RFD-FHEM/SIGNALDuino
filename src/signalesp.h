@@ -98,7 +98,7 @@ volatile unsigned long lastTime = micros();
 
 bool hasCC1101 = false;
 bool AfcEnabled = true;
-char IB_1[14];                     // Input Buffer one - capture commands
+char IB_1[15]; // Input Buffer one - capture commands, 14 characters + '\0' (always null terminated)
 #ifdef CMP_CC1101
   bool wmbus = false;
   bool wmbus_t = false;
@@ -469,6 +469,7 @@ void serialEvent()
       return;
     } else {
       IB_1[idx] = (char)MSG_PRINTER.read();
+      IB_1[idx + 1] = '\0';  // idx <= 13, IB_1 has room for the terminator
       // DBG_PRINTLN(idx);
       // DBG_PRINT(IB_1[idx]);
 
@@ -495,7 +496,6 @@ void serialEvent()
         case ';':
           DBG_PRINT("send cmd detected ");
           // DBG_PRINTLN(idx);
-          if (idx + 1 < (uint8_t)sizeof(IB_1)) IB_1[idx + 1] = '\0';  // ';' at the last position: no room for '\0'
           if (idx > 0)
             send_cmd();
           idx = 0; // increments to 1

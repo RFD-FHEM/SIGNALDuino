@@ -11,7 +11,7 @@
 #include "compile_config.h"
 
 extern bool hasCC1101;
-extern char IB_1[14];
+extern char IB_1[15];  // 14 characters + '\0'
 
 //================================= RAW Send ======================================
 void send_raw(char *startpos, char *endpos, const int16_t *buckets)

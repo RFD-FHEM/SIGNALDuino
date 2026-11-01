@@ -100,9 +100,9 @@ TEST(serialHelper, captureFlashStrings) {
 }
 
 TEST(serialHelper, loadCommandRespectsBufferSize) {
-    EXPECT_TRUE(serialtest::loadCommand("1234567890123"));   // 13 chars + '\0' fit
-    EXPECT_STREQ("1234567890123", IB_1);
-    EXPECT_FALSE(serialtest::loadCommand("12345678901234")); // 14 chars do not fit
+    EXPECT_TRUE(serialtest::loadCommand("12345678901234"));   // 14 chars + '\0' fit
+    EXPECT_STREQ("12345678901234", IB_1);
+    EXPECT_FALSE(serialtest::loadCommand("123456789012345")); // 15 chars do not fit
     EXPECT_TRUE(serialtest::loadCommand("P"));
     EXPECT_EQ('\0', IB_1[1]) << "buffer must be zero padded";
 }

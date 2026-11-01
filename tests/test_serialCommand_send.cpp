@@ -278,6 +278,13 @@ TEST_F(SendCommandTest, garbagePrefixIsSkippedAndCommandSentWithItsRepeats) {
     EXPECT_EQ(0u, cap.inputLeft());
 }
 
+TEST_F(SendCommandTest, garbagePrefixFillingIB_1IsSkipped) {
+    // longest first part serialEvent() stores: 14 characters, ';' at IB_1[13]
+    run("XXXXXXXXXXXSR;P0=-400;P1=800;D=0101;\n");
+    EXPECT_EQ("SR;P0=-400;P1=800;D=0101;\n", cap.output());
+    EXPECT_TRUE(signalNear(rec.signal(), { -400, 800, -400, 800 }));
+}
+
 TEST_F(SendCommandTest, garbagePrefixIsNotEchoed) {
     run("\x01SR;P0=-400;P1=800;D=0101;\n");
     EXPECT_EQ("SR;P0=-400;P1=800;D=0101;\n", cap.output());
