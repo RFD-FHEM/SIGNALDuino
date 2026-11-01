@@ -39,6 +39,8 @@ bool isHexadecimalDigit(int8_t value)
 
 #include "tests.cpp"
 #include "test_serialCommand.cpp"
+#include "test_serialCommand_system.cpp"
+#include "test_serialCommand_send.cpp"
 
 int main(int argc, char **argv)
 {

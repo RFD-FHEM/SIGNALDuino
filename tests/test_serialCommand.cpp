@@ -33,8 +33,86 @@ SimpleFIFO<int, FIFO_LENGTH> FiFo; //store FIFO_LENGTH # ints
 
 SignalDetectorClass musterDec;
 
+#include "serialCommandHelper.h"
+
+// The arduino-mock micros() always returns 0; the busy-wait loops in send.h
+// would never end. Map micros() to the fake clock for send.h only.
+// disableReceive()/enableReceive() are recorded for send.h only, so the tests
+// can check whether send_cmd() switches the receiver on again.
+namespace serialtest {
+inline void recordDisableReceive() { receiveState().disables++; receiveState().enabled = false; disableReceive(); }
+inline void recordEnableReceive() { receiveState().enables++; receiveState().enabled = true; enableReceive(); }
+} // namespace serialtest
+#define micros() serialtest::fakeMicros()
+#define disableReceive() serialtest::recordDisableReceive()
+#define enableReceive() serialtest::recordEnableReceive()
 #include <send.h>
+#undef enableReceive
+#undef disableReceive
+#undef micros
 #include <commands.h>
+
+namespace serialtest {
+// Runs a short command through the firmware command dispatcher.
+// Like serialEvent() in the firmware, the line terminator stays in IB_1,
+// so "\n" is appended unless terminate is false.
+inline void runShortCommand(const char* cmd, bool terminate = true) {
+    std::string line(cmd);
+    if (terminate) line += '\n';
+    ASSERT_TRUE(loadCommand(line.c_str())) << "command does not fit into IB_1: " << cmd;
+    commands::HandleShortCommand();
+}
+} // namespace serialtest
+
+// ---------------------------------------------------------------------------
+// Self tests for the serial test helpers (no firmware involved)
+// ---------------------------------------------------------------------------
+TEST(serialHelper, captureStringsAndChars) {
+    serialtest::SerialCapture cap;
+    Serial.print("ab");
+    Serial.print('c');
+    Serial.println("d");
+    Serial.println();
+    EXPECT_EQ("abcd\n\n", cap.output());
+}
+
+TEST(serialHelper, captureNumbersLikeArduinoPrint) {
+    serialtest::SerialCapture cap;
+    Serial.print(0, DEC);
+    Serial.print(' ');
+    Serial.print(-42, DEC);
+    Serial.print(' ');
+    Serial.print((unsigned char)0x0a, HEX);
+    Serial.print(' ');
+    Serial.print(255u, HEX);
+    Serial.print(' ');
+    Serial.print(5L, BIN);
+    Serial.print(' ');
+    Serial.println(4294967295UL, DEC);
+    EXPECT_EQ("0 -42 A FF 101 4294967295\n", cap.output());
+}
+
+TEST(serialHelper, captureFlashStrings) {
+    serialtest::SerialCapture cap;
+    Serial.print(FPSTR(TXT_EEPROM));
+    Serial.println(FPSTR(TXT_BLANK));
+    EXPECT_EQ("EEPROM \n", cap.output());
+}
+
+TEST(serialHelper, loadCommandRespectsBufferSize) {
+    EXPECT_TRUE(serialtest::loadCommand("1234567890123"));   // 13 chars + '\0' fit
+    EXPECT_STREQ("1234567890123", IB_1);
+    EXPECT_FALSE(serialtest::loadCommand("12345678901234")); // 14 chars do not fit
+    EXPECT_TRUE(serialtest::loadCommand("P"));
+    EXPECT_EQ('\0', IB_1[1]) << "buffer must be zero padded";
+}
+
+// Wiring check: helper + real command dispatcher
+TEST(serialHelper, runShortCommandReachesDispatcher) {
+    serialtest::SerialCapture cap;
+    serialtest::runShortCommand("P");
+    EXPECT_EQ("OK\n", cap.output());
+}
 
 // static size_t println(int, int = DEC);
 TEST(serial, println1) {
