@@ -103,3 +103,23 @@ include_directories(
 enable_testing()
 gtest_discover_tests(TestProject)
 #add_test(testSamesign TestProject)
+##############################################################################################################################################
+# Second test executable for the serial commands that need CC1101 support (CMP_CC1101).
+# src/cc1101.cpp is compiled unchanged against the fake chip in fakeCC1101.h.
+##############################################################################################################################################
+add_executable(TestProjectCC1101
+  ${ARDUINO_LIBRARY_SOURCE_FILES}
+  ${PROJECT_SOURCE_DIR}/main_cc1101.cpp
+)
+target_compile_definitions(TestProjectCC1101 PRIVATE CMP_CC1101)
+target_link_libraries(TestProjectCC1101
+    gtest_main
+    arduino_mock
+    ${CMAKE_THREAD_LIBS_INIT}
+)
+target_include_directories(TestProjectCC1101 PUBLIC
+    ${arduino_mock_SOURCE_DIR}/include
+    ${googletest_SOURCE_DIR}/googletest/include
+    ${googletest_SOURCE_DIR}/googlemock/include
+)
+gtest_discover_tests(TestProjectCC1101)
