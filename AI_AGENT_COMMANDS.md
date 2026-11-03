@@ -7,7 +7,7 @@ Dieses Dokument listet die verfügbaren seriellen Befehle für die SIGNALDuino F
 | Syntax | Funktion | Antwort | Beispiel |
 | :--- | :--- | :--- | :--- |
 | `V` | Version abfragen | Versionsstring inkl. Kompilierzeitpunkt, CC1101-Status und Frequenz | `V` -> `V 3.3.1-dev SIGNALduino - compiled at ...` |
-| `?` | Hilfe anzeigen | Liste der unterstützten Befehle | `?` -> `? Use one of V R t X S P C r W s x e` |
+| `?` | Hilfe anzeigen | Liste der unterstützten Befehle | `?` -> `? Use one of V R t X S P C r W s w x e` |
 | `R` | Freien RAM abfragen | Anzahl der freien Bytes im RAM | `R` -> `1234` |
 | `t` | Uptime abfragen | Systemlaufzeit in Sekunden | `t` -> `3600` |
 | `P` | Ping | Prüft Verbindung | `P` -> `OK` |
