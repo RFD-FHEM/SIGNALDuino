@@ -84,7 +84,7 @@ Nur im Code gelesen, im nativen Build nicht kompiliert (`serialEvent()` in `sign
 
 - ESP: `IB_1[idx + 1] = '\0'` schrieb bei `;` an Position 13 nach `IB_1[14]`, also ein Byte hinter den Puffer.
 - Alle: bei vollem Puffer gab `Command to long: ` mit `MSG_PRINTLN(IB_1)` 14 Zeichen ohne `\0` aus und las über `IB_1` hinaus. AVR/STM terminierten `IB_1` nie, `DBG_PRINT(IB_1)` in `send_cmd()` las ebenso weiter.
-- Behoben: `IB_1` hat jetzt 15 Bytes (14 Zeichen + `\0`). Alle drei `serialEvent()`-Varianten terminieren nach jedem gelesenen Zeichen, `IB_1` ist also immer ein gültiger String. Nicht für ESP/STM kompiliert getestet; nativ getestet ist nur die Puffergröße des Testhelfers (`loadCommandRespectsBufferSize`).
+- Behoben: `IB_1` hat jetzt 15 Bytes (14 Zeichen + `\0`). Alle drei `serialEvent()`-Varianten terminieren nach jedem gelesenen Zeichen, `IB_1` ist also immer ein gültiger String. Die drei `serialEvent()`-Varianten sind nicht kompiliert getestet. Ein Test liest ihre Quelltexte und prüft Terminierung direkt nach dem Lesen, Puffergröße und `idx == 14` (`serialEventVariantsNullTerminateIB_1AfterEveryCharacter`, reine Textprüfung, führt `serialEvent()` nicht aus); dazu die Puffergröße des Testhelfers (`loadCommandRespectsBufferSize`).
 - AVR/STM: ein `;` an Position 0 (Zeile beginnt mit `;`) ruft `send_cmd()` auf. ESP prüft vorher `idx > 0`. Folge wie #267.
 - Bei Timeouts oder zu langen Kommandos landen Reste im Puffer, wie oben beschrieben. `serialEvent()` liest sie als neue Kommandos. Kommt darin ein `;`, wird `send_cmd()` mit einem Teil ohne `S` aufgerufen (#267).
 
