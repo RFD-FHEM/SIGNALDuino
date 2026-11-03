@@ -422,7 +422,7 @@ TEST_F(ShortCommandTest, setMcMinBitLenNonNumericSetsZero) {
 
 TEST_F(ShortCommandTest, setMcMinBitLenLongestValueThatFits) {
     strictEeprom();
-    runShortCommand("CSmcmbl=0020");   // 12 chars + '\n' = full IB_1
+    runShortCommand("CSmcmbl=00020");  // 13 chars + '\n' = full IB_1 (14 chars)
     EXPECT_EQ(20, musterDec.mcMinBitLen);
     EXPECT_EQ("20 bits set", cap.output());
 }

@@ -41,7 +41,7 @@ void DBG_PRINTtoHEX(uint8_t b) {  // this function is the alternative to sprintf
 #include "functions.h"
 #include "signalDecoder.h"
 
-extern char IB_1[14];
+extern char IB_1[15];  // 14 characters + '\0'
 extern bool hasCC1101;
 extern SignalDetectorClass musterDec;
 extern volatile bool blinkLED;
