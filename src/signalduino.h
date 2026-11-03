@@ -83,7 +83,7 @@ volatile bool blinkLED = false;
 volatile unsigned long lastTime = micros();
 bool hasCC1101 = false;
 bool AfcEnabled = true;
-char IB_1[14]; // Input Buffer one - capture commands
+char IB_1[15]; // Input Buffer one - capture commands, 14 characters + '\0' (always null terminated)
 
 
 
@@ -268,6 +268,7 @@ void serialEvent()
       return;
     } else {
       IB_1[idx] = (char)MSG_PRINTER.read();
+      IB_1[idx + 1] = '\0';  // idx <= 13, IB_1 has room for the terminator
       switch (IB_1[idx])
       {
         case '\n':

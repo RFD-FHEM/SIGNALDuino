@@ -14,7 +14,7 @@
 #include "output.h"
 #include "signalDecoder.h"         // xFSK
 
-extern char IB_1[14];
+extern char IB_1[15];  // 14 characters + '\0'
 
 #if defined(ESP8266) || defined(ESP32) || defined(ARDUINO_MAPLEMINI_F103CB)
 	#include <SPI.h>

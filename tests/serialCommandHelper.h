@@ -28,7 +28,7 @@
 #include <arduino-mock/Arduino.h>
 #include <arduino-mock/Serial.h>
 
-extern char IB_1[14];
+extern char IB_1[15];  // 14 characters + '\0'
 
 namespace serialtest {
 
@@ -272,7 +272,7 @@ private:
 };
 
 // Copies cmd into IB_1 (zero padded) and returns false if it does not fit
-// (IB_1 holds 13 characters plus terminator).
+// (IB_1 holds 14 characters plus terminator, like serialEvent() stores them).
 inline bool loadCommand(const char* cmd) {
     const size_t len = strlen(cmd);
     if (len >= sizeof(IB_1)) return false;

@@ -25,7 +25,7 @@
 #define EE_MAGIC_OFFSET        0
 #define addr_features          0xff
 
-char IB_1[14]; // Input Buffer one - capture commands
+char IB_1[15]; // Input Buffer one - capture commands, 14 characters + '\0' (always null terminated)
 void disableReceive();
 void enableReceive();
 int freeRam() { return 100; };
