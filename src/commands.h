@@ -108,11 +108,15 @@ namespace commands {
 		#endif
 	}
 
+	// C<E|D><flag> stores the flag in EEPROM, CV<E|D><flag> changes it only until the next reset
 	inline void configCMD()
 	{
 		bool *bptr;
+		const bool persist = (IB_1[1] != 'V');
+		const uint8_t modeIdx = persist ? 1 : 2;	// 'E' / 'D'
+		const uint8_t flagIdx = modeIdx + 1;		// 'S', 'U', 'C', ...
 
-		switch (IB_1[2])
+		switch (IB_1[flagIdx])
 		{
 			case 'S' : //MS
 				bptr = &musterDec.MSenabled;
@@ -143,7 +147,7 @@ namespace commands {
 				return;
 		}
 
-		switch (IB_1[1])
+		switch (IB_1[modeIdx])
 		{
 			case 'E':
 				*bptr = true;
@@ -155,11 +159,110 @@ namespace commands {
 				return;
 		}
 		#if defined (CMP_CC1101) && (defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB))
-			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled, wmbus, wmbus_t);
+			if (persist) {
+				storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled, wmbus, wmbus_t);
+			} else {
+				applyFunctions(AfcEnabled, wmbus, wmbus_t);
+			}
 		#else
-			storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
+			if (persist) {
+				storeFunctions(musterDec.MSenabled, musterDec.MUenabled, musterDec.MCenabled, musterDec.MredEnabled, AfcEnabled);
+			} else {
+				applyFunctions(AfcEnabled);
+			}
 		#endif
 	}
+
+	// W<reg><val> writes EEPROM and CC1101 register, w<reg><val> writes only the CC1101 register (reg is the EEPROM address, CC1101 register + 2)
+	inline void writeRegister(const bool persist)
+	{
+		char b[3];
+		b[2] = '\0';
+
+		memcpy(b, &IB_1[1], 2);
+		uint8_t reg = strtol(b, nullptr, 16);
+		memcpy(b, &IB_1[3], 2);
+		uint8_t val = strtol(b, nullptr, 16);
+
+		if (persist) {
+			EEPROM.write(reg, val); //Todo pruefen ob reg hier um 1 erhoeht werden muss
+		}
+		DBG_PRINT(reg);
+		DBG_PRINT('=');
+
+		DBG_PRINTLN(val);
+
+#ifdef CMP_CC1101
+		if (hasCC1101) {
+			cc1101::writeCCreg(reg, val);
+		}
+
+		if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
+			// adr 0x00 IOCFG2, the CC1101 is the reference if the EEPROM is not written
+			const uint8_t iocfg2 = (persist || !hasCC1101) ? EEPROM.read(2) : cc1101::readReg(0x00, CC1101_CONFIG);
+
+			if (iocfg2 == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
+				DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
+
+				reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
+				// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
+				// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
+				if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
+					val = 0x56;          // FREND1 = 0x56
+				} else {
+					val = 0xB6;         // FREND1 = 0xB6
+				}
+				if (persist) {
+					EEPROM.write(reg, val);
+				}
+				if (hasCC1101) {
+					cc1101::writeCCreg(reg, val);
+				}
+				reg = 0x03 + 2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
+				memcpy(b, &IB_1[3], 2);
+				val = strtol(b, nullptr, 16);
+				// RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
+				// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
+				if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
+					val = 0x47;          // FIFOTHR = 0x47
+				} else {
+					val = 0x07;           // FIFOTHR = 0x07
+				}
+				if (persist) {
+					EEPROM.write(reg, val);
+				}
+				if (hasCC1101) {
+					cc1101::writeCCreg(reg, val);
+				}
+			}
+		}
+#endif
+#if defined(ESP32) || defined(ESP8266)
+		if (persist) {
+			EEPROM.commit();
+		}
+#endif
+	}
+
+#ifdef CMP_CC1101
+	// WR discards changes made with w and CV and loads CC1101 registers and feature flags from EEPROM again
+	inline void reloadConfig()
+	{
+		#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
+			getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled, &wmbus, &wmbus_t);
+		#else
+			getFunctions(&musterDec.MSenabled, &musterDec.MUenabled, &musterDec.MCenabled, &musterDec.MredEnabled, &AfcEnabled);
+		#endif
+		if (hasCC1101) {
+			cc1101::CCinit();
+		}
+		#if defined (ESP8266) || defined (ESP32) || defined (ARDUINO_MAPLEMINI_F103CB)
+			applyFunctions(AfcEnabled, wmbus, wmbus_t);
+		#else
+			applyFunctions(AfcEnabled);
+		#endif
+	}
+#endif
 
 	inline void configSET()
 	{
@@ -184,6 +287,7 @@ namespace commands {
 		#define  cmd_config 'C'          // CG get config, set config, C<reg> get CC1101 register
 		#define  cmd_patable 'x' 
 		#define  cmd_write 'W'           // write EEPROM und write CC1101 register
+		#define  cmd_writeVolatile 'w'   // write only CC1101 register
 		#define  cmd_read  'r'           // read EEPROM
 		#define  cmd_space ' '
 		#define  cmd_send 'S'
@@ -205,6 +309,7 @@ namespace commands {
 			MSG_PRINT(cmd_status); MSG_PRINT(FPSTR(TXT_BLANK));
 #ifdef CMP_CC1101
 			if (hasCC1101) {
+				MSG_PRINT(cmd_writeVolatile); MSG_PRINT(FPSTR(TXT_BLANK));
 				MSG_PRINT(cmd_patable); MSG_PRINT(FPSTR(TXT_BLANK));
 				MSG_PRINT(cmd_ccFactoryReset); MSG_PRINT(FPSTR(TXT_BLANK));
 			}
@@ -280,6 +385,7 @@ namespace commands {
 					break;
 				case 'E':
 				case 'D':
+				case 'V':
 					configCMD();
 					break;
 				case 'S':
@@ -350,63 +456,17 @@ namespace commands {
 					}
 					#endif
 				#endif
-			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
-				char b[3];
-				b[2] = '\0';
-
-				memcpy(b, &IB_1[1], 2);
-				uint8_t reg = strtol(b, nullptr, 16);
-				memcpy(b, &IB_1[3], 2);
-				uint8_t val = strtol(b, nullptr, 16);
-
-				EEPROM.write(reg, val); //Todo pruefen ob reg hier um 1 erhoeht werden muss
-				DBG_PRINT(reg);
-				DBG_PRINT('=');
-
-				DBG_PRINTLN(val);
-
 #ifdef CMP_CC1101
-				if (hasCC1101) {
-					cc1101::writeCCreg(reg, val);
-				}
-
-				if (reg == 0x10 + 2) {       // 0x10 MDMCFG4 bwidth 325 kHz (EEPROM-Addresse + 2)
-
-					if (EEPROM.read(2) == 13) {     // adr 0x00 is only on OOK/ASK 0D (GD0) | DN022 -- CC110x CC111x OOK ASK Register Settings (Rev. E) "... optimum register settings for OOK/ASK operation."
-						DBG_PRINTLN(F("optimum register settings for OOK/ASK operation"));
-
-						reg = 0x21 + 2;            // 0x21 FREND1 (EEPROM-Addresse + 2)
-						// RX filter bandwidth > 101 kHz, FREND1 = 0xB6
-						// RX filter bandwidth <= 101 kHz, FREND1 = 0x56
-						if (val >= 0xC7) {    // 199 = 0xC7 = 101 kHz
-							val = 0x56;          // FREND1 = 0x56
-						} else {
-							val = 0xB6;         // FREND1 = 0xB6
-						}
-						EEPROM.write(reg, val);
-						if (hasCC1101) {
-							cc1101::writeCCreg(reg, val);
-						}
-						reg = 0x03 + 2;             // 0x03 FIFOTHR (EEPROM-Addresse + 2)
-						memcpy(b, &IB_1[3], 2);
-						val = strtol(b, nullptr, 16);
-						// RX filter bandwidth > 325 kHz, FIFOTHR = 0x07
-						// RX filter bandwidth <= 325 kHz, FIFOTHR = 0x47
-						if (val >= 0x57) {     // 87 = 0x57 = 325 kHz
-							val = 0x47;          // FIFOTHR = 0x47
-						} else {
-							val = 0x07;           // FIFOTHR = 0x07
-						}
-						EEPROM.write(reg, val);
-						if (hasCC1101) {
-							cc1101::writeCCreg(reg, val);
-						}
-					}
-				}
+			} else if (IB_1[1] == 'R') {
+				reloadConfig();
 #endif
-#if defined(ESP32) || defined(ESP8266)
-				EEPROM.commit();
-#endif
+			} else if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
+				writeRegister(true);
+			}
+		break;
+		case cmd_writeVolatile:
+			if (isHexadecimalDigit(IB_1[1]) && isHexadecimalDigit(IB_1[2]) && isHexadecimalDigit(IB_1[3]) && isHexadecimalDigit(IB_1[4])) {
+				writeRegister(false);
 			}
 		break;
 		case cmd_status:
