@@ -14,7 +14,7 @@ Spalte "Schritt": 2 = System-/Konfigurationskommandos, 3 = Sendekommandos, 4 = C
 | Kommando | Gutfall | Fehler-/Grenzfälle | Schritt | Status |
 | :--- | :--- | :--- | :---: | :---: |
 | `V` | Versionsstring `V <PROGVERS><PROGNAME> - compiled at …`; mit CC1101 inkl. `cc1101 (chip CC110x)` | Zusatzzeichen, Chipversionen 03/04/14/05/07/17/unbekannt, Version `00`/`FF` (Rückfall auf Revision 0), `hasCC1101` aus | 2 / 4 | ✅ |
-| `?` | Liste `? Use one of V R t X S P C r W s`, mit CC1101 zusätzlich `x e` | Zusatzzeichen, `hasCC1101` aus | 2 / 4 | ✅ |
+| `?` | Liste `? Use one of V R t X S P C r W s`, mit CC1101 zusätzlich `w x e` | Zusatzzeichen, `hasCC1101` aus | 2 / 4 | ✅ |
 | `R` | freier RAM (`freeRam()`) | Zusatzzeichen | 2 | ✅ |
 | `t` | Uptime in Sekunden (Wert gegen `millis()` des Mocks geprüft) | Überlauf nicht testbar: der arduino-mock leitet `millis()` aus der Systemzeit ab | 2 | ✅ |
 | `P` | `OK` | Zusatzzeichen | 2 | ✅ |

@@ -119,7 +119,7 @@ static const uint8_t kInitValSize = 0x29;
 // ---------------------------------------------------------------------------
 TEST_F(Cc1101Test, helpListsCC1101Commands) {
     runShort("?");
-    EXPECT_EQ("? Use one of V R t X S P C r W s x e \n", cap.output());
+    EXPECT_EQ("? Use one of V R t X S P C r W s w x e \n", cap.output());
 }
 
 TEST_F(Cc1101Test, helpWithoutCC1101HardwareOmitsCC1101Commands) {
