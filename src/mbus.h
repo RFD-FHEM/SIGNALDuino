@@ -47,11 +47,17 @@ void mbus_readRXFIFO(uint8_t* data, uint8_t length, uint8_t *rssi, uint8_t *lqi)
 #define FIXED                     1
 #define MAX_FIXED_LENGTH          256
 
+// Maximum time a packet may stay in RX (state > 1) before the receiver is restarted.
+// MBbytes holds 584 bytes: ~45 ms at T/C-mode (103 kBaud), ~142 ms at S-mode (32.768 kBaud).
+#define MBUS_RX_TIMEOUT_TMODE_MS  100   // T- and C-mode
+#define MBUS_RX_TIMEOUT_SMODE_MS  200   // S-mode
+
 typedef struct RXinfoDescr {
   uint8_t  lengthField;         // The L-field in the WMBUS packet
   uint16_t length;              // Total number of bytes to to be read from the RX FIFO
   uint16_t bytesLeft;           // Bytes left to to be read from the RX FIFO
   uint8_t *pByteIndex;          // Pointer to current position in the byte array
+  uint32_t startMillis;         // millis() at sync detection, used for the RX timeout
   uint8_t format;               // Infinite or fixed packet mode
   uint8_t mode;                 // S-mode or T-mode
   uint8_t framemode;            // C-mode or T-mode frame

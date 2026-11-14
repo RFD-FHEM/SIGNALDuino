@@ -133,6 +133,7 @@ void mbus_task()
       Serial.println(F("mbt1 sync"));
 #endif
       RXinfo.state = 2;
+      RXinfo.startMillis = millis();
     }
     break;
 
@@ -460,6 +461,26 @@ void mbus_task()
       #endif
     }
     RXinfo.state = 0;
+    return;
+  }
+
+  // Do not restart the receiver while a packet is being received (state > 1).
+  // The CC1101 goes to IDLE (MCSM1 RXOFF_MODE) as soon as a packet is complete, and GDO2 falls at
+  // the same time. If that happens between the GDO2 check above and the MARCSTATE read in
+  // mbus_on(), mbus_on() would flush the RX FIFO and silently drop the complete telegram.
+  // The end of the packet is detected by the GDO2 check in the next call (GDO2 also falls on an
+  // RX FIFO overflow). A reception that hangs is restarted after a timeout.
+  if (RXinfo.state > 1)
+  {
+    const uint32_t rxTimeout = (RXinfo.mode == WMBUS_SMODE) ? MBUS_RX_TIMEOUT_SMODE_MS : MBUS_RX_TIMEOUT_TMODE_MS;
+    if ((uint32_t)(millis() - RXinfo.startMillis) < rxTimeout)
+    {
+      return;
+    }
+#ifdef debug_mbus
+    Serial.println(F("mbt RX timeout"));
+#endif
+    mbus_on(TRUE);
     return;
   }
   mbus_on(FALSE);
